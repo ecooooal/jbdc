@@ -5,10 +5,10 @@
     "paths": {
       "@/*": ["./src/*"],
       "@/assets/*": ["./assets/*"],
-      "@/features/*": ["./features/*"],
-      "@/shared/*": ["./shared/*"],
-      "@/components/*": ["./shared/components/*"],
-      "@/utils/*": ["./shared/lib/*"],
+      "@/features/*": ["./src/features/*"],
+      "@/shared/*": ["./src/shared/*"],
+      "@/components/*": ["./src/shared/components/*"],
+      "@/utils/*": ["./src/shared/lib/*"],
     }
   },
   "include": ["**/*.ts", "**/*.tsx", ".expo/types/**/*.ts", "expo-env.d.ts"]
