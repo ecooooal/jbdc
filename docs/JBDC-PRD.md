@@ -1,5 +1,23 @@
 # Product Requirements Document (PRD)
 
+> **Superseded where it conflicts.** This document records product intent — the vision, the persona, and the workflows. It is **not** implementation guidance. Scope lives in the issue tracker (the MVP map), vocabulary in `GLOSSARY.md`, and decisions in `docs/adr/`. The deviations below are deliberate; do not change working code to match this document.
+>
+> | Section | This document says | What was built |
+> |---|---|---|
+> | §4.2 | Multiple materials via text fields | Materials are an owner-managed list; a design links to several |
+> | §4.4 | Seven image types incl. "fabric reference" | Six kinds: sketch, material, inspiration, prototype, final, photoshoot |
+> | §4.5, §5.6, §9 | Marketing Materials and two link tables | Cut; post-MVP |
+> | §4.6 | Prototype is a status | Cut; six statuses. `prototype` is an image kind |
+> | §5.1 | Dashboard | Cut |
+> | §7 | Filters by category, material, colour, creation date | Status, collection, and material only |
+> | §8 | Desktop and mobile | Native iOS and Android only |
+> | §8 | Application data protected | No app-level encryption at rest; OS protection only (ADR-0001) |
+> | §9 | Nine tables, `design_revisions`, `design_decisions` | One design aggregate and one event table (ADR-0003) |
+> | §9 | `cover_image_id` and `is_primary` | `is_primary` only |
+> | §11 | Five development phases | Seven slices, tracked as issues |
+>
+> Where this document and the tracker disagree, the tracker wins.
+
 # JBDC — Fashion Design Vault
 
 **Product Type:** Local-first Mobile Application
