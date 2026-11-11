@@ -19,7 +19,9 @@ For expo eas, see EXPO-EAS.md
 
 ## Rules
 
-- `docs/JBDC-PRD.md` is the product source of truth for scope and features — input to specs, not an implementation spec. Its data model is a proposal, not a decision.
+- `docs/JBDC-PRD.md` is product **intent**, not instructions: the vision, the persona, and the workflows. It is superseded wherever it conflicts with the issue tracker, `GLOSSARY.md`, or `docs/adr/`. Read it never for scope.
+- Precedence when sources disagree: GitHub issues (scope and specs) → `docs/adr/` (decisions) → `GLOSSARY.md` (vocabulary) → `docs/JBDC-PRD.md` (intent).
+- Use the vocabulary in `GLOSSARY.md` when naming anything. A term that is not in it is not a term.
 - If `ios/` and `android/` directories do not exist, they are generated (Continuous Native Generation). Never create or edit them by hand — configure native behavior in `app.json` and config plugins.
 - Expo Go only includes its bundled native modules. After adding a library with native code, the app needs a development build: `npx expo run:ios|android` locally, or `eas build --profile development`.
 - Prefer recommended Expo modules over third-party libraries, and check your available skills before adding dependencies. Docs: https://docs.expo.dev/versions/latest/index.md
