@@ -42,3 +42,7 @@ Five canonical triage roles: `needs-triage`, `needs-info`, `ready-for-agent`, `r
 ### Domain docs
 
 Single-context: `GLOSSARY.md` and `docs/adr/` at the repo root. See `docs/agents/domain.md`.
+
+### Deep-module packages
+
+Packages under `src/features` are deep modules — import only through a package's entry points (its root files); everything in `lib/`/`tests/` is private. 

@@ -1,14 +1,15 @@
-import { DarkTheme, Stack, ThemeProvider } from 'expo-router';
-import { useColorScheme } from 'react-native';
 import { PortalHost } from '@rn-primitives/portal';
-import '../global.css'
+import { DarkTheme, Stack, ThemeProvider } from 'expo-router';
+import { DatabaseProvider } from '@/features/database/react';
+import '../global.css';
 
-export default function TabLayout() {
-  const colorScheme = useColorScheme();
+export default function RootLayout() {
   return (
-    <ThemeProvider value={DarkTheme}>
-      <Stack />
-      <PortalHost />
-    </ThemeProvider>
+    <DatabaseProvider>
+      <ThemeProvider value={DarkTheme}>
+        <Stack screenOptions={{ headerShown: false }} />
+        <PortalHost />
+      </ThemeProvider>
+    </DatabaseProvider>
   );
 }

@@ -1,9 +1,11 @@
-// Learn more https://docs.expo.io/guides/customizing-metro
 const { getDefaultConfig } = require("expo/metro-config");
 const { withUniwindConfig } = require("uniwind/metro");
 
 /** @type {import('expo/metro-config').MetroConfig} */
 const config = getDefaultConfig(__dirname);
+
+// drizzle-kit ships migrations as .sql; babel inlines them as strings.
+config.resolver.sourceExts.push("sql");
 
 module.exports = withUniwindConfig(config, {
   // relative path to your global.css file (from previous step)
