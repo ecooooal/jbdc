@@ -1,16 +1,23 @@
-import { useMemo } from 'react';
-import { View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useDatabase } from '@/features/database/react';
-import { listLibraryDesigns } from '@/features/library';
-import { Text } from '@/shared/components/ui/text';
+import { useDatabase } from "@/features/database/react";
+import { listLibraryDesigns } from "@/features/library";
+import { Text } from "@/shared/components/ui/text";
+import { useMemo } from "react";
+import { View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function LibraryScreen() {
   const database = useDatabase();
-  const libraryDesigns = useMemo(() => listLibraryDesigns(database.db), [database]);
+  const libraryDesigns = useMemo(
+    () => listLibraryDesigns(database.db),
+    [database],
+  );
 
   return (
-    <SafeAreaView className="bg-background flex-1" edges={['top', 'left', 'right']}>
+    <SafeAreaView
+      style={{ flex: 1 }}
+      className="bg-background"
+      edges={["top", "left", "right"]}
+    >
       <View className="flex-1 px-6 pt-6">
         <Text variant="h3">Library</Text>
 
