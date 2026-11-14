@@ -1,4 +1,4 @@
-import { mkdtempSync, rmSync } from 'node:fs';
+import { mkdtempSync, readFileSync, readdirSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { eq, sql } from 'drizzle-orm';
@@ -139,6 +139,52 @@ describe('database migrations', () => {
       expect(seeded.find((category) => category.seedKey === 'dress')?.name).toBe('Dresses');
     } finally {
       rmSync(directory, { recursive: true, force: true });
+    }
+  });
+
+  const migrationsDirectory = join(__dirname, '..', 'migrations');
+  const migrationFolders = readdirSync(migrationsDirectory, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => entry.name)
+    .sort();
+  const migrationsOnDisk = migrationFolders.map(
+    (folder) =>
+      [folder, readFileSync(join(migrationsDirectory, folder, 'migration.sql'), 'utf8')] as const
+  );
+
+  test('the bundled migration list matches the generated folders', () => {
+    const bundle = readFileSync(join(migrationsDirectory, 'migrations.js'), 'utf8');
+    const bundledFolders = Array.from(
+      bundle.matchAll(/from\s+'\.\/([^/]+)\/migration\.sql'/g),
+      (match) => match[1]
+    ).sort();
+
+    expect(bundledFolders).toEqual(migrationFolders);
+  });
+
+  test('every generated CREATE is idempotent and can be re-applied', () => {
+    // `createTempDatabase()` has already applied the migrations once. Running
+    // the generated DDL again proves the invariant `pnpm db:generate` creates:
+    // a regeneration that bypasses the post-processor must fail here.
+    for (const [name, migrationSql] of migrationsOnDisk) {
+      for (const rawStatement of migrationSql.split('--> statement-breakpoint')) {
+        const statement = rawStatement.trim();
+        if (!/^create\s+(unique\s+)?(table|index)\s/i.test(statement)) continue;
+
+        if (!/^create\s+(unique\s+)?(table|index)\s+if not exists\s/i.test(statement)) {
+          throw new Error(
+            `${name} is not idempotent. Generate migrations with \`pnpm db:generate\`: ${statement.slice(0, 120)}`
+          );
+        }
+
+        try {
+          database.db.run(sql.raw(statement));
+        } catch (error) {
+          throw new Error(
+            `${name}: re-applying generated DDL failed: ${(error as Error).message}`
+          );
+        }
+      }
     }
   });
 });
