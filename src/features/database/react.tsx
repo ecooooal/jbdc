@@ -3,6 +3,12 @@ import { createContext, useContext, useEffect, useState } from 'react';
 import { openAppDatabase } from './expo';
 import type { Database } from './lib/port';
 
+/**
+ * Live-query support for feature packages. Re-exported through this entry so
+ * screens and features never import a driver adapter themselves.
+ */
+export { useLiveQuery } from './expo';
+
 const DatabaseContext = createContext<Database | null>(null);
 
 /**

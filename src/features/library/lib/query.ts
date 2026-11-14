@@ -24,7 +24,7 @@ export type LibraryDesign = {
  * recently updated first. Category and collection names come along so the grid
  * row never needs a second query.
  */
-export function listLibraryDesigns(db: DatabaseHandle): LibraryDesign[] {
+export function libraryDesignsQuery(db: DatabaseHandle) {
   return db
     .select({
       id: designs.id,
@@ -40,6 +40,10 @@ export function listLibraryDesigns(db: DatabaseHandle): LibraryDesign[] {
     .where(
       and(inArray(designs.status, [...DEFAULT_LIBRARY_STATUSES]), isNull(designs.deletedAt))
     )
-    .orderBy(desc(designs.updatedAt))
-    .all();
+    .orderBy(desc(designs.updatedAt));
+}
+
+/** Runs the default query once. The screen uses the live hook instead. */
+export function listLibraryDesigns(db: DatabaseHandle): LibraryDesign[] {
+  return libraryDesignsQuery(db).all();
 }

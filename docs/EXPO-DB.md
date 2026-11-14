@@ -13,21 +13,24 @@ handle, the schema tables, and the status vocabulary. They never import
 |---|---|---|
 | `@/features/database` | every feature module | nothing; types and schema only |
 | `@/features/database/expo` | the provider (`react.tsx`) | expo-sqlite, synchronously |
-| `@/features/database/react` | the app root and screens | provider and `useDatabase()` |
+| `@/features/database/react` | the app root and screens | provider, `useDatabase()`, `useLiveQuery` |
 | `@/features/database/testing` | Jest suites only | better-sqlite3 on a temp file |
 
 The port opens a connection, applies migrations, applies the seed, and hands
-out the handle plus transactions:
+out the handle, an identity generator for new rows, and transactions:
 
 ```ts
 const database = openAppDatabase();
 const rows = listLibraryDesigns(database.db);
+const design = createDesign(database, { name: 'Silk slip dress' });
 ```
 
-`openAppDatabase()` enables change listeners so later slices can subscribe to
-live queries. Opening is synchronous because drizzle's expo-sqlite driver is
-synchronous; that driver landed in drizzle-orm 1.0 (currently pinned to an RC),
-which is why the ORM version is exact rather than a range.
+`openAppDatabase()` enables change listeners so the Library can subscribe to
+live queries. Feature packages subscribe through `useLiveQuery`, re-exported by
+`@/features/database/react`, never by importing a driver adapter. Opening is
+synchronous because drizzle's expo-sqlite driver is synchronous; that driver
+landed in drizzle-orm 1.0 (currently pinned to an RC), which is why the ORM
+version is exact rather than a range.
 
 ## Migrations
 

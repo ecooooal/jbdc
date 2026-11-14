@@ -11,12 +11,19 @@ export { openTestDatabase };
  * file per call, migrated and seeded like the app's, and removes it on dispose.
  * Jest suites call this in `beforeAll` and `afterAll`.
  */
-export function createTempDatabase(): { database: Database; dispose: () => void } {
+export function createTempDatabase(): {
+  database: Database;
+  /** The file on disk, so a suite can close and reopen it like a relaunch. */
+  path: string;
+  dispose: () => void;
+} {
   const directory = mkdtempSync(join(tmpdir(), 'jbdc-'));
-  const database = openTestDatabase(join(directory, 'jbdc.db'));
+  const path = join(directory, 'jbdc.db');
+  const database = openTestDatabase(path);
 
   return {
     database,
+    path,
     dispose: () => {
       database.close();
       rmSync(directory, { recursive: true, force: true });
