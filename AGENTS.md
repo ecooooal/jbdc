@@ -5,7 +5,7 @@ This is an Expo/React Native mobile application. Prioritize mobile-first pattern
 Expo ships breaking changes every SDK release. APIs you remember are likely renamed, moved, or removed. Before writing any code that touches an Expo, EAS, or React Native API:
 
 1. Read the major version of the `expo` package in `package.json`.
-2. Fetch the matching versioned docs: `https://docs.expo.dev/versions/v<major>.0.0/`
+2. Search the local versioned docs first: `npx @expo/agent-cli docs:search <query>`. It syncs the matching SDK docs on demand and prints `file:line` to read. Only fetch `https://docs.expo.dev/versions/v<major>.0.0/` when the search has no match.
 3. For anything else, fetch https://docs.expo.dev/llms.txt — an index of all Expo docs with corrections to common LLM misconceptions. Follow its links to the specific page you need; never answer from memory.
 
 ## Commands
@@ -28,6 +28,8 @@ For expo eas, see EXPO-EAS.md
 
 - Please read docs/EXPO-FOLDER-STRUCTURE.md first for the folder structure
 - See docs/EXPO-DB when handling the application database
+- Review: read CODING_STANDARDS.md before approving a diff. It covers judgement
+  calls only; types, lint, import boundaries, and tests are enforced by CI.
 
 ## Agent skills
 

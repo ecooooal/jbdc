@@ -5,7 +5,7 @@ talks to the **Database port** in `src/features/database`.
 
 ## The port
 
-Feature modules import `@/features/database` for the `CatalogDatabase` query
+Feature modules import `@/features/database` for the `DatabaseHandle` query
 handle, the schema tables, and the status vocabulary. They never import
 `expo-sqlite` or `better-sqlite3`.
 
@@ -61,3 +61,18 @@ afterAll(dispose);
 ```
 
 No mocks, no in-memory fakes. Only the two thin driver adapters are untested.
+
+`jest.config.js` uses `testEnvironment: 'node'` and loads `jest.setup.js`.
+Expo's preset installs lazy globals (`fetch`, `URL`, `structuredClone`) that
+Jest 30 touches during teardown, where a lazy `require` is illegal. The setup
+file resolves them eagerly; new suites inherit both settings and must not
+remove them.
+
+Run one suite with `pnpm test -- src/features/database` and the full gate with
+`pnpm test`.
+
+`migrations.test.ts` also checks the invariant the generator post-processor
+relies on: every generated `CREATE` uses `IF NOT EXISTS`, re-applying each one
+on an already-migrated database succeeds, and the bundled `migrations.js` lists
+exactly the migration folders on disk. That fails if `drizzle-kit generate` is
+run without `pnpm db:generate`.
