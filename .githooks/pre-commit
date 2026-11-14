@@ -1,0 +1,7 @@
+#!/bin/sh
+# Fast local gate. CI runs the full suite (typecheck + lint + tests), so keep
+# the commit hook to the two cheap checks (< 3 s total here).
+set -e
+
+pnpm typecheck
+pnpm lint
