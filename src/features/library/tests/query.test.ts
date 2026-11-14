@@ -46,7 +46,7 @@ describe('library query', () => {
   }
 
   test('returns no rows for an empty database', () => {
-    expect(listLibraryDesigns(database.db)).toEqual([]);
+    expect(listLibraryDesigns(database)).toEqual([]);
   });
 
   test('excludes soft-deleted, rejected, and archived designs', () => {
@@ -55,7 +55,7 @@ describe('library query', () => {
     insertDesign('Archived', { status: 'archived' });
     insertDesign('Still in development', { status: 'in_development' });
 
-    expect(listLibraryDesigns(database.db).map((design) => design.name)).toEqual([
+    expect(listLibraryDesigns(database).map((design) => design.name)).toEqual([
       'Still in development',
     ]);
   });
@@ -65,7 +65,7 @@ describe('library query', () => {
     insertDesign('Produced', { status: 'produced', updatedAt: 30 });
     insertDesign('Approved', { status: 'approved', updatedAt: 20 });
 
-    expect(listLibraryDesigns(database.db).map((design) => design.name)).toEqual([
+    expect(listLibraryDesigns(database).map((design) => design.name)).toEqual([
       'Produced',
       'Approved',
       'Concept',
@@ -85,7 +85,7 @@ describe('library query', () => {
     insertDesign('In a collection', { categoryId, collectionId, updatedAt: 40 });
     insertDesign('Bare design', { updatedAt: 50 });
 
-    const [bare, inCollection] = listLibraryDesigns(database.db);
+    const [bare, inCollection] = listLibraryDesigns(database);
 
     expect(bare).toMatchObject({
       name: 'Bare design',

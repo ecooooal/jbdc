@@ -42,7 +42,7 @@ describe('design records', () => {
       deletedAt: null,
     });
     expect(design.id).toMatch(UUID_V4);
-    expect(getDesign(database.db, design.id)).toEqual(design);
+    expect(getDesign(database, design.id)).toEqual(design);
   });
 
   test('trims the name before saving it', () => {
@@ -55,7 +55,7 @@ describe('design records', () => {
     expect(() => createDesign(database, { name: '' })).toThrow(InvalidDesignNameError);
     expect(() => createDesign(database, { name: ' \n\t ' })).toThrow(InvalidDesignNameError);
 
-    expect(listDesigns(database.db)).toEqual([]);
+    expect(listDesigns(database)).toEqual([]);
   });
 
   test('rejects names longer than the limit and accepts the boundary', () => {
@@ -63,7 +63,7 @@ describe('design records', () => {
       createDesign(database, { name: 'a'.repeat(DESIGN_NAME_MAX_LENGTH + 1) })
     ).toThrow(InvalidDesignNameError);
 
-    expect(listDesigns(database.db)).toEqual([]);
+    expect(listDesigns(database)).toEqual([]);
 
     const boundary = createDesign(database, { name: 'a'.repeat(DESIGN_NAME_MAX_LENGTH) });
     expect(boundary.name).toHaveLength(DESIGN_NAME_MAX_LENGTH);
@@ -85,7 +85,7 @@ describe('design records', () => {
     createDesign(database, { name: 'Third' }, 30);
     createDesign(database, { name: 'Second' }, 20);
 
-    expect(listDesigns(database.db).map((design) => design.name)).toEqual([
+    expect(listDesigns(database).map((design) => design.name)).toEqual([
       'Third',
       'Second',
       'First',
@@ -102,15 +102,15 @@ describe('design records', () => {
       .where(eq(designs.id, removed.id))
       .run();
 
-    expect(getDesign(database.db, removed.id)).toBeNull();
-    expect(getDesign(database.db, kept.id)).toMatchObject({ name: 'Kept' });
-    expect(listDesigns(database.db).map((design) => design.name)).toEqual(['Kept']);
+    expect(getDesign(database, removed.id)).toBeNull();
+    expect(getDesign(database, kept.id)).toMatchObject({ name: 'Kept' });
+    expect(listDesigns(database).map((design) => design.name)).toEqual(['Kept']);
   });
 
   test('a created design is in the Library query', () => {
     const design = createDesign(database, { name: 'Linen shirt' }, 10);
 
-    expect(listLibraryDesigns(database.db)).toEqual([
+    expect(listLibraryDesigns(database)).toEqual([
       {
         id: design.id,
         name: 'Linen shirt',
@@ -131,8 +131,8 @@ describe('design records', () => {
     const reopened = openTestDatabase(path);
 
     try {
-      expect(getDesign(reopened.db, design.id)).toMatchObject({ name: 'Archive coat' });
-      expect(listLibraryDesigns(reopened.db).map((row) => row.name)).toEqual(['Archive coat']);
+      expect(getDesign(reopened, design.id)).toMatchObject({ name: 'Archive coat' });
+      expect(listLibraryDesigns(reopened).map((row) => row.name)).toEqual(['Archive coat']);
     } finally {
       reopened.close();
       disposeFirst();

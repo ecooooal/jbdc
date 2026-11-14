@@ -5,9 +5,9 @@ talks to the **Database port** in `src/features/database`.
 
 ## The port
 
-Feature modules import `@/features/database` for the `DatabaseHandle` query
-handle, the schema tables, and the status vocabulary. They never import
-`expo-sqlite` or `better-sqlite3`.
+Feature modules import `@/features/database` for the `Database` port, the schema
+tables, and the status vocabulary. They never import `expo-sqlite` or
+`better-sqlite3`.
 
 | Entry | Who imports it | What it opens |
 |---|---|---|
@@ -17,16 +17,19 @@ handle, the schema tables, and the status vocabulary. They never import
 | `@/features/database/testing` | Jest suites only | better-sqlite3 on a temp file |
 
 The port opens a connection, applies migrations, applies the seed, and hands
-out the handle, an identity generator for new rows, and transactions:
+out the query handle, an identity generator for new rows, and transactions.
+Feature reads and writes take the port itself; `Database.db` is the live-query
+adapter's handle and no feature function names it:
 
 ```ts
 const database = openAppDatabase();
-const rows = listLibraryDesigns(database.db);
+const rows = listLibraryDesigns(database);
 const design = createDesign(database, { name: 'Silk slip dress' });
 ```
 
 `openAppDatabase()` enables change listeners so the Library can subscribe to
-live queries. Feature packages subscribe through `useLiveQuery`, re-exported by
+live queries. A feature exposes its own hook (`useLibraryDesigns`) that reads
+`useDatabase()` and subscribes through `useLiveQuery`, re-exported by
 `@/features/database/react`, never by importing a driver adapter. Opening is
 synchronous because drizzle's expo-sqlite driver is synchronous; that driver
 landed in drizzle-orm 1.0 (currently pinned to an RC), which is why the ORM

@@ -1,5 +1,5 @@
 import { and, desc, eq, isNull } from 'drizzle-orm';
-import type { Database, DatabaseHandle, DesignStatus } from '@/features/database';
+import type { Database, DesignStatus } from '@/features/database';
 import { designs } from '@/features/database';
 
 /** A name is trimmed and must survive trimming; this is the only cap. */
@@ -104,9 +104,9 @@ export function createDesign(
 }
 
 /** Reads one live Design; a soft-deleted row is gone as far as readers are concerned. */
-export function getDesign(db: DatabaseHandle, id: string): Design | null {
+export function getDesign(database: Database, id: string): Design | null {
   return (
-    db
+    database.db
       .select(designColumns)
       .from(designs)
       .where(and(eq(designs.id, id), isNull(designs.deletedAt)))
@@ -115,8 +115,8 @@ export function getDesign(db: DatabaseHandle, id: string): Design | null {
 }
 
 /** All live Designs, most recently updated first. */
-export function listDesigns(db: DatabaseHandle): Design[] {
-  return db
+export function listDesigns(database: Database): Design[] {
+  return database.db
     .select(designColumns)
     .from(designs)
     .where(isNull(designs.deletedAt))
