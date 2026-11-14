@@ -1,2 +1,14 @@
 minimumReleaseAgeExclude:
   - expo-sqlite@58.0.17
+
+# better-sqlite3 is a native module, so its install script must run. The
+# watcher ships prebuilt binaries and does not need to build.
+allowBuilds:
+  better-sqlite3: true
+  '@parcel/watcher': false
+
+permissions:
+  drizzle-kit:
+    skills: true
+  expo-sqlite:
+    skills: true
