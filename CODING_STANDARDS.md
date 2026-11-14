@@ -27,6 +27,9 @@ check can make. Mechanical rules live in code, not here:
 - **The schema is the vocabulary.** Do not invent a status, kind, or table that
   is absent from `GLOSSARY.md` and `schema.ts`. If the spec needs one, the spec
   changes first.
+- **useEffect**, used sensibly.
+- **State** lives in reducers.
+- Client components get only what they use.
 
 ## Tests
 
