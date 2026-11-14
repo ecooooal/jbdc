@@ -1,25 +1,6 @@
-import { useMemo } from 'react';
-import type { Database } from '@/features/database';
-import { useLiveQuery } from '@/features/database/react';
-import type { LibraryDesign } from './lib/query';
-import { libraryDesignsQuery } from './lib/query';
-
-export { LibraryCard } from './components/library-card';
-
-export type LibraryDesigns = {
-  designs: LibraryDesign[];
-  error: Error | undefined;
-  /** False until the first read resolves, so an empty catalog is not shown early. */
-  isLoaded: boolean;
-};
-
 /**
- * Subscribes to the Library's default query. Creates and edits land in the
- * returned designs without a manual refresh.
+ * Library — React entry point. Routes import the screen from here; the query
+ * and its types stay on the driver-free entry (`@/features/library`).
  */
-export function useLibraryDesigns(database: Database): LibraryDesigns {
-  const query = useMemo(() => libraryDesignsQuery(database.db), [database]);
-  const { data, error, updatedAt } = useLiveQuery(query, [query]);
-
-  return { designs: data, error, isLoaded: updatedAt !== undefined };
-}
+export { LibraryScreen } from './components/library-screen';
+export { LibraryCard } from './components/library-card';
