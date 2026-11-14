@@ -38,6 +38,10 @@ _Avoid_: sample, toile, mockup
 
 ## History
 
+**History**:
+The append-only sequence of Events kept for one design, newest first when read. One editing session is one Event, so History reads as work, not keystrokes.
+_Avoid_: audit log, activity feed, revision history
+
 **Status**:
 Where a design stands right now: Concept, In Development, Approved, Produced, Rejected, or Archived. Exactly one at a time, changeable in any direction.
 _Avoid_: state, stage, phase
