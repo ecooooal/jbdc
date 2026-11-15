@@ -1,3 +1,5 @@
+import { designNameProblem } from './limits';
+
 /** The four fields Edit can change. Status is displayed, never edited here. */
 export type EditDesignField = 'name' | 'description' | 'categoryId' | 'collectionId';
 
@@ -47,6 +49,35 @@ export function createInitialEditDesignState(): EditDesignState {
     savedCollectionId: null,
     error: null,
   };
+}
+
+/** A write that still owes the row its draft, ready for `updateDesign`. */
+export type PendingEdit = {
+  name?: string;
+  description?: string;
+};
+
+function descriptionValue(draft: string): string | null {
+  const description = draft.trim();
+
+  return description.length > 0 ? description : null;
+}
+
+/**
+ * The drafts the row has not seen yet. Only name and description are drafted;
+ * a Category or Collection writes the moment it is chosen. An invalid name is
+ * never pending, so closing the screen cannot commit a blank one.
+ */
+export function pendingEdit(state: EditDesignState): PendingEdit | null {
+  const patch: PendingEdit = {};
+  const name = state.name.trim();
+
+  if (name !== state.savedName && designNameProblem(name) === null) patch.name = name;
+  if (descriptionValue(state.description) !== state.savedDescription) {
+    patch.description = state.description;
+  }
+
+  return patch.name === undefined && patch.description === undefined ? null : patch;
 }
 
 /** Clears the refusal for the field that just changed, and only that field. */

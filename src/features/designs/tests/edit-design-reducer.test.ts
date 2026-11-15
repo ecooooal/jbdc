@@ -1,6 +1,7 @@
 import {
   createInitialEditDesignState,
   editDesignReducer,
+  pendingEdit,
   type EditDesignEvent,
   type EditDesignState,
 } from '../lib/edit-design-reducer';
@@ -153,6 +154,37 @@ describe('edit design reducer', () => {
     );
 
     expect(saved).toMatchObject({ description: '', savedDescription: null, error: null });
+  });
+
+  test('the drafts that still differ from the row are what closing writes', () => {
+    expect(pendingEdit(loaded())).toBeNull();
+
+    const draft = send(
+      loaded(),
+      { type: 'name-changed', name: '  Wool coat  ' },
+      { type: 'description-changed', description: ' Heavy twill ' }
+    );
+
+    expect(pendingEdit(draft)).toEqual({
+      name: 'Wool coat',
+      description: ' Heavy twill ',
+    });
+  });
+
+  test('a blank name is never pending, but a real description still is', () => {
+    const draft = send(
+      loaded(),
+      { type: 'name-changed', name: '   ' },
+      { type: 'description-changed', description: 'Heavy twill' }
+    );
+
+    expect(pendingEdit(draft)).toEqual({ description: 'Heavy twill' });
+  });
+
+  test('clearing the description is a pending write', () => {
+    expect(pendingEdit(send(loaded(), { type: 'description-changed', description: '' }))).toEqual({
+      description: '',
+    });
   });
 
   test('a saved field leaves the other drafts where they are', () => {

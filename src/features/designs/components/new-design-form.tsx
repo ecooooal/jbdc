@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { Plus } from 'lucide-react-native';
-import { useReducer, type ReactNode } from 'react';
+import { useReducer } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useDatabase } from '@/features/database/react';
@@ -27,16 +27,8 @@ import {
   createInitialNewDesignFormState,
   newDesignFormReducer,
 } from '../lib/new-design-form-reducer';
+import { FormField } from './form-field';
 import { TaxonomySelect } from './taxonomy-select';
-
-function FormField({ label, children }: { label: string; children: ReactNode }) {
-  return (
-    <View className="gap-2">
-      <Text variant="small">{label}</Text>
-      {children}
-    </View>
-  );
-}
 
 /**
  * One entry created without leaving the form. The Collection form adds the

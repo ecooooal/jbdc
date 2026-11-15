@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { ChevronLeft } from 'lucide-react-native';
-import { useEffect, useReducer, type ReactNode } from 'react';
+import { useEffect, useReducer, useRef } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useDatabase } from '@/features/database/react';
@@ -18,20 +18,13 @@ import { Text } from '@/shared/components/ui/text';
 import {
   createInitialEditDesignState,
   editDesignReducer,
+  pendingEdit,
   type EditDesignField,
 } from '../lib/edit-design-reducer';
 import { useDesignDetail } from '../lib/use-design-detail';
 import { DesignStatusBadge } from './design-status-badge';
+import { FormField } from './form-field';
 import { TaxonomySelect } from './taxonomy-select';
-
-function FormField({ label, children }: { label: string; children: ReactNode }) {
-  return (
-    <View className="gap-2">
-      <Text variant="small">{label}</Text>
-      {children}
-    </View>
-  );
-}
 
 /**
  * Edit for one Design. Every section writes itself the moment it is committed,
@@ -53,6 +46,20 @@ export function EditDesignScreen({ designId }: { designId: string }) {
   useEffect(() => {
     if (design) dispatch({ type: 'design-loaded', design });
   }, [design]);
+
+  /** The last rendered state, so closing the screen sees the newest drafts. */
+  const latestState = useRef(state);
+  useEffect(() => {
+    latestState.current = state;
+  });
+
+  /** Closing the screen writes a draft the owner never left, but never a blank name. */
+  useEffect(() => {
+    return () => {
+      const patch = pendingEdit(latestState.current);
+      if (patch) updateDesign(database, designId, patch);
+    };
+  }, [database, designId]);
 
   const selectedCategory = categories.find((category) => category.id === state.categoryId) ?? null;
   const selectedCollection =

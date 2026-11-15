@@ -75,8 +75,17 @@ test('a blank name is refused and the previous name stays', async () => {
   await fireEvent(name, 'blur');
 
   expect(screen.getByText('A design needs a name.')).toBeTruthy();
-  expect(screen.getByLabelText('Design name')).toHaveDisplayValue('Silk slip dress');
   expect(getDesign(database, design.id)).toMatchObject({ name: 'Silk slip dress' });
+});
+
+test('a name typed but not left is written when the screen closes', async () => {
+  const design = newDesign();
+  const view = await renderEdit(design.id);
+
+  await fireEvent.changeText(screen.getByLabelText('Design name'), 'Wool coat');
+  await view.unmount();
+
+  expect(getDesign(database, design.id)).toMatchObject({ name: 'Wool coat' });
 });
 
 test('a description typed and left is stored', async () => {
