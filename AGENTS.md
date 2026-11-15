@@ -42,14 +42,16 @@ Five canonical triage roles: `needs-triage`, `needs-info`, `ready-for-agent`, `r
 Single-context: `GLOSSARY.md` and `docs/adr/` at the repo root. See `docs/agents/domain.md`.
 
 ### Src Folder Layout
-Please read `docs/EXPO-FOLDER-STRUCTURE.md` first for the folder structure
+Read `docs/EXPO-FOLDER-STRUCTURE.md` before exploring `src/features`; the
+feature map in `src/features/README.md` names each package's public entries.
 
 ### Database Handling
-See `docs/EXPO-DB` when handling the application database
+See `docs/EXPO-DB.md` when handling the application database
 
 ### Coding Standards
 - Review: read `CODING_STANDARDS.md` before approving a diff. It covers judgement
-  calls only; types, lint, interface design, import boundaries, and tests are enforced by CI.
+  calls only; types, lint, interface design, import boundaries, frontend state,
+  and tests are enforced by CI.
 - Frontend state: read `docs/FRONTEND_STATE.md` before adding a screen's state.
   Reducers own decisions; rendered tests are for wiring only.
 

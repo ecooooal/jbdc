@@ -18,8 +18,8 @@ tables, and the status vocabulary. They never import `expo-sqlite` or
 
 The port opens a connection, applies migrations, applies the seed, and hands
 out the query handle, an identity generator for new rows, and transactions.
-Feature reads and writes take the port itself; `Database.db` is the live-query
-adapter's handle and no feature function names it:
+Feature reads and writes take the `Database` port and run their drizzle queries
+through `database.db`; only the adapters know which driver is underneath:
 
 ```ts
 const database = openAppDatabase();
@@ -67,6 +67,11 @@ afterAll(dispose);
 ```
 
 No mocks, no in-memory fakes. Only the two thin driver adapters are untested.
+
+Render tests keep the same real database. `DatabaseProvider` accepts `database`
+and `liveQuery` props: pass a `createTempDatabase()` handle and a synchronous
+live-query adapter that calls `query.all()`. The app passes neither, so it
+still opens expo-sqlite and uses its change listener.
 
 `jest.config.js` uses `testEnvironment: 'node'` and loads `jest.setup.js`.
 Expo's preset installs lazy globals (`fetch`, `URL`, `structuredClone`) that

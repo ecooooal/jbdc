@@ -51,7 +51,7 @@ The reducer owns decisions, not everything that changes on screen.
 - **Reanimated shared values and worklets are not reducer state.** They run off the JS thread; a reducer cannot read or write them. Dispatch an event when a gesture or animation ends and a rule must run.
 - **Mid-gesture state is not reducer state.** `react-native-gesture-handler` decides during the gesture; dispatch at the end.
 - **Route state belongs to expo-router.** Read it at the edge and pass what a rule needs (`{ type: "edit-opened", designId }`).
-- **Live data belongs to `useLiveQuery`.** Do not copy rows into reducer state. The reducer holds the surface's decisions — the draft, the step, the error — not the catalog.
+- **Live data belongs to `useLiveQuery`.** Do not copy catalog rows into reducer state. A selection is an id; derive the selected row and its label from the live list. An entry created inline is selected by id immediately, and its label appears when the live query observes the insert. The reducer holds the surface's decisions — the draft, the step, the error — not the catalog.
 - **One modal, one field.** Two `is…Open` booleans that cannot both be true are one piece of state: `openModal: "rename" | "copy" | null`.
 
 ## When plain `useState` is fine
@@ -81,16 +81,21 @@ Two layers. The rule is which layer gets what.
 - It does not cover a transition. If a scenario can be driven by sending events to the reducer, it belongs there. Awaiting `act` flushes every pending update, so a rendered test cannot see transient states a reducer test can.
 - `renderHook` is for bridge hooks (rule 7): assert that a subscription dispatches what it hears and cleans up on unmount.
 - Prefer `getByRole`, then accessible name and placeholder; `getByTestId` is the last resort. Prefer `userEvent` over `fireEvent`. The Jest matchers extend on import; no setup file is needed.
-- Do not mock the port or the driver. `@/features/database/testing` opens a real temporary database. A screen test that needs the catalogue supplies it through the database provider — add that injection seam with the first such test, rather than mocking a provider.
+- Do not mock the port or the driver. `@/features/database/testing` opens a real temporary database. A screen test that needs the catalogue passes a temp `database` and a synchronous `liveQuery` to `DatabaseProvider` — the seam is the provider, not a mock of it. `src/features/designs/tests/new-design-form.test.tsx` is the first such test.
 - A reducer test replaces the component test for the same rule. Do not check one rule in both layers.
 
 ## The guard
 
-Not built yet. When it is, it is `scripts/check-frontend-state.mjs` — a script beside `check-feature-boundaries.mjs`, not an ESLint rule, because it counts per file and cross-references a file's own setters. It scans `src/features/**` and `src/app/**`, skips `tests/`, runs in pre-commit and CI, and fails a file with:
+`scripts/check-frontend-state.mjs`, beside
+`check-feature-boundaries.mjs`, scans `src/features/**` and `src/app/**`, skips
+`tests/`, and runs in pre-commit and CI. It fails a file with:
 
 | Guard               | Fails when a file has…                                                               | Why                                                                  |
 | ------------------- | ------------------------------------------------------------------------------------ | -------------------------------------------------------------------- |
 | `use-state`         | more than **4** `useState` calls                                                     | past a few independent toggles, they are one state machine in pieces |
 | `effect-sets-state` | more than **1** `useEffect`/`useLayoutEffect` that references the file's own setters | a transition happening outside any reducer                           |
+| `reducer-purity`    | a `*-reducer.ts` that imports React, a driver, or any module reaching `src/features/database` | the reducer must not smuggle in the catalog                          |
 
-Calibrate the limits against this repo when it lands; the numbers above are the starting point, not gospel. An allowlist entry may only go down. Do not add entries.
+The limits are calibrated against this repo. There is no allowlist: a file
+that trips `use-state` or `effect-sets-state` is split into a reducer, and a
+reducer that trips `reducer-purity` drops the dependency.
