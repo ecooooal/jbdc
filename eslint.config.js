@@ -2,8 +2,9 @@ const { defineConfig } = require('eslint/config');
 const expoConfig = require('eslint-config-expo/flat');
 
 // Mechanical boundaries from AGENTS.md and docs/EXPO-DB.md. Patterns match the
-// import specifier, so they cover both `@/features/...` and relative paths
-// that cross into another feature package.
+// raw import specifier, so they cover `@/features/...` aliases and bare
+// specifiers. Relative escapes are resolved and checked by
+// scripts/check-feature-boundaries.mjs in pre-commit and CI.
 const boundaryRules = {
   entryPoints: {
     group: ['**/features/*/lib/**', '**/features/*/tests/**'],

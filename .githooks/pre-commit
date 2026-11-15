@@ -1,7 +1,11 @@
 #!/bin/sh
 # Fast local gate. CI runs the full suite (typecheck + lint + tests), so keep
-# the commit hook to the two cheap checks (< 3 s total here).
+# the commit hook to the cheap checks.
 set -e
 
 pnpm typecheck
 pnpm lint
+
+# Resolves imports to paths, so relative escapes that no-restricted-imports
+# cannot see still fail.
+node scripts/check-feature-boundaries.mjs
