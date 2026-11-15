@@ -37,6 +37,8 @@ For expo eas, see EXPO-EAS.md
 
 Issues and specs live as GitHub issues in `ecooooal/jbdc`, managed with the `gh` CLI. See `docs/agents/issue-tracker.md`.
 
+Git access is read-only: the GitHub token manages issues and PRs but cannot push commits. Hand branch pushes (`git push`) to the user, then open the PR with `gh` once the branch is on the remote.
+
 ### Triage labels
 
 Five canonical triage roles: `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`. See `docs/agents/triage-labels.md`.
