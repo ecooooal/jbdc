@@ -62,7 +62,7 @@ A component may keep `useState` when **all** of these are true:
 - No other state is updated in step with it, and no rule decides how it changes beyond "set it to what the user just typed or clicked".
 - No effect writes to it.
 
-`NewDesignForm` keeps `name` and `error` this way: two fields, no effect, below the guard's limit. It is not the model to extend — a third coupled field, or an async create, turns it into a reducer.
+A single text draft and its refusal are fine this way: one field, no effect. `NewDesignForm` crossed that line when its Category and Collection pickers arrived — name, two optional selections, and an inline draft now change together — so its decisions live in `new-design-form-reducer.ts`. A third coupled field turns a `useState` form into a reducer.
 
 ## Testing
 

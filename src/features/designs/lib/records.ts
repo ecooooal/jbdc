@@ -1,13 +1,15 @@
 import { and, desc, eq, isNull } from 'drizzle-orm';
 import type { Database, DesignStatus } from '@/features/database';
 import { categories, collections, designs } from '@/features/database';
+import { DESIGN_NAME_MAX_LENGTH } from './limits';
 
-/** A name is trimmed and must survive trimming; this is the only cap. */
-export const DESIGN_NAME_MAX_LENGTH = 120;
+export { DESIGN_NAME_MAX_LENGTH } from './limits';
 
 export type CreateDesignInput = {
   name: string;
   description?: string | null;
+  categoryId?: string | null;
+  collectionId?: string | null;
 };
 
 /** A design as it is stored. Statuses and timestamps are never caller-supplied. */
@@ -68,16 +70,40 @@ function normalizeDescription(raw: string | null | undefined): string | null {
 }
 
 /**
- * Lowercased name and description, rebuilt on every write. Category and
- * collection names join this once designs can be created with them.
+ * Lowercased name, description, Category, and Collection, rebuilt on every
+ * write. The taxonomy names are read from their tables, so a rename lands in
+ * the search text the next time the design is written.
  */
-function buildSearchText(name: string, description: string | null): string {
-  return [name, description].filter(Boolean).join(' ').toLowerCase();
+function buildSearchText(
+  name: string,
+  description: string | null,
+  category: string | null,
+  collection: string | null
+): string {
+  return [name, description, category, collection].filter(Boolean).join(' ').toLowerCase();
+}
+
+/** The name of a Category or Collection the form selected, or null for none. */
+function taxonomyName(
+  database: Database,
+  table: typeof categories | typeof collections,
+  id: string | null
+): string | null {
+  if (!id) return null;
+
+  return (
+    database.db
+      .select({ name: table.name })
+      .from(table)
+      .where(eq(table.id, id))
+      .get()?.name ?? null
+  );
 }
 
 /**
  * Writes one Design and returns it. A name is the only required input; a blank,
- * whitespace-only, or over-long name throws before anything is written.
+ * whitespace-only, or over-long name throws before anything is written. The
+ * Category and Collection are optional and arrive as the ids the pickers chose.
  */
 export function createDesign(
   database: Database,
@@ -86,12 +112,14 @@ export function createDesign(
 ): Design {
   const name = normalizeName(input.name);
   const description = normalizeDescription(input.description);
+  const categoryId = input.categoryId ?? null;
+  const collectionId = input.collectionId ?? null;
   const design: Design = {
     id: database.newId(),
     name,
     description,
-    categoryId: null,
-    collectionId: null,
+    categoryId,
+    collectionId,
     status: 'concept',
     createdAt: now,
     updatedAt: now,
@@ -102,7 +130,12 @@ export function createDesign(
     .insert(designs)
     .values({
       ...design,
-      searchText: buildSearchText(name, description),
+      searchText: buildSearchText(
+        name,
+        description,
+        taxonomyName(database, categories, categoryId),
+        taxonomyName(database, collections, collectionId)
+      ),
     })
     .run();
 

@@ -19,6 +19,7 @@ import {
   listDesigns,
 } from '@/features/designs';
 import { listLibraryDesigns } from '@/features/library';
+import { createCategory, createCollection } from '@/features/taxonomy';
 
 const UUID_V4 = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 
@@ -96,6 +97,44 @@ describe('design records', () => {
       .get();
 
     expect(row?.searchText).toBe('silk slip dress bias cut');
+  });
+
+  test('joins the chosen category and collection names everywhere a design is read', () => {
+    const category = createCategory(database, { name: 'Dress' });
+    const collection = createCollection(database, { name: 'Spring 2027', year: 2027 });
+
+    const design = createDesign(
+      database,
+      {
+        name: '  Silk Slip Dress ',
+        description: ' Bias Cut ',
+        categoryId: category.id,
+        collectionId: collection.id,
+      },
+      10
+    );
+
+    expect(design).toMatchObject({
+      name: 'Silk Slip Dress',
+      categoryId: category.id,
+      collectionId: collection.id,
+    });
+    expect(getDesignDetail(database, design.id)).toMatchObject({
+      category: 'Dress',
+      collection: 'Spring 2027',
+    });
+    expect(listLibraryDesigns(database)[0]).toMatchObject({
+      name: 'Silk Slip Dress',
+      category: 'Dress',
+      collection: 'Spring 2027',
+    });
+
+    const row = database.db
+      .select({ searchText: designs.searchText })
+      .from(designs)
+      .get();
+
+    expect(row?.searchText).toBe('silk slip dress bias cut dress spring 2027');
   });
 
   test('lists designs most recently updated first', () => {
