@@ -6,10 +6,12 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useDatabase } from '@/features/database/react';
 import {
   DESIGN_NAME_MAX_LENGTH,
+  getDesign,
   InvalidDesignNameError,
   updateDesign,
   type UpdateDesignInput,
 } from '@/features/designs';
+import { appendEditEvent, diffDesignFields, type DesignFieldValues } from '@/features/history';
 import { useTaxonomy } from '@/features/taxonomy/react';
 import { Button } from '@/shared/components/ui/button';
 import { Icon } from '@/shared/components/ui/icon';
@@ -20,11 +22,19 @@ import {
   editDesignReducer,
   unwrittenFields,
   type EditDesignField,
+  type EditableDesign,
 } from '../lib/edit-design-reducer';
 import { useDesignDetail } from '../lib/use-design-detail';
 import { DesignStatusBadge } from './design-status-badge';
 import { FormField } from './form-field';
 import { TaxonomySelect } from './taxonomy-select';
+
+/** The four editable fields, in the shape the History diff reads. */
+function editableValues(design: EditableDesign): DesignFieldValues {
+  const { name, description, categoryId, collectionId } = design;
+
+  return { name, description, categoryId, collectionId };
+}
 
 /**
  * Edit for one Design. Every section writes itself the moment it is committed,
@@ -43,8 +53,15 @@ export function EditDesignScreen({ designId }: { designId: string }) {
     createInitialEditDesignState
   );
 
+  /** The fields as they were when this editing session opened (ADR-0004). */
+  const sessionStart = useRef<DesignFieldValues | null>(null);
+
   useEffect(() => {
-    if (design) dispatch({ type: 'design-loaded', design });
+    if (!design) return;
+
+    if (sessionStart.current === null) sessionStart.current = editableValues(design);
+
+    dispatch({ type: 'design-loaded', design });
   }, [design]);
 
   /** The last rendered state, so closing the screen sees the newest drafts. */
@@ -54,8 +71,10 @@ export function EditDesignScreen({ designId }: { designId: string }) {
   });
 
   /**
-   * Closing the screen or leaving the app writes a draft the owner never left,
-   * but never a blank name. Category and Collection already wrote on selection.
+   * Closing the screen, navigating away, or leaving the app writes a draft the
+   * owner never left, then records what the whole session changed as one Event.
+   * A session that changed nothing writes no Event. Category and Collection
+   * already wrote on selection.
    */
   useEffect(() => {
     function flushDrafts(): ReturnType<typeof updateDesign> {
@@ -64,16 +83,45 @@ export function EditDesignScreen({ designId }: { designId: string }) {
       return patch ? updateDesign(database, designId, patch) : null;
     }
 
+    function recordSession(): void {
+      const start = sessionStart.current;
+      if (!start) return;
+
+      const current = getDesign(database, designId);
+      if (!current) return;
+
+      const end = editableValues(current);
+      const diff = diffDesignFields(start, end);
+
+      if (!diff) return;
+
+      appendEditEvent(database, designId, diff);
+      // The next commit covers only what changes after this one.
+      sessionStart.current = end;
+    }
+
+    function flushSessionDrafts(report: boolean): void {
+      const saved = flushDrafts();
+
+      if (report && saved) dispatch({ type: 'drafts-written', design: saved });
+    }
+
     const subscription = AppState.addEventListener('change', (status) => {
       if (status === 'active') return;
 
-      const saved = flushDrafts();
-      if (saved) dispatch({ type: 'drafts-written', design: saved });
+      // Flushing keeps a focused draft even when the app is killed from the
+      // app switcher, which may never report `background`.
+      flushSessionDrafts(true);
+
+      // Only background ends a session; iOS `inactive` also fires for Control
+      // Centre and the app switcher, which the owner has not left.
+      if (status === 'background') recordSession();
     });
 
     return () => {
       subscription.remove();
-      flushDrafts();
+      flushSessionDrafts(false);
+      recordSession();
     };
   }, [database, designId]);
 

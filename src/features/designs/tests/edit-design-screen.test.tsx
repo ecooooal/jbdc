@@ -1,10 +1,12 @@
 import { PortalHost } from '@rn-primitives/portal';
-import { fireEvent, render, screen } from '@testing-library/react-native';
+import { act, fireEvent, render, screen } from '@testing-library/react-native';
+import { AppState } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { DatabaseProvider, type LiveQuery } from '@/features/database/react';
 import { createTempDatabase } from '@/features/database/testing';
 import { createDesign, getDesign } from '@/features/designs';
 import { EditDesignScreen } from '@/features/designs/react';
+import { listDesignEvents } from '@/features/history';
 import { createCategory, createCollection } from '@/features/taxonomy';
 
 jest.mock('expo-router', () => ({ router: { back: jest.fn() } }));
@@ -117,4 +119,81 @@ test('shows the Category and Collection already on the design', async () => {
 
   expect(screen.getByText('Dress')).toBeTruthy();
   expect(screen.getByText('Spring 2027 (2027)')).toBeTruthy();
+});
+
+describe('edit session history', () => {
+  test('two fields changed in one session are one Event with both old and new values', async () => {
+    const design = newDesign();
+    const view = await renderEdit(design.id);
+
+    await fireEvent.changeText(screen.getByLabelText('Design name'), 'Wool coat');
+    await fireEvent.changeText(screen.getByLabelText('Design description'), 'Heavy twill');
+    await view.unmount();
+
+    const events = listDesignEvents(database, design.id);
+
+    expect(events).toHaveLength(1);
+    expect(events[0]).toMatchObject({
+      kind: 'edit',
+      diff: {
+        name: { from: 'Silk slip dress', to: 'Wool coat' },
+        description: { from: 'Bias cut', to: 'Heavy twill' },
+      },
+    });
+  });
+
+  test('a session that changes nothing writes no Event', async () => {
+    const design = newDesign();
+    const view = await renderEdit(design.id);
+
+    await view.unmount();
+
+    expect(listDesignEvents(database, design.id)).toEqual([]);
+  });
+
+  test('two separate sessions write two Events', async () => {
+    const design = newDesign();
+
+    const first = await renderEdit(design.id);
+    await fireEvent.changeText(screen.getByLabelText('Design name'), 'Wool coat');
+    await first.unmount();
+
+    const second = await renderEdit(design.id);
+    await fireEvent.changeText(screen.getByLabelText('Design description'), 'Heavy twill');
+    await second.unmount();
+
+    expect(listDesignEvents(database, design.id).map((event) => event.diff)).toEqual([
+      { description: { from: 'Bias cut', to: 'Heavy twill' } },
+      { name: { from: 'Silk slip dress', to: 'Wool coat' } },
+    ]);
+  });
+
+  test('leaving the app commits the session, and closing it again writes nothing more', async () => {
+    const design = newDesign();
+    const listeners: ((status: string) => void)[] = [];
+    const addEventListener = jest
+      .spyOn(AppState, 'addEventListener')
+      .mockImplementation(((_type: string, handler: (status: string) => void) => {
+        listeners.push(handler);
+
+        return { remove: jest.fn() };
+      }) as never);
+
+    const view = await renderEdit(design.id);
+    await fireEvent.changeText(screen.getByLabelText('Design name'), 'Wool coat');
+
+    // Opening Control Centre or the app switcher only makes the app inactive.
+    await act(async () => listeners[0]('inactive'));
+    expect(getDesign(database, design.id)).toMatchObject({ name: 'Wool coat' });
+    expect(listDesignEvents(database, design.id)).toEqual([]);
+
+    await act(async () => listeners[0]('background'));
+
+    expect(listDesignEvents(database, design.id)).toHaveLength(1);
+
+    await view.unmount();
+    addEventListener.mockRestore();
+
+    expect(listDesignEvents(database, design.id)).toHaveLength(1);
+  });
 });

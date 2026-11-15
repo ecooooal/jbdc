@@ -87,16 +87,28 @@ export function DesignDetailScreen({ designId }: { designId: string }) {
           <Icon as={ChevronLeft} />
         </Button>
         {design ? (
-          <Button
-            size="sm"
-            variant="ghost"
-            accessibilityLabel="Edit design"
-            onPress={() =>
-              router.push({ pathname: '/designs/[id]/edit', params: { id: designId } })
-            }
-          >
-            <Text>Edit</Text>
-          </Button>
+          <View className="flex-row items-center gap-1">
+            <Button
+              size="sm"
+              variant="ghost"
+              accessibilityLabel="History"
+              onPress={() =>
+                router.push({ pathname: '/designs/[id]/history', params: { id: designId } })
+              }
+            >
+              <Text>History</Text>
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              accessibilityLabel="Edit design"
+              onPress={() =>
+                router.push({ pathname: '/designs/[id]/edit', params: { id: designId } })
+              }
+            >
+              <Text>Edit</Text>
+            </Button>
+          </View>
         ) : null}
       </View>
 
