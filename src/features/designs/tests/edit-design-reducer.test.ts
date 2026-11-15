@@ -171,6 +171,21 @@ describe('edit design reducer', () => {
     });
   });
 
+  test('a write made by leaving the app becomes the value a later refusal restores', () => {
+    const written = send(
+      send(loaded(), {
+        type: 'name-changed',
+        name: 'Wool coat',
+      }),
+      {
+        type: 'drafts-written',
+        design: { ...DESIGN, name: 'Wool coat' },
+      }
+    );
+
+    expect(written).toMatchObject({ name: 'Wool coat', savedName: 'Wool coat' });
+  });
+
   test('a blank name is never pending, but a real description still is', () => {
     const draft = send(
       loaded(),

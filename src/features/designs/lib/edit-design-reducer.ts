@@ -35,6 +35,7 @@ export type EditDesignEvent =
   | { type: 'category-chosen'; categoryId: string | null }
   | { type: 'collection-chosen'; collectionId: string | null }
   | { type: 'field-saved'; field: EditDesignField; design: EditableDesign }
+  | { type: 'drafts-written'; design: EditableDesign }
   | { type: 'field-refused'; field: EditDesignField; message: string };
 
 export function createInitialEditDesignState(): EditDesignState {
@@ -160,6 +161,14 @@ export function editDesignReducer(
           };
       }
     }
+    case 'drafts-written':
+      return {
+        ...state,
+        savedName: event.design.name,
+        savedDescription: event.design.description,
+        savedCategoryId: event.design.categoryId,
+        savedCollectionId: event.design.collectionId,
+      };
     case 'field-refused': {
       const next = { ...state, error: { field: event.field, message: event.message } };
 

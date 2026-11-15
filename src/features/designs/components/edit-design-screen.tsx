@@ -58,12 +58,17 @@ export function EditDesignScreen({ designId }: { designId: string }) {
    * but never a blank name. Category and Collection already wrote on selection.
    */
   useEffect(() => {
-    function flushDrafts(): void {
-      updateDesign(database, designId, unwrittenFields(latestState.current) ?? {});
+    function flushDrafts(): ReturnType<typeof updateDesign> {
+      const patch = unwrittenFields(latestState.current);
+
+      return patch ? updateDesign(database, designId, patch) : null;
     }
 
     const subscription = AppState.addEventListener('change', (status) => {
-      if (status !== 'active') flushDrafts();
+      if (status === 'active') return;
+
+      const saved = flushDrafts();
+      if (saved) dispatch({ type: 'drafts-written', design: saved });
     });
 
     return () => {
