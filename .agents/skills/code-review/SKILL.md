@@ -59,6 +59,8 @@ Each smell reads *what it is* → *how to fix*; match it against the diff:
 
 Issue both sub-agent calls together, in the foreground, and aggregate the reports they return.
 
+**Neither reviewer runs the repo's checks.** The implementation agent already ran typecheck, lint, tests, and the boundary check; CI repeats them on push. A reviewer that reruns them spends the review budget producing output it cannot act on. End both prompts with: "Do not run the repo's checks. Assume they pass; if the diff looks like it cannot compile, say so from reading it."
+
 **Standards sub-agent prompt** should include:
 
 - The full diff command and commit list.
