@@ -13,6 +13,13 @@ check can make. Mechanical rules live in code, not here:
   commit, and never let it hide inside a review diff.
 - **One ticket, one purpose.** If a change is not needed for the ticket's
   acceptance criteria, leave it out and file it.
+- **Subject names the ticket.** `<type> (#<ticket>): <reason>`, e.g.
+  `feat (#14): edit a design's fields without a Save button`. Types in use:
+  `feat`, `fix`, `refactor`, `test`, `docs`, `chore`. A change with no ticket
+  names the files it touches instead of inventing a number, comma-separated
+  when there are several: `chore (CODING_STANDARDS, AGENTS): …`.
+  The Spec review reads the ticket from the subject, so a commit without one is
+  unreviewable.
 
 ## Architecture
 
