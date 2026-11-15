@@ -1,16 +1,48 @@
 import { router } from 'expo-router';
 import { Plus } from 'lucide-react-native';
-import { ScrollView, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useLibraryDesigns } from '../lib/use-library-designs';
+import { ScrollView, useWindowDimensions, View } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useCardDensity } from '@/features/settings/react';
 import { Button } from '@/shared/components/ui/button';
 import { Icon } from '@/shared/components/ui/icon';
 import { Text } from '@/shared/components/ui/text';
+import {
+  LIBRARY_GRID_GAP,
+  LIBRARY_HORIZONTAL_PADDING,
+  LIBRARY_SIDE_PADDING,
+  libraryGrid,
+} from '../lib/grid';
+import { useLibraryDesigns } from '../lib/use-library-designs';
+import { DensityControl } from './density-control';
 import { LibraryCard } from './library-card';
 
-/** The Library screen: the grid of active designs, or the empty state offering create. */
+/** Splits the designs into the rows the chosen density asks for. */
+function chunk<T>(items: readonly T[], size: number): T[][] {
+  const rows: T[][] = [];
+
+  for (let start = 0; start < items.length; start += size) {
+    rows.push(items.slice(start, start + size));
+  }
+
+  return rows;
+}
+
+/**
+ * The Library screen: the grid of active designs, or the empty state offering
+ * create. The chosen density decides the column count; the card width follows
+ * the viewport, so rotating the device reflows the grid instead of breaking it.
+ */
 export function LibraryScreen() {
   const { designs, error, isLoaded } = useLibraryDesigns();
+  const { density, setDensity } = useCardDensity();
+  const { width: viewportWidth } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
+  const contentWidth = Math.max(
+    0,
+    viewportWidth - insets.left - insets.right - LIBRARY_HORIZONTAL_PADDING
+  );
+  const { columns, cardWidth } = libraryGrid(density, contentWidth);
+  const rows = chunk(designs, columns);
   const isEmpty = isLoaded && designs.length === 0;
 
   return (
@@ -19,19 +51,22 @@ export function LibraryScreen() {
       className="bg-background"
       edges={['top', 'left', 'right']}
     >
-      <View className="flex-1 px-6 pt-6">
-        <View className="flex-row items-center justify-between">
+      <View className="flex-1 pt-6" style={{ paddingHorizontal: LIBRARY_SIDE_PADDING }}>
+        <View className="flex-row items-center justify-between gap-3">
           <Text variant="h3">Library</Text>
-          {designs.length > 0 ? (
-            <Button
-              size="icon"
-              variant="outline"
-              accessibilityLabel="Create design"
-              onPress={() => router.push('/designs/new')}
-            >
-              <Icon as={Plus} />
-            </Button>
-          ) : null}
+          <View className="flex-row items-center gap-2">
+            <DensityControl density={density} onChange={setDensity} />
+            {designs.length > 0 ? (
+              <Button
+                size="icon"
+                variant="outline"
+                accessibilityLabel="Create design"
+                onPress={() => router.push('/designs/new')}
+              >
+                <Icon as={Plus} />
+              </Button>
+            ) : null}
+          </View>
         </View>
 
         {error ? (
@@ -53,9 +88,15 @@ export function LibraryScreen() {
           </View>
         ) : (
           <ScrollView className="mt-6 flex-1" showsVerticalScrollIndicator={false}>
-            <View className="gap-3 pb-8">
-              {designs.map((design) => (
-                <LibraryCard key={design.id} design={design} />
+            <View className="pb-8" style={{ gap: LIBRARY_GRID_GAP }}>
+              {rows.map((row) => (
+                <View key={row[0].id} className="flex-row" style={{ gap: LIBRARY_GRID_GAP }}>
+                  {row.map((design) => (
+                    <View key={design.id} style={{ width: cardWidth }}>
+                      <LibraryCard design={design} density={density} />
+                    </View>
+                  ))}
+                </View>
               ))}
             </View>
           </ScrollView>
