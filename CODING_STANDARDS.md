@@ -28,7 +28,7 @@ check can make. Mechanical rules live in code, not here:
   is absent from `GLOSSARY.md` and `schema.ts`. If the spec needs one, the spec
   changes first.
 - **useEffect**, used sensibly.
-- **State** lives in reducers.
+- **State** lives in reducers. See `docs/FRONTEND_STATE.md`.
 - Client components get only what they use.
 
 ## Tests
@@ -37,3 +37,6 @@ check can make. Mechanical rules live in code, not here:
   `@/features/database/testing`; do not mock the port or the driver.
 - **Test the invariant, not the implementation.** A test should fail if the
   behaviour regresses, not if a private helper is renamed.
+- **Render only what a reducer cannot reach.** Decisions are tested on the
+  reducer; RNTL covers gestures, what a state looks like, and subscriptions.
+  Never check one rule in both layers. See `docs/FRONTEND_STATE.md`.
