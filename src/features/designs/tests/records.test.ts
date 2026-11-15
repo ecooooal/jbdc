@@ -1,5 +1,11 @@
+import { randomUUID } from 'node:crypto';
 import { eq } from 'drizzle-orm';
-import { designs } from '@/features/database';
+import {
+  categories,
+  collections,
+  designs,
+  type DesignStatus,
+} from '@/features/database';
 import {
   createTempDatabase,
   openTestDatabase,
@@ -8,12 +14,24 @@ import {
   createDesign,
   DESIGN_NAME_MAX_LENGTH,
   getDesign,
+  getDesignDetail,
   InvalidDesignNameError,
   listDesigns,
 } from '@/features/designs';
 import { listLibraryDesigns } from '@/features/library';
 
 const UUID_V4 = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
+
+let database: ReturnType<typeof createTempDatabase>['database'];
+let dispose: () => void;
+
+beforeEach(() => {
+  ({ database, dispose } = createTempDatabase());
+});
+
+afterEach(() => {
+  dispose();
+});
 
 describe('design records', () => {
   let database: ReturnType<typeof createTempDatabase>['database'];
@@ -137,5 +155,102 @@ describe('design records', () => {
       reopened.close();
       disposeFirst();
     }
+  });
+});
+
+describe('design detail', () => {
+  type DetailDesign = {
+    name: string;
+    description?: string | null;
+    categoryId?: string | null;
+    collectionId?: string | null;
+    status?: DesignStatus;
+    createdAt?: number;
+    updatedAt?: number;
+    deletedAt?: number | null;
+  };
+
+  function insertDetailDesign(input: DetailDesign): string {
+    const id = randomUUID();
+
+    database.db
+      .insert(designs)
+      .values({
+        id,
+        name: input.name,
+        description: input.description ?? null,
+        categoryId: input.categoryId ?? null,
+        collectionId: input.collectionId ?? null,
+        status: input.status ?? 'concept',
+        searchText: input.name.toLowerCase(),
+        createdAt: input.createdAt ?? 0,
+        updatedAt: input.updatedAt ?? 0,
+        deletedAt: input.deletedAt ?? null,
+      })
+      .run();
+
+    return id;
+  }
+
+  test('reads every displayed field with its category and collection names', () => {
+    const categoryId = randomUUID();
+    const collectionId = randomUUID();
+
+    database.db.insert(categories).values({ id: categoryId, name: 'Dress', createdAt: 0 }).run();
+    database.db
+      .insert(collections)
+      .values({ id: collectionId, name: 'Spring 2027', year: 2027, createdAt: 0 })
+      .run();
+
+    const id = insertDetailDesign({
+      name: 'Silk slip dress',
+      description: 'Bias cut, cowl neck.',
+      categoryId,
+      collectionId,
+      status: 'approved',
+      createdAt: 10,
+      updatedAt: 20,
+    });
+
+    expect(getDesignDetail(database, id)).toEqual({
+      id,
+      name: 'Silk slip dress',
+      description: 'Bias cut, cowl neck.',
+      categoryId,
+      collectionId,
+      category: 'Dress',
+      collection: 'Spring 2027',
+      status: 'approved',
+      createdAt: 10,
+      updatedAt: 20,
+      deletedAt: null,
+    });
+  });
+
+  test('a design with no description, category, or collection is still readable', () => {
+    const id = insertDetailDesign({ name: 'Unfinished idea' });
+
+    expect(getDesignDetail(database, id)).toMatchObject({
+      name: 'Unfinished idea',
+      description: null,
+      category: null,
+      collection: null,
+    });
+  });
+
+  test.each(['rejected', 'archived'] as const)(
+    'reads a %s design the Library hides',
+    (status) => {
+      const id = insertDetailDesign({ name: 'Kept for the record', status });
+
+      expect(getDesignDetail(database, id)).toMatchObject({ name: 'Kept for the record', status });
+    }
+  );
+
+  test('returns null for a soft-deleted or unknown design', () => {
+    const removed = insertDetailDesign({ name: 'Removed', deletedAt: 30 });
+
+    expect(getDesignDetail(database, removed)).toBeNull();
+    expect(getDesignDetail(database, randomUUID())).toBeNull();
   });
 });

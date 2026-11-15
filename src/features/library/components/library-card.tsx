@@ -1,23 +1,13 @@
 import { Shirt } from 'lucide-react-native';
-import { View } from 'react-native';
-import type { DesignStatus } from '@/features/database';
+import { Pressable, View } from 'react-native';
 import { designStatusLabel } from '@/features/designs';
+import { DesignStatusBadge } from '@/features/designs/react';
 import type { LibraryDesign } from '@/features/library';
 import type { CardDensity } from '@/features/settings';
-import { Badge, type BadgeProps } from '@/shared/components/ui/badge';
 import { Card } from '@/shared/components/ui/card';
 import { Icon } from '@/shared/components/ui/icon';
 import { Text } from '@/shared/components/ui/text';
 import { cn } from '@/shared/lib/utils';
-
-const STATUS_BADGE_VARIANTS: Record<DesignStatus, NonNullable<BadgeProps['variant']>> = {
-  concept: 'outline',
-  in_development: 'secondary',
-  approved: 'default',
-  produced: 'default',
-  rejected: 'destructive',
-  archived: 'outline',
-};
 
 function Meta({ value, placeholder }: { value: string | null; placeholder: string }) {
   return value ? (
@@ -52,14 +42,6 @@ function MetaStack({ design }: { design: LibraryDesign }) {
   );
 }
 
-function StatusBadge({ status }: { status: DesignStatus }) {
-  return (
-    <Badge variant={STATUS_BADGE_VARIANTS[status]}>
-      <Text>{designStatusLabel(status)}</Text>
-    </Badge>
-  );
-}
-
 /** Images are a later slice, so every card carries a quiet cover stand-in. */
 function CoverPlaceholder({ className }: { className?: string }) {
   return (
@@ -80,7 +62,7 @@ function ListRow({ design }: { design: LibraryDesign }) {
         </Text>
         <MetaLine design={design} />
       </View>
-      <StatusBadge status={design.status} />
+      <DesignStatusBadge status={design.status} />
     </Card>
   );
 }
@@ -109,7 +91,7 @@ function Tile({ design, density }: { design: LibraryDesign; density: Exclude<Car
           <>
             <MetaStack design={design} />
             <View className="self-start">
-              <StatusBadge status={design.status} />
+              <DesignStatusBadge status={design.status} />
             </View>
           </>
         )}
@@ -121,18 +103,25 @@ function Tile({ design, density }: { design: LibraryDesign; density: Exclude<Car
 /**
  * One Design in the Library. The shape follows the owner's chosen density:
  * one is a list row with every field, two is a roomy tile, four is a compact
- * tile that keeps the cover and name legible.
+ * tile that keeps the cover and name legible. The whole card is one button:
+ * pressing it opens that Design.
  */
 export function LibraryCard({
   design,
   density,
+  onPress,
 }: {
   design: LibraryDesign;
   density: CardDensity;
+  onPress: () => void;
 }) {
-  return density === 1 ? (
-    <ListRow design={design} />
-  ) : (
-    <Tile design={design} density={density} />
+  return (
+    <Pressable role="button" onPress={onPress} className="active:opacity-70">
+      {density === 1 ? (
+        <ListRow design={design} />
+      ) : (
+        <Tile design={design} density={density} />
+      )}
+    </Pressable>
   );
 }

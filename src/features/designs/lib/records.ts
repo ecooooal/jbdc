@@ -1,6 +1,6 @@
 import { and, desc, eq, isNull } from 'drizzle-orm';
 import type { Database, DesignStatus } from '@/features/database';
-import { designs } from '@/features/database';
+import { categories, collections, designs } from '@/features/database';
 
 /** A name is trimmed and must survive trimming; this is the only cap. */
 export const DESIGN_NAME_MAX_LENGTH = 120;
@@ -21,6 +21,12 @@ export type Design = {
   createdAt: number;
   updatedAt: number;
   deletedAt: number | null;
+};
+
+/** A Design with the names Detail displays in place of its foreign keys. */
+export type DesignDetail = Design & {
+  category: string | null;
+  collection: string | null;
 };
 
 export class InvalidDesignNameError extends Error {
@@ -112,6 +118,31 @@ export function getDesign(database: Database, id: string): Design | null {
       .where(and(eq(designs.id, id), isNull(designs.deletedAt)))
       .get() ?? null
   );
+}
+
+const designDetailColumns = {
+  ...designColumns,
+  category: categories.name,
+  collection: collections.name,
+};
+
+/**
+ * The Detail read: one live Design with its Category and Collection names.
+ * Detail shows a Design in any status, so unlike the Library it never filters
+ * by status. Private to the feature, like the Library's query builder.
+ */
+export function designDetailQuery(database: Database, id: string) {
+  return database.db
+    .select(designDetailColumns)
+    .from(designs)
+    .leftJoin(categories, eq(designs.categoryId, categories.id))
+    .leftJoin(collections, eq(designs.collectionId, collections.id))
+    .where(and(eq(designs.id, id), isNull(designs.deletedAt)));
+}
+
+/** Reads one live Design for Detail; null when it is unknown or soft-deleted. */
+export function getDesignDetail(database: Database, id: string): DesignDetail | null {
+  return designDetailQuery(database, id).get() ?? null;
 }
 
 /** All live Designs, most recently updated first. */

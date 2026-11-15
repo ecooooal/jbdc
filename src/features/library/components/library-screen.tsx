@@ -93,7 +93,13 @@ export function LibraryScreen() {
                 <View key={row[0].id} className="flex-row" style={{ gap: LIBRARY_GRID_GAP }}>
                   {row.map((design) => (
                     <View key={design.id} style={{ width: cardWidth }}>
-                      <LibraryCard design={design} density={density} />
+                      <LibraryCard
+                        design={design}
+                        density={density}
+                        onPress={() =>
+                          router.push({ pathname: '/designs/[id]', params: { id: design.id } })
+                        }
+                      />
                     </View>
                   ))}
                 </View>
