@@ -1,7 +1,7 @@
 import { router } from 'expo-router';
 import { ChevronLeft } from 'lucide-react-native';
 import { useEffect, useReducer, useRef } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
+import { AppState, KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useDatabase } from '@/features/database/react';
 import {
@@ -18,7 +18,7 @@ import { Text } from '@/shared/components/ui/text';
 import {
   createInitialEditDesignState,
   editDesignReducer,
-  pendingEdit,
+  unwrittenFields,
   type EditDesignField,
 } from '../lib/edit-design-reducer';
 import { useDesignDetail } from '../lib/use-design-detail';
@@ -53,11 +53,22 @@ export function EditDesignScreen({ designId }: { designId: string }) {
     latestState.current = state;
   });
 
-  /** Closing the screen writes a draft the owner never left, but never a blank name. */
+  /**
+   * Closing the screen or leaving the app writes a draft the owner never left,
+   * but never a blank name. Category and Collection already wrote on selection.
+   */
   useEffect(() => {
+    function flushDrafts(): void {
+      updateDesign(database, designId, unwrittenFields(latestState.current) ?? {});
+    }
+
+    const subscription = AppState.addEventListener('change', (status) => {
+      if (status !== 'active') flushDrafts();
+    });
+
     return () => {
-      const patch = pendingEdit(latestState.current);
-      if (patch) updateDesign(database, designId, patch);
+      subscription.remove();
+      flushDrafts();
     };
   }, [database, designId]);
 

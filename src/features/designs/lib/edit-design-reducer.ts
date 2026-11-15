@@ -1,3 +1,4 @@
+import { normalizeDescription } from './description';
 import { designNameProblem } from './limits';
 
 /** The four fields Edit can change. Status is displayed, never edited here. */
@@ -51,29 +52,23 @@ export function createInitialEditDesignState(): EditDesignState {
   };
 }
 
-/** A write that still owes the row its draft, ready for `updateDesign`. */
-export type PendingEdit = {
+/** The fields a draft still owes the row, ready for `updateDesign`. */
+export type UnwrittenDesignFields = {
   name?: string;
   description?: string;
 };
 
-function descriptionValue(draft: string): string | null {
-  const description = draft.trim();
-
-  return description.length > 0 ? description : null;
-}
-
 /**
  * The drafts the row has not seen yet. Only name and description are drafted;
  * a Category or Collection writes the moment it is chosen. An invalid name is
- * never pending, so closing the screen cannot commit a blank one.
+ * never here, so closing the screen cannot commit a blank one.
  */
-export function pendingEdit(state: EditDesignState): PendingEdit | null {
-  const patch: PendingEdit = {};
+export function unwrittenFields(state: EditDesignState): UnwrittenDesignFields | null {
+  const patch: UnwrittenDesignFields = {};
   const name = state.name.trim();
 
   if (name !== state.savedName && designNameProblem(name) === null) patch.name = name;
-  if (descriptionValue(state.description) !== state.savedDescription) {
+  if (normalizeDescription(state.description) !== state.savedDescription) {
     patch.description = state.description;
   }
 

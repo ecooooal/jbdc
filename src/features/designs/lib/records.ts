@@ -1,6 +1,7 @@
 import { and, desc, eq, isNull } from 'drizzle-orm';
 import type { Database, DesignStatus } from '@/features/database';
 import { categories, collections, designs } from '@/features/database';
+import { normalizeDescription } from './description';
 import { DESIGN_NAME_MAX_LENGTH, designNameProblem } from './limits';
 
 export { DESIGN_NAME_MAX_LENGTH, designNameProblem } from './limits';
@@ -72,12 +73,6 @@ function normalizeName(raw: string): string {
   if (problem) throw new InvalidDesignNameError(problem);
 
   return name;
-}
-
-function normalizeDescription(raw: string | null | undefined): string | null {
-  const description = raw?.trim();
-
-  return description ? description : null;
 }
 
 /**

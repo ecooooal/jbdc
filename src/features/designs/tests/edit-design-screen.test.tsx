@@ -75,6 +75,7 @@ test('a blank name is refused and the previous name stays', async () => {
   await fireEvent(name, 'blur');
 
   expect(screen.getByText('A design needs a name.')).toBeTruthy();
+  expect(screen.getByLabelText('Design name')).toHaveDisplayValue('Silk slip dress');
   expect(getDesign(database, design.id)).toMatchObject({ name: 'Silk slip dress' });
 });
 

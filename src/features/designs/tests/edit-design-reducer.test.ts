@@ -1,7 +1,7 @@
 import {
   createInitialEditDesignState,
   editDesignReducer,
-  pendingEdit,
+  unwrittenFields,
   type EditDesignEvent,
   type EditDesignState,
 } from '../lib/edit-design-reducer';
@@ -157,7 +157,7 @@ describe('edit design reducer', () => {
   });
 
   test('the drafts that still differ from the row are what closing writes', () => {
-    expect(pendingEdit(loaded())).toBeNull();
+    expect(unwrittenFields(loaded())).toBeNull();
 
     const draft = send(
       loaded(),
@@ -165,7 +165,7 @@ describe('edit design reducer', () => {
       { type: 'description-changed', description: ' Heavy twill ' }
     );
 
-    expect(pendingEdit(draft)).toEqual({
+    expect(unwrittenFields(draft)).toEqual({
       name: 'Wool coat',
       description: ' Heavy twill ',
     });
@@ -178,13 +178,15 @@ describe('edit design reducer', () => {
       { type: 'description-changed', description: 'Heavy twill' }
     );
 
-    expect(pendingEdit(draft)).toEqual({ description: 'Heavy twill' });
+    expect(unwrittenFields(draft)).toEqual({ description: 'Heavy twill' });
   });
 
   test('clearing the description is a pending write', () => {
-    expect(pendingEdit(send(loaded(), { type: 'description-changed', description: '' }))).toEqual({
-      description: '',
-    });
+    expect(unwrittenFields(send(loaded(), { type: 'description-changed', description: '' }))).toEqual(
+      {
+        description: '',
+      }
+    );
   });
 
   test('a saved field leaves the other drafts where they are', () => {
