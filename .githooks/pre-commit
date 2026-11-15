@@ -9,5 +9,8 @@ pnpm lint
 # cannot see still fail.
 node scripts/check-feature-boundaries.mjs
 
+# Counts useState/effect-set-state per file and keeps reducers pure.
+node scripts/check-frontend-state.mjs
+
 # ~2s today; catches a broken test before the diff reaches review.
 pnpm test
