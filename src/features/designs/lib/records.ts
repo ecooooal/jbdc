@@ -1,12 +1,23 @@
 import { and, desc, eq, isNull } from 'drizzle-orm';
 import type { Database, DesignStatus } from '@/features/database';
 import { categories, collections, designs } from '@/features/database';
-import { DESIGN_NAME_MAX_LENGTH } from './limits';
+import { DESIGN_NAME_MAX_LENGTH, designNameProblem } from './limits';
 
-export { DESIGN_NAME_MAX_LENGTH } from './limits';
+export { DESIGN_NAME_MAX_LENGTH, designNameProblem } from './limits';
 
 export type CreateDesignInput = {
   name: string;
+  description?: string | null;
+  categoryId?: string | null;
+  collectionId?: string | null;
+};
+
+/**
+ * A partial write: an absent field is left alone, while an explicit null
+ * clears the description, Category, or Collection. Status is never editable.
+ */
+export type UpdateDesignInput = {
+  name?: string;
   description?: string | null;
   categoryId?: string | null;
   collectionId?: string | null;
@@ -56,9 +67,9 @@ const designColumns = {
 
 function normalizeName(raw: string): string {
   const name = raw.trim();
+  const problem = designNameProblem(name);
 
-  if (name.length === 0) throw new InvalidDesignNameError('empty');
-  if (name.length > DESIGN_NAME_MAX_LENGTH) throw new InvalidDesignNameError('too_long');
+  if (problem) throw new InvalidDesignNameError(problem);
 
   return name;
 }
@@ -140,6 +151,63 @@ export function createDesign(
     .run();
 
   return design;
+}
+
+/**
+ * Writes the fields the owner changed and returns the stored Design. An
+ * absent field is untouched; null clears an optional one. A blank or
+ * over-long name throws before anything is written, so the previous name
+ * survives a refused save. A patch that changes nothing skips the write, so
+ * the Updated timestamp only moves when the row does.
+ */
+export function updateDesign(
+  database: Database,
+  id: string,
+  input: UpdateDesignInput,
+  now: number = Date.now()
+): Design | null {
+  const current = getDesign(database, id);
+  if (!current) return null;
+
+  const next: Design = {
+    ...current,
+    name: input.name === undefined ? current.name : normalizeName(input.name),
+    description:
+      input.description === undefined
+        ? current.description
+        : normalizeDescription(input.description),
+    categoryId: input.categoryId === undefined ? current.categoryId : input.categoryId,
+    collectionId: input.collectionId === undefined ? current.collectionId : input.collectionId,
+  };
+
+  const changed =
+    next.name !== current.name ||
+    next.description !== current.description ||
+    next.categoryId !== current.categoryId ||
+    next.collectionId !== current.collectionId;
+
+  if (!changed) return current;
+
+  next.updatedAt = now;
+  database.db
+    .update(designs)
+    .set({
+      name: next.name,
+      description: next.description,
+      categoryId: next.categoryId,
+      collectionId: next.collectionId,
+      updatedAt: next.updatedAt,
+      searchText: buildSearchText(
+        next.name,
+        next.description,
+        taxonomyName(database, categories, next.categoryId),
+        taxonomyName(database, collections, next.collectionId)
+      ),
+    })
+    .where(eq(designs.id, id))
+    .run();
+
+  return next;
 }
 
 /** Reads one live Design; a soft-deleted row is gone as far as readers are concerned. */

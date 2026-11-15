@@ -13,10 +13,12 @@ import {
 import {
   createDesign,
   DESIGN_NAME_MAX_LENGTH,
+  designNameProblem,
   getDesign,
   getDesignDetail,
   InvalidDesignNameError,
   listDesigns,
+  updateDesign,
 } from '@/features/designs';
 import { listLibraryDesigns } from '@/features/library';
 import { createCategory, createCollection } from '@/features/taxonomy';
@@ -194,6 +196,153 @@ describe('design records', () => {
       reopened.close();
       disposeFirst();
     }
+  });
+});
+
+describe('design name rule', () => {
+  test('separates an empty name from an over-long one', () => {
+    expect(designNameProblem('')).toBe('empty');
+    expect(designNameProblem('  \n\t ')).toBe('empty');
+    expect(designNameProblem('a'.repeat(DESIGN_NAME_MAX_LENGTH))).toBeNull();
+    expect(designNameProblem('a'.repeat(DESIGN_NAME_MAX_LENGTH + 1))).toBe('too_long');
+  });
+});
+
+describe('design updates', () => {
+  function storedSearchText(): string | undefined {
+    return database.db.select({ searchText: designs.searchText }).from(designs).get()?.searchText;
+  }
+
+  test('persists each editable field and rebuilds search text on every write', () => {
+    const oldCategory = createCategory(database, { name: 'Dress' });
+    const category = createCategory(database, { name: 'Knitwear' });
+    const collection = createCollection(database, { name: 'Spring 2027', year: 2027 });
+    const design = createDesign(
+      database,
+      {
+        name: 'Silk slip',
+        description: 'Bias cut',
+        categoryId: oldCategory.id,
+      },
+      10
+    );
+
+    const updated = updateDesign(
+      database,
+      design.id,
+      {
+        name: '  Wool coat ',
+        description: ' Heavy twill ',
+        categoryId: category.id,
+        collectionId: collection.id,
+      },
+      20
+    );
+
+    expect(updated).toMatchObject({
+      id: design.id,
+      name: 'Wool coat',
+      description: 'Heavy twill',
+      categoryId: category.id,
+      collectionId: collection.id,
+      status: 'concept',
+      createdAt: 10,
+      updatedAt: 20,
+    });
+    expect(getDesignDetail(database, design.id)).toMatchObject({
+      name: 'Wool coat',
+      description: 'Heavy twill',
+      category: 'Knitwear',
+      collection: 'Spring 2027',
+    });
+    expect(listLibraryDesigns(database)[0]).toMatchObject({
+      name: 'Wool coat',
+      category: 'Knitwear',
+      collection: 'Spring 2027',
+    });
+    expect(storedSearchText()).toBe('wool coat heavy twill knitwear spring 2027');
+  });
+
+  test('clears the description, Category, and Collection', () => {
+    const category = createCategory(database, { name: 'Dress' });
+    const collection = createCollection(database, { name: 'Resort', year: 2028 });
+    const design = createDesign(
+      database,
+      {
+        name: 'Silk slip',
+        description: 'Bias cut',
+        categoryId: category.id,
+        collectionId: collection.id,
+      },
+      10
+    );
+
+    expect(
+      updateDesign(
+        database,
+        design.id,
+        { description: null, categoryId: null, collectionId: null },
+        20
+      )
+    ).toMatchObject({
+      name: 'Silk slip',
+      description: null,
+      categoryId: null,
+      collectionId: null,
+      updatedAt: 20,
+    });
+    expect(getDesignDetail(database, design.id)).toMatchObject({
+      description: null,
+      category: null,
+      collection: null,
+    });
+    expect(storedSearchText()).toBe('silk slip');
+  });
+
+  test('refuses a blank name and keeps the previous one', () => {
+    const design = createDesign(database, { name: 'Wool coat' }, 10);
+
+    expect(() => updateDesign(database, design.id, { name: '   ' }, 20)).toThrow(
+      InvalidDesignNameError
+    );
+
+    expect(getDesign(database, design.id)).toMatchObject({
+      name: 'Wool coat',
+      updatedAt: 10,
+    });
+  });
+
+  test('accepts the name limit and refuses one character more', () => {
+    const design = createDesign(database, { name: 'Wool coat' }, 10);
+
+    expect(
+      updateDesign(database, design.id, { name: 'a'.repeat(DESIGN_NAME_MAX_LENGTH) }, 20)
+    ).toMatchObject({ name: 'a'.repeat(DESIGN_NAME_MAX_LENGTH) });
+    expect(() =>
+      updateDesign(database, design.id, { name: 'a'.repeat(DESIGN_NAME_MAX_LENGTH + 1) }, 30)
+    ).toThrow(InvalidDesignNameError);
+  });
+
+  test('an update that changes nothing leaves the timestamp alone', () => {
+    const design = createDesign(database, { name: 'Wool coat' }, 10);
+
+    expect(updateDesign(database, design.id, { name: ' Wool coat ' }, 20)).toMatchObject({
+      name: 'Wool coat',
+      updatedAt: 10,
+    });
+  });
+
+  test('returns null for a design that is unknown or already gone', () => {
+    const design = createDesign(database, { name: 'Wool coat' }, 10);
+
+    database.db
+      .update(designs)
+      .set({ deletedAt: 15 })
+      .where(eq(designs.id, design.id))
+      .run();
+
+    expect(updateDesign(database, design.id, { name: 'Linen shirt' }, 20)).toBeNull();
+    expect(updateDesign(database, randomUUID(), { name: 'Linen shirt' }, 20)).toBeNull();
   });
 });
 

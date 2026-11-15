@@ -5,10 +5,12 @@
 export {
   createDesign,
   DESIGN_NAME_MAX_LENGTH,
+  designNameProblem,
   getDesign,
   getDesignDetail,
   InvalidDesignNameError,
   listDesigns,
+  updateDesign,
 } from './lib/records';
-export type { CreateDesignInput, Design, DesignDetail } from './lib/records';
+export type { CreateDesignInput, Design, DesignDetail, UpdateDesignInput } from './lib/records';
 export { designStatusLabel } from './lib/status';

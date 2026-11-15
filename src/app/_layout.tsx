@@ -10,7 +10,8 @@ export default function RootLayout() {
         <Stack screenOptions={{ headerShown: false }}>
           <Stack.Screen name="index" />
           <Stack.Screen name="designs/new" options={{ presentation: 'modal' }} />
-          <Stack.Screen name="designs/[id]" />
+          <Stack.Screen name="designs/[id]/index" />
+          <Stack.Screen name="designs/[id]/edit" />
         </Stack>
         <PortalHost />
       </ThemeProvider>

@@ -1,4 +1,4 @@
-import { DESIGN_NAME_MAX_LENGTH } from './limits';
+import { designNameProblem } from './limits';
 
 /** Which inline creation form the create screen has open, if any. */
 export type InlineCreationKind = 'category' | 'collection';
@@ -56,9 +56,7 @@ export function createInitialNewDesignFormState(): NewDesignFormState {
  * records module sees it, so whitespace alone never enables Create.
  */
 export function canCreateDesign(state: NewDesignFormState): boolean {
-  const name = state.name.trim();
-
-  return name.length > 0 && name.length <= DESIGN_NAME_MAX_LENGTH;
+  return designNameProblem(state.name) === null;
 }
 
 /**

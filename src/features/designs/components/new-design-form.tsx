@@ -20,14 +20,6 @@ import { useTaxonomy } from '@/features/taxonomy/react';
 import { Button } from '@/shared/components/ui/button';
 import { Icon } from '@/shared/components/ui/icon';
 import { Input } from '@/shared/components/ui/input';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectSeparator,
-  SelectTrigger,
-  SelectValue,
-} from '@/shared/components/ui/select';
 import { Text } from '@/shared/components/ui/text';
 import {
   canCreateDesign,
@@ -35,9 +27,7 @@ import {
   createInitialNewDesignFormState,
   newDesignFormReducer,
 } from '../lib/new-design-form-reducer';
-
-/** A Select option value no Category or Collection id can collide with. */
-const NO_TAXONOMY = '__none__';
+import { TaxonomySelect } from './taxonomy-select';
 
 function FormField({ label, children }: { label: string; children: ReactNode }) {
   return (
@@ -45,48 +35,6 @@ function FormField({ label, children }: { label: string; children: ReactNode }) 
       <Text variant="small">{label}</Text>
       {children}
     </View>
-  );
-}
-
-/**
- * A picker over the owner's live Categories or Collections, plus the row that
- * clears the choice. The options and the current label come from that list, so
- * an entry created inline appears as soon as the insert is observed.
- */
-function TaxonomySelect<T extends { id: string; name: string }>({
-  label,
-  placeholder,
-  value,
-  items,
-  disabled,
-  itemLabel = (item) => item.name,
-  onSelect,
-}: {
-  label: string;
-  placeholder: string;
-  value: T | null;
-  items: T[];
-  disabled: boolean;
-  itemLabel?: (item: T) => string;
-  onSelect: (item: T | null) => void;
-}) {
-  return (
-    <Select
-      disabled={disabled}
-      value={value ? { value: value.id, label: itemLabel(value) } : undefined}
-      onValueChange={(option) => onSelect(items.find((item) => item.id === option?.value) ?? null)}
-    >
-      <SelectTrigger accessibilityLabel={label}>
-        <SelectValue placeholder={placeholder} />
-      </SelectTrigger>
-      <SelectContent>
-        {items.map((item) => (
-          <SelectItem key={item.id} value={item.id} label={itemLabel(item)} />
-        ))}
-        <SelectSeparator />
-        <SelectItem value={NO_TAXONOMY} label={placeholder} />
-      </SelectContent>
-    </Select>
   );
 }
 

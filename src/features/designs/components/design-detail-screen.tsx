@@ -77,7 +77,7 @@ export function DesignDetailScreen({ designId }: { designId: string }) {
 
   return (
     <SafeAreaView style={{ flex: 1 }} className="bg-background" edges={['top', 'left', 'right']}>
-      <View className="flex-row items-center px-4 pt-2">
+      <View className="flex-row items-center justify-between px-4 pt-2">
         <Button
           size="icon"
           variant="ghost"
@@ -86,6 +86,18 @@ export function DesignDetailScreen({ designId }: { designId: string }) {
         >
           <Icon as={ChevronLeft} />
         </Button>
+        {design ? (
+          <Button
+            size="sm"
+            variant="ghost"
+            accessibilityLabel="Edit design"
+            onPress={() =>
+              router.push({ pathname: '/designs/[id]/edit', params: { id: designId } })
+            }
+          >
+            <Text>Edit</Text>
+          </Button>
+        ) : null}
       </View>
 
       {error ? (
