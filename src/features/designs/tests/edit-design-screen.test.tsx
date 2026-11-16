@@ -4,7 +4,7 @@ import { AppState } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { DatabaseProvider } from '@/features/database/react';
 import { createSyncSubscribe, createTempDatabase } from '@/features/database/testing';
-import { createDesign, getDesign } from '@/features/designs';
+import { createDesign, getDesign, listMaterialUses } from '@/features/designs';
 import { EditDesignScreen } from '@/features/designs/react';
 import { listDesignEvents } from '@/features/history';
 import { createCategory, createCollection } from '@/features/taxonomy';
@@ -293,6 +293,50 @@ describe('Creative direction rows', () => {
     expect(screen.getByRole('button', { name: 'Mood' })).toBeTruthy();
     expect(screen.getByText('Romantic, relaxed')).toBeTruthy();
     expect(screen.queryByPlaceholderText('Intended atmosphere or emotion')).toBeNull();
+  });
+});
+
+describe('Materials', () => {
+  test('Edit shows the Materials table and Add material on the Specification tab', async () => {
+    const design = newDesign();
+
+    await renderEdit(design.id);
+
+    for (const heading of ['Material', 'Colour', 'Role']) {
+      expect(screen.getByText(heading)).toBeTruthy();
+    }
+    expect(screen.getByText('No materials yet')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Add material' })).toBeTruthy();
+  });
+
+  test('a Material created inline is used to add a Material use', async () => {
+    const design = newDesign();
+
+    await renderEdit(design.id);
+    await userEvent.press(screen.getByRole('button', { name: 'Add material' }));
+    await userEvent.press(screen.getByRole('button', { name: 'New material' }));
+    await userEvent.type(screen.getByLabelText('New material name'), 'Silk crêpe');
+    await userEvent.press(screen.getByRole('button', { name: 'Add to list' }));
+
+    await act(async () => live.notify('materials'));
+
+    expect(screen.getByText('Silk crêpe')).toBeTruthy();
+
+    await userEvent.type(screen.getByLabelText('Colour'), 'Ivory');
+    await userEvent.press(screen.getByRole('button', { name: 'Add material use' }));
+
+    await act(async () => {
+      live.notify('design_materials');
+      live.notify('designs');
+    });
+
+    expect(listMaterialUses(database, design.id)).toEqual([
+      expect.objectContaining({ materialName: 'Silk crêpe', colour: 'Ivory', role: 'main' }),
+    ]);
+    expect(screen.getAllByText('Silk crêpe').length).toBeGreaterThan(0);
+    expect(screen.getByText('Ivory')).toBeTruthy();
+    expect(screen.getByText('Main')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Add material' })).toBeTruthy();
   });
 });
 

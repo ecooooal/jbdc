@@ -30,63 +30,8 @@ import {
   newDesignFormReducer,
 } from '../lib/new-design-form-reducer';
 import { FormField } from './form-field';
+import { InlineCreationPanel } from './inline-creation-panel';
 import { TaxonomySelect } from './taxonomy-select';
-
-/**
- * One entry created without leaving the form. The Collection form adds the
- * optional year field; the Category form leaves it undefined.
- */
-function InlineCreationPanel({
-  title,
-  submitLabel,
-  name,
-  yearField,
-  error,
-  onNameChange,
-  onSubmit,
-  onCancel,
-}: {
-  title: string;
-  submitLabel: string;
-  name: string;
-  yearField?: { value: string; onChange: (year: string) => void };
-  error: string | null;
-  onNameChange: (name: string) => void;
-  onSubmit: () => void;
-  onCancel: () => void;
-}) {
-  return (
-    <View className="border-border gap-3 rounded-xl border p-3">
-      <Text variant="small">{title}</Text>
-      <Input
-        value={name}
-        onChangeText={onNameChange}
-        placeholder="Name"
-        maxLength={TAXONOMY_NAME_MAX_LENGTH}
-        autoFocus
-        accessibilityLabel={`${title} name`}
-      />
-      {yearField ? (
-        <Input
-          value={yearField.value}
-          onChangeText={yearField.onChange}
-          placeholder="Year (optional)"
-          keyboardType="number-pad"
-          accessibilityLabel={`${title} year`}
-        />
-      ) : null}
-      {error ? <Text className="text-destructive text-sm">{error}</Text> : null}
-      <View className="flex-row justify-end gap-2">
-        <Button size="sm" variant="ghost" onPress={onCancel}>
-          <Text>Cancel</Text>
-        </Button>
-        <Button size="sm" onPress={onSubmit}>
-          <Text>{submitLabel}</Text>
-        </Button>
-      </View>
-    </View>
-  );
-}
 
 /**
  * The create-design form. A name is the only input; Category and Collection
@@ -206,6 +151,7 @@ export function NewDesignForm() {
               submitLabel="Add category"
               name={state.inlineName}
               error={state.inlineError}
+              maxLength={TAXONOMY_NAME_MAX_LENGTH}
               onNameChange={(name) => dispatch({ type: 'inline-name-changed', name })}
               onSubmit={addCategory}
               onCancel={() => dispatch({ type: 'inline-creation-closed' })}
@@ -245,6 +191,7 @@ export function NewDesignForm() {
                 onChange: (year) => dispatch({ type: 'inline-year-changed', year }),
               }}
               error={state.inlineError}
+              maxLength={TAXONOMY_NAME_MAX_LENGTH}
               onNameChange={(name) => dispatch({ type: 'inline-name-changed', name })}
               onSubmit={addCollection}
               onCancel={() => dispatch({ type: 'inline-creation-closed' })}

@@ -12,6 +12,7 @@ export {
   listCategories,
   listCollections,
   readTaxonomyNames,
+  readTaxonomyNamesFrom,
   TAXONOMY_NAME_MAX_LENGTH,
   taxonomyLabel,
 } from './lib/records';

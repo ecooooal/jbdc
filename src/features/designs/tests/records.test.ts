@@ -728,6 +728,7 @@ describe('design detail', () => {
       createdAt: 10,
       updatedAt: 20,
       deletedAt: null,
+      materialUses: [],
     });
   });
 

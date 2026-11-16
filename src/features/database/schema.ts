@@ -18,6 +18,11 @@ export const DESIGN_EVENT_KINDS = ['status_change', 'decision', 'edit', 'note'] 
 
 export type DesignEventKind = (typeof DESIGN_EVENT_KINDS)[number];
 
+/** The role a Material use plays on a design. */
+export const MATERIAL_USE_ROLES = ['main', 'secondary', 'other'] as const;
+
+export type MaterialUseRole = (typeof MATERIAL_USE_ROLES)[number];
+
 const sqlList = (values: readonly string[]) =>
   sql.raw(values.map((value) => `'${value}'`).join(', '));
 
@@ -36,6 +41,17 @@ export const collections = sqliteTable('collections', {
   id: text('id').primaryKey(),
   name: text('name').notNull(),
   year: integer('year', { mode: 'number' }),
+  createdAt: timestamp('created_at').notNull(),
+  deletedAt: timestamp('deleted_at'),
+});
+
+/**
+ * The owner's named fabrics and trims. A Material is a list entry, not a
+ * design field: a design reaches one through a Material use.
+ */
+export const materials = sqliteTable('materials', {
+  id: text('id').primaryKey(),
+  name: text('name').notNull(),
   createdAt: timestamp('created_at').notNull(),
   deletedAt: timestamp('deleted_at'),
 });
@@ -68,7 +84,7 @@ export const designs = sqliteTable(
     styling: text('styling'),
     palette: text('palette'),
     status: text('status', { enum: DESIGN_STATUSES }).notNull(),
-    /** Lowercased name, description, Specification, Creative direction, category and collection, rebuilt on every write. */
+    /** Lowercased name, description, Specification, Creative direction, category, collection, and Material uses, rebuilt on every write. */
     searchText: text('search_text').notNull(),
     createdAt: timestamp('created_at').notNull(),
     updatedAt: timestamp('updated_at').notNull(),
@@ -78,6 +94,35 @@ export const designs = sqliteTable(
     index('designs_status_idx').on(table.status),
     index('designs_collection_id_idx').on(table.collectionId),
     check('designs_status_check', sql`${table.status} in (${sqlList(DESIGN_STATUSES)})`),
+  ]
+);
+
+/**
+ * One design's use of a Material: the colour used and the role it plays. The
+ * same Material may appear twice in different colours; there is no role
+ * cardinality rule, because two mains is a readable inconsistency.
+ */
+export const designMaterials = sqliteTable(
+  'design_materials',
+  {
+    id: text('id').primaryKey(),
+    designId: text('design_id')
+      .notNull()
+      .references(() => designs.id),
+    materialId: text('material_id')
+      .notNull()
+      .references(() => materials.id),
+    colour: text('colour').notNull(),
+    role: text('role', { enum: MATERIAL_USE_ROLES }).notNull(),
+    createdAt: timestamp('created_at').notNull(),
+  },
+  (table) => [
+    index('design_materials_design_id_idx').on(table.designId),
+    index('design_materials_material_id_idx').on(table.materialId),
+    check(
+      'design_materials_role_check',
+      sql`${table.role} in (${sqlList(MATERIAL_USE_ROLES)})`
+    ),
   ]
 );
 

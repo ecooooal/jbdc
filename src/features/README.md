@@ -6,9 +6,10 @@ entries; `lib/` and `tests/` are private.
 | Feature | Public entries | Owns |
 | --- | --- | --- |
 | `database` | `index.ts`, `react.tsx`, `expo.ts`, `testing.ts` | Database port, schema, migrations, seed, live reads |
-| `designs` | `index.ts`, `react.ts` | Design records and their editable field set, create and edit forms, Detail |
+| `designs` | `index.ts`, `react.ts` | Design records, their editable field set and Material uses, create and edit forms, Detail |
 | `history` | `index.ts`, `react.ts` | Append-only design Events, the edit diff, History |
 | `library` | `index.ts`, `react.ts` | Library query, grid, cards |
+| `materials` | `index.ts`, `react.ts` | The owner's Material list, names, and creation |
 | `settings` | `index.ts`, `react.ts` | Device-local preferences |
 | `taxonomy` | `index.ts`, `react.ts` | Category and Collection lists, names and labels, and creation |
 

@@ -1,5 +1,5 @@
 import { asc, isNull } from 'drizzle-orm';
-import type { Database } from '@/features/database';
+import type { Database, DatabaseHandle } from '@/features/database';
 import { categories, collections } from '@/features/database';
 
 /** A name is trimmed and must survive trimming; this is the only cap. */
@@ -118,12 +118,12 @@ export type TaxonomyNames = {
 };
 
 /** Reads every Category and Collection name once, deleted entries included. */
-export function readTaxonomyNames(database: Database): TaxonomyNames {
-  const categoryRows = database.db
+export function readTaxonomyNamesFrom(db: DatabaseHandle): TaxonomyNames {
+  const categoryRows = db
     .select({ id: categories.id, name: categories.name })
     .from(categories)
     .all();
-  const collectionRows = database.db
+  const collectionRows = db
     .select({ id: collections.id, name: collections.name, year: collections.year })
     .from(collections)
     .all();
@@ -132,6 +132,11 @@ export function readTaxonomyNames(database: Database): TaxonomyNames {
     categories: new Map(categoryRows.map((row) => [row.id, row.name])),
     collections: new Map(collectionRows.map((row) => [row.id, row])),
   };
+}
+
+/** Reads every Category and Collection name once through the port. */
+export function readTaxonomyNames(database: Database): TaxonomyNames {
+  return readTaxonomyNamesFrom(database.db);
 }
 
 /** The one label rule: a name, plus a Collection's optional year in parentheses. */

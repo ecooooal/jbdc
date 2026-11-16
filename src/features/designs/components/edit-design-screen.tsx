@@ -32,6 +32,7 @@ import { DesignImageStrip } from './design-image-strip';
 import { DesignStatusBadge } from './design-status-badge';
 import { FieldRows } from './field-rows';
 import { FormField } from './form-field';
+import { MaterialUsesSection } from './material-uses-section';
 import { TaxonomySelect } from './taxonomy-select';
 
 /**
@@ -294,15 +295,20 @@ export function EditDesignScreen({ designId }: { designId: string }) {
             </TabsList>
             {DESIGN_SECTIONS.map(({ tab, fields }) => (
               <TabsContent key={tab} value={tab}>
-                <FieldRows
-                  fields={fields}
-                  draft={state.draft}
-                  editing={state.editing}
-                  error={state.error}
-                  onOpen={openRow}
-                  onChange={changeText}
-                  onCommit={commitText}
-                />
+                <View className="gap-4">
+                  <FieldRows
+                    fields={fields}
+                    draft={state.draft}
+                    editing={state.editing}
+                    error={state.error}
+                    onOpen={openRow}
+                    onChange={changeText}
+                    onCommit={commitText}
+                  />
+                  {tab === 'specification' ? (
+                    <MaterialUsesSection designId={designId} uses={design.materialUses} />
+                  ) : null}
+                </View>
               </TabsContent>
             ))}
           </Tabs>

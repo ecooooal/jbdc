@@ -18,6 +18,7 @@ import {
 import { useDesignDetail } from '../lib/use-design-detail';
 import { DesignImageStrip } from './design-image-strip';
 import { DesignStatusBadge } from './design-status-badge';
+import { MaterialUsesTable } from './material-uses-table';
 
 const TIMESTAMP_FORMAT = new Intl.DateTimeFormat(undefined, {
   year: 'numeric',
@@ -69,25 +70,44 @@ function recordedRows(
   return fields.filter(({ field }) => Boolean(design[field]));
 }
 
+/** What one section records, and whether it has anything to show. */
+function sectionContent(
+  design: DesignDetail,
+  tab: DesignSectionTab,
+  fields: readonly DesignSectionFieldDefinition[]
+) {
+  const filled = recordedRows(design, fields);
+  const materialUses = tab === 'specification' ? design.materialUses : [];
+
+  return { filled, materialUses, isEmpty: filled.length === 0 && materialUses.length === 0 };
+}
+
 /** One section read-only: filled rows only, or a note when it has none. */
 function DetailSection({
   design,
+  tab,
   fields,
 }: {
   design: DesignDetail;
+  tab: DesignSectionTab;
   fields: readonly DesignSectionFieldDefinition[];
 }) {
-  const filled = recordedRows(design, fields);
+  const { filled, materialUses, isEmpty } = sectionContent(design, tab, fields);
 
-  if (filled.length === 0) {
+  if (isEmpty) {
     return <Text variant="muted">Nothing recorded yet</Text>;
   }
 
   return (
-    <View className="border-border rounded-xl border px-4 py-1">
-      {filled.map(({ field, label }) => (
-        <DetailRow key={field} label={label} value={design[field] ?? ''} />
-      ))}
+    <View className="gap-4">
+      {filled.length > 0 ? (
+        <View className="border-border rounded-xl border px-4 py-1">
+          {filled.map(({ field, label }) => (
+            <DetailRow key={field} label={label} value={design[field] ?? ''} />
+          ))}
+        </View>
+      ) : null}
+      {materialUses.length > 0 ? <MaterialUsesTable uses={materialUses} /> : null}
     </View>
   );
 }
@@ -101,7 +121,7 @@ function DetailSection({
 function DetailSections({ design }: { design: DesignDetail }) {
   const [chosen, setChosen] = useState<DesignSectionTab | null>(null);
   const recorded = DESIGN_SECTIONS.filter(
-    ({ fields }) => recordedRows(design, fields).length > 0
+    ({ tab, fields }) => !sectionContent(design, tab, fields).isEmpty
   );
 
   if (recorded.length === 0) {
@@ -126,7 +146,7 @@ function DetailSections({ design }: { design: DesignDetail }) {
       </TabsList>
       {DESIGN_SECTIONS.map(({ tab: value, fields }) => (
         <TabsContent key={value} value={value}>
-          <DetailSection design={design} fields={fields} />
+          <DetailSection design={design} tab={value} fields={fields} />
         </TabsContent>
       ))}
     </Tabs>

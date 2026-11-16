@@ -10,9 +10,12 @@ export {
   categories,
   collections,
   designEvents,
+  designMaterials,
   designs,
+  materials,
   settings,
   DESIGN_EVENT_KINDS,
   DESIGN_STATUSES,
+  MATERIAL_USE_ROLES,
 } from './schema';
-export type { DesignEventKind, DesignStatus } from './schema';
+export type { DesignEventKind, DesignStatus, MaterialUseRole } from './schema';

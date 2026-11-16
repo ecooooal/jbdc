@@ -1,7 +1,13 @@
 import { and, desc, eq, isNull } from 'drizzle-orm';
-import type { Database, DesignStatus } from '@/features/database';
-import { designs } from '@/features/database';
-import { readTaxonomyNames } from '@/features/taxonomy';
+import type {
+  Database,
+  DatabaseHandle,
+  DesignStatus,
+  MaterialUseRole,
+} from '@/features/database';
+import { designMaterials, designs, MATERIAL_USE_ROLES } from '@/features/database';
+import { readMaterialNamesFrom } from '@/features/materials';
+import { readTaxonomyNamesFrom } from '@/features/taxonomy';
 import { CREATIVE_DIRECTION_FIELDS } from './creative-direction-fields';
 import { designFieldsChanged, type DesignEditableField } from './fields';
 import { DESIGN_NAME_MAX_LENGTH, designNameProblem } from './limits';
@@ -51,10 +57,29 @@ export type CreateDesignInput = { name: string } & Partial<Omit<DesignFields, 'n
  */
 export type UpdateDesignInput = Partial<DesignFields>;
 
+/** A Material use with the Material's name resolved, as a table shows it. */
+export type MaterialUse = {
+  id: string;
+  designId: string;
+  materialId: string;
+  materialName: string;
+  colour: string;
+  role: MaterialUseRole;
+  createdAt: number;
+};
+
+/** One new use of a Material on a Design. */
+export type AddMaterialUseInput = {
+  materialId: string;
+  colour: string;
+  role: MaterialUseRole;
+};
+
 /** A Design with the names Detail displays in place of its foreign keys. */
 export type DesignDetail = Design & {
   category: string | null;
   collection: string | null;
+  materialUses: MaterialUse[];
 };
 
 export class InvalidDesignNameError extends Error {
@@ -65,6 +90,13 @@ export class InvalidDesignNameError extends Error {
         : `A design name can be at most ${DESIGN_NAME_MAX_LENGTH} characters.`
     );
     this.name = 'InvalidDesignNameError';
+  }
+}
+
+export class InvalidMaterialUseError extends Error {
+  constructor(readonly reason: 'empty_colour') {
+    super('A material use needs a colour.');
+    this.name = 'InvalidMaterialUseError';
   }
 }
 
@@ -126,14 +158,15 @@ function normalizeName(raw: string): string {
 
 /**
  * Lowercased name, description, Specification, Creative direction, Category,
- * and Collection, rebuilt on every write. The taxonomy names are read from
- * their tables, so a rename lands in the search text the next time the design
- * is written.
+ * Collection, and every Material use's name and colour, rebuilt on every write.
+ * The taxonomy and Material names are read from their tables, so a rename lands
+ * in the search text the next time the design is written.
  */
 function buildSearchText(
   design: DesignFields,
   category: string | null,
-  collection: string | null
+  collection: string | null,
+  materialUseParts: readonly string[]
 ): string {
   return [
     design.name,
@@ -142,6 +175,7 @@ function buildSearchText(
     ...CREATIVE_DIRECTION_FIELDS.map(({ field }) => design[field]),
     category,
     collection,
+    ...materialUseParts,
   ]
     .filter(Boolean)
     .join(' ')
@@ -154,12 +188,66 @@ function designTaxonomyNames(
   categoryId: string | null,
   collectionId: string | null
 ): { category: string | null; collection: string | null } {
-  const names = readTaxonomyNames(database);
+  return designTaxonomyNamesFrom(database.db, categoryId, collectionId);
+}
+
+function designTaxonomyNamesFrom(
+  db: DatabaseHandle,
+  categoryId: string | null,
+  collectionId: string | null
+): { category: string | null; collection: string | null } {
+  const names = readTaxonomyNamesFrom(db);
 
   return {
     category: categoryId ? (names.categories.get(categoryId) ?? null) : null,
     collection: collectionId ? (names.collections.get(collectionId)?.name ?? null) : null,
   };
+}
+
+const MATERIAL_USE_ROLE_ORDER = Object.fromEntries(
+  MATERIAL_USE_ROLES.map((role, index) => [role, index])
+) as Record<MaterialUseRole, number>;
+
+function compareMaterialUses(left: MaterialUse, right: MaterialUse): number {
+  return (
+    MATERIAL_USE_ROLE_ORDER[left.role] - MATERIAL_USE_ROLE_ORDER[right.role] ||
+    left.materialName.localeCompare(right.materialName) ||
+    left.createdAt - right.createdAt ||
+    left.id.localeCompare(right.id)
+  );
+}
+
+/**
+ * One Design's Material uses, ordered by role (main, secondary, other), then
+ * Material name. The names come from the Material name read, deleted entries
+ * included, so a use written before the Material was removed keeps its name.
+ */
+function materialUsesFrom(db: DatabaseHandle, designId: string): MaterialUse[] {
+  const rows = db
+    .select({
+      id: designMaterials.id,
+      designId: designMaterials.designId,
+      materialId: designMaterials.materialId,
+      colour: designMaterials.colour,
+      role: designMaterials.role,
+      createdAt: designMaterials.createdAt,
+    })
+    .from(designMaterials)
+    .where(eq(designMaterials.designId, designId))
+    .all();
+  const names = readMaterialNamesFrom(db);
+
+  return rows
+    .map((row) => ({
+      ...row,
+      materialName: names.get(row.materialId) ?? row.materialId,
+    }))
+    .sort(compareMaterialUses);
+}
+
+/** Each linked Material's name and colour, ready for `buildSearchText`. */
+function materialUseSearchParts(db: DatabaseHandle, designId: string): string[] {
+  return materialUsesFrom(db, designId).flatMap((use) => [use.materialName, use.colour]);
 }
 
 /**
@@ -196,7 +284,7 @@ export function createDesign(
     .insert(designs)
     .values({
       ...design,
-      searchText: buildSearchText(design, taxonomy.category, taxonomy.collection),
+      searchText: buildSearchText(design, taxonomy.category, taxonomy.collection, []),
     })
     .run();
 
@@ -237,6 +325,7 @@ export function updateDesign(
   if (!designFieldsChanged(next, current)) return current;
 
   const taxonomy = designTaxonomyNames(database, next.categoryId, next.collectionId);
+  const materialUseParts = materialUseSearchParts(database.db, id);
 
   next.updatedAt = now;
   database.db
@@ -249,7 +338,7 @@ export function updateDesign(
       ...specification,
       ...creativeDirection,
       updatedAt: next.updatedAt,
-      searchText: buildSearchText(next, taxonomy.category, taxonomy.collection),
+      searchText: buildSearchText(next, taxonomy.category, taxonomy.collection, materialUseParts),
     })
     .where(eq(designs.id, id))
     .run();
@@ -259,8 +348,12 @@ export function updateDesign(
 
 /** Reads one live Design; a soft-deleted row is gone as far as readers are concerned. */
 export function getDesign(database: Database, id: string): Design | null {
+  return designFrom(database.db, id);
+}
+
+function designFrom(db: DatabaseHandle, id: string): Design | null {
   return (
-    database.db
+    db
       .select(designColumns)
       .from(designs)
       .where(and(eq(designs.id, id), isNull(designs.deletedAt)))
@@ -282,7 +375,8 @@ export function designDetailQuery(database: Database, id: string) {
 
 /**
  * Reads one live Design for Detail, resolving its Category and Collection
- * through the taxonomy name read; null when it is unknown or soft-deleted.
+ * through the taxonomy name read and its Material uses through the Material
+ * name read; null when it is unknown or soft-deleted.
  */
 export function getDesignDetail(database: Database, id: string): DesignDetail | null {
   const design = designDetailQuery(database, id).get();
@@ -292,6 +386,7 @@ export function getDesignDetail(database: Database, id: string): DesignDetail | 
   return {
     ...design,
     ...designTaxonomyNames(database, design.categoryId, design.collectionId),
+    materialUses: materialUsesFrom(database.db, id),
   };
 }
 
@@ -303,4 +398,60 @@ export function listDesigns(database: Database): Design[] {
     .where(isNull(designs.deletedAt))
     .orderBy(desc(designs.updatedAt))
     .all();
+}
+
+/** One Design's Material uses, ordered by role then Material name. */
+export function listMaterialUses(database: Database, designId: string): MaterialUse[] {
+  return materialUsesFrom(database.db, designId);
+}
+
+/**
+ * Records one Material use on a Design. The insertion and the Design's rebuilt
+ * `search_text` (every linked Material's name and colour) land in one
+ * transaction, with `updatedAt` moved so the Library re-sorts by recency.
+ * Returns null when the Design is unknown or soft-deleted.
+ */
+export function addMaterialUse(
+  database: Database,
+  designId: string,
+  input: AddMaterialUseInput,
+  now: number = Date.now()
+): MaterialUse | null {
+  const colour = input.colour.trim();
+
+  if (colour.length === 0) throw new InvalidMaterialUseError('empty_colour');
+
+  return database.transaction((tx) => {
+    const design = designFrom(tx, designId);
+
+    if (!design) return null;
+
+    const use = {
+      id: database.newId(),
+      designId,
+      materialId: input.materialId,
+      colour,
+      role: input.role,
+      createdAt: now,
+    };
+
+    tx.insert(designMaterials).values(use).run();
+
+    const taxonomy = designTaxonomyNamesFrom(tx, design.categoryId, design.collectionId);
+
+    tx.update(designs)
+      .set({
+        updatedAt: now,
+        searchText: buildSearchText(
+          design,
+          taxonomy.category,
+          taxonomy.collection,
+          materialUseSearchParts(tx, designId)
+        ),
+      })
+      .where(eq(designs.id, designId))
+      .run();
+
+    return materialUsesFrom(tx, designId).find((entry) => entry.id === use.id) ?? null;
+  });
 }

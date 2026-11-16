@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { categories, collections, designs } from '@/features/database';
+import { categories, collections, designMaterials, designs, materials } from '@/features/database';
 import {
   useDatabase,
   useLiveRead,
@@ -16,9 +16,11 @@ export type DesignDetailResult = {
 
 /**
  * Subscribes to one Design's Detail read, resolving its Category and Collection
- * through the taxonomy name read. An edit or a taxonomy rename made elsewhere
- * lands in the returned design without a manual refresh. The query builder
- * stays private to the feature; callers never wire the subscription themselves.
+ * through the taxonomy name read and its Material uses through the Material
+ * name read. An edit, a taxonomy rename, a Material rename, or a Material use
+ * made elsewhere lands in the returned design without a manual refresh. The
+ * query builder stays private to the feature; callers never wire the
+ * subscription themselves.
  */
 export function useDesignDetail(id: string): DesignDetailResult {
   const database = useDatabase();
@@ -31,7 +33,7 @@ export function useDesignDetail(id: string): DesignDetailResult {
     [database, id]
   );
   const { data, error, status } = useLiveRead({
-    tables: [designs, categories, collections],
+    tables: [designs, categories, collections, designMaterials, materials],
     run,
   });
 

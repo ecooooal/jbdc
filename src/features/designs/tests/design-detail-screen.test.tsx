@@ -5,8 +5,9 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { categories } from '@/features/database';
 import { DatabaseProvider } from '@/features/database/react';
 import { createSyncSubscribe, createTempDatabase } from '@/features/database/testing';
-import { createDesign } from '@/features/designs';
+import { createDesign, addMaterialUse } from '@/features/designs';
 import { DesignDetailScreen } from '@/features/designs/react';
+import { createMaterial } from '@/features/materials';
 import { createCategory } from '@/features/taxonomy';
 
 jest.mock('expo-router', () => ({
@@ -158,4 +159,40 @@ test('a design that has recorded nothing shows no tab content', async () => {
 
   expect(screen.getByText('Nothing recorded yet')).toBeTruthy();
   expect(screen.queryByText('Specification')).toBeNull();
+});
+
+test('Detail renders recorded Material uses read-only', async () => {
+  const design = createDesign(database, { name: 'Wool coat', silhouette: 'Straight' });
+  const wool = createMaterial(database, { name: 'Wool' });
+  const lining = createMaterial(database, { name: 'Cupro lining' });
+
+  addMaterialUse(database, design.id, {
+    materialId: lining.id,
+    colour: 'Taupe',
+    role: 'secondary',
+  });
+  addMaterialUse(database, design.id, { materialId: wool.id, colour: 'Charcoal', role: 'main' });
+
+  await renderDetail(design.id);
+
+  expect(screen.getByText('Material')).toBeTruthy();
+  expect(screen.getByText('Wool')).toBeTruthy();
+  expect(screen.getByText('Charcoal')).toBeTruthy();
+  expect(screen.getByText('Main')).toBeTruthy();
+  expect(screen.getByText('Cupro lining')).toBeTruthy();
+  expect(screen.queryByRole('button', { name: 'Add material' })).toBeNull();
+});
+
+test('a design with only Material uses opens on Specification', async () => {
+  const design = createDesign(database, { name: 'Wool coat' });
+  const wool = createMaterial(database, { name: 'Wool' });
+
+  addMaterialUse(database, design.id, { materialId: wool.id, colour: 'Charcoal', role: 'main' });
+
+  await renderDetail(design.id);
+
+  expect(screen.getByRole('tab', { name: 'Specification' })).toBeTruthy();
+  expect(screen.getByText('Wool')).toBeTruthy();
+  expect(screen.getByText('Charcoal')).toBeTruthy();
+  expect(screen.queryByText('Nothing recorded yet')).toBeNull();
 });

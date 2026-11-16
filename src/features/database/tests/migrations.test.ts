@@ -17,7 +17,7 @@ describe('database migrations', () => {
     dispose();
   });
 
-  test('creates all five tables and the three indexes', () => {
+  test('creates the catalog tables and indexes', () => {
     const objects = database.db.all<{ type: string; name: string }>(
       sql`select type, name from sqlite_master
           where type in ('table', 'index')
@@ -30,13 +30,17 @@ describe('database migrations', () => {
         'categories',
         'collections',
         'design_events',
+        'design_materials',
         'designs',
+        'materials',
         'settings',
       ])
     );
     expect(objects.filter((object) => object.type === 'index').map((object) => object.name)).toEqual(
       expect.arrayContaining([
         'design_events_design_id_created_at_idx',
+        'design_materials_design_id_idx',
+        'design_materials_material_id_idx',
         'designs_collection_id_idx',
         'designs_status_idx',
       ])
