@@ -43,8 +43,25 @@ describe('database migrations', () => {
     );
   });
 
-  test('accepts the full status vocabulary and rejects anything else', () => {
-    for (const [index, status] of DESIGN_STATUSES.entries()) {
+  test('stores the seven Specification fields on designs', () => {
+    const columns = database.db
+      .all<{ name: string }>(sql`pragma table_info(designs)`)
+      .map((column) => column.name);
+
+    expect(columns).toEqual(
+      expect.arrayContaining([
+        'silhouette',
+        'neckline',
+        'sleeve_type',
+        'garment_details',
+        'size_range',
+        'measurements',
+        'construction_notes',
+      ])
+    );
+  });
+
+  test('accepts the full status vocabulary and rejects anything else', () => {    for (const [index, status] of DESIGN_STATUSES.entries()) {
       expect(() =>
         database.db
           .insert(designs)

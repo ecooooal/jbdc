@@ -57,6 +57,13 @@ describe('design records', () => {
       description: null,
       categoryId: null,
       collectionId: null,
+      silhouette: null,
+      neckline: null,
+      sleeveType: null,
+      garmentDetails: null,
+      sizeRange: null,
+      measurements: null,
+      constructionNotes: null,
       status: 'concept',
       createdAt: now,
       updatedAt: now,
@@ -64,6 +71,45 @@ describe('design records', () => {
     });
     expect(design.id).toMatch(UUID_V4);
     expect(getDesign(database, design.id)).toEqual(design);
+  });
+
+  test('round-trips every Specification field through create', () => {
+    const design = createDesign(database, {
+      name: 'Silk slip dress',
+      silhouette: '  Relaxed A-line  ',
+      neckline: 'Wide boat neck',
+      sleeveType: 'Dropped shoulder',
+      garmentDetails: 'Concealed side zip, two pockets',
+      sizeRange: 'UK 8–16',
+      measurements: 'Bust 96 / waist 104 / hip 112',
+      constructionNotes: 'French seams throughout',
+    });
+
+    expect(design).toMatchObject({
+      silhouette: 'Relaxed A-line',
+      neckline: 'Wide boat neck',
+      sleeveType: 'Dropped shoulder',
+      garmentDetails: 'Concealed side zip, two pockets',
+      sizeRange: 'UK 8–16',
+      measurements: 'Bust 96 / waist 104 / hip 112',
+      constructionNotes: 'French seams throughout',
+    });
+    expect(getDesign(database, design.id)).toEqual(design);
+  });
+
+  test('creates a Specification field left blank as null', () => {
+    const design = createDesign(database, {
+      name: 'Silk slip dress',
+      silhouette: '   ',
+      neckline: '',
+      measurements: ' \n\t ',
+    });
+
+    expect(design).toMatchObject({
+      silhouette: null,
+      neckline: null,
+      measurements: null,
+    });
   });
 
   test('trims the name before saving it', () => {
@@ -99,6 +145,22 @@ describe('design records', () => {
       .get();
 
     expect(row?.searchText).toBe('silk slip dress bias cut');
+  });
+
+  test('includes the Specification values in search text', () => {
+    createDesign(database, {
+      name: 'Silk Slip Dress',
+      silhouette: ' Relaxed A-line ',
+      garmentDetails: 'Concealed zip',
+      measurements: 'Bust 96',
+    });
+
+    const row = database.db
+      .select({ searchText: designs.searchText })
+      .from(designs)
+      .get();
+
+    expect(row?.searchText).toBe('silk slip dress relaxed a-line concealed zip bust 96');
   });
 
   test('joins the chosen category and collection names everywhere a design is read', () => {
@@ -263,6 +325,72 @@ describe('design updates', () => {
     expect(storedSearchText()).toBe('wool coat heavy twill knitwear spring 2027');
   });
 
+  test('persists every Specification field and rebuilds search text', () => {
+    const design = createDesign(database, { name: 'Silk slip' }, 10);
+
+    const updated = updateDesign(
+      database,
+      design.id,
+      {
+        silhouette: ' Relaxed A-line ',
+        neckline: 'Wide boat neck',
+        sleeveType: 'Dropped shoulder',
+        garmentDetails: 'Concealed side zip',
+        sizeRange: 'UK 8–16',
+        measurements: 'Bust 96',
+        constructionNotes: 'French seams',
+      },
+      20
+    );
+
+    expect(updated).toMatchObject({
+      name: 'Silk slip',
+      silhouette: 'Relaxed A-line',
+      neckline: 'Wide boat neck',
+      sleeveType: 'Dropped shoulder',
+      garmentDetails: 'Concealed side zip',
+      sizeRange: 'UK 8–16',
+      measurements: 'Bust 96',
+      constructionNotes: 'French seams',
+      updatedAt: 20,
+    });
+    expect(getDesign(database, design.id)).toEqual(updated);
+    expect(storedSearchText()).toBe(
+      'silk slip relaxed a-line wide boat neck dropped shoulder concealed side zip uk 8–16 bust 96 french seams'
+    );
+  });
+
+  test('clears a Specification field with null or whitespace alone', () => {
+    const design = createDesign(
+      database,
+      { name: 'Silk slip', neckline: 'Wide boat neck', sizeRange: 'UK 8–16' },
+      10
+    );
+
+    expect(
+      updateDesign(database, design.id, { neckline: null, sizeRange: '   ' }, 20)
+    ).toMatchObject({
+      neckline: null,
+      sizeRange: null,
+      updatedAt: 20,
+    });
+  });
+
+  test('an update leaves Specification fields it does not name alone', () => {
+    const design = createDesign(
+      database,
+      { name: 'Silk slip', silhouette: 'Relaxed A-line', measurements: 'Bust 96' },
+      10
+    );
+
+    expect(updateDesign(database, design.id, { neckline: 'Boat neck' }, 20)).toMatchObject({
+      silhouette: 'Relaxed A-line',
+      measurements: 'Bust 96',
+      neckline: 'Boat neck',
+      updatedAt: 20,
+    });
+  });
+
   test('clears the description, Category, and Collection', () => {
     const category = createCategory(database, { name: 'Dress' });
     const collection = createCollection(database, { name: 'Resort', year: 2028 });
@@ -352,6 +480,13 @@ describe('design detail', () => {
     description?: string | null;
     categoryId?: string | null;
     collectionId?: string | null;
+    silhouette?: string | null;
+    neckline?: string | null;
+    sleeveType?: string | null;
+    garmentDetails?: string | null;
+    sizeRange?: string | null;
+    measurements?: string | null;
+    constructionNotes?: string | null;
     status?: DesignStatus;
     createdAt?: number;
     updatedAt?: number;
@@ -369,6 +504,13 @@ describe('design detail', () => {
         description: input.description ?? null,
         categoryId: input.categoryId ?? null,
         collectionId: input.collectionId ?? null,
+        silhouette: input.silhouette ?? null,
+        neckline: input.neckline ?? null,
+        sleeveType: input.sleeveType ?? null,
+        garmentDetails: input.garmentDetails ?? null,
+        sizeRange: input.sizeRange ?? null,
+        measurements: input.measurements ?? null,
+        constructionNotes: input.constructionNotes ?? null,
         status: input.status ?? 'concept',
         searchText: input.name.toLowerCase(),
         createdAt: input.createdAt ?? 0,
@@ -395,6 +537,13 @@ describe('design detail', () => {
       description: 'Bias cut, cowl neck.',
       categoryId,
       collectionId,
+      silhouette: 'Bias cut',
+      neckline: 'Cowl neck',
+      sleeveType: 'Sleeveless',
+      garmentDetails: 'Concealed side zip',
+      sizeRange: 'UK 8–16',
+      measurements: 'Bust 96',
+      constructionNotes: 'French seams',
       status: 'approved',
       createdAt: 10,
       updatedAt: 20,
@@ -408,6 +557,13 @@ describe('design detail', () => {
       collectionId,
       category: 'Dress',
       collection: 'Spring 2027',
+      silhouette: 'Bias cut',
+      neckline: 'Cowl neck',
+      sleeveType: 'Sleeveless',
+      garmentDetails: 'Concealed side zip',
+      sizeRange: 'UK 8–16',
+      measurements: 'Bust 96',
+      constructionNotes: 'French seams',
       status: 'approved',
       createdAt: 10,
       updatedAt: 20,

@@ -12,11 +12,22 @@ const KNITWEAR = 'category-knitwear';
 const NOW = 1_700_000_000_000;
 const LATER = NOW + 60_000;
 
+const EMPTY_SPECIFICATION = {
+  silhouette: null,
+  neckline: null,
+  sleeveType: null,
+  garmentDetails: null,
+  sizeRange: null,
+  measurements: null,
+  constructionNotes: null,
+} as const;
+
 const DESIGN: DesignFields = {
   name: 'Silk slip dress',
   description: 'Bias cut',
   categoryId: DRESS,
   collectionId: null,
+  ...EMPTY_SPECIFICATION,
 };
 
 /** A visit that has read its Design and is ready to edit. */
@@ -34,15 +45,28 @@ describe('edit design reducer', () => {
       designId: DESIGN_ID,
       isSeeded: false,
       isClosed: false,
-      name: '',
-      description: '',
-      categoryId: null,
-      collectionId: null,
-      savedName: '',
-      savedDescription: null,
-      savedCategoryId: null,
-      savedCollectionId: null,
+      draft: {
+        name: '',
+        description: '',
+        categoryId: null,
+        collectionId: null,
+        silhouette: '',
+        neckline: '',
+        sleeveType: '',
+        garmentDetails: '',
+        sizeRange: '',
+        measurements: '',
+        constructionNotes: '',
+      },
+      saved: {
+        name: '',
+        description: null,
+        categoryId: null,
+        collectionId: null,
+        ...EMPTY_SPECIFICATION,
+      },
       sessionStart: null,
+      editing: null,
       error: null,
     });
   });
@@ -52,22 +76,44 @@ describe('edit design reducer', () => {
       designId: DESIGN_ID,
       isSeeded: true,
       isClosed: false,
-      name: 'Silk slip dress',
-      description: 'Bias cut',
-      categoryId: DRESS,
-      collectionId: null,
-      savedName: 'Silk slip dress',
-      savedDescription: 'Bias cut',
-      savedCategoryId: DRESS,
-      savedCollectionId: null,
+      draft: {
+        name: 'Silk slip dress',
+        description: 'Bias cut',
+        categoryId: DRESS,
+        collectionId: null,
+        silhouette: '',
+        neckline: '',
+        sleeveType: '',
+        garmentDetails: '',
+        sizeRange: '',
+        measurements: '',
+        constructionNotes: '',
+      },
+      saved: DESIGN,
       sessionStart: DESIGN,
+      editing: null,
       error: null,
+    });
+  });
+
+  test('seeds Specification drafts from the stored values', () => {
+    const tester = createReducerTester(editDesignReducer, createInitialEditDesignState(DESIGN_ID));
+
+    tester.send({
+      type: 'design-loaded',
+      design: { ...DESIGN, silhouette: 'Relaxed A-line', measurements: 'Bust 96' },
+    });
+
+    expect(tester.getState().draft).toMatchObject({
+      silhouette: 'Relaxed A-line',
+      measurements: 'Bust 96',
+      neckline: '',
     });
   });
 
   test('a later live read does not overwrite what the owner is typing', () => {
     const tester = session();
-    tester.send({ type: 'name-changed', name: 'Wool coat' });
+    tester.send({ type: 'text-changed', field: 'name', value: 'Wool coat' });
 
     const editing = tester.getState();
     tester.send({ type: 'design-loaded', design: DESIGN });
@@ -83,20 +129,51 @@ describe('edit design reducer', () => {
       field: 'name',
       message: 'A design needs a name.',
     });
-    tester.send({ type: 'name-changed', name: 'Wool coat' });
+    tester.send({ type: 'text-changed', field: 'name', value: 'Wool coat' });
 
-    expect(tester.getState()).toMatchObject({ name: 'Wool coat', error: null });
+    expect(tester.getState()).toMatchObject({ draft: { name: 'Wool coat' }, error: null });
+  });
+
+  test('one row is open at a time', () => {
+    const tester = session();
+
+    tester.send({ type: 'row-opened', target: 'silhouette', now: NOW });
+    expect(tester.getState().editing).toBe('silhouette');
+
+    tester.send({ type: 'row-opened', target: 'neckline', now: NOW });
+    expect(tester.getState().editing).toBe('neckline');
+
+    tester.send({ type: 'row-closed' });
+    expect(tester.getState().editing).toBeNull();
+  });
+
+  test('opening another row writes the draft the owner is leaving', () => {
+    const tester = session();
+
+    tester.send({ type: 'row-opened', target: 'silhouette', now: NOW });
+    tester.send({ type: 'text-changed', field: 'silhouette', value: '  Relaxed A-line  ' });
+    tester.send({ type: 'row-opened', target: 'neckline', now: LATER });
+
+    expect(tester.getEffects()).toEqual([
+      {
+        type: 'write-drafts',
+        designId: DESIGN_ID,
+        patch: { silhouette: '  Relaxed A-line  ' },
+        now: LATER,
+      },
+    ]);
+    expect(tester.getState().editing).toBe('neckline');
   });
 
   test('a saved name is trimmed and becomes the value a refusal restores', () => {
     const tester = session();
 
-    tester.send({ type: 'name-changed', name: '  Wool coat  ' });
+    tester.send({ type: 'text-changed', field: 'name', value: '  Wool coat  ' });
     tester.send({ type: 'field-saved', field: 'name', design: { ...DESIGN, name: 'Wool coat' } });
 
     expect(tester.getState()).toMatchObject({
-      name: 'Wool coat',
-      savedName: 'Wool coat',
+      draft: { name: 'Wool coat' },
+      saved: { name: 'Wool coat' },
       error: null,
     });
 
@@ -107,8 +184,7 @@ describe('edit design reducer', () => {
     });
 
     expect(tester.getState()).toMatchObject({
-      name: 'Wool coat',
-      savedName: 'Wool coat',
+      draft: { name: 'Wool coat' },
       error: { field: 'name', message: 'A design needs a name.' },
     });
   });
@@ -116,22 +192,28 @@ describe('edit design reducer', () => {
   test('choosing a Category updates the draft until the write confirms it', () => {
     const tester = session();
 
-    tester.send({ type: 'category-chosen', categoryId: KNITWEAR });
-    expect(tester.getState()).toMatchObject({ categoryId: KNITWEAR, savedCategoryId: DRESS });
+    tester.send({ type: 'choice-chosen', field: 'categoryId', value: KNITWEAR });
+    expect(tester.getState()).toMatchObject({
+      draft: { categoryId: KNITWEAR },
+      saved: { categoryId: DRESS },
+    });
 
     tester.send({
       type: 'field-saved',
       field: 'categoryId',
       design: { ...DESIGN, categoryId: KNITWEAR },
     });
-    expect(tester.getState()).toMatchObject({ categoryId: KNITWEAR, savedCategoryId: KNITWEAR });
+    expect(tester.getState()).toMatchObject({
+      draft: { categoryId: KNITWEAR },
+      saved: { categoryId: KNITWEAR },
+    });
   });
 
   test('a refused selection falls back to the committed one', () => {
     const tester = session();
 
-    tester.send({ type: 'category-chosen', categoryId: KNITWEAR });
-    tester.send({ type: 'collection-chosen', collectionId: 'collection-spring' });
+    tester.send({ type: 'choice-chosen', field: 'categoryId', value: KNITWEAR });
+    tester.send({ type: 'choice-chosen', field: 'collectionId', value: 'collection-spring' });
     tester.send({ type: 'field-refused', field: 'categoryId', message: 'This design is not here.' });
     tester.send({
       type: 'field-refused',
@@ -140,25 +222,26 @@ describe('edit design reducer', () => {
     });
 
     expect(tester.getState()).toMatchObject({
-      categoryId: DRESS,
-      collectionId: null,
-      savedCategoryId: DRESS,
-      savedCollectionId: null,
+      draft: { categoryId: DRESS, collectionId: null },
+      saved: { categoryId: DRESS, collectionId: null },
     });
   });
 
   test('clearing a selection is a draft like any other', () => {
     const tester = session();
 
-    tester.send({ type: 'category-chosen', categoryId: null });
+    tester.send({ type: 'choice-chosen', field: 'categoryId', value: null });
 
-    expect(tester.getState()).toMatchObject({ categoryId: null, savedCategoryId: DRESS });
+    expect(tester.getState()).toMatchObject({
+      draft: { categoryId: null },
+      saved: { categoryId: DRESS },
+    });
   });
 
   test('a cleared description comes back as an empty draft, not the text null', () => {
     const tester = session();
 
-    tester.send({ type: 'description-changed', description: '' });
+    tester.send({ type: 'text-changed', field: 'description', value: '' });
     tester.send({
       type: 'field-saved',
       field: 'description',
@@ -166,40 +249,76 @@ describe('edit design reducer', () => {
     });
 
     expect(tester.getState()).toMatchObject({
-      description: '',
-      savedDescription: null,
+      draft: { description: '' },
+      saved: { description: null },
       error: null,
     });
+  });
+
+  test('a saved Specification row becomes its stored value and collapses', () => {
+    const tester = session();
+
+    tester.send({ type: 'row-opened', target: 'silhouette', now: NOW });
+    tester.send({ type: 'text-changed', field: 'silhouette', value: '  Relaxed A-line  ' });
+    tester.send({
+      type: 'field-saved',
+      field: 'silhouette',
+      design: { ...DESIGN, silhouette: 'Relaxed A-line' },
+    });
+
+    expect(tester.getState()).toMatchObject({
+      draft: { silhouette: 'Relaxed A-line' },
+      saved: { silhouette: 'Relaxed A-line' },
+      editing: null,
+    });
+  });
+
+  test('saving a row that has since closed does not collapse the open one', () => {
+    const tester = session();
+
+    tester.send({ type: 'row-opened', target: 'silhouette', now: NOW });
+    tester.send({ type: 'row-opened', target: 'neckline', now: NOW });
+    tester.send({
+      type: 'field-saved',
+      field: 'silhouette',
+      design: { ...DESIGN, silhouette: 'Relaxed A-line' },
+    });
+
+    expect(tester.getState().editing).toBe('neckline');
   });
 
   test('a saved field leaves the other drafts where they are', () => {
     const tester = session();
 
-    tester.send({ type: 'name-changed', name: 'Wool coat' });
-    tester.send({ type: 'description-changed', description: 'Heavy twill' });
+    tester.send({ type: 'text-changed', field: 'name', value: 'Wool coat' });
+    tester.send({ type: 'text-changed', field: 'description', value: 'Heavy twill' });
     tester.send({ type: 'field-saved', field: 'name', design: { ...DESIGN, name: 'Wool coat' } });
 
-    expect(tester.getState()).toMatchObject({ name: 'Wool coat', description: 'Heavy twill' });
+    expect(tester.getState()).toMatchObject({
+      draft: { name: 'Wool coat', description: 'Heavy twill' },
+    });
   });
 
   test('the drafts that still differ from the row are what a flush writes', () => {
     const tester = session();
     expect(unwrittenFields(tester.getState())).toBeNull();
 
-    tester.send({ type: 'name-changed', name: '  Wool coat  ' });
-    tester.send({ type: 'description-changed', description: ' Heavy twill ' });
+    tester.send({ type: 'text-changed', field: 'name', value: '  Wool coat  ' });
+    tester.send({ type: 'text-changed', field: 'description', value: ' Heavy twill ' });
+    tester.send({ type: 'text-changed', field: 'silhouette', value: ' Relaxed A-line ' });
 
     expect(unwrittenFields(tester.getState())).toEqual({
       name: 'Wool coat',
       description: ' Heavy twill ',
+      silhouette: ' Relaxed A-line ',
     });
   });
 
   test('a blank name is never pending, but a real description still is', () => {
     const tester = session();
 
-    tester.send({ type: 'name-changed', name: '   ' });
-    tester.send({ type: 'description-changed', description: 'Heavy twill' });
+    tester.send({ type: 'text-changed', field: 'name', value: '   ' });
+    tester.send({ type: 'text-changed', field: 'description', value: 'Heavy twill' });
 
     expect(unwrittenFields(tester.getState())).toEqual({ description: 'Heavy twill' });
   });
@@ -207,19 +326,42 @@ describe('edit design reducer', () => {
   test('clearing the description is a pending write', () => {
     const tester = session();
 
-    tester.send({ type: 'description-changed', description: '' });
+    tester.send({ type: 'text-changed', field: 'description', value: '' });
 
     expect(unwrittenFields(tester.getState())).toEqual({ description: '' });
+  });
+
+  test('clearing a Specification row is a pending write', () => {
+    const tester = createReducerTester(editDesignReducer, createInitialEditDesignState(DESIGN_ID));
+
+    tester.send({
+      type: 'design-loaded',
+      design: { ...DESIGN, neckline: 'Wide boat neck' },
+    });
+    tester.send({ type: 'text-changed', field: 'neckline', value: '' });
+
+    expect(unwrittenFields(tester.getState())).toEqual({ neckline: '' });
+  });
+
+  test('whitespace-only Specification input is not a change', () => {
+    const tester = session();
+
+    tester.send({ type: 'text-changed', field: 'constructionNotes', value: '   ' });
+
+    expect(unwrittenFields(tester.getState())).toBeNull();
   });
 
   test('a draft written by leaving the app becomes the value a later refusal restores', () => {
     const tester = session();
 
-    tester.send({ type: 'name-changed', name: 'Wool coat' });
+    tester.send({ type: 'text-changed', field: 'name', value: 'Wool coat' });
     tester.send({ type: 'app-backgrounded', now: NOW });
     tester.send({ type: 'drafts-written', design: { ...DESIGN, name: 'Wool coat' } });
 
-    expect(tester.getState()).toMatchObject({ name: 'Wool coat', savedName: 'Wool coat' });
+    expect(tester.getState()).toMatchObject({
+      draft: { name: 'Wool coat' },
+      saved: { name: 'Wool coat' },
+    });
   });
 });
 
@@ -236,7 +378,7 @@ describe('edit session boundary', () => {
   test('closing after a draft writes it, then records the whole visit once', () => {
     const tester = session();
 
-    tester.send({ type: 'name-changed', name: 'Wool coat' });
+    tester.send({ type: 'text-changed', field: 'name', value: 'Wool coat' });
     tester.send({ type: 'session-closed', now: NOW });
 
     expect(tester.getEffects()).toEqual([
@@ -256,10 +398,59 @@ describe('edit session boundary', () => {
     ]);
   });
 
+  test('a Specification draft is written and recorded like any other field', () => {
+    const tester = session();
+
+    tester.send({ type: 'text-changed', field: 'silhouette', value: ' Relaxed A-line ' });
+    tester.send({ type: 'text-changed', field: 'measurements', value: 'Bust 96, waist 104' });
+    tester.send({ type: 'session-closed', now: NOW });
+
+    expect(tester.getEffects()).toEqual([
+      {
+        type: 'write-drafts',
+        designId: DESIGN_ID,
+        patch: { silhouette: ' Relaxed A-line ', measurements: 'Bust 96, waist 104' },
+        now: NOW,
+      },
+      {
+        type: 'record-session',
+        designId: DESIGN_ID,
+        before: DESIGN,
+        after: { ...DESIGN, silhouette: 'Relaxed A-line', measurements: 'Bust 96, waist 104' },
+        now: NOW,
+      },
+    ]);
+  });
+
+  test('a Specification row cleared at close is recorded as null', () => {
+    const tester = createReducerTester(editDesignReducer, createInitialEditDesignState(DESIGN_ID));
+    const filled = { ...DESIGN, neckline: 'Wide boat neck' };
+
+    tester.send({ type: 'design-loaded', design: filled });
+    tester.send({ type: 'text-changed', field: 'neckline', value: '   ' });
+    tester.send({ type: 'session-closed', now: NOW });
+
+    expect(tester.getEffects()).toEqual([
+      {
+        type: 'write-drafts',
+        designId: DESIGN_ID,
+        patch: { neckline: '   ' },
+        now: NOW,
+      },
+      {
+        type: 'record-session',
+        designId: DESIGN_ID,
+        before: filled,
+        after: DESIGN,
+        now: NOW,
+      },
+    ]);
+  });
+
   test('leaving the app writes the drafts but records nothing', () => {
     const tester = session();
 
-    tester.send({ type: 'name-changed', name: 'Wool coat' });
+    tester.send({ type: 'text-changed', field: 'name', value: 'Wool coat' });
     tester.send({ type: 'app-backgrounded', now: NOW });
 
     expect(tester.getEffects()).toEqual([
@@ -275,7 +466,7 @@ describe('edit session boundary', () => {
   test('a visit backgrounded and later closed stays one Event against the open row', () => {
     const tester = session();
 
-    tester.send({ type: 'name-changed', name: 'Wool coat' });
+    tester.send({ type: 'text-changed', field: 'name', value: 'Wool coat' });
     tester.send({ type: 'app-backgrounded', now: NOW });
     tester.send({ type: 'drafts-written', design: { ...DESIGN, name: 'Wool coat' } });
     tester.send({ type: 'session-closed', now: LATER });
@@ -300,7 +491,7 @@ describe('edit session boundary', () => {
   test('a selection already written is recorded without a close-time write', () => {
     const tester = session();
 
-    tester.send({ type: 'category-chosen', categoryId: KNITWEAR });
+    tester.send({ type: 'choice-chosen', field: 'categoryId', value: KNITWEAR });
     tester.send({
       type: 'field-saved',
       field: 'categoryId',
@@ -322,9 +513,9 @@ describe('edit session boundary', () => {
   test('a net-zero visit restores the earlier value but writes no Event', () => {
     const tester = session();
 
-    tester.send({ type: 'name-changed', name: 'Wool coat' });
+    tester.send({ type: 'text-changed', field: 'name', value: 'Wool coat' });
     tester.send({ type: 'field-saved', field: 'name', design: { ...DESIGN, name: 'Wool coat' } });
-    tester.send({ type: 'name-changed', name: 'Silk slip dress' });
+    tester.send({ type: 'text-changed', field: 'name', value: 'Silk slip dress' });
     tester.send({ type: 'session-closed', now: NOW });
 
     expect(tester.getEffects()).toEqual([
@@ -340,13 +531,13 @@ describe('edit session boundary', () => {
   test('a selection written away and back writes no Event', () => {
     const tester = session();
 
-    tester.send({ type: 'category-chosen', categoryId: KNITWEAR });
+    tester.send({ type: 'choice-chosen', field: 'categoryId', value: KNITWEAR });
     tester.send({
       type: 'field-saved',
       field: 'categoryId',
       design: { ...DESIGN, categoryId: KNITWEAR },
     });
-    tester.send({ type: 'category-chosen', categoryId: DRESS });
+    tester.send({ type: 'choice-chosen', field: 'categoryId', value: DRESS });
     tester.send({ type: 'field-saved', field: 'categoryId', design: DESIGN });
     tester.send({ type: 'session-closed', now: NOW });
 
@@ -356,7 +547,7 @@ describe('edit session boundary', () => {
   test('a second close declares nothing more', () => {
     const tester = session();
 
-    tester.send({ type: 'name-changed', name: 'Wool coat' });
+    tester.send({ type: 'text-changed', field: 'name', value: 'Wool coat' });
     tester.send({ type: 'session-closed', now: NOW });
 
     const firstClose = tester.getEffects();
@@ -368,8 +559,8 @@ describe('edit session boundary', () => {
   test('a close writes no blank name but still writes a valid description', () => {
     const tester = session();
 
-    tester.send({ type: 'name-changed', name: '   ' });
-    tester.send({ type: 'description-changed', description: 'Heavy twill' });
+    tester.send({ type: 'text-changed', field: 'name', value: '   ' });
+    tester.send({ type: 'text-changed', field: 'description', value: 'Heavy twill' });
     tester.send({ type: 'session-closed', now: NOW });
 
     expect(tester.getEffects()).toEqual([
@@ -392,7 +583,7 @@ describe('edit session boundary', () => {
   test('the recorded description is the stored one, not the raw draft', () => {
     const tester = session();
 
-    tester.send({ type: 'description-changed', description: '  Heavy twill  ' });
+    tester.send({ type: 'text-changed', field: 'description', value: '  Heavy twill  ' });
     tester.send({ type: 'session-closed', now: NOW });
 
     expect(tester.getEffects()).toEqual([

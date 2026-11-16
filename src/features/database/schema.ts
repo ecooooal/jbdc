@@ -48,8 +48,17 @@ export const designs = sqliteTable(
     description: text('description'),
     categoryId: text('category_id').references(() => categories.id),
     collectionId: text('collection_id').references(() => collections.id),
+    // Specification: the technical and physical description of a design. All
+    // optional; null means the owner has not recorded it.
+    silhouette: text('silhouette'),
+    neckline: text('neckline'),
+    sleeveType: text('sleeve_type'),
+    garmentDetails: text('garment_details'),
+    sizeRange: text('size_range'),
+    measurements: text('measurements'),
+    constructionNotes: text('construction_notes'),
     status: text('status', { enum: DESIGN_STATUSES }).notNull(),
-    /** Lowercased name, description, category and collection, rebuilt on every write. */
+    /** Lowercased name, description, Specification, category and collection, rebuilt on every write. */
     searchText: text('search_text').notNull(),
     createdAt: timestamp('created_at').notNull(),
     updatedAt: timestamp('updated_at').notNull(),

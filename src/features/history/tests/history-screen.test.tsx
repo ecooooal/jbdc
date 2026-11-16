@@ -25,6 +25,13 @@ function fields(overrides: Partial<DesignFields> = {}): DesignFields {
     description: null,
     categoryId: null,
     collectionId: null,
+    silhouette: null,
+    neckline: null,
+    sleeveType: null,
+    garmentDetails: null,
+    sizeRange: null,
+    measurements: null,
+    constructionNotes: null,
     ...overrides,
   };
 }
@@ -134,6 +141,23 @@ test('a cleared Category reads as empty', async () => {
   await renderHistory(design.id);
 
   expect(screen.getByText('Category: Dress → None')).toBeTruthy();
+});
+
+test('shows a Specification change by its owner-facing label', async () => {
+  const design = createDesign(database, { name: 'Silk slip dress' }, 10);
+
+  recordEdit(
+    database,
+    design.id,
+    fields(),
+    fields({ silhouette: 'Relaxed A-line', measurements: 'Bust 96' }),
+    Date.UTC(2025, 0, 2, 3, 4)
+  );
+
+  await renderHistory(design.id);
+
+  expect(screen.getByText('Silhouette: None → Relaxed A-line')).toBeTruthy();
+  expect(screen.getByText('Measurements: None → Bust 96')).toBeTruthy();
 });
 
 test('a design with no History says so plainly', async () => {

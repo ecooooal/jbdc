@@ -3,6 +3,7 @@ import { ChevronLeft } from 'lucide-react-native';
 import { ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { DesignEditableField } from '@/features/designs';
+import { designFieldLabel } from '@/features/designs';
 import { taxonomyLabel, type TaxonomyNames } from '@/features/taxonomy';
 import { Button } from '@/shared/components/ui/button';
 import { Icon } from '@/shared/components/ui/icon';
@@ -21,13 +22,6 @@ const TIMESTAMP_FORMAT = new Intl.DateTimeFormat(undefined, {
 function formatTimestamp(timestamp: number): string {
   return TIMESTAMP_FORMAT.format(timestamp);
 }
-
-const FIELD_LABELS: Record<DesignEditableField, string> = {
-  name: 'Name',
-  description: 'Description',
-  categoryId: 'Category',
-  collectionId: 'Collection',
-};
 
 /**
  * The value a History entry shows for a field. A Category or Collection is
@@ -65,7 +59,7 @@ function EventCard({ event, taxonomy }: { event: DesignEvent; taxonomy: Taxonomy
       <Text variant="muted">{formatTimestamp(event.createdAt)}</Text>
       {changes.map(([field, change]) => (
         <Text key={field}>
-          {FIELD_LABELS[field]}: {valueLabel(field, change.from, taxonomy)} →{' '}
+          {designFieldLabel(field)}: {valueLabel(field, change.from, taxonomy)} →{' '}
           {valueLabel(field, change.to, taxonomy)}
         </Text>
       ))}

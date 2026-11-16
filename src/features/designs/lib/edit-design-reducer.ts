@@ -1,12 +1,22 @@
-import { normalizeDescription } from './description';
-import { designFieldsChanged, type DesignEditableField } from './fields';
+import {
+  DESIGN_CHOICE_FIELDS,
+  DESIGN_TEXT_FIELDS,
+  designFieldsChanged,
+  draftsFromFields,
+  EMPTY_DESIGN_DRAFTS,
+  type DesignChoiceEditableField,
+  type DesignDrafts,
+  type DesignEditableField,
+  type DesignTextEditableField,
+} from './fields';
 import { designNameProblem } from './limits';
+import { normalizeOptionalText } from './optional-text';
 import type { DesignFields } from './records';
 
 /**
  * Edit's decisions: the drafts, the row's current values, the visit baseline,
- * and the one refusal on screen. The live read seeds it once; later reads do
- * not overwrite a draft the owner is still editing.
+ * the one open row, and the one refusal on screen. The live read seeds it once;
+ * later reads do not overwrite a draft the owner is still editing.
  *
  * A visit is one screen session (ADR-0004): `sessionStart` is the row the
  * first read returned and never advances, so every write in the visit
@@ -20,26 +30,24 @@ export type EditDesignState = {
   /** True once the visit closed; a second close declares nothing more. */
   isClosed: boolean;
   /** What the owner has typed or picked, not necessarily written yet. */
-  name: string;
-  description: string;
-  categoryId: string | null;
-  collectionId: string | null;
+  draft: DesignDrafts;
   /** What the row holds now; a refused save restores these values. */
-  savedName: string;
-  savedDescription: string | null;
-  savedCategoryId: string | null;
-  savedCollectionId: string | null;
+  saved: DesignFields;
   /** The row at open: what the visit's one Event is diffed against. */
   sessionStart: DesignFields | null;
+  /** The one row whose editor is open. `taxonomy` is the Category · Collection pair. */
+  editing: EditDesignTarget | null;
   error: { field: DesignEditableField; message: string } | null;
 };
 
+export type EditDesignTarget = DesignEditableField | 'taxonomy';
+
 export type EditDesignEvent =
   | { type: 'design-loaded'; design: DesignFields }
-  | { type: 'name-changed'; name: string }
-  | { type: 'description-changed'; description: string }
-  | { type: 'category-chosen'; categoryId: string | null }
-  | { type: 'collection-chosen'; collectionId: string | null }
+  | { type: 'text-changed'; field: DesignTextEditableField; value: string }
+  | { type: 'choice-chosen'; field: DesignChoiceEditableField; value: string | null }
+  | { type: 'row-opened'; target: EditDesignTarget; now: number }
+  | { type: 'row-closed' }
   | { type: 'field-saved'; field: DesignEditableField; design: DesignFields }
   | { type: 'drafts-written'; design: DesignFields }
   | { type: 'field-refused'; field: DesignEditableField; message: string }
@@ -72,61 +80,91 @@ export function createInitialEditDesignState(designId: string): EditDesignState 
     designId,
     isSeeded: false,
     isClosed: false,
-    name: '',
-    description: '',
-    categoryId: null,
-    collectionId: null,
-    savedName: '',
-    savedDescription: null,
-    savedCategoryId: null,
-    savedCollectionId: null,
+    draft: EMPTY_DESIGN_DRAFTS,
+    saved: {
+      name: '',
+      description: null,
+      categoryId: null,
+      collectionId: null,
+      silhouette: null,
+      neckline: null,
+      sleeveType: null,
+      garmentDetails: null,
+      sizeRange: null,
+      measurements: null,
+      constructionNotes: null,
+    },
     sessionStart: null,
+    editing: null,
     error: null,
   };
 }
 
-/** The fields a draft still owes the row, ready for `updateDesign`. */
-export type UnwrittenDesignFields = {
-  name?: string;
-  description?: string;
-};
+/** The text drafts that still differ from the row, ready for `updateDesign`. */
+export type UnwrittenDesignFields = Partial<Record<DesignTextEditableField, string>>;
 
 /**
- * The drafts the row has not seen yet. Only name and description are drafted;
- * a Category or Collection writes the moment it is chosen. An invalid name is
- * never here, so closing the screen cannot commit a blank one.
+ * The drafts the row has not seen yet. Only text is drafted; a Category or
+ * Collection writes the moment it is chosen. An invalid name is never here,
+ * so closing the screen cannot commit a blank one.
  */
 export function unwrittenFields(state: EditDesignState): UnwrittenDesignFields | null {
   const patch: UnwrittenDesignFields = {};
-  const name = state.name.trim();
 
-  if (name !== state.savedName && designNameProblem(name) === null) patch.name = name;
-  if (normalizeDescription(state.description) !== state.savedDescription) {
-    patch.description = state.description;
+  for (const field of DESIGN_TEXT_FIELDS) {
+    const draft = state.draft[field];
+
+    if (field === 'name') {
+      const name = draft.trim();
+
+      if (name !== state.saved.name && designNameProblem(name) === null) patch.name = name;
+      continue;
+    }
+
+    if (normalizeOptionalText(draft) !== state.saved[field]) patch[field] = draft;
   }
 
-  return patch.name === undefined && patch.description === undefined ? null : patch;
+  return Object.keys(patch).length === 0 ? null : patch;
 }
 
 /**
  * The row as it will stand once a close writes the drafts: a valid name is
- * written trimmed, an invalid one was never written, and a description is
- * written normalized. Category and Collection are read from what the row holds,
- * because they write on choice rather than at close.
+ * written trimmed, every other text field is written normalized, and Category
+ * and Collection come from what the row holds because they write on choice.
  */
 function fieldsAfterClose(
   state: EditDesignState,
   patch: UnwrittenDesignFields | null
 ): DesignFields {
-  return {
-    name: patch?.name ?? state.savedName,
-    description:
-      patch?.description === undefined
-        ? state.savedDescription
-        : normalizeDescription(patch.description),
-    categoryId: state.savedCategoryId,
-    collectionId: state.savedCollectionId,
-  };
+  const after: DesignFields = { ...state.saved };
+
+  for (const field of DESIGN_TEXT_FIELDS) {
+    const raw = patch?.[field];
+
+    if (raw === undefined) continue;
+
+    if (field === 'name') {
+      after.name = raw.trim();
+      continue;
+    }
+
+    after[field] = normalizeOptionalText(raw);
+  }
+
+  return after;
+}
+
+/** Updates the draft a save confirmed, so the row reads the stored value. */
+function draftsAfterSave(
+  draft: DesignDrafts,
+  field: DesignEditableField,
+  design: DesignFields
+): DesignDrafts {
+  if (field === 'categoryId' || field === 'collectionId') {
+    return { ...draft, [field]: design[field] };
+  }
+
+  return { ...draft, [field]: design[field] ?? '' };
 }
 
 /** Clears the refusal for the field that just changed, and only that field. */
@@ -135,6 +173,10 @@ function clearedError(
   field: DesignEditableField
 ): EditDesignState['error'] {
   return error?.field === field ? null : error;
+}
+
+function isChoiceField(field: DesignEditableField): field is DesignChoiceEditableField {
+  return DESIGN_CHOICE_FIELDS.some((choice) => choice === field);
 }
 
 function only(state: EditDesignState): EditDesignResult {
@@ -149,94 +191,77 @@ export function editDesignReducer(
     case 'design-loaded': {
       if (state.isSeeded) return only(state);
 
-      const { name, description, categoryId, collectionId } = event.design;
-
       return only({
         ...state,
         isSeeded: true,
-        name,
-        description: description ?? '',
-        categoryId,
-        collectionId,
-        savedName: name,
-        savedDescription: description,
-        savedCategoryId: categoryId,
-        savedCollectionId: collectionId,
-        sessionStart: { name, description, categoryId, collectionId },
+        draft: draftsFromFields(event.design),
+        saved: event.design,
+        sessionStart: event.design,
+        editing: null,
         error: null,
       });
     }
-    case 'name-changed':
-      return only({ ...state, name: event.name, error: clearedError(state.error, 'name') });
-    case 'description-changed':
+    case 'text-changed':
       return only({
         ...state,
-        description: event.description,
-        error: clearedError(state.error, 'description'),
+        draft: { ...state.draft, [event.field]: event.value },
+        error: clearedError(state.error, event.field),
       });
-    case 'category-chosen':
+    case 'choice-chosen':
       return only({
         ...state,
-        categoryId: event.categoryId,
-        error: clearedError(state.error, 'categoryId'),
+        draft: { ...state.draft, [event.field]: event.value },
+        error: clearedError(state.error, event.field),
       });
-    case 'collection-chosen':
-      return only({
-        ...state,
-        collectionId: event.collectionId,
-        error: clearedError(state.error, 'collectionId'),
-      });
-    case 'field-saved': {
-      const error = clearedError(state.error, event.field);
+    case 'row-opened': {
+      const opened = { ...state, editing: event.target };
+      const leaving = state.editing;
+      const leavingTextRow =
+        leaving !== null && leaving !== event.target && leaving !== 'taxonomy' && !isChoiceField(leaving);
 
-      switch (event.field) {
-        case 'name':
-          return only({ ...state, name: event.design.name, savedName: event.design.name, error });
-        case 'description':
-          return only({
-            ...state,
-            description: event.design.description ?? '',
-            savedDescription: event.design.description,
-            error,
-          });
-        case 'categoryId':
-          return only({
-            ...state,
-            categoryId: event.design.categoryId,
-            savedCategoryId: event.design.categoryId,
-            error,
-          });
-        case 'collectionId':
-          return only({
-            ...state,
-            collectionId: event.design.collectionId,
-            savedCollectionId: event.design.collectionId,
-            error,
-          });
-      }
+      if (!leavingTextRow) return only(opened);
+
+      // A row unmounted on iOS does not reliably fire blur, so opening another
+      // row writes the one being left. The visit still records one Event.
+      const patch = unwrittenFields(state);
+
+      if (!patch) return only(opened);
+
+      return {
+        state: opened,
+        effects: [{ type: 'write-drafts', designId: state.designId, patch, now: event.now }],
+      };
     }
+    case 'row-closed':
+      return only({ ...state, editing: null });
+    case 'field-saved':
+      return only({
+        ...state,
+        draft: draftsAfterSave(state.draft, event.field, event.design),
+        saved: event.design,
+        editing: isChoiceField(event.field)
+          ? state.editing
+          : state.editing === event.field
+            ? null
+            : state.editing,
+        error: clearedError(state.error, event.field),
+      });
     case 'drafts-written':
       return only({
         ...state,
-        savedName: event.design.name,
-        savedDescription: event.design.description,
-        savedCategoryId: event.design.categoryId,
-        savedCollectionId: event.design.collectionId,
+        saved: event.design,
       });
-    case 'field-refused': {
-      const next = { ...state, error: { field: event.field, message: event.message } };
-
-      switch (event.field) {
-        case 'name':
-          return only({ ...next, name: state.savedName });
-        case 'description':
-          return only({ ...next, description: state.savedDescription ?? '' });
-        case 'categoryId':
-          return only({ ...next, categoryId: state.savedCategoryId });
-        case 'collectionId':
-          return only({ ...next, collectionId: state.savedCollectionId });
-      }
-    }
+    case 'field-refused':
+      return only({
+        ...state,
+        draft: {
+          ...state.draft,
+          [event.field]: isChoiceField(event.field)
+            ? state.saved[event.field]
+            : (state.saved[event.field] ?? ''),
+        },
+        error: { field: event.field, message: event.message },
+      });
     case 'app-backgrounded': {
       // Leaving the foreground flushes a draft; only a close records the visit.
       if (state.isClosed) return only(state);

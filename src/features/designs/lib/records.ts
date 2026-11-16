@@ -2,9 +2,10 @@ import { and, desc, eq, isNull } from 'drizzle-orm';
 import type { Database, DesignStatus } from '@/features/database';
 import { designs } from '@/features/database';
 import { readTaxonomyNames } from '@/features/taxonomy';
-import { normalizeDescription } from './description';
-import type { DesignEditableField } from './fields';
+import { designFieldsChanged, type DesignEditableField } from './fields';
 import { DESIGN_NAME_MAX_LENGTH, designNameProblem } from './limits';
+import { normalizeOptionalText } from './optional-text';
+import { SPECIFICATION_FIELDS, type SpecificationField } from './specification-fields';
 
 export { DESIGN_NAME_MAX_LENGTH, designNameProblem } from './limits';
 
@@ -15,6 +16,13 @@ export type Design = {
   description: string | null;
   categoryId: string | null;
   collectionId: string | null;
+  silhouette: string | null;
+  neckline: string | null;
+  sleeveType: string | null;
+  garmentDetails: string | null;
+  sizeRange: string | null;
+  measurements: string | null;
+  constructionNotes: string | null;
   status: DesignStatus;
   createdAt: number;
   updatedAt: number;
@@ -29,7 +37,8 @@ export type CreateDesignInput = { name: string } & Partial<Omit<DesignFields, 'n
 
 /**
  * A partial write: an absent field is left alone, while an explicit null
- * clears the description, Category, or Collection. Status is never editable.
+ * clears an optional one. A Specifications field clears just like description.
+ * Status is never editable.
  */
 export type UpdateDesignInput = Partial<DesignFields>;
 
@@ -56,11 +65,48 @@ const designColumns = {
   description: designs.description,
   categoryId: designs.categoryId,
   collectionId: designs.collectionId,
+  silhouette: designs.silhouette,
+  neckline: designs.neckline,
+  sleeveType: designs.sleeveType,
+  garmentDetails: designs.garmentDetails,
+  sizeRange: designs.sizeRange,
+  measurements: designs.measurements,
+  constructionNotes: designs.constructionNotes,
   status: designs.status,
   createdAt: designs.createdAt,
   updatedAt: designs.updatedAt,
   deletedAt: designs.deletedAt,
 };
+
+/** The seven Specification values, each trimmed; whitespace alone is null. */
+type SpecificationValues = Record<SpecificationField, string | null>;
+
+function normalizeSpecification(
+  input: Partial<Record<SpecificationField, string | null | undefined>>
+): SpecificationValues {
+  const values = {} as SpecificationValues;
+
+  for (const { field } of SPECIFICATION_FIELDS) {
+    values[field] = normalizeOptionalText(input[field]);
+  }
+
+  return values;
+}
+
+/** The Specification values a partial write leaves in the row. */
+function updatedSpecification(
+  current: Design,
+  input: UpdateDesignInput
+): SpecificationValues {
+  const values = {} as SpecificationValues;
+
+  for (const { field } of SPECIFICATION_FIELDS) {
+    values[field] =
+      input[field] === undefined ? current[field] : normalizeOptionalText(input[field]);
+  }
+
+  return values;
+}
 
 function normalizeName(raw: string): string {
   const name = raw.trim();
@@ -72,17 +118,25 @@ function normalizeName(raw: string): string {
 }
 
 /**
- * Lowercased name, description, Category, and Collection, rebuilt on every
- * write. The taxonomy names are read from their tables, so a rename lands in
- * the search text the next time the design is written.
+ * Lowercased name, description, Specification, Category, and Collection,
+ * rebuilt on every write. The taxonomy names are read from their tables, so a
+ * rename lands in the search text the next time the design is written.
  */
 function buildSearchText(
-  name: string,
-  description: string | null,
+  design: DesignFields,
   category: string | null,
   collection: string | null
 ): string {
-  return [name, description, category, collection].filter(Boolean).join(' ').toLowerCase();
+  return [
+    design.name,
+    design.description,
+    ...SPECIFICATION_FIELDS.map(({ field }) => design[field]),
+    category,
+    collection,
+  ]
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase();
 }
 
 /** The names a Design's stored Category and Collection ids resolve to, or null. */
@@ -102,7 +156,8 @@ function designTaxonomyNames(
 /**
  * Writes one Design and returns it. A name is the only required input; a blank,
  * whitespace-only, or over-long name throws before anything is written. The
- * Category and Collection are optional and arrive as the ids the pickers chose.
+ * Category and Collection are optional and arrive as the ids the pickers chose;
+ * the Specification fields are optional text.
  */
 export function createDesign(
   database: Database,
@@ -110,7 +165,7 @@ export function createDesign(
   now: number = Date.now()
 ): Design {
   const name = normalizeName(input.name);
-  const description = normalizeDescription(input.description);
+  const description = normalizeOptionalText(input.description);
   const categoryId = input.categoryId ?? null;
   const collectionId = input.collectionId ?? null;
   const taxonomy = designTaxonomyNames(database, categoryId, collectionId);
@@ -120,6 +175,7 @@ export function createDesign(
     description,
     categoryId,
     collectionId,
+    ...normalizeSpecification(input),
     status: 'concept',
     createdAt: now,
     updatedAt: now,
@@ -130,7 +186,7 @@ export function createDesign(
     .insert(designs)
     .values({
       ...design,
-      searchText: buildSearchText(name, description, taxonomy.category, taxonomy.collection),
+      searchText: buildSearchText(design, taxonomy.category, taxonomy.collection),
     })
     .run();
 
@@ -159,18 +215,13 @@ export function updateDesign(
     description:
       input.description === undefined
         ? current.description
-        : normalizeDescription(input.description),
+        : normalizeOptionalText(input.description),
     categoryId: input.categoryId === undefined ? current.categoryId : input.categoryId,
     collectionId: input.collectionId === undefined ? current.collectionId : input.collectionId,
+    ...updatedSpecification(current, input),
   };
 
-  const changed =
-    next.name !== current.name ||
-    next.description !== current.description ||
-    next.categoryId !== current.categoryId ||
-    next.collectionId !== current.collectionId;
-
-  if (!changed) return current;
+  if (!designFieldsChanged(next, current)) return current;
 
   const taxonomy = designTaxonomyNames(database, next.categoryId, next.collectionId);
 
@@ -182,13 +233,9 @@ export function updateDesign(
       description: next.description,
       categoryId: next.categoryId,
       collectionId: next.collectionId,
+      ...normalizeSpecification(next),
       updatedAt: next.updatedAt,
-      searchText: buildSearchText(
-        next.name,
-        next.description,
-        taxonomy.category,
-        taxonomy.collection
-      ),
+      searchText: buildSearchText(next, taxonomy.category, taxonomy.collection),
     })
     .where(eq(designs.id, id))
     .run();

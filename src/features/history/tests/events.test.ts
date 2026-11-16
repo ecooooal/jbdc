@@ -8,6 +8,13 @@ const BEFORE: DesignFields = {
   description: 'Bias cut',
   categoryId: 'category-dress',
   collectionId: null,
+  silhouette: null,
+  neckline: null,
+  sleeveType: null,
+  garmentDetails: null,
+  sizeRange: null,
+  measurements: null,
+  constructionNotes: null,
 };
 
 describe('diffDesignFields', () => {

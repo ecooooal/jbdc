@@ -64,7 +64,7 @@ test("renaming the Design's Category re-reads Detail", async () => {
 
   await renderDetail(design.id);
 
-  expect(screen.getByText('Dress')).toBeTruthy();
+  expect(screen.getByText('Dress · No collection')).toBeTruthy();
 
   database.db
     .update(categories)
@@ -74,5 +74,44 @@ test("renaming the Design's Category re-reads Detail", async () => {
 
   await act(async () => live.notify('categories'));
 
-  expect(screen.getByText('Knitwear')).toBeTruthy();
+  expect(screen.getByText('Knitwear · No collection')).toBeTruthy();
+});
+
+test('Detail renders the hero and the recorded Specification read-only', async () => {
+  const design = createDesign(database, {
+    name: 'Silk slip dress',
+    description: 'Bias cut, cowl neck.',
+    silhouette: 'Relaxed A-line',
+    measurements: 'Bust 96 / waist 104',
+  });
+
+  await renderDetail(design.id);
+
+  expect(screen.getByText('Silk slip dress')).toBeTruthy();
+  expect(screen.getByText('No category · No collection')).toBeTruthy();
+  expect(screen.getByText('Bias cut, cowl neck.')).toBeTruthy();
+  expect(screen.getByText('Specification')).toBeTruthy();
+  expect(screen.getByText('Relaxed A-line')).toBeTruthy();
+  expect(screen.getByText('Bust 96 / waist 104')).toBeTruthy();
+  expect(screen.getByText('Created')).toBeTruthy();
+});
+
+test('Detail hides Specification rows the owner has not recorded', async () => {
+  const design = createDesign(database, { name: 'Silk slip dress', neckline: 'Boat neck' });
+
+  await renderDetail(design.id);
+
+  expect(screen.getByText('Neckline')).toBeTruthy();
+  expect(screen.queryByText('Silhouette')).toBeNull();
+  expect(screen.queryByText('Measurements')).toBeNull();
+  expect(screen.queryByText('Not set')).toBeNull();
+});
+
+test('a design that has recorded nothing shows no tab content', async () => {
+  const design = createDesign(database, { name: 'Unfinished idea' });
+
+  await renderDetail(design.id);
+
+  expect(screen.getByText('Nothing recorded yet')).toBeTruthy();
+  expect(screen.queryByText('Specification')).toBeNull();
 });

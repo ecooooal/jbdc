@@ -1,7 +1,7 @@
 import { router } from 'expo-router';
 import { ChevronLeft } from 'lucide-react-native';
 import { useEffect } from 'react';
-import { AppState, View } from 'react-native';
+import { AppState, Pressable, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { useDatabase } from '@/features/database/react';
@@ -17,18 +17,26 @@ import { useTaxonomy } from '@/features/taxonomy/react';
 import { Button } from '@/shared/components/ui/button';
 import { Icon } from '@/shared/components/ui/icon';
 import { Input } from '@/shared/components/ui/input';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/tabs';
 import { Text } from '@/shared/components/ui/text';
+import type { DesignTextEditableField } from '../lib/fields';
+import type { EditDesignTarget } from '../lib/edit-design-reducer';
+import type { SpecificationField } from '../lib/specification-fields';
 import { useDesignDetail } from '../lib/use-design-detail';
 import { useEditSession } from '../lib/use-edit-session';
+import { DesignImageStrip } from './design-image-strip';
 import { DesignStatusBadge } from './design-status-badge';
 import { FormField } from './form-field';
+import { SpecificationRows } from './specification-rows';
 import { TaxonomySelect } from './taxonomy-select';
 
 /**
- * Edit for one Design. Every section writes itself the moment it is committed,
- * so there is no Save button, toast, or confirmation: the owner changes a
- * field, leaves it, and the row is already stored. Status is shown, not
- * editable. Detail and the Library follow through their live reads.
+ * Edit for one Design. The hero holds the image strip and identity, which the
+ * owner edits least; the Specification tab holds the technical rows. Every
+ * row writes itself when it is left, so there is no Save button, toast, or
+ * confirmation: the owner changes a field, leaves it, and the row is already
+ * stored. Status is shown, not editable. Detail and the Library follow through
+ * their live reads.
  */
 export function EditDesignScreen({ designId }: { designId: string }) {
   const database = useDatabase();
@@ -64,9 +72,12 @@ export function EditDesignScreen({ designId }: { designId: string }) {
     };
   }, [send]);
 
-  const selectedCategory = categories.find((category) => category.id === state.categoryId) ?? null;
+  const selectedCategory = categories.find((category) => category.id === state.draft.categoryId) ?? null;
   const selectedCollection =
-    collections.find((collection) => collection.id === state.collectionId) ?? null;
+    collections.find((collection) => collection.id === state.draft.collectionId) ?? null;
+  const taxonomySummary = `${selectedCategory?.name ?? 'No category'} · ${
+    selectedCollection ? taxonomyLabel(selectedCollection) : 'No collection'
+  }`;
 
   function commit(field: DesignEditableField, patch: UpdateDesignInput): void {
     try {
@@ -85,22 +96,35 @@ export function EditDesignScreen({ designId }: { designId: string }) {
     }
   }
 
-  function commitName(): void {
-    commit('name', { name: state.name });
+  /** Leaves a text row: what is on screen is what the row should hold. */
+  function commitText(field: DesignTextEditableField): void {
+    commit(field, { [field]: state.draft[field] } as UpdateDesignInput);
   }
 
-  function commitDescription(): void {
-    commit('description', { description: state.description });
+  function changeText(field: DesignTextEditableField, value: string): void {
+    send({ type: 'text-changed', field, value });
+  }
+
+  function openRow(target: EditDesignTarget): void {
+    send({ type: 'row-opened', target, now: Date.now() });
+  }
+
+  function closeRow(): void {
+    send({ type: 'row-closed' });
   }
 
   function chooseCategory(categoryId: string | null): void {
-    send({ type: 'category-chosen', categoryId });
+    send({ type: 'choice-chosen', field: 'categoryId', value: categoryId });
     commit('categoryId', { categoryId });
   }
 
   function chooseCollection(collectionId: string | null): void {
-    send({ type: 'collection-chosen', collectionId });
+    send({ type: 'choice-chosen', field: 'collectionId', value: collectionId });
     commit('collectionId', { collectionId });
+  }
+
+  function commitSpecification(field: SpecificationField): void {
+    commitText(field);
   }
 
   function fieldError(field: DesignEditableField) {
@@ -136,77 +160,137 @@ export function EditDesignScreen({ designId }: { designId: string }) {
           style={{ flex: 1 }}
           bottomOffset={24}
           contentContainerStyle={{
-            gap: 24,
+            gap: 20,
             paddingHorizontal: 24,
             paddingTop: 8,
             paddingBottom: 48,
           }}
           keyboardShouldPersistTaps="handled"
         >
-          <View className="gap-1">
-            <Text variant="h3">Edit design</Text>
-            <Text variant="muted">Changes are kept as you make them.</Text>
+          <DesignImageStrip />
+
+          <View className="gap-3">
+            {state.editing === 'name' ? (
+              <View className="gap-2">
+                <Input
+                  value={state.draft.name}
+                  onChangeText={(value) => changeText('name', value)}
+                  onBlur={() => commitText('name')}
+                  onSubmitEditing={() => commitText('name')}
+                  returnKeyType="done"
+                  maxLength={DESIGN_NAME_MAX_LENGTH}
+                  autoFocus
+                  accessibilityLabel="Design name"
+                />
+                {fieldError('name')}
+              </View>
+            ) : (
+              <Pressable
+                onPress={() => openRow('name')}
+                accessibilityRole="button"
+                accessibilityLabel="Design name"
+              >
+                <Text variant="h3">{state.draft.name}</Text>
+              </Pressable>
+            )}
+
+            <View className="flex-row items-center gap-2">
+              <DesignStatusBadge status={design.status} />
+              <Pressable
+                className="flex-1"
+                onPress={() => openRow('taxonomy')}
+                accessibilityRole="button"
+                accessibilityLabel="Category and collection"
+              >
+                <Text variant="muted">{taxonomySummary}</Text>
+              </Pressable>
+            </View>
+
+            {state.editing === 'taxonomy' ? (
+              <View className="border-border gap-3 rounded-xl border p-3">
+                <FormField label="Category">
+                  <TaxonomySelect
+                    label="Category"
+                    placeholder="No category"
+                    value={selectedCategory}
+                    items={categories}
+                    disabled={taxonomyStatus !== 'ready'}
+                    onSelect={(category) => chooseCategory(category?.id ?? null)}
+                  />
+                  {fieldError('categoryId')}
+                </FormField>
+                <FormField label="Collection">
+                  <TaxonomySelect
+                    label="Collection"
+                    placeholder="No collection"
+                    value={selectedCollection}
+                    items={collections}
+                    disabled={taxonomyStatus !== 'ready'}
+                    itemLabel={taxonomyLabel}
+                    onSelect={(collection) => chooseCollection(collection?.id ?? null)}
+                  />
+                  {fieldError('collectionId')}
+                </FormField>
+                <Button size="sm" variant="ghost" className="self-end" onPress={closeRow}>
+                  <Text>Done</Text>
+                </Button>
+              </View>
+            ) : null}
+
+            {state.editing === 'description' ? (
+              <View className="gap-2">
+                <Input
+                  value={state.draft.description}
+                  onChangeText={(value) => changeText('description', value)}
+                  onBlur={() => commitText('description')}
+                  multiline
+                  autoFocus
+                  textAlignVertical="top"
+                  className="h-28 py-2"
+                  placeholder="What this piece is"
+                  accessibilityLabel="Description"
+                />
+                {fieldError('description')}
+              </View>
+            ) : (
+              <Pressable
+                onPress={() => openRow('description')}
+                accessibilityRole="button"
+                accessibilityLabel="Description"
+              >
+                {state.draft.description ? (
+                  <Text variant="muted" className="text-base leading-6">
+                    {state.draft.description}
+                  </Text>
+                ) : (
+                  <Text variant="muted">No description</Text>
+                )}
+              </Pressable>
+            )}
           </View>
 
           {taxonomyError ? (
             <Text className="text-destructive text-sm">{taxonomyError.message}</Text>
           ) : null}
 
-          <FormField label="Name">
-            <Input
-              value={state.name}
-              onChangeText={(name) => send({ type: 'name-changed', name })}
-              onBlur={commitName}
-              onSubmitEditing={commitName}
-              returnKeyType="done"
-              maxLength={DESIGN_NAME_MAX_LENGTH}
-              accessibilityLabel="Design name"
-            />
-            {fieldError('name')}
-          </FormField>
-
-          <FormField label="Description">
-            <Input
-              value={state.description}
-              onChangeText={(description) => send({ type: 'description-changed', description })}
-              onBlur={commitDescription}
-              multiline
-              textAlignVertical="top"
-              className="h-28 py-2"
-              accessibilityLabel="Design description"
-            />
-            {fieldError('description')}
-          </FormField>
-
-          <View className="border-border flex-row items-center justify-between gap-4 rounded-xl border px-4 py-3">
-            <Text variant="muted">Status</Text>
-            <DesignStatusBadge status={design.status} />
-          </View>
-
-          <FormField label="Category">
-            <TaxonomySelect
-              label="Category"
-              placeholder="No category"
-              value={selectedCategory}
-              items={categories}
-              disabled={taxonomyStatus !== 'ready'}
-              onSelect={(category) => chooseCategory(category?.id ?? null)}
-            />
-            {fieldError('categoryId')}
-          </FormField>
-
-          <FormField label="Collection">
-            <TaxonomySelect
-              label="Collection"
-              placeholder="No collection"
-              value={selectedCollection}
-              items={collections}
-              disabled={taxonomyStatus !== 'ready'}
-              itemLabel={taxonomyLabel}
-              onSelect={(collection) => chooseCollection(collection?.id ?? null)}
-            />
-            {fieldError('collectionId')}
-          </FormField>
+          {/* One tab until Creative direction lands (#26); the shape stays final. */}
+          <Tabs value="specification" onValueChange={() => {}}>
+            <TabsList>
+              <TabsTrigger value="specification">
+                <Text>Specification</Text>
+              </TabsTrigger>
+            </TabsList>
+            <TabsContent value="specification">
+              <SpecificationRows
+                draft={state.draft}
+                editing={state.editing}
+                error={state.error}
+                onOpen={openRow}
+                onChange={changeText}
+                onCommit={commitSpecification}
+              />
+            </TabsContent>
+          </Tabs>
         </KeyboardAwareScrollView>
       )}
     </SafeAreaView>
