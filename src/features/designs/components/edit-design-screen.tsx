@@ -22,6 +22,7 @@ import { useDesignDetail } from '../lib/use-design-detail';
 import { useEditSession } from '../lib/use-edit-session';
 import { DesignStatusBadge } from './design-status-badge';
 import { FormField } from './form-field';
+import { PrototypeEditVariants, prototypeVariantFrom } from './prototype-edit/prototype-edit-variants';
 import { TaxonomySelect } from './taxonomy-select';
 
 /**
@@ -30,12 +31,20 @@ import { TaxonomySelect } from './taxonomy-select';
  * field, leaves it, and the row is already stored. Status is shown, not
  * editable. Detail and the Library follow through their live reads.
  */
-export function EditDesignScreen({ designId }: { designId: string }) {
+export function EditDesignScreen({
+  designId,
+  variant,
+}: {
+  designId: string;
+  /** PROTOTYPE: read from the route by the screen file, never by this screen (#7). */
+  variant?: string | string[];
+}) {
   const database = useDatabase();
   const { design, error: readError, status: readStatus } = useDesignDetail(designId);
   const { categories, collections, error: taxonomyError, status: taxonomyStatus } =
     useTaxonomy();
   const [state, send] = useEditSession(designId);
+  const prototypeVariant = __DEV__ ? prototypeVariantFrom(variant) : null;
 
   useEffect(() => {
     if (!design) return;
@@ -109,6 +118,18 @@ export function EditDesignScreen({ designId }: { designId: string }) {
     return <Text className="text-destructive text-sm">{state.error.message}</Text>;
   }
 
+  /** PROTOTYPE: the throwaway variants for #7. Delete with the prototype. */
+  if (prototypeVariant && design) {
+    return (
+      <PrototypeEditVariants
+        variant={prototypeVariant}
+        design={design}
+        categories={categories}
+        collections={collections}
+      />
+    );
+  }
+
   return (
     <SafeAreaView style={{ flex: 1 }} className="bg-background" edges={['top', 'left', 'right']}>
       <View className="flex-row items-center px-4 pt-2">
@@ -120,6 +141,23 @@ export function EditDesignScreen({ designId }: { designId: string }) {
         >
           <Icon as={ChevronLeft} />
         </Button>
+        {/* PROTOTYPE: enters the throwaway variants for #7. Delete with them. */}
+        {__DEV__ ? (
+          <Button
+            size="sm"
+            variant="outline"
+            className="ml-auto"
+            accessibilityLabel="Open layout variants"
+            onPress={() =>
+              router.push({
+                pathname: '/designs/[id]/edit',
+                params: { id: designId, variant: 'A' },
+              })
+            }
+          >
+            <Text>Variants</Text>
+          </Button>
+        ) : null}
       </View>
 
       {readError ? (
