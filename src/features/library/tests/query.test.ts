@@ -1,5 +1,11 @@
 import { randomUUID } from 'node:crypto';
-import { categories, collections, designs, type DesignStatus } from '@/features/database';
+import {
+  categories,
+  collections,
+  DESIGN_STATUSES,
+  designs,
+  type DesignStatus,
+} from '@/features/database';
 import { createTempDatabase } from '@/features/database/testing';
 import { listLibraryDesigns } from '@/features/library';
 
@@ -58,6 +64,17 @@ describe('library query', () => {
     expect(listLibraryDesigns(database).map((design) => design.name)).toEqual([
       'Still in development',
     ]);
+  });
+
+  test('includes exactly the Statuses that are neither Rejected nor Archived', () => {
+    for (const status of DESIGN_STATUSES) insertDesign(status, { status });
+
+    const statuses = listLibraryDesigns(database).map((design) => design.status);
+    const shown = DESIGN_STATUSES.filter(
+      (status) => status !== 'rejected' && status !== 'archived'
+    );
+
+    expect([...statuses].sort()).toEqual([...shown].sort());
   });
 
   test('includes active statuses, most recently updated first', () => {

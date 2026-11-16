@@ -1,15 +1,18 @@
 import { and, desc, inArray, isNull } from 'drizzle-orm';
-import type { Database, DesignStatus } from '@/features/database';
-import { designs } from '@/features/database';
+import { DESIGN_STATUSES, designs, type Database, type DesignStatus } from '@/features/database';
 import { readTaxonomyNames } from '@/features/taxonomy';
 
+/**
+ * The two Statuses the default Library hides. Every other Status in the schema
+ * is shown, so a Status added to `DESIGN_STATUSES` joins the Library without an
+ * edit here.
+ */
+const HIDDEN_LIBRARY_STATUSES: readonly DesignStatus[] = ['rejected', 'archived'];
+
 /** The statuses the Library shows before any filter is chosen. */
-export const DEFAULT_LIBRARY_STATUSES: readonly DesignStatus[] = [
-  'concept',
-  'in_development',
-  'approved',
-  'produced',
-];
+export const DEFAULT_LIBRARY_STATUSES: readonly DesignStatus[] = DESIGN_STATUSES.filter(
+  (status) => !HIDDEN_LIBRARY_STATUSES.includes(status)
+);
 
 export type LibraryDesign = {
   id: string;

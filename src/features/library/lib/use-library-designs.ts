@@ -10,7 +10,7 @@ import { listLibraryDesigns, type LibraryDesign } from './query';
 export type LibraryDesigns = {
   designs: LibraryDesign[];
   error: Error | undefined;
-  /** `loading` until the first read resolves, so an empty catalog is not shown early. */
+  /** `loading` until the first read resolves, so an empty library is not shown early. */
   status: LiveReadStatus;
 };
 

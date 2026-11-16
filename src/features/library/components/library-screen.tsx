@@ -76,7 +76,7 @@ export function LibraryScreen() {
         {status === 'loading' ? null : isEmpty ? (
           <View className="flex-1 items-center justify-center gap-5 pb-16">
             <View className="items-center gap-2">
-              <Text variant="h4">The catalog is empty</Text>
+              <Text variant="h4">The library is empty</Text>
               <Text variant="muted" className="text-center">
                 Designs you add will appear here.
               </Text>
