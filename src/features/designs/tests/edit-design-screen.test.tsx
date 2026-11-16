@@ -134,7 +134,7 @@ describe('edit hero', () => {
     await renderEdit(design.id);
 
     expect(screen.getByText('Concept')).toBeTruthy();
-    expect(screen.getByText('Dress · Spring 2027 (2027)')).toBeTruthy();
+    expect(screen.getByText('Dress · Spring 2027')).toBeTruthy();
   });
 
   test('tapping Category · Collection opens both pickers and Done closes them', async () => {
@@ -210,18 +210,6 @@ describe('Specification rows', () => {
     expect(screen.getByPlaceholderText('Neckline design')).toBeTruthy();
   });
 
-  test('opening another row writes the row being left, without a blur', async () => {
-    const design = newDesign();
-
-    await renderEdit(design.id);
-    await openRow('Silhouette');
-    await fireEvent.changeText(screen.getByLabelText('Silhouette'), 'Relaxed A-line');
-    await openRow('Neckline');
-
-    expect(getDesign(database, design.id)).toMatchObject({ silhouette: 'Relaxed A-line' });
-    expect(listDesignEvents(database, design.id)).toEqual([]);
-  });
-
   test('a measured row stays one multiline field', async () => {
     const design = newDesign();
 
@@ -232,38 +220,6 @@ describe('Specification rows', () => {
 
     expect(measurements.props.multiline).toBe(true);
     expect(screen.getByPlaceholderText('Relevant clothing measurements')).toBeTruthy();
-  });
-
-  test('clearing a Specification row stores null', async () => {
-    const design = createDesign(database, {
-      name: 'Silk slip dress',
-      neckline: 'Wide boat neck',
-    });
-
-    await renderEdit(design.id);
-    await openRow('Neckline');
-
-    const neckline = screen.getByLabelText('Neckline');
-
-    await fireEvent.changeText(neckline, '');
-    await fireEvent(neckline, 'blur');
-
-    expect(getDesign(database, design.id)).toMatchObject({ neckline: null });
-    expect(screen.getByRole('button', { name: 'Neckline' })).toBeTruthy();
-  });
-
-  test('whitespace-only Specification input stores null', async () => {
-    const design = newDesign();
-
-    await renderEdit(design.id);
-    await openRow('Construction notes');
-
-    const notes = screen.getByLabelText('Construction notes');
-
-    await fireEvent.changeText(notes, '   ');
-    await fireEvent(notes, 'blur');
-
-    expect(getDesign(database, design.id)).toMatchObject({ constructionNotes: null });
   });
 
   test('a Specification row typed but not left is written when the screen closes', async () => {

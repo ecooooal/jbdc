@@ -137,10 +137,10 @@ describe('edit design reducer', () => {
   test('one row is open at a time', () => {
     const tester = session();
 
-    tester.send({ type: 'row-opened', target: 'silhouette', now: NOW });
+    tester.send({ type: 'row-opened', row: 'silhouette', now: NOW });
     expect(tester.getState().editing).toBe('silhouette');
 
-    tester.send({ type: 'row-opened', target: 'neckline', now: NOW });
+    tester.send({ type: 'row-opened', row: 'neckline', now: NOW });
     expect(tester.getState().editing).toBe('neckline');
 
     tester.send({ type: 'row-closed' });
@@ -150,9 +150,9 @@ describe('edit design reducer', () => {
   test('opening another row writes the draft the owner is leaving', () => {
     const tester = session();
 
-    tester.send({ type: 'row-opened', target: 'silhouette', now: NOW });
+    tester.send({ type: 'row-opened', row: 'silhouette', now: NOW });
     tester.send({ type: 'text-changed', field: 'silhouette', value: '  Relaxed A-line  ' });
-    tester.send({ type: 'row-opened', target: 'neckline', now: LATER });
+    tester.send({ type: 'row-opened', row: 'neckline', now: LATER });
 
     expect(tester.getEffects()).toEqual([
       {
@@ -163,6 +163,30 @@ describe('edit design reducer', () => {
       },
     ]);
     expect(tester.getState().editing).toBe('neckline');
+  });
+
+  test('leaving a name row with a blank draft restores the saved name', () => {
+    const tester = session();
+
+    tester.send({ type: 'row-opened', row: 'name', now: NOW });
+    tester.send({ type: 'text-changed', field: 'name', value: '   ' });
+    tester.send({ type: 'row-opened', row: 'description', now: LATER });
+
+    expect(tester.getEffects()).toEqual([]);
+    expect(tester.getState()).toMatchObject({
+      draft: { name: 'Silk slip dress' },
+      editing: 'description',
+    });
+  });
+
+  test('opening another row clears the refusal of the row being left', () => {
+    const tester = session();
+
+    tester.send({ type: 'row-opened', row: 'name', now: NOW });
+    tester.send({ type: 'field-refused', field: 'name', message: 'A design needs a name.' });
+    tester.send({ type: 'row-opened', row: 'description', now: LATER });
+
+    expect(tester.getState().error).toBeNull();
   });
 
   test('a saved name is trimmed and becomes the value a refusal restores', () => {
@@ -258,7 +282,7 @@ describe('edit design reducer', () => {
   test('a saved Specification row becomes its stored value and collapses', () => {
     const tester = session();
 
-    tester.send({ type: 'row-opened', target: 'silhouette', now: NOW });
+    tester.send({ type: 'row-opened', row: 'silhouette', now: NOW });
     tester.send({ type: 'text-changed', field: 'silhouette', value: '  Relaxed A-line  ' });
     tester.send({
       type: 'field-saved',
@@ -276,8 +300,8 @@ describe('edit design reducer', () => {
   test('saving a row that has since closed does not collapse the open one', () => {
     const tester = session();
 
-    tester.send({ type: 'row-opened', target: 'silhouette', now: NOW });
-    tester.send({ type: 'row-opened', target: 'neckline', now: NOW });
+    tester.send({ type: 'row-opened', row: 'silhouette', now: NOW });
+    tester.send({ type: 'row-opened', row: 'neckline', now: NOW });
     tester.send({
       type: 'field-saved',
       field: 'silhouette',

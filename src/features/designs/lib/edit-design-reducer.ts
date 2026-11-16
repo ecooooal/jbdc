@@ -36,17 +36,17 @@ export type EditDesignState = {
   /** The row at open: what the visit's one Event is diffed against. */
   sessionStart: DesignFields | null;
   /** The one row whose editor is open. `taxonomy` is the Category · Collection pair. */
-  editing: EditDesignTarget | null;
+  editing: EditDesignRow | null;
   error: { field: DesignEditableField; message: string } | null;
 };
 
-export type EditDesignTarget = DesignEditableField | 'taxonomy';
+export type EditDesignRow = DesignEditableField | 'taxonomy';
 
 export type EditDesignEvent =
   | { type: 'design-loaded'; design: DesignFields }
   | { type: 'text-changed'; field: DesignTextEditableField; value: string }
   | { type: 'choice-chosen'; field: DesignChoiceEditableField; value: string | null }
-  | { type: 'row-opened'; target: EditDesignTarget; now: number }
+  | { type: 'row-opened'; row: EditDesignRow; now: number }
   | { type: 'row-closed' }
   | { type: 'field-saved'; field: DesignEditableField; design: DesignFields }
   | { type: 'drafts-written'; design: DesignFields }
@@ -214,16 +214,23 @@ export function editDesignReducer(
         error: clearedError(state.error, event.field),
       });
     case 'row-opened': {
-      const opened = { ...state, editing: event.target };
       const leaving = state.editing;
       const leavingTextRow =
-        leaving !== null && leaving !== event.target && leaving !== 'taxonomy' && !isChoiceField(leaving);
+        leaving !== null && leaving !== event.row && leaving !== 'taxonomy' && !isChoiceField(leaving);
+      const invalidName =
+        leaving === 'name' && designNameProblem(state.draft.name) !== null;
+      const opened = {
+        ...state,
+        draft: invalidName ? { ...state.draft, name: state.saved.name } : state.draft,
+        error: state.error?.field === leaving ? null : state.error,
+        editing: event.row,
+      };
 
       if (!leavingTextRow) return only(opened);
 
       // A row unmounted on iOS does not reliably fire blur, so opening another
       // row writes the one being left. The visit still records one Event.
-      const patch = unwrittenFields(state);
+      const patch = unwrittenFields(opened);
 
       if (!patch) return only(opened);
 
@@ -239,11 +246,7 @@ export function editDesignReducer(
         ...state,
         draft: draftsAfterSave(state.draft, event.field, event.design),
         saved: event.design,
-        editing: isChoiceField(event.field)
-          ? state.editing
-          : state.editing === event.field
-            ? null
-            : state.editing,
+        editing: state.editing === event.field ? null : state.editing,
         error: clearedError(state.error, event.field),
       });
     case 'drafts-written':

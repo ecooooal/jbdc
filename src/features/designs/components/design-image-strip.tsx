@@ -10,8 +10,7 @@ export function DesignImageStrip() {
       {[0, 1, 2].map((index) => (
         <View
           key={index}
-          style={{ borderStyle: 'dashed' }}
-          className="border-border h-24 flex-1 rounded-lg border"
+          className="border-border h-24 flex-1 rounded-lg border border-dashed"
         />
       ))}
     </View>

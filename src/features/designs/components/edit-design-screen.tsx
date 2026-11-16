@@ -20,8 +20,7 @@ import { Input } from '@/shared/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/tabs';
 import { Text } from '@/shared/components/ui/text';
 import type { DesignTextEditableField } from '../lib/fields';
-import type { EditDesignTarget } from '../lib/edit-design-reducer';
-import type { SpecificationField } from '../lib/specification-fields';
+import type { EditDesignRow } from '../lib/edit-design-reducer';
 import { useDesignDetail } from '../lib/use-design-detail';
 import { useEditSession } from '../lib/use-edit-session';
 import { DesignImageStrip } from './design-image-strip';
@@ -76,7 +75,7 @@ export function EditDesignScreen({ designId }: { designId: string }) {
   const selectedCollection =
     collections.find((collection) => collection.id === state.draft.collectionId) ?? null;
   const taxonomySummary = `${selectedCategory?.name ?? 'No category'} · ${
-    selectedCollection ? taxonomyLabel(selectedCollection) : 'No collection'
+    selectedCollection?.name ?? 'No collection'
   }`;
 
   function commit(field: DesignEditableField, patch: UpdateDesignInput): void {
@@ -105,8 +104,8 @@ export function EditDesignScreen({ designId }: { designId: string }) {
     send({ type: 'text-changed', field, value });
   }
 
-  function openRow(target: EditDesignTarget): void {
-    send({ type: 'row-opened', target, now: Date.now() });
+  function openRow(row: EditDesignRow): void {
+    send({ type: 'row-opened', row, now: Date.now() });
   }
 
   function closeRow(): void {
@@ -121,10 +120,6 @@ export function EditDesignScreen({ designId }: { designId: string }) {
   function chooseCollection(collectionId: string | null): void {
     send({ type: 'choice-chosen', field: 'collectionId', value: collectionId });
     commit('collectionId', { collectionId });
-  }
-
-  function commitSpecification(field: SpecificationField): void {
-    commitText(field);
   }
 
   function fieldError(field: DesignEditableField) {
@@ -287,7 +282,7 @@ export function EditDesignScreen({ designId }: { designId: string }) {
                 error={state.error}
                 onOpen={openRow}
                 onChange={changeText}
-                onCommit={commitSpecification}
+                onCommit={commitText}
               />
             </TabsContent>
           </Tabs>

@@ -81,28 +81,21 @@ const designColumns = {
 /** The seven Specification values, each trimmed; whitespace alone is null. */
 type SpecificationValues = Record<SpecificationField, string | null>;
 
-function normalizeSpecification(
+/**
+ * The seven Specification values a write would store. An absent field keeps the
+ * current value; null or whitespace clears it.
+ */
+function specificationValues(
+  current: Design | null,
   input: Partial<Record<SpecificationField, string | null | undefined>>
 ): SpecificationValues {
   const values = {} as SpecificationValues;
 
   for (const { field } of SPECIFICATION_FIELDS) {
-    values[field] = normalizeOptionalText(input[field]);
-  }
-
-  return values;
-}
-
-/** The Specification values a partial write leaves in the row. */
-function updatedSpecification(
-  current: Design,
-  input: UpdateDesignInput
-): SpecificationValues {
-  const values = {} as SpecificationValues;
-
-  for (const { field } of SPECIFICATION_FIELDS) {
     values[field] =
-      input[field] === undefined ? current[field] : normalizeOptionalText(input[field]);
+      input[field] === undefined
+        ? (current?.[field] ?? null)
+        : normalizeOptionalText(input[field]);
   }
 
   return values;
@@ -175,7 +168,7 @@ export function createDesign(
     description,
     categoryId,
     collectionId,
-    ...normalizeSpecification(input),
+    ...specificationValues(null, input),
     status: 'concept',
     createdAt: now,
     updatedAt: now,
@@ -209,6 +202,7 @@ export function updateDesign(
   const current = getDesign(database, id);
   if (!current) return null;
 
+  const specification = specificationValues(current, input);
   const next: Design = {
     ...current,
     name: input.name === undefined ? current.name : normalizeName(input.name),
@@ -218,7 +212,7 @@ export function updateDesign(
         : normalizeOptionalText(input.description),
     categoryId: input.categoryId === undefined ? current.categoryId : input.categoryId,
     collectionId: input.collectionId === undefined ? current.collectionId : input.collectionId,
-    ...updatedSpecification(current, input),
+    ...specification,
   };
 
   if (!designFieldsChanged(next, current)) return current;
@@ -233,7 +227,7 @@ export function updateDesign(
       description: next.description,
       categoryId: next.categoryId,
       collectionId: next.collectionId,
-      ...normalizeSpecification(next),
+      ...specification,
       updatedAt: next.updatedAt,
       searchText: buildSearchText(next, taxonomy.category, taxonomy.collection),
     })

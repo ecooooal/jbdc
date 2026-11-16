@@ -61,7 +61,8 @@ describe('database migrations', () => {
     );
   });
 
-  test('accepts the full status vocabulary and rejects anything else', () => {    for (const [index, status] of DESIGN_STATUSES.entries()) {
+  test('accepts the full status vocabulary and rejects anything else', () => {
+    for (const [index, status] of DESIGN_STATUSES.entries()) {
       expect(() =>
         database.db
           .insert(designs)
