@@ -1,17 +1,9 @@
 /**
  * History — the append-only Events kept for one Design. It owns the edit diff
- * format (`{ field: { from, to } }`, null meaning empty) and the read order.
- * It holds no session state: the Edit screen owns the snapshot (ADR-0004).
+ * format (`{ field: { from, to } }`, null meaning empty), the one call that
+ * records a session's changes, and the read order. The editable field set is
+ * the Design's (`DESIGN_EDITABLE_FIELDS`); History iterates it. History holds
+ * no session state: the Edit screen owns the snapshot (ADR-0004).
  */
-export {
-  appendEditEvent,
-  diffDesignFields,
-  listDesignEvents,
-} from './lib/events';
-export type {
-  DesignEditDiff,
-  DesignEditableField,
-  DesignEvent,
-  DesignFieldChange,
-  DesignFieldValues,
-} from './lib/events';
+export { diffDesignFields, listDesignEvents, recordEdit } from './lib/events';
+export type { DesignEditDiff, DesignEvent, DesignFieldChange } from './lib/events';

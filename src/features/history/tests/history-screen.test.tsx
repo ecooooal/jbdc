@@ -2,8 +2,8 @@ import { render, screen } from '@testing-library/react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { DatabaseProvider, type LiveQuery } from '@/features/database/react';
 import { createTempDatabase } from '@/features/database/testing';
-import { createDesign } from '@/features/designs';
-import { appendEditEvent } from '@/features/history';
+import { createDesign, type DesignFields } from '@/features/designs';
+import { recordEdit } from '@/features/history';
 import { HistoryScreen } from '@/features/history/react';
 import { createCategory } from '@/features/taxonomy';
 
@@ -19,6 +19,17 @@ const syncLiveQuery = ((query: { all(): unknown[] }) => ({
   error: undefined,
   updatedAt: new Date(0),
 })) as unknown as LiveQuery;
+
+/** The fields of a Design before an edit; overrides say what changed. */
+function fields(overrides: Partial<DesignFields> = {}): DesignFields {
+  return {
+    name: 'Silk slip dress',
+    description: null,
+    categoryId: null,
+    collectionId: null,
+    ...overrides,
+  };
+}
 
 let database: ReturnType<typeof createTempDatabase>['database'];
 let dispose: () => void;
@@ -44,13 +55,11 @@ async function renderHistory(designId: string) {
 test('shows what changed, the old value, the new value, and when', async () => {
   const design = createDesign(database, { name: 'Silk slip dress' }, 10);
 
-  appendEditEvent(
+  recordEdit(
     database,
     design.id,
-    {
-      name: { from: 'Silk slip dress', to: 'Wool coat' },
-      description: { from: null, to: 'Heavy twill' },
-    },
+    fields(),
+    fields({ name: 'Wool coat', description: 'Heavy twill' }),
     Date.UTC(2025, 0, 2, 3, 4)
   );
 
@@ -67,10 +76,11 @@ test('shows the names of the Categories a session changed', async () => {
   const knitwear = createCategory(database, { name: 'Knitwear' });
   const design = createDesign(database, { name: 'Silk slip dress' }, 10);
 
-  appendEditEvent(
+  recordEdit(
     database,
     design.id,
-    { categoryId: { from: dress.id, to: knitwear.id } },
+    fields({ categoryId: dress.id }),
+    fields({ categoryId: knitwear.id }),
     Date.UTC(2025, 0, 2, 3, 4)
   );
 
@@ -83,10 +93,11 @@ test('a cleared Category reads as empty', async () => {
   const dress = createCategory(database, { name: 'Dress' });
   const design = createDesign(database, { name: 'Silk slip dress' }, 10);
 
-  appendEditEvent(
+  recordEdit(
     database,
     design.id,
-    { categoryId: { from: dress.id, to: null } },
+    fields({ categoryId: dress.id }),
+    fields(),
     Date.UTC(2025, 0, 2, 3, 4)
   );
 

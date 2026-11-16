@@ -1,24 +1,11 @@
 import { desc, eq, sql } from 'drizzle-orm';
 import type { Database, DesignEventKind } from '@/features/database';
 import { designEvents } from '@/features/database';
-
-/** The Design fields an edit session can change. Status and Images are not here. */
-export const DESIGN_EDITABLE_FIELDS = [
-  'name',
-  'description',
-  'categoryId',
-  'collectionId',
-] as const;
-
-export type DesignEditableField = (typeof DESIGN_EDITABLE_FIELDS)[number];
-
-/** The editable fields of a Design as the row holds them. Null means empty. */
-export type DesignFieldValues = {
-  name: string;
-  description: string | null;
-  categoryId: string | null;
-  collectionId: string | null;
-};
+import {
+  DESIGN_EDITABLE_FIELDS,
+  type DesignEditableField,
+  type DesignFields,
+} from '@/features/designs';
 
 /** What one field was before an edit and what it became. Null means empty. */
 export type DesignFieldChange = {
@@ -51,8 +38,8 @@ type DesignEventRow = Omit<DesignEvent, 'diff'> & {
  * coalescing is tested without a screen or a database (ADR-0004).
  */
 export function diffDesignFields(
-  before: DesignFieldValues,
-  after: DesignFieldValues
+  before: DesignFields,
+  after: DesignFields
 ): DesignEditDiff | null {
   const diff: DesignEditDiff = {};
 
@@ -98,17 +85,21 @@ export function designEventsQuery(database: Database, designId: string) {
 }
 
 /**
- * Appends one edit Event for a session. An empty diff is not a session worth
- * recording, so nothing is written and null is returned. Written once, never
- * updated: a later session appends another Event.
+ * Records one edit session: diffs the fields before and after, then appends a
+ * single Event when anything changed. A session that changed nothing writes
+ * nothing and returns null. Written once, never updated: a later session
+ * appends another Event.
  */
-export function appendEditEvent(
+export function recordEdit(
   database: Database,
   designId: string,
-  diff: DesignEditDiff,
+  before: DesignFields,
+  after: DesignFields,
   now: number = Date.now()
 ): DesignEvent | null {
-  if (Object.keys(diff).length === 0) return null;
+  const diff = diffDesignFields(before, after);
+
+  if (!diff) return null;
 
   const event: DesignEvent = {
     id: database.newId(),

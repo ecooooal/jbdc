@@ -1,13 +1,9 @@
 import { createTempDatabase } from '@/features/database/testing';
+import type { DesignFields } from '@/features/designs';
 import { createDesign } from '@/features/designs';
-import {
-  appendEditEvent,
-  diffDesignFields,
-  listDesignEvents,
-  type DesignFieldValues,
-} from '@/features/history';
+import { diffDesignFields, listDesignEvents, recordEdit } from '@/features/history';
 
-const BEFORE: DesignFieldValues = {
+const BEFORE: DesignFields = {
   name: 'Silk slip dress',
   description: 'Bias cut',
   categoryId: 'category-dress',
@@ -45,7 +41,7 @@ describe('diffDesignFields', () => {
   });
 });
 
-describe('design events', () => {
+describe('recordEdit', () => {
   let database: ReturnType<typeof createTempDatabase>['database'];
   let dispose: () => void;
 
@@ -59,12 +55,14 @@ describe('design events', () => {
 
   test('an edit session appends one event whose diff reads as an object', () => {
     const design = createDesign(database, { name: 'Silk slip dress' }, 10);
-    const diff = diffDesignFields(
-      BEFORE,
-      { ...BEFORE, name: 'Wool coat', collectionId: 'collection-spring' }
-    );
 
-    const event = appendEditEvent(database, design.id, diff ?? {}, 20);
+    const event = recordEdit(
+      database,
+      design.id,
+      BEFORE,
+      { ...BEFORE, name: 'Wool coat', collectionId: 'collection-spring' },
+      20
+    );
 
     expect(event).toMatchObject({
       designId: design.id,
@@ -83,25 +81,16 @@ describe('design events', () => {
   test('a session that changed nothing writes no event', () => {
     const design = createDesign(database, { name: 'Silk slip dress' }, 10);
 
-    expect(appendEditEvent(database, design.id, {}, 20)).toBeNull();
+    expect(recordEdit(database, design.id, BEFORE, { ...BEFORE }, 20)).toBeNull();
     expect(listDesignEvents(database, design.id)).toEqual([]);
   });
 
   test('two sessions are two events, both kept as written', () => {
     const design = createDesign(database, { name: 'Silk slip dress' }, 10);
+    const renamed = { ...BEFORE, name: 'Silk slip' };
 
-    appendEditEvent(
-      database,
-      design.id,
-      { name: { from: 'Silk slip dress', to: 'Silk slip' } },
-      20
-    );
-    appendEditEvent(
-      database,
-      design.id,
-      { description: { from: 'Bias cut', to: 'Heavy twill' } },
-      30
-    );
+    recordEdit(database, design.id, BEFORE, renamed, 20);
+    recordEdit(database, design.id, renamed, { ...renamed, description: 'Heavy twill' }, 30);
 
     expect(listDesignEvents(database, design.id).map((event) => event.diff)).toEqual([
       { description: { from: 'Bias cut', to: 'Heavy twill' } },
@@ -111,9 +100,10 @@ describe('design events', () => {
 
   test('reads newest first', () => {
     const design = createDesign(database, { name: 'Silk slip dress' }, 10);
+    const renamed = { ...BEFORE, name: 'Silk slip' };
 
-    appendEditEvent(database, design.id, { name: { from: 'A', to: 'B' } }, 20);
-    appendEditEvent(database, design.id, { name: { from: 'B', to: 'C' } }, 30);
+    recordEdit(database, design.id, BEFORE, renamed, 20);
+    recordEdit(database, design.id, renamed, { ...renamed, name: 'Silk slip dress' }, 30);
 
     expect(listDesignEvents(database, design.id).map((event) => event.createdAt)).toEqual([
       30, 20,
@@ -122,13 +112,14 @@ describe('design events', () => {
 
   test('two events in the same millisecond read in the order they were written', () => {
     const design = createDesign(database, { name: 'Silk slip dress' }, 10);
+    const renamed = { ...BEFORE, name: 'Silk slip' };
 
-    appendEditEvent(database, design.id, { name: { from: 'A', to: 'B' } }, 20);
-    appendEditEvent(database, design.id, { name: { from: 'B', to: 'C' } }, 20);
+    recordEdit(database, design.id, BEFORE, renamed, 20);
+    recordEdit(database, design.id, renamed, { ...renamed, name: 'Silk slip dress' }, 20);
 
     expect(listDesignEvents(database, design.id).map((event) => event.diff)).toEqual([
-      { name: { from: 'B', to: 'C' } },
-      { name: { from: 'A', to: 'B' } },
+      { name: { from: 'Silk slip', to: 'Silk slip dress' } },
+      { name: { from: 'Silk slip dress', to: 'Silk slip' } },
     ]);
   });
 
@@ -136,7 +127,7 @@ describe('design events', () => {
     const first = createDesign(database, { name: 'Silk slip dress' }, 10);
     const second = createDesign(database, { name: 'Wool coat' }, 10);
 
-    appendEditEvent(database, first.id, { name: { from: 'A', to: 'B' } }, 20);
+    recordEdit(database, first.id, BEFORE, { ...BEFORE, name: 'Silk slip' }, 20);
 
     expect(listDesignEvents(database, second.id)).toEqual([]);
   });

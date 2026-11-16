@@ -9,9 +9,11 @@ import {
   getDesign,
   InvalidDesignNameError,
   updateDesign,
+  type DesignEditableField,
+  type DesignFields,
   type UpdateDesignInput,
 } from '@/features/designs';
-import { appendEditEvent, diffDesignFields, type DesignFieldValues } from '@/features/history';
+import { recordEdit } from '@/features/history';
 import { useTaxonomy } from '@/features/taxonomy/react';
 import { Button } from '@/shared/components/ui/button';
 import { Icon } from '@/shared/components/ui/icon';
@@ -21,20 +23,11 @@ import {
   createInitialEditDesignState,
   editDesignReducer,
   unwrittenFields,
-  type EditDesignField,
-  type EditableDesign,
 } from '../lib/edit-design-reducer';
 import { useDesignDetail } from '../lib/use-design-detail';
 import { DesignStatusBadge } from './design-status-badge';
 import { FormField } from './form-field';
 import { TaxonomySelect } from './taxonomy-select';
-
-/** The four editable fields, in the shape the History diff reads. */
-function editableValues(design: EditableDesign): DesignFieldValues {
-  const { name, description, categoryId, collectionId } = design;
-
-  return { name, description, categoryId, collectionId };
-}
 
 /**
  * Edit for one Design. Every section writes itself the moment it is committed,
@@ -54,12 +47,12 @@ export function EditDesignScreen({ designId }: { designId: string }) {
   );
 
   /** The fields as they were when this editing session opened (ADR-0004). */
-  const sessionStart = useRef<DesignFieldValues | null>(null);
+  const sessionStart = useRef<DesignFields | null>(null);
 
   useEffect(() => {
     if (!design) return;
 
-    if (sessionStart.current === null) sessionStart.current = editableValues(design);
+    if (sessionStart.current === null) sessionStart.current = design;
 
     dispatch({ type: 'design-loaded', design });
   }, [design]);
@@ -90,14 +83,12 @@ export function EditDesignScreen({ designId }: { designId: string }) {
       const current = getDesign(database, designId);
       if (!current) return;
 
-      const end = editableValues(current);
-      const diff = diffDesignFields(start, end);
+      const event = recordEdit(database, designId, start, current);
 
-      if (!diff) return;
+      if (!event) return;
 
-      appendEditEvent(database, designId, diff);
       // The next commit covers only what changes after this one.
-      sessionStart.current = end;
+      sessionStart.current = current;
     }
 
     function flushSessionDrafts(report: boolean): void {
@@ -129,7 +120,7 @@ export function EditDesignScreen({ designId }: { designId: string }) {
   const selectedCollection =
     collections.find((collection) => collection.id === state.collectionId) ?? null;
 
-  function commit(field: EditDesignField, patch: UpdateDesignInput): void {
+  function commit(field: DesignEditableField, patch: UpdateDesignInput): void {
     try {
       const saved = updateDesign(database, designId, patch);
 
@@ -164,7 +155,7 @@ export function EditDesignScreen({ designId }: { designId: string }) {
     commit('collectionId', { collectionId });
   }
 
-  function fieldError(field: EditDesignField) {
+  function fieldError(field: DesignEditableField) {
     if (state.error?.field !== field) return null;
 
     return <Text className="text-destructive text-sm">{state.error.message}</Text>;

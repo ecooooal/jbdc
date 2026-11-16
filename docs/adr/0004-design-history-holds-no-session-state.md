@@ -8,3 +8,7 @@ Issue #15 (and #8 before it) says the Design history module snapshots the editab
 - A hard process kill loses the Event while keeping the field edits, as #15 accepts. Nothing in the module can recover a snapshot the screen did not survive, and nothing pretends to.
 - Any future screen that edits a Design must hold its own snapshot; the module will not remember one for it.
 - If a second editing surface appears, the snapshot lifecycle becomes a real seam. That is the point to introduce an adapter, not before.
+
+## Amendment
+
+`appendEditEvent(db, designId, diff)` is now internal to `recordEdit(db, designId, before, after)`: the module still performs the same two pure transformations behind one call, and `diffDesignFields` stays exported and pure. The decision is unchanged; only the entry point moved, so a caller can no longer write an Event without a diff to justify it.

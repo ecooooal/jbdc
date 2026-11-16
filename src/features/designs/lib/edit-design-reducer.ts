@@ -1,17 +1,12 @@
 import { normalizeDescription } from './description';
 import { designNameProblem } from './limits';
+import type { DesignEditableField, DesignFields } from './records';
 
-/** The four fields Edit can change. Status is displayed, never edited here. */
-export type EditDesignField = 'name' | 'description' | 'categoryId' | 'collectionId';
-
-/** The editable fields of a stored Design, as the live read returns them. */
-export type EditableDesign = {
-  name: string;
-  description: string | null;
-  categoryId: string | null;
-  collectionId: string | null;
-};
-
+/**
+ * Edit's decisions: the drafts, the last committed values, and the one refusal
+ * on screen. The live read seeds it once; later reads do not overwrite a draft
+ * the owner is still editing.
+ */
 export type EditDesignState = {
   /** False until the first live read seeds the drafts. */
   isSeeded: boolean;
@@ -25,18 +20,18 @@ export type EditDesignState = {
   savedDescription: string | null;
   savedCategoryId: string | null;
   savedCollectionId: string | null;
-  error: { field: EditDesignField; message: string } | null;
+  error: { field: DesignEditableField; message: string } | null;
 };
 
 export type EditDesignEvent =
-  | { type: 'design-loaded'; design: EditableDesign }
+  | { type: 'design-loaded'; design: DesignFields }
   | { type: 'name-changed'; name: string }
   | { type: 'description-changed'; description: string }
   | { type: 'category-chosen'; categoryId: string | null }
   | { type: 'collection-chosen'; collectionId: string | null }
-  | { type: 'field-saved'; field: EditDesignField; design: EditableDesign }
-  | { type: 'drafts-written'; design: EditableDesign }
-  | { type: 'field-refused'; field: EditDesignField; message: string };
+  | { type: 'field-saved'; field: DesignEditableField; design: DesignFields }
+  | { type: 'drafts-written'; design: DesignFields }
+  | { type: 'field-refused'; field: DesignEditableField; message: string };
 
 export function createInitialEditDesignState(): EditDesignState {
   return {
@@ -79,7 +74,7 @@ export function unwrittenFields(state: EditDesignState): UnwrittenDesignFields |
 /** Clears the refusal for the field that just changed, and only that field. */
 function clearedError(
   error: EditDesignState['error'],
-  field: EditDesignField
+  field: DesignEditableField
 ): EditDesignState['error'] {
   return error?.field === field ? null : error;
 }

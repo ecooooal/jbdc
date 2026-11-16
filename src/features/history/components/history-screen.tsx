@@ -2,16 +2,13 @@ import { router } from 'expo-router';
 import { ChevronLeft } from 'lucide-react-native';
 import { ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import type { DesignEditableField } from '@/features/designs';
 import type { Collection } from '@/features/taxonomy';
 import { useTaxonomy } from '@/features/taxonomy/react';
 import { Button } from '@/shared/components/ui/button';
 import { Icon } from '@/shared/components/ui/icon';
 import { Text } from '@/shared/components/ui/text';
-import type {
-  DesignEditableField,
-  DesignEvent,
-  DesignFieldChange,
-} from '../lib/events';
+import type { DesignEvent, DesignFieldChange } from '../lib/events';
 import { useDesignHistory } from '../lib/use-design-history';
 
 const TIMESTAMP_FORMAT = new Intl.DateTimeFormat(undefined, {

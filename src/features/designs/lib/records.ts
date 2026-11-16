@@ -6,24 +6,6 @@ import { DESIGN_NAME_MAX_LENGTH, designNameProblem } from './limits';
 
 export { DESIGN_NAME_MAX_LENGTH, designNameProblem } from './limits';
 
-export type CreateDesignInput = {
-  name: string;
-  description?: string | null;
-  categoryId?: string | null;
-  collectionId?: string | null;
-};
-
-/**
- * A partial write: an absent field is left alone, while an explicit null
- * clears the description, Category, or Collection. Status is never editable.
- */
-export type UpdateDesignInput = {
-  name?: string;
-  description?: string | null;
-  categoryId?: string | null;
-  collectionId?: string | null;
-};
-
 /** A design as it is stored. Statuses and timestamps are never caller-supplied. */
 export type Design = {
   id: string;
@@ -36,6 +18,33 @@ export type Design = {
   updatedAt: number;
   deletedAt: number | null;
 };
+
+/**
+ * The fields Edit can change, in the order History lists them. Status,
+ * timestamps, and Images are not editable here. This is the one declaration:
+ * `DesignFields` is a `Pick` of `Design`, so a listed field must be a stored
+ * one, and the patch types and the History diff are both derived from it.
+ */
+export const DESIGN_EDITABLE_FIELDS = [
+  'name',
+  'description',
+  'categoryId',
+  'collectionId',
+] as const;
+
+export type DesignEditableField = (typeof DESIGN_EDITABLE_FIELDS)[number];
+
+/** The editable fields of a stored Design. Null means empty. */
+export type DesignFields = Pick<Design, DesignEditableField>;
+
+/** A new Design: a name is required, every other editable field is optional. */
+export type CreateDesignInput = { name: string } & Partial<Omit<DesignFields, 'name'>>;
+
+/**
+ * A partial write: an absent field is left alone, while an explicit null
+ * clears the description, Category, or Collection. Status is never editable.
+ */
+export type UpdateDesignInput = Partial<DesignFields>;
 
 /** A Design with the names Detail displays in place of its foreign keys. */
 export type DesignDetail = Design & {
