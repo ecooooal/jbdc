@@ -11,11 +11,14 @@ export {
   InvalidTaxonomyNameError,
   listCategories,
   listCollections,
+  readTaxonomyNames,
   TAXONOMY_NAME_MAX_LENGTH,
+  taxonomyLabel,
 } from './lib/records';
 export type {
   Category,
   Collection,
   CreateCategoryInput,
   CreateCollectionInput,
+  TaxonomyNames,
 } from './lib/records';

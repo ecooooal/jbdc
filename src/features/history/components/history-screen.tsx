@@ -3,8 +3,7 @@ import { ChevronLeft } from 'lucide-react-native';
 import { ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { DesignEditableField } from '@/features/designs';
-import type { Collection } from '@/features/taxonomy';
-import { useTaxonomy } from '@/features/taxonomy/react';
+import { taxonomyLabel, type TaxonomyNames } from '@/features/taxonomy';
 import { Button } from '@/shared/components/ui/button';
 import { Icon } from '@/shared/components/ui/icon';
 import { Text } from '@/shared/components/ui/text';
@@ -30,18 +29,10 @@ const FIELD_LABELS: Record<DesignEditableField, string> = {
   collectionId: 'Collection',
 };
 
-type TaxonomyNames = {
-  categories: { id: string; name: string }[];
-  collections: Collection[];
-};
-
-const collectionLabel = (collection: Collection): string =>
-  collection.year === null ? collection.name : `${collection.name} (${collection.year})`;
-
 /**
  * The value a History entry shows for a field. A Category or Collection is
  * stored as its id, so the owner reads the name instead; null is the field
- * being empty. A Taxonomy entry removed since the edit has no name to show.
+ * being empty. A Taxonomy entry deleted since the edit still has a name (#7).
  */
 function valueLabel(
   field: DesignEditableField,
@@ -52,11 +43,11 @@ function valueLabel(
 
   switch (field) {
     case 'categoryId':
-      return categories.find((category) => category.id === value)?.name ?? 'Unknown Category';
+      return categories.get(value) ?? 'Unknown Category';
     case 'collectionId': {
-      const collection = collections.find((entry) => entry.id === value);
+      const collection = collections.get(value);
 
-      return collection ? collectionLabel(collection) : 'Unknown Collection';
+      return collection ? taxonomyLabel(collection) : 'Unknown Collection';
     }
     default:
       return value;
@@ -88,13 +79,7 @@ function EventCard({ event, taxonomy }: { event: DesignEvent; taxonomy: Taxonomy
  * values.
  */
 export function HistoryScreen({ designId }: { designId: string }) {
-  const { events, error, status } = useDesignHistory(designId);
-  const {
-    categories,
-    collections,
-    error: taxonomyError,
-    status: taxonomyStatus,
-  } = useTaxonomy();
+  const { events, taxonomy, error, status } = useDesignHistory(designId);
 
   return (
     <SafeAreaView style={{ flex: 1 }} className="bg-background" edges={['top', 'left', 'right']}>
@@ -111,7 +96,7 @@ export function HistoryScreen({ designId }: { designId: string }) {
 
       {error ? (
         <Text className="text-destructive px-6 pt-4">{error.message}</Text>
-      ) : status === 'loading' || taxonomyStatus === 'loading' ? null : (
+      ) : status === 'loading' ? null : (
         <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
           <View className="gap-6 px-6 pb-12 pt-2">
             <View className="gap-1">
@@ -119,20 +104,12 @@ export function HistoryScreen({ designId }: { designId: string }) {
               <Text variant="muted">One entry per editing session, newest first.</Text>
             </View>
 
-            {taxonomyError ? (
-              <Text className="text-destructive text-sm">{taxonomyError.message}</Text>
-            ) : null}
-
             {events.length === 0 ? (
               <Text variant="muted">Nothing has changed yet.</Text>
             ) : (
               <View className="gap-4">
                 {events.map((event) => (
-                  <EventCard
-                    key={event.id}
-                    event={event}
-                    taxonomy={{ categories, collections }}
-                  />
+                  <EventCard key={event.id} event={event} taxonomy={taxonomy} />
                 ))}
               </View>
             )}

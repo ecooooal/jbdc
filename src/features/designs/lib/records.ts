@@ -1,6 +1,7 @@
 import { and, desc, eq, isNull } from 'drizzle-orm';
 import type { Database, DesignStatus } from '@/features/database';
-import { categories, collections, designs } from '@/features/database';
+import { designs } from '@/features/database';
+import { readTaxonomyNames } from '@/features/taxonomy';
 import { normalizeDescription } from './description';
 import type { DesignEditableField } from './fields';
 import { DESIGN_NAME_MAX_LENGTH, designNameProblem } from './limits';
@@ -84,21 +85,18 @@ function buildSearchText(
   return [name, description, category, collection].filter(Boolean).join(' ').toLowerCase();
 }
 
-/** The name of a Category or Collection the form selected, or null for none. */
-function taxonomyName(
+/** The names a Design's stored Category and Collection ids resolve to, or null. */
+function designTaxonomyNames(
   database: Database,
-  table: typeof categories | typeof collections,
-  id: string | null
-): string | null {
-  if (!id) return null;
+  categoryId: string | null,
+  collectionId: string | null
+): { category: string | null; collection: string | null } {
+  const names = readTaxonomyNames(database);
 
-  return (
-    database.db
-      .select({ name: table.name })
-      .from(table)
-      .where(eq(table.id, id))
-      .get()?.name ?? null
-  );
+  return {
+    category: categoryId ? (names.categories.get(categoryId) ?? null) : null,
+    collection: collectionId ? (names.collections.get(collectionId)?.name ?? null) : null,
+  };
 }
 
 /**
@@ -115,6 +113,7 @@ export function createDesign(
   const description = normalizeDescription(input.description);
   const categoryId = input.categoryId ?? null;
   const collectionId = input.collectionId ?? null;
+  const taxonomy = designTaxonomyNames(database, categoryId, collectionId);
   const design: Design = {
     id: database.newId(),
     name,
@@ -131,12 +130,7 @@ export function createDesign(
     .insert(designs)
     .values({
       ...design,
-      searchText: buildSearchText(
-        name,
-        description,
-        taxonomyName(database, categories, categoryId),
-        taxonomyName(database, collections, collectionId)
-      ),
+      searchText: buildSearchText(name, description, taxonomy.category, taxonomy.collection),
     })
     .run();
 
@@ -178,6 +172,8 @@ export function updateDesign(
 
   if (!changed) return current;
 
+  const taxonomy = designTaxonomyNames(database, next.categoryId, next.collectionId);
+
   next.updatedAt = now;
   database.db
     .update(designs)
@@ -190,8 +186,8 @@ export function updateDesign(
       searchText: buildSearchText(
         next.name,
         next.description,
-        taxonomyName(database, categories, next.categoryId),
-        taxonomyName(database, collections, next.collectionId)
+        taxonomy.category,
+        taxonomy.collection
       ),
     })
     .where(eq(designs.id, id))
@@ -211,29 +207,31 @@ export function getDesign(database: Database, id: string): Design | null {
   );
 }
 
-const designDetailColumns = {
-  ...designColumns,
-  category: categories.name,
-  collection: collections.name,
-};
-
 /**
- * The Detail read: one live Design with its Category and Collection names.
- * Detail shows a Design in any status, so unlike the Library it never filters
- * by status. Private to the feature, like the Library's query builder.
+ * The Detail read: one live Design, without taxonomy names. Detail shows a
+ * Design in any status, so unlike the Library it never filters by status.
+ * Private to the feature, like the Library's query builder.
  */
 export function designDetailQuery(database: Database, id: string) {
   return database.db
-    .select(designDetailColumns)
+    .select(designColumns)
     .from(designs)
-    .leftJoin(categories, eq(designs.categoryId, categories.id))
-    .leftJoin(collections, eq(designs.collectionId, collections.id))
     .where(and(eq(designs.id, id), isNull(designs.deletedAt)));
 }
 
-/** Reads one live Design for Detail; null when it is unknown or soft-deleted. */
+/**
+ * Reads one live Design for Detail, resolving its Category and Collection
+ * through the taxonomy name read; null when it is unknown or soft-deleted.
+ */
 export function getDesignDetail(database: Database, id: string): DesignDetail | null {
-  return designDetailQuery(database, id).get() ?? null;
+  const design = designDetailQuery(database, id).get();
+
+  if (!design) return null;
+
+  return {
+    ...design,
+    ...designTaxonomyNames(database, design.categoryId, design.collectionId),
+  };
 }
 
 /** All live Designs, most recently updated first. */

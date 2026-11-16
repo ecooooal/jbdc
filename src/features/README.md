@@ -10,7 +10,7 @@ entries; `lib/` and `tests/` are private.
 | `history` | `index.ts`, `react.ts` | Append-only design Events, the edit diff, History |
 | `library` | `index.ts`, `react.ts` | Library query, grid, cards |
 | `settings` | `index.ts`, `react.ts` | Device-local preferences |
-| `taxonomy` | `index.ts`, `react.ts` | Category and Collection lists and creation |
+| `taxonomy` | `index.ts`, `react.ts` | Category and Collection lists, names and labels, and creation |
 
 `index.ts` is driver-free: domain functions, constants, and types. `react.ts`
 holds components and hooks for route files. The anatomy and import rules live

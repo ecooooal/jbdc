@@ -11,6 +11,7 @@ import {
   type DesignEditableField,
   type UpdateDesignInput,
 } from '@/features/designs';
+import { taxonomyLabel } from '@/features/taxonomy';
 import { useTaxonomy } from '@/features/taxonomy/react';
 import { Button } from '@/shared/components/ui/button';
 import { Icon } from '@/shared/components/ui/icon';
@@ -203,11 +204,7 @@ export function EditDesignScreen({ designId }: { designId: string }) {
                 value={selectedCollection}
                 items={collections}
                 disabled={taxonomyStatus !== 'ready'}
-                itemLabel={(collection) =>
-                  collection.year === null
-                    ? collection.name
-                    : `${collection.name} (${collection.year})`
-                }
+                itemLabel={taxonomyLabel}
                 onSelect={(collection) => chooseCollection(collection?.id ?? null)}
               />
               {fieldError('collectionId')}

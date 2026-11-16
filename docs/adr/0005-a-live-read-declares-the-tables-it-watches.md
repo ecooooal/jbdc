@@ -7,4 +7,6 @@ Drizzle's `useLiveQuery` re-runs only for the **from** table: it reads `query.co
 - `useLiveRead` exposes one `status` (`loading | ready | error`), so the four `updatedAt !== undefined` derivations and the `AND` of two loaded flags collapse.
 - The seam has two adapters — the expo change listener and the test's synchronous runner — which is what makes it a seam rather than a guess.
 - A read that joins a table must list it. Its test writes to the joined table and asserts the read re-runs.
-- Until this lands, renaming a Category or Collection does not refresh Detail or the Library, and History refreshes but mislabels deleted entries. That is a live bug this ADR schedules, not a hypothetical.
+- Detail and the Library resolve taxonomy names through Taxonomy's name read rather than a join, but still declare `categories` and `collections` so a rename or delete re-runs them.
+- History is one read over `design_events`, `categories`, and `collections`. Its name read includes soft-deleted rows, so an Event keeps the name of a Category or Collection deleted after the edit.
+- Before this landed, renaming a Category or Collection did not refresh Detail or the Library, and History refreshed but mislabelled deleted entries. That was a live bug this ADR scheduled, not a hypothetical.

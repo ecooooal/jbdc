@@ -107,6 +107,41 @@ export function listCollections(database: Database): Collection[] {
 }
 
 /**
+ * The names a stored Category or Collection id resolves to, **including
+ * soft-deleted rows**. A delete removes an entry from the pickers but not from
+ * the designs that chose it (#7), so a reader resolving an old id must not use
+ * `categoriesQuery` or `collectionsQuery`.
+ */
+export type TaxonomyNames = {
+  categories: ReadonlyMap<string, string>;
+  collections: ReadonlyMap<string, Collection>;
+};
+
+/** Reads every Category and Collection name once, deleted entries included. */
+export function readTaxonomyNames(database: Database): TaxonomyNames {
+  const categoryRows = database.db
+    .select({ id: categories.id, name: categories.name })
+    .from(categories)
+    .all();
+  const collectionRows = database.db
+    .select({ id: collections.id, name: collections.name, year: collections.year })
+    .from(collections)
+    .all();
+
+  return {
+    categories: new Map(categoryRows.map((row) => [row.id, row.name])),
+    collections: new Map(collectionRows.map((row) => [row.id, row])),
+  };
+}
+
+/** The one label rule: a name, plus a Collection's optional year in parentheses. */
+export function taxonomyLabel(entry: { name: string; year?: number | null }): string {
+  return entry.year === null || entry.year === undefined
+    ? entry.name
+    : `${entry.name} (${entry.year})`;
+}
+
+/**
  * Writes one Category and returns it in the shape a picker selects. Inline
  * creation is the same call as any other, so the form never waits on a reload.
  */

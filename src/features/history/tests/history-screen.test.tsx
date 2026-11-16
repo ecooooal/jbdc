@@ -1,11 +1,13 @@
 import { render, screen } from '@testing-library/react-native';
+import { eq } from 'drizzle-orm';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { categories, collections } from '@/features/database';
 import { DatabaseProvider } from '@/features/database/react';
 import { createSyncSubscribe, createTempDatabase } from '@/features/database/testing';
 import { createDesign, type DesignFields } from '@/features/designs';
 import { recordEdit } from '@/features/history';
 import { HistoryScreen } from '@/features/history/react';
-import { createCategory } from '@/features/taxonomy';
+import { createCategory, createCollection } from '@/features/taxonomy';
 
 jest.mock('expo-router', () => ({ router: { back: jest.fn() } }));
 
@@ -83,6 +85,38 @@ test('shows the names of the Categories a session changed', async () => {
   await renderHistory(design.id);
 
   expect(screen.getByText('Category: Dress → Knitwear')).toBeTruthy();
+});
+
+test('keeps the names of a Category and Collection deleted after the edit', async () => {
+  const category = createCategory(database, { name: 'Dress' });
+  const collection = createCollection(database, { name: 'Spring', year: 2027 });
+  const design = createDesign(database, { name: 'Silk slip dress' }, 10);
+
+  recordEdit(
+    database,
+    design.id,
+    fields(),
+    fields({ categoryId: category.id, collectionId: collection.id }),
+    Date.UTC(2025, 0, 2, 3, 4)
+  );
+
+  database.db
+    .update(categories)
+    .set({ deletedAt: Date.UTC(2025, 0, 3) })
+    .where(eq(categories.id, category.id))
+    .run();
+  database.db
+    .update(collections)
+    .set({ deletedAt: Date.UTC(2025, 0, 3) })
+    .where(eq(collections.id, collection.id))
+    .run();
+
+  await renderHistory(design.id);
+
+  expect(screen.getByText('Category: None → Dress')).toBeTruthy();
+  expect(screen.getByText('Collection: None → Spring (2027)')).toBeTruthy();
+  expect(screen.queryByText(/Unknown Category/)).toBeNull();
+  expect(screen.queryByText(/Unknown Collection/)).toBeNull();
 });
 
 test('a cleared Category reads as empty', async () => {

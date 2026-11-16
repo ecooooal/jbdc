@@ -15,6 +15,7 @@ import {
   InvalidCollectionYearError,
   InvalidTaxonomyNameError,
   TAXONOMY_NAME_MAX_LENGTH,
+  taxonomyLabel,
 } from '@/features/taxonomy';
 import { useTaxonomy } from '@/features/taxonomy/react';
 import { Button } from '@/shared/components/ui/button';
@@ -231,11 +232,7 @@ export function NewDesignForm() {
               value={selectedCollection}
               items={collections}
               disabled={status !== 'ready'}
-              itemLabel={(collection) =>
-                collection.year === null
-                  ? collection.name
-                  : `${collection.name} (${collection.year})`
-              }
+              itemLabel={taxonomyLabel}
               onSelect={(collection) =>
                 dispatch({ type: 'collection-chosen', collectionId: collection?.id ?? null })
               }
