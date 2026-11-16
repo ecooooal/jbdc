@@ -9,8 +9,12 @@ import { Icon } from '@/shared/components/ui/icon';
 import { Separator } from '@/shared/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/tabs';
 import { Text } from '@/shared/components/ui/text';
-import { CREATIVE_DIRECTION_FIELDS } from '../lib/creative-direction-fields';
-import { SPECIFICATION_FIELDS } from '../lib/specification-fields';
+import {
+  DESIGN_SECTIONS,
+  isDesignSectionTab,
+  type DesignSectionFieldDefinition,
+  type DesignSectionTab,
+} from '../lib/sections';
 import { useDesignDetail } from '../lib/use-design-detail';
 import { DesignImageStrip } from './design-image-strip';
 import { DesignStatusBadge } from './design-status-badge';
@@ -58,22 +62,10 @@ function DetailHero({ design }: { design: DesignDetail }) {
   );
 }
 
-type DetailTab = 'specification' | 'creativeDirection';
-
-type DetailField =
-  | (typeof SPECIFICATION_FIELDS)[number]
-  | (typeof CREATIVE_DIRECTION_FIELDS)[number];
-
-const DETAIL_SECTIONS: readonly {
-  tab: DetailTab;
-  label: string;
-  fields: readonly DetailField[];
-}[] = [
-  { tab: 'specification', label: 'Specification', fields: SPECIFICATION_FIELDS },
-  { tab: 'creativeDirection', label: 'Creative direction', fields: CREATIVE_DIRECTION_FIELDS },
-];
-
-function recordedRows(design: DesignDetail, fields: readonly DetailField[]): DetailField[] {
+function recordedRows(
+  design: DesignDetail,
+  fields: readonly DesignSectionFieldDefinition[]
+): DesignSectionFieldDefinition[] {
   return fields.filter(({ field }) => Boolean(design[field]));
 }
 
@@ -83,7 +75,7 @@ function DetailSection({
   fields,
 }: {
   design: DesignDetail;
-  fields: readonly DetailField[];
+  fields: readonly DesignSectionFieldDefinition[];
 }) {
   const filled = recordedRows(design, fields);
 
@@ -107,8 +99,8 @@ function DetailSection({
  * first section that has something to show.
  */
 function DetailSections({ design }: { design: DesignDetail }) {
-  const [chosen, setChosen] = useState<DetailTab | null>(null);
-  const recorded = DETAIL_SECTIONS.filter(
+  const [chosen, setChosen] = useState<DesignSectionTab | null>(null);
+  const recorded = DESIGN_SECTIONS.filter(
     ({ fields }) => recordedRows(design, fields).length > 0
   );
 
@@ -119,15 +111,20 @@ function DetailSections({ design }: { design: DesignDetail }) {
   const tab = chosen ?? recorded[0].tab;
 
   return (
-    <Tabs value={tab} onValueChange={(value) => setChosen(value as DetailTab)}>
+    <Tabs
+      value={tab}
+      onValueChange={(value) => {
+        if (isDesignSectionTab(value)) setChosen(value);
+      }}
+    >
       <TabsList>
-        {DETAIL_SECTIONS.map(({ tab: value, label }) => (
+        {DESIGN_SECTIONS.map(({ tab: value, label }) => (
           <TabsTrigger key={value} value={value}>
             <Text>{label}</Text>
           </TabsTrigger>
         ))}
       </TabsList>
-      {DETAIL_SECTIONS.map(({ tab: value, fields }) => (
+      {DESIGN_SECTIONS.map(({ tab: value, fields }) => (
         <TabsContent key={value} value={value}>
           <DetailSection design={design} fields={fields} />
         </TabsContent>

@@ -13,6 +13,7 @@ import {
 import { designNameProblem } from './limits';
 import { normalizeOptionalText } from './optional-text';
 import type { DesignFields } from './records';
+import { DESIGN_SECTIONS, type DesignSectionTab } from './sections';
 
 /**
  * Edit's decisions: the drafts, the row's current values, the visit baseline,
@@ -39,20 +40,18 @@ export type EditDesignState = {
   /** The one row whose editor is open. `taxonomy` is the Category · Collection pair. */
   editing: EditDesignRow | null;
   /** The section tab Edit is showing. */
-  tab: EditDesignTab;
+  tab: DesignSectionTab;
   error: { field: DesignEditableField; message: string } | null;
 };
 
 export type EditDesignRow = DesignEditableField | 'taxonomy';
-
-export type EditDesignTab = 'specification' | 'creativeDirection';
 
 export type EditDesignEvent =
   | { type: 'design-loaded'; design: DesignFields }
   | { type: 'text-changed'; field: DesignTextEditableField; value: string }
   | { type: 'choice-chosen'; field: DesignChoiceEditableField; value: string | null }
   | { type: 'row-opened'; row: EditDesignRow; now: number }
-  | { type: 'tab-changed'; tab: EditDesignTab; now: number }
+  | { type: 'tab-changed'; tab: DesignSectionTab; now: number }
   | { type: 'row-closed' }
   | { type: 'field-saved'; field: DesignEditableField; design: DesignFields }
   | { type: 'drafts-written'; design: DesignFields }
@@ -90,7 +89,7 @@ export function createInitialEditDesignState(designId: string): EditDesignState 
     saved: EMPTY_DESIGN_FIELDS,
     sessionStart: null,
     editing: null,
-    tab: 'specification',
+    tab: DESIGN_SECTIONS[0].tab,
     error: null,
   };
 }
@@ -179,6 +178,22 @@ function only(state: EditDesignState): EditDesignResult {
 }
 
 /**
+ * Moves to `next` and writes the drafts it still holds. Several gestures leave
+ * a text row — opening another, changing tabs, leaving the app — and all of
+ * them declare the same single write.
+ */
+function flushing(next: EditDesignState, now: number): EditDesignResult {
+  const patch = unwrittenFields(next);
+
+  if (!patch) return only(next);
+
+  return {
+    state: next,
+    effects: [{ type: 'write-drafts', designId: next.designId, patch, now }],
+  };
+}
+
+/**
  * The state after the owner leaves a row: a blank name falls back to the
  * stored one, and a refusal on the row being left clears. The caller decides
  * what opens next.
@@ -233,14 +248,7 @@ export function editDesignReducer(
 
       // A row unmounted on iOS does not reliably fire blur, so opening another
       // row writes the one being left. The visit still records one Event.
-      const patch = unwrittenFields(opened);
-
-      if (!patch) return only(opened);
-
-      return {
-        state: opened,
-        effects: [{ type: 'write-drafts', designId: state.designId, patch, now: event.now }],
-      };
+      return flushing(opened, event.now);
     }
     case 'tab-changed': {
       if (event.tab === state.tab) return only(state);
@@ -248,14 +256,8 @@ export function editDesignReducer(
       // A tab is unmounted on iOS without firing blur, so the tab change
       // writes the draft it holds. It records nothing: the visit is still open.
       const next = { ...leftRow(state, state.editing), tab: event.tab, editing: null };
-      const patch = unwrittenFields(next);
 
-      if (!patch) return only(next);
-
-      return {
-        state: next,
-        effects: [{ type: 'write-drafts', designId: state.designId, patch, now: event.now }],
-      };
+      return flushing(next, event.now);
     }
     case 'row-closed':
       return only({ ...state, editing: null });
@@ -283,18 +285,9 @@ export function editDesignReducer(
         },
         error: { field: event.field, message: event.message },
       });
-    case 'app-backgrounded': {
+    case 'app-backgrounded':
       // Leaving the foreground flushes a draft; only a close records the visit.
-      if (state.isClosed) return only(state);
-
-      const patch = unwrittenFields(state);
-      if (!patch) return only(state);
-
-      return {
-        state,
-        effects: [{ type: 'write-drafts', designId: state.designId, patch, now: event.now }],
-      };
-    }
+      return state.isClosed ? only(state) : flushing(state, event.now);
     case 'session-closed': {
       if (state.isClosed) return only(state);
 

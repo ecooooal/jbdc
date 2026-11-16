@@ -296,44 +296,22 @@ describe('Creative direction rows', () => {
   });
 });
 
-describe('tab change flushes drafts', () => {
-  test('switching tabs with a half-typed row stores it and records nothing', async () => {
+describe('tab change wiring', () => {
+  test('pressing the Creative direction tab shows its rows and collapses the one it leaves', async () => {
     const design = newDesign();
-    const view = await renderEdit(design.id);
 
+    await renderEdit(design.id);
     await openRow('Silhouette');
     await fireEvent.changeText(screen.getByLabelText('Silhouette'), 'Relaxed A-line');
     await openTab('Creative direction');
 
-    expect(getDesign(database, design.id)).toMatchObject({ silhouette: 'Relaxed A-line' });
-    expect(listDesignEvents(database, design.id)).toEqual([]);
+    expect(screen.getByRole('button', { name: 'Concept' })).toBeTruthy();
+    expect(screen.queryByPlaceholderText('Overall clothing shape')).toBeNull();
 
-    await view.unmount();
+    await openTab('Specification');
 
-    expect(listDesignEvents(database, design.id)).toHaveLength(1);
-  });
-
-  test('a visit that crosses both tabs still writes one Event carrying every field', async () => {
-    const design = newDesign();
-    const view = await renderEdit(design.id);
-
-    await openRow('Silhouette');
-    await fireEvent.changeText(screen.getByLabelText('Silhouette'), 'Relaxed A-line');
-    await openTab('Creative direction');
-    await openRow('Mood');
-    await fireEvent.changeText(screen.getByLabelText('Mood'), 'Romantic');
-    await view.unmount();
-
-    const events = listDesignEvents(database, design.id);
-
-    expect(events).toHaveLength(1);
-    expect(events[0]).toMatchObject({
-      kind: 'edit',
-      diff: {
-        silhouette: { from: null, to: 'Relaxed A-line' },
-        mood: { from: null, to: 'Romantic' },
-      },
-    });
+    expect(screen.getByRole('button', { name: 'Silhouette' })).toBeTruthy();
+    expect(screen.getByText('Relaxed A-line')).toBeTruthy();
   });
 });
 

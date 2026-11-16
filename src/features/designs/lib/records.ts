@@ -2,14 +2,12 @@ import { and, desc, eq, isNull } from 'drizzle-orm';
 import type { Database, DesignStatus } from '@/features/database';
 import { designs } from '@/features/database';
 import { readTaxonomyNames } from '@/features/taxonomy';
-import {
-  CREATIVE_DIRECTION_FIELDS,
-  type CreativeDirectionField,
-} from './creative-direction-fields';
+import { CREATIVE_DIRECTION_FIELDS } from './creative-direction-fields';
 import { designFieldsChanged, type DesignEditableField } from './fields';
 import { DESIGN_NAME_MAX_LENGTH, designNameProblem } from './limits';
 import { normalizeOptionalText } from './optional-text';
-import { SPECIFICATION_FIELDS, type SpecificationField } from './specification-fields';
+import type { DesignSectionField } from './sections';
+import { SPECIFICATION_FIELDS } from './specification-fields';
 
 export { DESIGN_NAME_MAX_LENGTH, designNameProblem } from './limits';
 
@@ -96,13 +94,11 @@ const designColumns = {
   deletedAt: designs.deletedAt,
 };
 
-type OptionalTextField = SpecificationField | CreativeDirectionField;
-
 /**
  * The values of one optional-text section a write would store, each trimmed;
  * whitespace alone is null. An absent field keeps the current value.
  */
-function optionalTextValues<Field extends OptionalTextField>(
+function optionalTextValues<Field extends DesignSectionField>(
   fields: readonly { field: Field }[],
   current: Design | null,
   input: Partial<Record<Field, string | null | undefined>>

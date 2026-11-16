@@ -19,10 +19,13 @@ import { Icon } from '@/shared/components/ui/icon';
 import { Input } from '@/shared/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/tabs';
 import { Text } from '@/shared/components/ui/text';
-import { CREATIVE_DIRECTION_FIELDS } from '../lib/creative-direction-fields';
 import type { DesignTextEditableField } from '../lib/fields';
-import type { EditDesignRow, EditDesignTab } from '../lib/edit-design-reducer';
-import { SPECIFICATION_FIELDS } from '../lib/specification-fields';
+import type { EditDesignRow } from '../lib/edit-design-reducer';
+import {
+  DESIGN_SECTIONS,
+  isDesignSectionTab,
+  type DesignSectionTab,
+} from '../lib/sections';
 import { useDesignDetail } from '../lib/use-design-detail';
 import { useEditSession } from '../lib/use-edit-session';
 import { DesignImageStrip } from './design-image-strip';
@@ -116,7 +119,7 @@ export function EditDesignScreen({ designId }: { designId: string }) {
   }
 
   /** The tab it is leaving is unmounted, so the reducer writes its draft first. */
-  function changeTab(tab: EditDesignTab): void {
+  function changeTab(tab: DesignSectionTab): void {
     send({ type: 'tab-changed', tab, now: Date.now() });
   }
 
@@ -278,38 +281,30 @@ export function EditDesignScreen({ designId }: { designId: string }) {
 
           <Tabs
             value={state.tab}
-            onValueChange={(value) => changeTab(value as EditDesignTab)}
+            onValueChange={(value) => {
+              if (isDesignSectionTab(value)) changeTab(value);
+            }}
           >
             <TabsList>
-              <TabsTrigger value="specification">
-                <Text>Specification</Text>
-              </TabsTrigger>
-              <TabsTrigger value="creativeDirection">
-                <Text>Creative direction</Text>
-              </TabsTrigger>
+              {DESIGN_SECTIONS.map(({ tab, label }) => (
+                <TabsTrigger key={tab} value={tab}>
+                  <Text>{label}</Text>
+                </TabsTrigger>
+              ))}
             </TabsList>
-            <TabsContent value="specification">
-              <FieldRows
-                fields={SPECIFICATION_FIELDS}
-                draft={state.draft}
-                editing={state.editing}
-                error={state.error}
-                onOpen={openRow}
-                onChange={changeText}
-                onCommit={commitText}
-              />
-            </TabsContent>
-            <TabsContent value="creativeDirection">
-              <FieldRows
-                fields={CREATIVE_DIRECTION_FIELDS}
-                draft={state.draft}
-                editing={state.editing}
-                error={state.error}
-                onOpen={openRow}
-                onChange={changeText}
-                onCommit={commitText}
-              />
-            </TabsContent>
+            {DESIGN_SECTIONS.map(({ tab, fields }) => (
+              <TabsContent key={tab} value={tab}>
+                <FieldRows
+                  fields={fields}
+                  draft={state.draft}
+                  editing={state.editing}
+                  error={state.error}
+                  onOpen={openRow}
+                  onChange={changeText}
+                  onCommit={commitText}
+                />
+              </TabsContent>
+            ))}
           </Tabs>
         </KeyboardAwareScrollView>
       )}

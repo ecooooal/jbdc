@@ -1,11 +1,11 @@
 import { Pressable, View } from 'react-native';
 import { Input } from '@/shared/components/ui/input';
 import { Text } from '@/shared/components/ui/text';
-import type { CreativeDirectionField } from '../lib/creative-direction-fields';
 import type { EditDesignState } from '../lib/edit-design-reducer';
-import type { SpecificationField } from '../lib/specification-fields';
-
-export type SectionField = SpecificationField | CreativeDirectionField;
+import type {
+  DesignSectionField,
+  DesignSectionFieldDefinition,
+} from '../lib/sections';
 
 /**
  * One section's read-first rows: a line of `Label … value` until the owner
@@ -21,18 +21,13 @@ export function FieldRows({
   onChange,
   onCommit,
 }: {
-  fields: readonly {
-    field: SectionField;
-    label: string;
-    placeholder: string;
-    multiline: boolean;
-  }[];
+  fields: readonly DesignSectionFieldDefinition[];
   draft: EditDesignState['draft'];
   editing: EditDesignState['editing'];
   error: EditDesignState['error'];
-  onOpen: (field: SectionField) => void;
-  onChange: (field: SectionField, value: string) => void;
-  onCommit: (field: SectionField) => void;
+  onOpen: (field: DesignSectionField) => void;
+  onChange: (field: DesignSectionField, value: string) => void;
+  onCommit: (field: DesignSectionField) => void;
 }) {
   return (
     <View className="border-border bg-background overflow-hidden rounded-xl border">

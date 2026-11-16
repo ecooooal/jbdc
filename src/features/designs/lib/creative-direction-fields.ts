@@ -47,7 +47,7 @@ export const CREATIVE_DIRECTION_FIELDS = [
   {
     field: 'palette',
     label: 'Palette',
-    placeholder: 'Intended colour combinations',
+    placeholder: 'Intended color combinations',
     multiline: false,
   },
 ] as const;
