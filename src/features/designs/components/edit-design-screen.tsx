@@ -1,8 +1,9 @@
 import { router } from 'expo-router';
 import { ChevronLeft } from 'lucide-react-native';
 import { useEffect } from 'react';
-import { AppState, KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
+import { AppState, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { useDatabase } from '@/features/database/react';
 import {
   DESIGN_NAME_MAX_LENGTH,
@@ -131,86 +132,82 @@ export function EditDesignScreen({ designId }: { designId: string }) {
           </Text>
         </View>
       ) : !state.isSeeded ? null : (
-        <KeyboardAvoidingView
-          className="flex-1"
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        <KeyboardAwareScrollView
+          style={{ flex: 1 }}
+          bottomOffset={24}
+          contentContainerStyle={{
+            gap: 24,
+            paddingHorizontal: 24,
+            paddingTop: 8,
+            paddingBottom: 48,
+          }}
+          keyboardShouldPersistTaps="handled"
         >
-          <ScrollView
-            className="flex-1"
-            contentContainerStyle={{
-              gap: 24,
-              paddingHorizontal: 24,
-              paddingTop: 8,
-              paddingBottom: 48,
-            }}
-            keyboardShouldPersistTaps="handled"
-          >
-            <View className="gap-1">
-              <Text variant="h3">Edit design</Text>
-              <Text variant="muted">Changes are kept as you make them.</Text>
-            </View>
+          <View className="gap-1">
+            <Text variant="h3">Edit design</Text>
+            <Text variant="muted">Changes are kept as you make them.</Text>
+          </View>
 
-            {taxonomyError ? (
-              <Text className="text-destructive text-sm">{taxonomyError.message}</Text>
-            ) : null}
+          {taxonomyError ? (
+            <Text className="text-destructive text-sm">{taxonomyError.message}</Text>
+          ) : null}
 
-            <FormField label="Name">
-              <Input
-                value={state.name}
-                onChangeText={(name) => send({ type: 'name-changed', name })}
-                onBlur={commitName}
-                onSubmitEditing={commitName}
-                returnKeyType="done"
-                maxLength={DESIGN_NAME_MAX_LENGTH}
-                accessibilityLabel="Design name"
-              />
-              {fieldError('name')}
-            </FormField>
+          <FormField label="Name">
+            <Input
+              value={state.name}
+              onChangeText={(name) => send({ type: 'name-changed', name })}
+              onBlur={commitName}
+              onSubmitEditing={commitName}
+              returnKeyType="done"
+              maxLength={DESIGN_NAME_MAX_LENGTH}
+              accessibilityLabel="Design name"
+            />
+            {fieldError('name')}
+          </FormField>
 
-            <FormField label="Description">
-              <Input
-                value={state.description}
-                onChangeText={(description) => send({ type: 'description-changed', description })}
-                onBlur={commitDescription}
-                multiline
-                textAlignVertical="top"
-                className="h-28 py-2"
-                accessibilityLabel="Design description"
-              />
-              {fieldError('description')}
-            </FormField>
+          <FormField label="Description">
+            <Input
+              value={state.description}
+              onChangeText={(description) => send({ type: 'description-changed', description })}
+              onBlur={commitDescription}
+              multiline
+              textAlignVertical="top"
+              className="h-28 py-2"
+              accessibilityLabel="Design description"
+            />
+            {fieldError('description')}
+          </FormField>
 
-            <View className="border-border flex-row items-center justify-between gap-4 rounded-xl border px-4 py-3">
-              <Text variant="muted">Status</Text>
-              <DesignStatusBadge status={design.status} />
-            </View>
+          <View className="border-border flex-row items-center justify-between gap-4 rounded-xl border px-4 py-3">
+            <Text variant="muted">Status</Text>
+            <DesignStatusBadge status={design.status} />
+          </View>
 
-            <FormField label="Category">
-              <TaxonomySelect
-                label="Category"
-                placeholder="No category"
-                value={selectedCategory}
-                items={categories}
-                disabled={taxonomyStatus !== 'ready'}
-                onSelect={(category) => chooseCategory(category?.id ?? null)}
-              />
-              {fieldError('categoryId')}
-            </FormField>
+          <FormField label="Category">
+            <TaxonomySelect
+              label="Category"
+              placeholder="No category"
+              value={selectedCategory}
+              items={categories}
+              disabled={taxonomyStatus !== 'ready'}
+              onSelect={(category) => chooseCategory(category?.id ?? null)}
+            />
+            {fieldError('categoryId')}
+          </FormField>
 
-            <FormField label="Collection">
-              <TaxonomySelect
-                label="Collection"
-                placeholder="No collection"
-                value={selectedCollection}
-                items={collections}
-                disabled={taxonomyStatus !== 'ready'}
-                itemLabel={taxonomyLabel}
-                onSelect={(collection) => chooseCollection(collection?.id ?? null)}
-              />
-              {fieldError('collectionId')}
-            </FormField>
-          </ScrollView>
-        </KeyboardAvoidingView>
+          <FormField label="Collection">
+            <TaxonomySelect
+              label="Collection"
+              placeholder="No collection"
+              value={selectedCollection}
+              items={collections}
+              disabled={taxonomyStatus !== 'ready'}
+              itemLabel={taxonomyLabel}
+              onSelect={(collection) => chooseCollection(collection?.id ?? null)}
+            />
+            {fieldError('collectionId')}
+          </FormField>
+        </KeyboardAwareScrollView>
       )}
     </SafeAreaView>
   );
