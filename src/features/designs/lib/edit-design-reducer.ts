@@ -1,25 +1,36 @@
 import { normalizeDescription } from './description';
+import { designFieldsChanged, type DesignEditableField } from './fields';
 import { designNameProblem } from './limits';
-import type { DesignEditableField, DesignFields } from './records';
+import type { DesignFields } from './records';
 
 /**
- * Edit's decisions: the drafts, the last committed values, and the one refusal
- * on screen. The live read seeds it once; later reads do not overwrite a draft
- * the owner is still editing.
+ * Edit's decisions: the drafts, the row's current values, the visit baseline,
+ * and the one refusal on screen. The live read seeds it once; later reads do
+ * not overwrite a draft the owner is still editing.
+ *
+ * A visit is one screen session (ADR-0004): `sessionStart` is the row the
+ * first read returned and never advances, so every write in the visit
+ * coalesces into one Event at close.
  */
 export type EditDesignState = {
+  /** The Design this visit edits; every effect names it. */
+  designId: string;
   /** False until the first live read seeds the drafts. */
   isSeeded: boolean;
+  /** True once the visit closed; a second close declares nothing more. */
+  isClosed: boolean;
   /** What the owner has typed or picked, not necessarily written yet. */
   name: string;
   description: string;
   categoryId: string | null;
   collectionId: string | null;
-  /** What the row holds; a refused save restores these values. */
+  /** What the row holds now; a refused save restores these values. */
   savedName: string;
   savedDescription: string | null;
   savedCategoryId: string | null;
   savedCollectionId: string | null;
+  /** The row at open: what the visit's one Event is diffed against. */
+  sessionStart: DesignFields | null;
   error: { field: DesignEditableField; message: string } | null;
 };
 
@@ -31,11 +42,36 @@ export type EditDesignEvent =
   | { type: 'collection-chosen'; collectionId: string | null }
   | { type: 'field-saved'; field: DesignEditableField; design: DesignFields }
   | { type: 'drafts-written'; design: DesignFields }
-  | { type: 'field-refused'; field: DesignEditableField; message: string };
+  | { type: 'field-refused'; field: DesignEditableField; message: string }
+  | { type: 'app-backgrounded'; now: number }
+  | { type: 'session-closed'; now: number };
 
-export function createInitialEditDesignState(): EditDesignState {
+/**
+ * The work a visit asks for. `write-drafts` and `record-session` are separate
+ * because leaving the app flushes a draft but records nothing, while a close
+ * does both. The runner makes one call per effect and dispatches the outcome
+ * back as an event.
+ */
+export type EditDesignEffect =
+  | { type: 'write-drafts'; designId: string; patch: UnwrittenDesignFields; now: number }
+  | {
+      type: 'record-session';
+      designId: string;
+      before: DesignFields;
+      after: DesignFields;
+      now: number;
+    };
+
+export type EditDesignResult = {
+  state: EditDesignState;
+  effects: EditDesignEffect[];
+};
+
+export function createInitialEditDesignState(designId: string): EditDesignState {
   return {
+    designId,
     isSeeded: false,
+    isClosed: false,
     name: '',
     description: '',
     categoryId: null,
@@ -44,6 +80,7 @@ export function createInitialEditDesignState(): EditDesignState {
     savedDescription: null,
     savedCategoryId: null,
     savedCollectionId: null,
+    sessionStart: null,
     error: null,
   };
 }
@@ -71,6 +108,27 @@ export function unwrittenFields(state: EditDesignState): UnwrittenDesignFields |
   return patch.name === undefined && patch.description === undefined ? null : patch;
 }
 
+/**
+ * The row as it will stand once a close writes the drafts: a valid name is
+ * written trimmed, an invalid one was never written, and a description is
+ * written normalized. Category and Collection are read from what the row holds,
+ * because they write on choice rather than at close.
+ */
+function fieldsAfterClose(
+  state: EditDesignState,
+  patch: UnwrittenDesignFields | null
+): DesignFields {
+  return {
+    name: patch?.name ?? state.savedName,
+    description:
+      patch?.description === undefined
+        ? state.savedDescription
+        : normalizeDescription(patch.description),
+    categoryId: state.savedCategoryId,
+    collectionId: state.savedCollectionId,
+  };
+}
+
 /** Clears the refusal for the field that just changed, and only that field. */
 function clearedError(
   error: EditDesignState['error'],
@@ -79,22 +137,22 @@ function clearedError(
   return error?.field === field ? null : error;
 }
 
-/**
- * Edit's decisions: the drafts, the last committed values, and the one refusal
- * on screen. The live read seeds it once; later reads do not overwrite a draft
- * the owner is still editing.
- */
+function only(state: EditDesignState): EditDesignResult {
+  return { state, effects: [] };
+}
+
 export function editDesignReducer(
   state: EditDesignState,
   event: EditDesignEvent
-): EditDesignState {
+): EditDesignResult {
   switch (event.type) {
     case 'design-loaded': {
-      if (state.isSeeded) return state;
+      if (state.isSeeded) return only(state);
 
       const { name, description, categoryId, collectionId } = event.design;
 
-      return {
+      return only({
+        ...state,
         isSeeded: true,
         name,
         description: description ?? '',
@@ -104,79 +162,119 @@ export function editDesignReducer(
         savedDescription: description,
         savedCategoryId: categoryId,
         savedCollectionId: collectionId,
+        sessionStart: { name, description, categoryId, collectionId },
         error: null,
-      };
+      });
     }
     case 'name-changed':
-      return { ...state, name: event.name, error: clearedError(state.error, 'name') };
+      return only({ ...state, name: event.name, error: clearedError(state.error, 'name') });
     case 'description-changed':
-      return {
+      return only({
         ...state,
         description: event.description,
         error: clearedError(state.error, 'description'),
-      };
+      });
     case 'category-chosen':
-      return {
+      return only({
         ...state,
         categoryId: event.categoryId,
         error: clearedError(state.error, 'categoryId'),
-      };
+      });
     case 'collection-chosen':
-      return {
+      return only({
         ...state,
         collectionId: event.collectionId,
         error: clearedError(state.error, 'collectionId'),
-      };
+      });
     case 'field-saved': {
       const error = clearedError(state.error, event.field);
 
       switch (event.field) {
         case 'name':
-          return { ...state, name: event.design.name, savedName: event.design.name, error };
+          return only({ ...state, name: event.design.name, savedName: event.design.name, error });
         case 'description':
-          return {
+          return only({
             ...state,
             description: event.design.description ?? '',
             savedDescription: event.design.description,
             error,
-          };
+          });
         case 'categoryId':
-          return {
+          return only({
             ...state,
             categoryId: event.design.categoryId,
             savedCategoryId: event.design.categoryId,
             error,
-          };
+          });
         case 'collectionId':
-          return {
+          return only({
             ...state,
             collectionId: event.design.collectionId,
             savedCollectionId: event.design.collectionId,
             error,
-          };
+          });
       }
     }
     case 'drafts-written':
-      return {
+      return only({
         ...state,
         savedName: event.design.name,
         savedDescription: event.design.description,
         savedCategoryId: event.design.categoryId,
         savedCollectionId: event.design.collectionId,
-      };
+      });
     case 'field-refused': {
       const next = { ...state, error: { field: event.field, message: event.message } };
 
       switch (event.field) {
         case 'name':
-          return { ...next, name: state.savedName };
+          return only({ ...next, name: state.savedName });
         case 'description':
-          return { ...next, description: state.savedDescription ?? '' };
+          return only({ ...next, description: state.savedDescription ?? '' });
         case 'categoryId':
-          return { ...next, categoryId: state.savedCategoryId };
+          return only({ ...next, categoryId: state.savedCategoryId });
         case 'collectionId':
-          return { ...next, collectionId: state.savedCollectionId };
+          return only({ ...next, collectionId: state.savedCollectionId });
       }
+    }
+    case 'app-backgrounded': {
+      // Leaving the foreground flushes a draft; only a close records the visit.
+      if (state.isClosed) return only(state);
+
+      const patch = unwrittenFields(state);
+      if (!patch) return only(state);
+
+      return {
+        state,
+        effects: [{ type: 'write-drafts', designId: state.designId, patch, now: event.now }],
+      };
+    }
+    case 'session-closed': {
+      if (state.isClosed) return only(state);
+
+      const before = state.sessionStart;
+      if (!before) return { state: { ...state, isClosed: true }, effects: [] };
+
+      const effects: EditDesignEffect[] = [];
+      const patch = unwrittenFields(state);
+
+      if (patch) {
+        effects.push({ type: 'write-drafts', designId: state.designId, patch, now: event.now });
+      }
+
+      const after = fieldsAfterClose(state, patch);
+
+      if (designFieldsChanged(before, after)) {
+        effects.push({
+          type: 'record-session',
+          designId: state.designId,
+          before,
+          after,
+          now: event.now,
+        });
+      }
+
+      return { state: { ...state, isClosed: true }, effects };
     }
   }
 }

@@ -2,6 +2,7 @@ import { and, desc, eq, isNull } from 'drizzle-orm';
 import type { Database, DesignStatus } from '@/features/database';
 import { categories, collections, designs } from '@/features/database';
 import { normalizeDescription } from './description';
+import type { DesignEditableField } from './fields';
 import { DESIGN_NAME_MAX_LENGTH, designNameProblem } from './limits';
 
 export { DESIGN_NAME_MAX_LENGTH, designNameProblem } from './limits';
@@ -19,22 +20,7 @@ export type Design = {
   deletedAt: number | null;
 };
 
-/**
- * The fields Edit can change, in the order History lists them. Status,
- * timestamps, and Images are not editable here. This is the one declaration:
- * `DesignFields` is a `Pick` of `Design`, so a listed field must be a stored
- * one, and the patch types and the History diff are both derived from it.
- */
-export const DESIGN_EDITABLE_FIELDS = [
-  'name',
-  'description',
-  'categoryId',
-  'collectionId',
-] as const;
-
-export type DesignEditableField = (typeof DESIGN_EDITABLE_FIELDS)[number];
-
-/** The editable fields of a stored Design. Null means empty. */
+/** The editable fields of a stored Design, from the one field list. Null means empty. */
 export type DesignFields = Pick<Design, DesignEditableField>;
 
 /** A new Design: a name is required, every other editable field is optional. */

@@ -1,30 +1,23 @@
 import { router } from 'expo-router';
 import { ChevronLeft } from 'lucide-react-native';
-import { useEffect, useReducer, useRef } from 'react';
+import { useEffect } from 'react';
 import { AppState, KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useDatabase } from '@/features/database/react';
 import {
   DESIGN_NAME_MAX_LENGTH,
-  getDesign,
   InvalidDesignNameError,
   updateDesign,
   type DesignEditableField,
-  type DesignFields,
   type UpdateDesignInput,
 } from '@/features/designs';
-import { recordEdit } from '@/features/history';
 import { useTaxonomy } from '@/features/taxonomy/react';
 import { Button } from '@/shared/components/ui/button';
 import { Icon } from '@/shared/components/ui/icon';
 import { Input } from '@/shared/components/ui/input';
 import { Text } from '@/shared/components/ui/text';
-import {
-  createInitialEditDesignState,
-  editDesignReducer,
-  unwrittenFields,
-} from '../lib/edit-design-reducer';
 import { useDesignDetail } from '../lib/use-design-detail';
+import { useEditSession } from '../lib/use-edit-session';
 import { DesignStatusBadge } from './design-status-badge';
 import { FormField } from './form-field';
 import { TaxonomySelect } from './taxonomy-select';
@@ -40,81 +33,34 @@ export function EditDesignScreen({ designId }: { designId: string }) {
   const { design, error: readError, isLoaded } = useDesignDetail(designId);
   const { categories, collections, error: taxonomyError, isLoaded: isTaxonomyLoaded } =
     useTaxonomy();
-  const [state, dispatch] = useReducer(
-    editDesignReducer,
-    undefined,
-    createInitialEditDesignState
-  );
-
-  /** The fields as they were when this editing session opened (ADR-0004). */
-  const sessionStart = useRef<DesignFields | null>(null);
+  const [state, send] = useEditSession(designId);
 
   useEffect(() => {
     if (!design) return;
 
-    if (sessionStart.current === null) sessionStart.current = design;
-
-    dispatch({ type: 'design-loaded', design });
-  }, [design]);
-
-  /** The last rendered state, so closing the screen sees the newest drafts. */
-  const latestState = useRef(state);
-  useEffect(() => {
-    latestState.current = state;
-  });
+    send({ type: 'design-loaded', design });
+  }, [design, send]);
 
   /**
-   * Closing the screen, navigating away, or leaving the app writes a draft the
-   * owner never left, then records what the whole session changed as one Event.
-   * A session that changed nothing writes no Event. Category and Collection
-   * already wrote on selection.
+   * Leaving the foreground flushes a draft the owner never left, so a kill from
+   * the app switcher keeps it. Closing the screen flushes and then records the
+   * whole visit as one Event; a visit that changed nothing declares no work at
+   * all (ADR-0004).
    */
   useEffect(() => {
-    function flushDrafts(): ReturnType<typeof updateDesign> {
-      const patch = unwrittenFields(latestState.current);
-
-      return patch ? updateDesign(database, designId, patch) : null;
-    }
-
-    function recordSession(): void {
-      const start = sessionStart.current;
-      if (!start) return;
-
-      const current = getDesign(database, designId);
-      if (!current) return;
-
-      const event = recordEdit(database, designId, start, current);
-
-      if (!event) return;
-
-      // The next commit covers only what changes after this one.
-      sessionStart.current = current;
-    }
-
-    function flushSessionDrafts(report: boolean): void {
-      const saved = flushDrafts();
-
-      if (report && saved) dispatch({ type: 'drafts-written', design: saved });
-    }
-
     const subscription = AppState.addEventListener('change', (status) => {
       if (status === 'active') return;
 
-      // Flushing keeps a focused draft even when the app is killed from the
-      // app switcher, which may never report `background`.
-      flushSessionDrafts(true);
-
-      // Only background ends a session; iOS `inactive` also fires for Control
-      // Centre and the app switcher, which the owner has not left.
-      if (status === 'background') recordSession();
+      // iOS `inactive` also fires for Control Centre and the app switcher, so
+      // flush there too: a kill may never report `background`.
+      send({ type: 'app-backgrounded', now: Date.now() });
     });
 
     return () => {
       subscription.remove();
-      flushSessionDrafts(false);
-      recordSession();
+      send({ type: 'session-closed', now: Date.now() });
     };
-  }, [database, designId]);
+  }, [send]);
 
   const selectedCategory = categories.find((category) => category.id === state.categoryId) ?? null;
   const selectedCollection =
@@ -125,15 +71,15 @@ export function EditDesignScreen({ designId }: { designId: string }) {
       const saved = updateDesign(database, designId, patch);
 
       if (!saved) {
-        dispatch({ type: 'field-refused', field, message: 'This design is not here.' });
+        send({ type: 'field-refused', field, message: 'This design is not here.' });
         return;
       }
 
-      dispatch({ type: 'field-saved', field, design: saved });
+      send({ type: 'field-saved', field, design: saved });
     } catch (caught) {
       if (!(caught instanceof InvalidDesignNameError)) throw caught;
 
-      dispatch({ type: 'field-refused', field, message: caught.message });
+      send({ type: 'field-refused', field, message: caught.message });
     }
   }
 
@@ -146,12 +92,12 @@ export function EditDesignScreen({ designId }: { designId: string }) {
   }
 
   function chooseCategory(categoryId: string | null): void {
-    dispatch({ type: 'category-chosen', categoryId });
+    send({ type: 'category-chosen', categoryId });
     commit('categoryId', { categoryId });
   }
 
   function chooseCollection(collectionId: string | null): void {
-    dispatch({ type: 'collection-chosen', collectionId });
+    send({ type: 'collection-chosen', collectionId });
     commit('collectionId', { collectionId });
   }
 
@@ -210,7 +156,7 @@ export function EditDesignScreen({ designId }: { designId: string }) {
             <FormField label="Name">
               <Input
                 value={state.name}
-                onChangeText={(name) => dispatch({ type: 'name-changed', name })}
+                onChangeText={(name) => send({ type: 'name-changed', name })}
                 onBlur={commitName}
                 onSubmitEditing={commitName}
                 returnKeyType="done"
@@ -223,7 +169,7 @@ export function EditDesignScreen({ designId }: { designId: string }) {
             <FormField label="Description">
               <Input
                 value={state.description}
-                onChangeText={(description) => dispatch({ type: 'description-changed', description })}
+                onChangeText={(description) => send({ type: 'description-changed', description })}
                 onBlur={commitDescription}
                 multiline
                 textAlignVertical="top"

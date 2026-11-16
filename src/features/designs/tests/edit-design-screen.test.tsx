@@ -168,7 +168,7 @@ describe('edit session history', () => {
     ]);
   });
 
-  test('leaving the app commits the session, and closing it again writes nothing more', async () => {
+  test('leaving the app keeps the draft and records nothing; closing writes one Event', async () => {
     const design = newDesign();
     const listeners: ((status: string) => void)[] = [];
     const addEventListener = jest
@@ -187,13 +187,18 @@ describe('edit session history', () => {
     expect(getDesign(database, design.id)).toMatchObject({ name: 'Wool coat' });
     expect(listDesignEvents(database, design.id)).toEqual([]);
 
+    // Leaving the app flushes a draft, but the visit is still open.
     await act(async () => listeners[0]('background'));
-
-    expect(listDesignEvents(database, design.id)).toHaveLength(1);
+    expect(listDesignEvents(database, design.id)).toEqual([]);
 
     await view.unmount();
     addEventListener.mockRestore();
 
-    expect(listDesignEvents(database, design.id)).toHaveLength(1);
+    const events = listDesignEvents(database, design.id);
+
+    expect(events).toHaveLength(1);
+    expect(events[0]).toMatchObject({
+      diff: { name: { from: 'Silk slip dress', to: 'Wool coat' } },
+    });
   });
 });

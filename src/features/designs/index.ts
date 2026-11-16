@@ -3,9 +3,10 @@
  * validation, identity and timestamps on create, and the `search_text` every
  * write rebuilds.
  */
+export { DESIGN_EDITABLE_FIELDS } from './lib/fields';
+export type { DesignEditableField } from './lib/fields';
 export {
   createDesign,
-  DESIGN_EDITABLE_FIELDS,
   DESIGN_NAME_MAX_LENGTH,
   designNameProblem,
   getDesign,
@@ -18,7 +19,6 @@ export type {
   CreateDesignInput,
   Design,
   DesignDetail,
-  DesignEditableField,
   DesignFields,
   UpdateDesignInput,
 } from './lib/records';
