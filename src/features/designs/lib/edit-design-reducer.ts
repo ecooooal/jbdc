@@ -11,8 +11,9 @@ import {
   type DesignTextEditableField,
 } from './fields';
 import { designNameProblem } from './limits';
+import { materialUsesAdded } from './material-use-changes';
 import { normalizeOptionalText } from './optional-text';
-import type { DesignFields } from './records';
+import type { DesignFields, MaterialUse } from './records';
 import { DESIGN_SECTIONS, type DesignSectionTab } from './sections';
 
 /**
@@ -35,8 +36,12 @@ export type EditDesignState = {
   draft: DesignDrafts;
   /** What the row holds now; a refused save restores these values. */
   saved: DesignFields;
+  /** The Material uses the row holds now, the ones this visit added included. */
+  savedUses: MaterialUse[];
   /** The row at open: what the visit's one Event is diffed against. */
   sessionStart: DesignFields | null;
+  /** The Material uses the row held at open. */
+  sessionStartUses: MaterialUse[];
   /** The one row whose editor is open. `taxonomy` is the Category · Collection pair. */
   editing: EditDesignRow | null;
   /** The section tab Edit is showing. */
@@ -47,9 +52,10 @@ export type EditDesignState = {
 export type EditDesignRow = DesignEditableField | 'taxonomy';
 
 export type EditDesignEvent =
-  | { type: 'design-loaded'; design: DesignFields }
+  | { type: 'design-loaded'; design: DesignFields; materialUses?: readonly MaterialUse[] }
   | { type: 'text-changed'; field: DesignTextEditableField; value: string }
   | { type: 'choice-chosen'; field: DesignChoiceEditableField; value: string | null }
+  | { type: 'material-use-added'; use: MaterialUse }
   | { type: 'row-opened'; row: EditDesignRow; now: number }
   | { type: 'tab-changed'; tab: DesignSectionTab; now: number }
   | { type: 'row-closed' }
@@ -72,6 +78,8 @@ export type EditDesignEffect =
       designId: string;
       before: DesignFields;
       after: DesignFields;
+      /** The uses the visit added, absent when it added none. */
+      addedMaterialUses?: MaterialUse[];
       now: number;
     };
 
@@ -87,7 +95,9 @@ export function createInitialEditDesignState(designId: string): EditDesignState 
     isClosed: false,
     draft: EMPTY_DESIGN_DRAFTS,
     saved: EMPTY_DESIGN_FIELDS,
+    savedUses: [],
     sessionStart: null,
+    sessionStartUses: [],
     editing: null,
     tab: DESIGN_SECTIONS[0].tab,
     error: null,
@@ -221,7 +231,9 @@ export function editDesignReducer(
         isSeeded: true,
         draft: draftsFromFields(event.design),
         saved: event.design,
+        savedUses: [...(event.materialUses ?? [])],
         sessionStart: event.design,
+        sessionStartUses: [...(event.materialUses ?? [])],
         editing: null,
         error: null,
       });
@@ -238,6 +250,10 @@ export function editDesignReducer(
         draft: { ...state.draft, [event.field]: event.value },
         error: clearedError(state.error, event.field),
       });
+    case 'material-use-added':
+      // The use is already written; the visit only keeps it for the Event it
+      // records at close, so adding one does not end the session.
+      return only({ ...state, savedUses: [...state.savedUses, event.use] });
     case 'row-opened': {
       const leaving = state.editing;
       const leavingTextRow =
@@ -302,14 +318,16 @@ export function editDesignReducer(
       }
 
       const after = fieldsAfterClose(state, patch);
+      const addedMaterialUses = materialUsesAdded(state.sessionStartUses, state.savedUses);
 
-      if (designFieldsChanged(before, after)) {
+      if (designFieldsChanged(before, after) || addedMaterialUses.length > 0) {
         effects.push({
           type: 'record-session',
           designId: state.designId,
           before,
           after,
           now: event.now,
+          ...(addedMaterialUses.length > 0 && { addedMaterialUses }),
         });
       }
 

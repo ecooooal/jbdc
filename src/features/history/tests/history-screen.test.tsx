@@ -4,9 +4,10 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { categories, collections } from '@/features/database';
 import { DatabaseProvider } from '@/features/database/react';
 import { createSyncSubscribe, createTempDatabase } from '@/features/database/testing';
-import { createDesign, type DesignFields } from '@/features/designs';
+import { addMaterialUse, createDesign, type DesignFields } from '@/features/designs';
 import { recordEdit } from '@/features/history';
 import { HistoryScreen } from '@/features/history/react';
+import { createMaterial } from '@/features/materials';
 import { createCategory, createCollection } from '@/features/taxonomy';
 
 jest.mock('expo-router', () => ({ router: { back: jest.fn() } }));
@@ -70,8 +71,10 @@ test('shows what changed, the old value, the new value, and when', async () => {
   recordEdit(
     database,
     design.id,
-    fields(),
-    fields({ name: 'Wool coat', description: 'Heavy twill' }),
+    {
+      before: fields(),
+      after: fields({ name: 'Wool coat', description: 'Heavy twill' }),
+    },
     Date.UTC(2025, 0, 2, 3, 4)
   );
 
@@ -91,8 +94,10 @@ test('shows the names of the Categories a session changed', async () => {
   recordEdit(
     database,
     design.id,
-    fields({ categoryId: dress.id }),
-    fields({ categoryId: knitwear.id }),
+    {
+      before: fields({ categoryId: dress.id }),
+      after: fields({ categoryId: knitwear.id }),
+    },
     Date.UTC(2025, 0, 2, 3, 4)
   );
 
@@ -109,8 +114,10 @@ test('keeps the names of a Category and Collection deleted after the edit', asyn
   recordEdit(
     database,
     design.id,
-    fields(),
-    fields({ categoryId: category.id, collectionId: collection.id }),
+    {
+      before: fields(),
+      after: fields({ categoryId: category.id, collectionId: collection.id }),
+    },
     Date.UTC(2025, 0, 2, 3, 4)
   );
 
@@ -140,8 +147,7 @@ test('a cleared Category reads as empty', async () => {
   recordEdit(
     database,
     design.id,
-    fields({ categoryId: dress.id }),
-    fields(),
+    { before: fields({ categoryId: dress.id }), after: fields() },
     Date.UTC(2025, 0, 2, 3, 4)
   );
 
@@ -156,8 +162,10 @@ test('shows a Specification change by its owner-facing label', async () => {
   recordEdit(
     database,
     design.id,
-    fields(),
-    fields({ silhouette: 'Relaxed A-line', measurements: 'Bust 96' }),
+    {
+      before: fields(),
+      after: fields({ silhouette: 'Relaxed A-line', measurements: 'Bust 96' }),
+    },
     Date.UTC(2025, 0, 2, 3, 4)
   );
 
@@ -165,6 +173,30 @@ test('shows a Specification change by its owner-facing label', async () => {
 
   expect(screen.getByText('Silhouette: None → Relaxed A-line')).toBeTruthy();
   expect(screen.getByText('Measurements: None → Bust 96')).toBeTruthy();
+});
+
+test('shows a Material use a session added', async () => {
+  const design = createDesign(database, { name: 'Silk slip dress' }, 10);
+  const wool = createMaterial(database, { name: 'Wool' });
+  const use = addMaterialUse(
+    database,
+    design.id,
+    { materialId: wool.id, colour: 'Charcoal', role: 'main' },
+    10
+  );
+
+  if (!use) throw new Error('the Material use should have been written');
+
+  recordEdit(
+    database,
+    design.id,
+    { before: fields(), after: fields(), addedMaterialUses: [use] },
+    Date.UTC(2025, 0, 2, 3, 4)
+  );
+
+  await renderHistory(design.id);
+
+  expect(screen.getByText('Material use: Wool (Charcoal, Main) added')).toBeTruthy();
 });
 
 test('a design with no History says so plainly', async () => {

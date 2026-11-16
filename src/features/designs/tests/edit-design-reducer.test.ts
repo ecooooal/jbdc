@@ -4,7 +4,7 @@ import {
   editDesignReducer,
   unwrittenFields,
 } from '../lib/edit-design-reducer';
-import type { DesignFields } from '../lib/records';
+import type { DesignFields, MaterialUse } from '../lib/records';
 
 const DESIGN_ID = 'design-silk-slip';
 const DRESS = 'category-dress';
@@ -39,6 +39,16 @@ const DESIGN: DesignFields = {
   collectionId: null,
   ...EMPTY_SPECIFICATION,
   ...EMPTY_CREATIVE_DIRECTION,
+};
+
+const WOOL_USE: MaterialUse = {
+  id: 'use-wool',
+  designId: DESIGN_ID,
+  materialId: 'material-wool',
+  materialName: 'Wool',
+  colour: 'Charcoal',
+  role: 'main',
+  createdAt: NOW,
 };
 
 /** A visit that has read its Design and is ready to edit. */
@@ -84,7 +94,9 @@ describe('edit design reducer', () => {
         ...EMPTY_SPECIFICATION,
         ...EMPTY_CREATIVE_DIRECTION,
       },
+      savedUses: [],
       sessionStart: null,
+      sessionStartUses: [],
       editing: null,
       tab: 'specification',
       error: null,
@@ -117,7 +129,9 @@ describe('edit design reducer', () => {
         palette: '',
       },
       saved: DESIGN,
+      savedUses: [],
       sessionStart: DESIGN,
+      sessionStartUses: [],
       editing: null,
       tab: 'specification',
       error: null,
@@ -529,6 +543,49 @@ describe('edit session boundary', () => {
 
     expect(tester.getEffects()).toEqual([]);
     expect(tester.getState().isClosed).toBe(true);
+  });
+
+  test('a visit that only adds a Material use records one Event naming the use', () => {
+    const tester = session();
+
+    tester.send({ type: 'material-use-added', use: WOOL_USE });
+    tester.send({ type: 'session-closed', now: LATER });
+
+    expect(tester.getEffects()).toEqual([
+      {
+        type: 'record-session',
+        designId: DESIGN_ID,
+        before: DESIGN,
+        after: DESIGN,
+        addedMaterialUses: [WOOL_USE],
+        now: LATER,
+      },
+    ]);
+  });
+
+  test('a Material use and a field change in one visit are one Event', () => {
+    const tester = session();
+
+    tester.send({ type: 'material-use-added', use: WOOL_USE });
+    tester.send({ type: 'text-changed', field: 'name', value: 'Wool coat' });
+    tester.send({ type: 'session-closed', now: LATER });
+
+    expect(tester.getEffects()).toEqual([
+      {
+        type: 'write-drafts',
+        designId: DESIGN_ID,
+        patch: { name: 'Wool coat' },
+        now: LATER,
+      },
+      {
+        type: 'record-session',
+        designId: DESIGN_ID,
+        before: DESIGN,
+        after: { ...DESIGN, name: 'Wool coat' },
+        addedMaterialUses: [WOOL_USE],
+        now: LATER,
+      },
+    ]);
   });
 
   test('closing after a draft writes it, then records the whole visit once', () => {

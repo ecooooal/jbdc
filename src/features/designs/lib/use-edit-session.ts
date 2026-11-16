@@ -36,7 +36,16 @@ export function useEditSession(
             break;
           }
           case 'record-session':
-            recordEdit(database, effect.designId, effect.before, effect.after, effect.now);
+            recordEdit(
+              database,
+              effect.designId,
+              {
+                before: effect.before,
+                after: effect.after,
+                addedMaterialUses: effect.addedMaterialUses,
+              },
+              effect.now
+            );
             break;
         }
       }

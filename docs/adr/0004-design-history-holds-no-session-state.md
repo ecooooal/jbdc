@@ -14,3 +14,5 @@ Issue #15 (and #8 before it) says the Design history module snapshots the editab
 `appendEditEvent(db, designId, diff)` is now internal to `recordEdit(db, designId, before, after)`: the module still performs the same two pure transformations behind one call, and `diffDesignFields` stays exported and pure. The decision is unchanged; only the entry point moved, so a caller can no longer write an Event without a diff to justify it.
 
 The snapshot then moved from a ref in the component to `editDesignReducer`'s state (`sessionStart`), which is still the Edit surface's own state rather than the History module's. The boundary is now the visit, not the app's foreground state: leaving the app flushes a draft but records nothing, and the visit's one Event is written when the screen closes.
+
+The entry point now takes the visit's changes as one object, `recordEdit(db, designId, { before, after, addedMaterialUses }, now)`, so a Material use the visit added travels in the same Event as the fields it changed (#27). The module still holds no snapshot and still performs one diff per visit.

@@ -46,8 +46,9 @@ export const collections = sqliteTable('collections', {
 });
 
 /**
- * The owner's named fabrics and trims. A Material is a list entry, not a
- * design field: a design reaches one through a Material use.
+ * The owner's named Materials, each a fabric or trim she works with. A Material
+ * is a list entry, not a design field: a design reaches one through a Material
+ * use.
  */
 export const materials = sqliteTable('materials', {
   id: text('id').primaryKey(),

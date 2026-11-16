@@ -6,4 +6,10 @@
  * no session state: the Edit screen owns the snapshot (ADR-0004).
  */
 export { diffDesignFields, listDesignEvents, recordEdit } from './lib/events';
-export type { DesignEditDiff, DesignEvent, DesignFieldChange } from './lib/events';
+export type {
+  DesignEditDiff,
+  DesignEvent,
+  DesignFieldChange,
+  EditSession,
+  MaterialUseChange,
+} from './lib/events';

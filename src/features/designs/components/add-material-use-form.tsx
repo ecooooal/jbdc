@@ -3,7 +3,7 @@ import { useReducer } from 'react';
 import { View } from 'react-native';
 import { useDatabase } from '@/features/database/react';
 import { MATERIAL_USE_ROLES, type MaterialUseRole } from '@/features/database';
-import { addMaterialUse, InvalidMaterialUseError } from '@/features/designs';
+import { addMaterialUse, InvalidMaterialUseError, type MaterialUse } from '@/features/designs';
 import {
   createMaterial,
   InvalidMaterialNameError,
@@ -70,7 +70,7 @@ export function AddMaterialUseForm({
   onCancel,
 }: {
   designId: string;
-  onAdded: () => void;
+  onAdded: (use: MaterialUse) => void;
   onCancel: () => void;
 }) {
   const database = useDatabase();
@@ -111,7 +111,7 @@ export function AddMaterialUseForm({
       }
 
       dispatch({ type: 'use-created' });
-      onAdded();
+      onAdded(use);
     } catch (caught) {
       if (!(caught instanceof InvalidMaterialUseError)) throw caught;
 

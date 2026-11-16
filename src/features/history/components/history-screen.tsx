@@ -3,7 +3,7 @@ import { ChevronLeft } from 'lucide-react-native';
 import { ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { DesignEditableField } from '@/features/designs';
-import { designFieldLabel } from '@/features/designs';
+import { designFieldLabel, materialUseRoleLabel } from '@/features/designs';
 import { taxonomyLabel, type TaxonomyNames } from '@/features/taxonomy';
 import { Button } from '@/shared/components/ui/button';
 import { Icon } from '@/shared/components/ui/icon';
@@ -48,11 +48,15 @@ function valueLabel(
   }
 }
 
-/** One editing session: when it happened and every field it changed. */
+/** One editing session: when it happened and every field or use it changed. */
 function EventCard({ event, taxonomy }: { event: DesignEvent; taxonomy: TaxonomyNames }) {
-  const changes = Object.entries(event.diff ?? {}) as [DesignEditableField, DesignFieldChange][];
+  if (!event.diff) return null;
 
-  if (changes.length === 0) return null;
+  const { materialUses, ...fields } = event.diff;
+  const changes = Object.entries(fields) as [DesignEditableField, DesignFieldChange][];
+  const addedUses = materialUses?.added ?? [];
+
+  if (changes.length === 0 && addedUses.length === 0) return null;
 
   return (
     <View className="border-border gap-2 rounded-xl border px-4 py-3">
@@ -61,6 +65,11 @@ function EventCard({ event, taxonomy }: { event: DesignEvent; taxonomy: Taxonomy
         <Text key={field}>
           {designFieldLabel(field)}: {valueLabel(field, change.from, taxonomy)} →{' '}
           {valueLabel(field, change.to, taxonomy)}
+        </Text>
+      ))}
+      {addedUses.map((use) => (
+        <Text key={use.id}>
+          {`Material use: ${use.materialName} (${use.colour}, ${materialUseRoleLabel(use.role)}) added`}
         </Text>
       ))}
     </View>

@@ -1,4 +1,4 @@
-import { and, asc, eq, isNull } from 'drizzle-orm';
+import { asc, eq, isNull } from 'drizzle-orm';
 import type { Database, DatabaseHandle } from '@/features/database';
 import { materials } from '@/features/database';
 
@@ -73,7 +73,9 @@ export function readMaterialNames(database: Database): ReadonlyMap<string, strin
 /**
  * Writes one Material and returns it in the shape a picker selects. The name
  * is trimmed; an empty, over-long, or exact duplicate name (case-sensitive)
- * throws before anything is written.
+ * throws before anything is written. A name that belongs to a Material the
+ * owner removed restores that row rather than inserting a second one, so a
+ * name is never held twice and an old use keeps pointing at the same Material.
  */
 export function createMaterial(
   database: Database,
@@ -81,13 +83,25 @@ export function createMaterial(
   now: number = Date.now()
 ): Material {
   const name = normalizeName(input.name);
-  const duplicate = database.db
-    .select({ id: materials.id })
+  const rows = database.db
+    .select({ id: materials.id, deletedAt: materials.deletedAt })
     .from(materials)
-    .where(and(eq(materials.name, name), isNull(materials.deletedAt)))
-    .get();
+    .where(eq(materials.name, name))
+    .all();
 
-  if (duplicate) throw new InvalidMaterialNameError('duplicate');
+  if (rows.some((row) => row.deletedAt === null)) throw new InvalidMaterialNameError('duplicate');
+
+  const removed = rows[0];
+
+  if (removed) {
+    database.db
+      .update(materials)
+      .set({ deletedAt: null })
+      .where(eq(materials.id, removed.id))
+      .run();
+
+    return { id: removed.id, name };
+  }
 
   const material: Material = { id: database.newId(), name };
 

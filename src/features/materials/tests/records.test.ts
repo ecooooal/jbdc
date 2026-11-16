@@ -80,13 +80,14 @@ describe('material records', () => {
     expect(readMaterialNames(database).get(material.id)).toBe('Silk crêpe');
   });
 
-  test('a name removed from the list can be added again', () => {
+  test('a name removed from the list is restored rather than added twice', () => {
     const removed = createMaterial(database, { name: 'Silk crêpe' });
     database.db.update(materials).set({ deletedAt: 10 }).where(eq(materials.id, removed.id)).run();
 
     const restored = createMaterial(database, { name: 'Silk crêpe' });
 
-    expect(restored.id).not.toBe(removed.id);
+    expect(restored).toEqual(removed);
     expect(listMaterials(database)).toEqual([restored]);
+    expect(readMaterialNames(database).size).toBe(1);
   });
 });

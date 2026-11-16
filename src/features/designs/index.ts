@@ -5,6 +5,7 @@
  */
 export { DESIGN_EDITABLE_FIELDS, designFieldLabel } from './lib/fields';
 export type { DesignEditableField } from './lib/fields';
+export { materialUseRoleLabel } from './lib/material-use-role';
 export {
   addMaterialUse,
   createDesign,

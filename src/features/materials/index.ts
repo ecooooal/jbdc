@@ -1,8 +1,8 @@
 /**
- * Materials — the owner-managed list of fabrics and trims. It owns name
- * trimming, duplicate refusal, and the name read that still resolves a
- * soft-deleted Material. A design reaches its Materials through Material uses,
- * which belong to the Design aggregate.
+ * Materials — the owner-managed list a Design's Material uses draw from. It
+ * owns name trimming, duplicate refusal, restoring a removed name, and the name
+ * read that still resolves a soft-deleted Material. A design reaches its
+ * Materials through Material uses, which belong to the Design aggregate.
  */
 export {
   createMaterial,

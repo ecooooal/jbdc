@@ -11,14 +11,17 @@ import { MaterialUsesTable } from './material-uses-table';
 /**
  * The Specification tab's Materials block: the recorded uses, then
  * `＋ Add material`. The editor opens in place and closes once a use is
- * written, leaving the new row to the screen's live read.
+ * written, leaving the new row to the screen's live read and the use itself to
+ * the visit that records one Event at close.
  */
 export function MaterialUsesSection({
   designId,
   uses,
+  onUseAdded,
 }: {
   designId: string;
   uses: MaterialUse[];
+  onUseAdded: (use: MaterialUse) => void;
 }) {
   const [isAdding, setIsAdding] = useState(false);
 
@@ -29,7 +32,10 @@ export function MaterialUsesSection({
       {isAdding ? (
         <AddMaterialUseForm
           designId={designId}
-          onAdded={() => setIsAdding(false)}
+          onAdded={(use) => {
+            setIsAdding(false);
+            onUseAdded(use);
+          }}
           onCancel={() => setIsAdding(false)}
         />
       ) : (

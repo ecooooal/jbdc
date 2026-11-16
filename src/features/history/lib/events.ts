@@ -5,6 +5,7 @@ import {
   DESIGN_EDITABLE_FIELDS,
   type DesignEditableField,
   type DesignFields,
+  type MaterialUse,
 } from '@/features/designs';
 
 /** What one field was before an edit and what it became. Null means empty. */
@@ -13,8 +14,25 @@ export type DesignFieldChange = {
   to: string | null;
 };
 
-/** Only the fields that changed, each with its old and new value. */
-export type DesignEditDiff = Partial<Record<DesignEditableField, DesignFieldChange>>;
+/** One Material use a session added, as History reads it back. */
+export type MaterialUseChange = Omit<MaterialUse, 'designId' | 'createdAt'>;
+
+/**
+ * What one editing session changed: the fields whose values differ, each with
+ * its old and new value, plus the Material uses it added. The uses are a key of
+ * their own rather than a field, because they live in their own table; an Event
+ * written before uses existed simply has no `materialUses`.
+ */
+export type DesignEditDiff = Partial<Record<DesignEditableField, DesignFieldChange>> & {
+  materialUses?: { added: MaterialUseChange[] };
+};
+
+/** A visit's changes, as the Edit screen hands them to History at close. */
+export type EditSession = {
+  before: DesignFields;
+  after: DesignFields;
+  addedMaterialUses?: readonly MaterialUse[];
+};
 
 /** One append-only entry in a Design's History, with its diff parsed. */
 export type DesignEvent = {
@@ -85,21 +103,33 @@ export function designEventsQuery(database: Database, designId: string) {
 }
 
 /**
- * Records one edit session: diffs the fields before and after, then appends a
- * single Event when anything changed. A session that changed nothing writes
- * nothing and returns null. Written once, never updated: a later session
- * appends another Event.
+ * Records one edit session: diffs the fields before and after, adds the
+ * Material uses the visit added, then appends a single Event when anything
+ * changed. A session that changed nothing writes nothing and returns null.
+ * Written once, never updated: a later session appends another Event.
  */
 export function recordEdit(
   database: Database,
   designId: string,
-  before: DesignFields,
-  after: DesignFields,
+  session: EditSession,
   now: number = Date.now()
 ): DesignEvent | null {
-  const diff = diffDesignFields(before, after);
+  const diff: DesignEditDiff = diffDesignFields(session.before, session.after) ?? {};
+  const added = session.addedMaterialUses ?? [];
 
-  if (!diff) return null;
+  if (added.length > 0) {
+    diff.materialUses = {
+      added: added.map(({ id, materialId, materialName, colour, role }) => ({
+        id,
+        materialId,
+        materialName,
+        colour,
+        role,
+      })),
+    };
+  }
+
+  if (Object.keys(diff).length === 0) return null;
 
   const event: DesignEvent = {
     id: database.newId(),

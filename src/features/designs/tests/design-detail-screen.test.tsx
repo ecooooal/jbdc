@@ -2,7 +2,7 @@ import { act, render, screen, userEvent } from '@testing-library/react-native';
 import { eq } from 'drizzle-orm';
 import { router } from 'expo-router';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { categories } from '@/features/database';
+import { categories, materials } from '@/features/database';
 import { DatabaseProvider } from '@/features/database/react';
 import { createSyncSubscribe, createTempDatabase } from '@/features/database/testing';
 import { createDesign, addMaterialUse } from '@/features/designs';
@@ -76,6 +76,27 @@ test("renaming the Design's Category re-reads Detail", async () => {
   await act(async () => live.notify('categories'));
 
   expect(screen.getByText('Knitwear · No collection')).toBeTruthy();
+});
+
+test("renaming a Material re-reads Detail", async () => {
+  const design = createDesign(database, { name: 'Wool coat' });
+  const wool = createMaterial(database, { name: 'Wool' });
+
+  addMaterialUse(database, design.id, {
+    materialId: wool.id,
+    colour: 'Charcoal',
+    role: 'main',
+  });
+
+  await renderDetail(design.id);
+
+  expect(screen.getByText('Wool')).toBeTruthy();
+
+  database.db.update(materials).set({ name: 'Merino' }).where(eq(materials.id, wool.id)).run();
+
+  await act(async () => live.notify('materials'));
+
+  expect(screen.getByText('Merino')).toBeTruthy();
 });
 
 test('Detail renders the hero and the recorded Specification read-only', async () => {

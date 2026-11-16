@@ -54,7 +54,7 @@ export function EditDesignScreen({ designId }: { designId: string }) {
   useEffect(() => {
     if (!design) return;
 
-    send({ type: 'design-loaded', design });
+    send({ type: 'design-loaded', design, materialUses: design.materialUses });
   }, [design, send]);
 
   /**
@@ -306,7 +306,11 @@ export function EditDesignScreen({ designId }: { designId: string }) {
                     onCommit={commitText}
                   />
                   {tab === 'specification' ? (
-                    <MaterialUsesSection designId={designId} uses={design.materialUses} />
+                    <MaterialUsesSection
+                      designId={designId}
+                      uses={design.materialUses}
+                      onUseAdded={(use) => send({ type: 'material-use-added', use })}
+                    />
                   ) : null}
                 </View>
               </TabsContent>
