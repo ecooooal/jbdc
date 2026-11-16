@@ -2,8 +2,8 @@ import { PortalHost } from '@rn-primitives/portal';
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import { AppState } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { DatabaseProvider, type LiveQuery } from '@/features/database/react';
-import { createTempDatabase } from '@/features/database/testing';
+import { DatabaseProvider } from '@/features/database/react';
+import { createSyncSubscribe, createTempDatabase } from '@/features/database/testing';
 import { createDesign, getDesign } from '@/features/designs';
 import { EditDesignScreen } from '@/features/designs/react';
 import { listDesignEvents } from '@/features/history';
@@ -16,12 +16,7 @@ const INITIAL_METRICS = {
   insets: { top: 47, left: 0, right: 0, bottom: 34 },
 };
 
-/** The test adapter for the live-query seam: re-read each render, synchronously. */
-const syncLiveQuery = ((query: { all(): unknown[] }) => ({
-  data: query.all(),
-  error: undefined,
-  updatedAt: new Date(0),
-})) as unknown as LiveQuery;
+const live = createSyncSubscribe();
 
 let database: ReturnType<typeof createTempDatabase>['database'];
 let dispose: () => void;
@@ -37,7 +32,7 @@ afterEach(() => {
 async function renderEdit(designId: string) {
   return render(
     <SafeAreaProvider initialMetrics={INITIAL_METRICS}>
-      <DatabaseProvider database={database} liveQuery={syncLiveQuery}>
+      <DatabaseProvider database={database} subscribe={live.subscribe}>
         <EditDesignScreen designId={designId} />
         <PortalHost />
       </DatabaseProvider>

@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { DatabaseProvider, type LiveQuery } from '@/features/database/react';
-import { createTempDatabase } from '@/features/database/testing';
+import { DatabaseProvider } from '@/features/database/react';
+import { createSyncSubscribe, createTempDatabase } from '@/features/database/testing';
 import { createDesign, type DesignFields } from '@/features/designs';
 import { recordEdit } from '@/features/history';
 import { HistoryScreen } from '@/features/history/react';
@@ -14,11 +14,7 @@ const INITIAL_METRICS = {
   insets: { top: 47, left: 0, right: 0, bottom: 34 },
 };
 
-const syncLiveQuery = ((query: { all(): unknown[] }) => ({
-  data: query.all(),
-  error: undefined,
-  updatedAt: new Date(0),
-})) as unknown as LiveQuery;
+const live = createSyncSubscribe();
 
 /** The fields of a Design before an edit; overrides say what changed. */
 function fields(overrides: Partial<DesignFields> = {}): DesignFields {
@@ -45,7 +41,7 @@ afterEach(() => {
 async function renderHistory(designId: string) {
   return render(
     <SafeAreaProvider initialMetrics={INITIAL_METRICS}>
-      <DatabaseProvider database={database} liveQuery={syncLiveQuery}>
+      <DatabaseProvider database={database} subscribe={live.subscribe}>
         <HistoryScreen designId={designId} />
       </DatabaseProvider>
     </SafeAreaProvider>

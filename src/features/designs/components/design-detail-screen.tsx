@@ -73,7 +73,7 @@ function DesignDetailContent({ design }: { design: DesignDetail }) {
  * to the Library.
  */
 export function DesignDetailScreen({ designId }: { designId: string }) {
-  const { design, error, isLoaded } = useDesignDetail(designId);
+  const { design, error, status } = useDesignDetail(designId);
 
   return (
     <SafeAreaView style={{ flex: 1 }} className="bg-background" edges={['top', 'left', 'right']}>
@@ -114,7 +114,7 @@ export function DesignDetailScreen({ designId }: { designId: string }) {
 
       {error ? (
         <Text className="text-destructive px-6 pt-4">{error.message}</Text>
-      ) : !isLoaded ? null : design ? (
+      ) : status === 'loading' ? null : design ? (
         <DesignDetailContent design={design} />
       ) : (
         <View className="flex-1 items-center justify-center gap-2 px-6 pb-16">

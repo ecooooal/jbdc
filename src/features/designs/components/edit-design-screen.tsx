@@ -30,8 +30,8 @@ import { TaxonomySelect } from './taxonomy-select';
  */
 export function EditDesignScreen({ designId }: { designId: string }) {
   const database = useDatabase();
-  const { design, error: readError, isLoaded } = useDesignDetail(designId);
-  const { categories, collections, error: taxonomyError, isLoaded: isTaxonomyLoaded } =
+  const { design, error: readError, status: readStatus } = useDesignDetail(designId);
+  const { categories, collections, error: taxonomyError, status: taxonomyStatus } =
     useTaxonomy();
   const [state, send] = useEditSession(designId);
 
@@ -122,7 +122,7 @@ export function EditDesignScreen({ designId }: { designId: string }) {
 
       {readError ? (
         <Text className="text-destructive px-6 pt-4">{readError.message}</Text>
-      ) : !isLoaded ? null : !design ? (
+      ) : readStatus === 'loading' ? null : !design ? (
         <View className="flex-1 items-center justify-center gap-2 px-6 pb-16">
           <Text variant="h4">This design is not here</Text>
           <Text variant="muted" className="text-center">
@@ -190,7 +190,7 @@ export function EditDesignScreen({ designId }: { designId: string }) {
                 placeholder="No category"
                 value={selectedCategory}
                 items={categories}
-                disabled={!isTaxonomyLoaded}
+                disabled={taxonomyStatus !== 'ready'}
                 onSelect={(category) => chooseCategory(category?.id ?? null)}
               />
               {fieldError('categoryId')}
@@ -202,7 +202,7 @@ export function EditDesignScreen({ designId }: { designId: string }) {
                 placeholder="No collection"
                 value={selectedCollection}
                 items={collections}
-                disabled={!isTaxonomyLoaded}
+                disabled={taxonomyStatus !== 'ready'}
                 itemLabel={(collection) =>
                   collection.year === null
                     ? collection.name

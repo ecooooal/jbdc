@@ -33,7 +33,7 @@ function chunk<T>(items: readonly T[], size: number): T[][] {
  * the viewport, so rotating the device reflows the grid instead of breaking it.
  */
 export function LibraryScreen() {
-  const { designs, error, isLoaded } = useLibraryDesigns();
+  const { designs, error, status } = useLibraryDesigns();
   const { density, setDensity } = useCardDensity();
   const { width: viewportWidth } = useWindowDimensions();
   const insets = useSafeAreaInsets();
@@ -43,7 +43,7 @@ export function LibraryScreen() {
   );
   const { columns, cardWidth } = libraryGrid(density, contentWidth);
   const rows = chunk(designs, columns);
-  const isEmpty = isLoaded && designs.length === 0;
+  const isEmpty = status === 'ready' && designs.length === 0;
 
   return (
     <SafeAreaView
@@ -73,7 +73,7 @@ export function LibraryScreen() {
           <Text className="text-destructive mt-6">{error.message}</Text>
         ) : null}
 
-        {!isLoaded ? null : isEmpty ? (
+        {status === 'loading' ? null : isEmpty ? (
           <View className="flex-1 items-center justify-center gap-5 pb-16">
             <View className="items-center gap-2">
               <Text variant="h4">The catalog is empty</Text>

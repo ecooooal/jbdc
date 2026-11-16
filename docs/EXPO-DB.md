@@ -13,8 +13,8 @@ tables, and the status vocabulary. They never import `expo-sqlite` or
 |---|---|---|
 | `@/features/database` | every feature module | nothing; types and schema only |
 | `@/features/database/expo` | the provider (`react.tsx`) | expo-sqlite, synchronously |
-| `@/features/database/react` | the app root and screens | provider, `useDatabase()`, `useLiveQuery` |
-| `@/features/database/testing` | Jest suites only | better-sqlite3 on a temp file |
+| `@/features/database/react` | the app root and screens | provider, `useDatabase()`, `useLiveRead` |
+| `@/features/database/testing` | Jest suites only | better-sqlite3 on a temp file, synchronous `subscribe` |
 
 The port opens a connection, applies migrations, applies the seed, and hands
 out the query handle, an identity generator for new rows, and transactions.
@@ -27,13 +27,14 @@ const rows = listLibraryDesigns(database);
 const design = createDesign(database, { name: 'Silk slip dress' });
 ```
 
-`openAppDatabase()` enables change listeners so the Library can subscribe to
-live queries. A feature exposes its own hook (`useLibraryDesigns`) that reads
-`useDatabase()` and subscribes through `useLiveQuery`, re-exported by
-`@/features/database/react`, never by importing a driver adapter. Opening is
-synchronous because drizzle's expo-sqlite driver is synchronous; that driver
-landed in drizzle-orm 1.0 (currently pinned to an RC), which is why the ORM
-version is exact rather than a range.
+`openAppDatabase()` enables change listeners so live reads can subscribe to
+table changes. A feature exposes its own hook (`useLibraryDesigns`) that reads
+`useDatabase()` and subscribes through `useLiveRead`, re-exported by
+`@/features/database/react`, never by importing a driver adapter. A live read
+declares the tables it watches, joins included (ADR-0005), because drizzle
+cannot derive them. Opening is synchronous because drizzle's expo-sqlite driver
+is synchronous; that driver landed in drizzle-orm 1.0 (currently pinned to an
+RC), which is why the ORM version is exact rather than a range.
 
 ## Migrations
 
@@ -69,9 +70,10 @@ afterAll(dispose);
 No mocks, no in-memory fakes. Only the two thin driver adapters are untested.
 
 Render tests keep the same real database. `DatabaseProvider` accepts `database`
-and `liveQuery` props: pass a `createTempDatabase()` handle and a synchronous
-live-query adapter that calls `query.all()`. The app passes neither, so it
-still opens expo-sqlite and uses its change listener.
+and `subscribe` props: pass a `createTempDatabase()` handle and the synchronous
+adapter from `createSyncSubscribe()`, then call `notify(table)` after a write
+the read should observe. The app passes neither, so it still opens expo-sqlite
+and uses its change listener filtered to its own file and the declared tables.
 
 `jest.config.js` uses `testEnvironment: 'node'` and loads `jest.setup.js`.
 Expo's preset installs lazy globals (`fetch`, `URL`, `structuredClone`) that

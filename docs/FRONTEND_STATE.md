@@ -24,7 +24,7 @@ One file per **surface**, not per feature: two screens that do not share a state
  thin runner ── does the I/O ──► dispatch(outcome event)
 ```
 
-Start with `useReducer` from React. Most surfaces here need no effect runner at all: `expo-sqlite` writes are synchronous and `useLiveQuery` already pushes read results in. Declare effects as data only when a surface has async work whose order or outcome is a decision.
+Start with `useReducer` from React. Most surfaces here need no effect runner at all: `expo-sqlite` writes are synchronous and `useLiveRead` already pushes read results in. Declare effects as data only when a surface has async work whose order or outcome is a decision.
 
 Do not take a dependency for it. There is no maintained effect-reducer package for React 19; if the need is real, vendor a small hook beside the surface that uses it, with its own tests.
 
@@ -51,7 +51,7 @@ The reducer owns decisions, not everything that changes on screen.
 - **Reanimated shared values and worklets are not reducer state.** They run off the JS thread; a reducer cannot read or write them. Dispatch an event when a gesture or animation ends and a rule must run.
 - **Mid-gesture state is not reducer state.** `react-native-gesture-handler` decides during the gesture; dispatch at the end.
 - **Route state belongs to expo-router.** Read it at the edge and pass what a rule needs (`{ type: "edit-opened", designId }`).
-- **Live data belongs to `useLiveQuery`.** Do not copy catalog rows into reducer state. A selection is an id; derive the selected row and its label from the live list. An entry created inline is selected by id immediately, and its label appears when the live query observes the insert. The reducer holds the surface's decisions — the draft, the step, the error — not the catalog.
+- **Live data belongs to `useLiveRead`.** Do not copy catalog rows into reducer state. A selection is an id; derive the selected row and its label from the live list. An entry created inline is selected by id immediately, and its label appears when the live read observes the insert. A read declares every table it watches, joins included (ADR-0005). The reducer holds the surface's decisions — the draft, the step, the error — not the catalog.
 - **One modal, one field.** Two `is…Open` booleans that cannot both be true are one piece of state: `openModal: "rename" | "copy" | null`.
 
 ## When plain `useState` is fine
@@ -81,7 +81,7 @@ Two layers. The rule is which layer gets what.
 - It does not cover a transition. If a scenario can be driven by sending events to the reducer, it belongs there. Awaiting `act` flushes every pending update, so a rendered test cannot see transient states a reducer test can.
 - `renderHook` is for bridge hooks (rule 7): assert that a subscription dispatches what it hears and cleans up on unmount.
 - Prefer `getByRole`, then accessible name and placeholder; `getByTestId` is the last resort. Prefer `userEvent` over `fireEvent`. The Jest matchers extend on import; no setup file is needed.
-- Do not mock the port or the driver. `@/features/database/testing` opens a real temporary database. A screen test that needs the catalogue passes a temp `database` and a synchronous `liveQuery` to `DatabaseProvider` — the seam is the provider, not a mock of it. `src/features/designs/tests/new-design-form.test.tsx` is the first such test.
+- Do not mock the port or the driver. `@/features/database/testing` opens a real temporary database and supplies `createSyncSubscribe()`, whose `notify(table)` fires the listeners watching that table. A screen test that needs the catalogue passes a temp `database` and that adapter's `subscribe` to `DatabaseProvider` — the seam is the provider, not a mock of it. `src/features/designs/tests/new-design-form.test.tsx` is the first such test.
 - A reducer test replaces the component test for the same rule. Do not check one rule in both layers.
 
 ## The guard

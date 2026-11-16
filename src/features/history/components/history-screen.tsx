@@ -88,12 +88,12 @@ function EventCard({ event, taxonomy }: { event: DesignEvent; taxonomy: Taxonomy
  * values.
  */
 export function HistoryScreen({ designId }: { designId: string }) {
-  const { events, error, isLoaded } = useDesignHistory(designId);
+  const { events, error, status } = useDesignHistory(designId);
   const {
     categories,
     collections,
     error: taxonomyError,
-    isLoaded: isTaxonomyLoaded,
+    status: taxonomyStatus,
   } = useTaxonomy();
 
   return (
@@ -111,7 +111,7 @@ export function HistoryScreen({ designId }: { designId: string }) {
 
       {error ? (
         <Text className="text-destructive px-6 pt-4">{error.message}</Text>
-      ) : !isLoaded || !isTaxonomyLoaded ? null : (
+      ) : status === 'loading' || taxonomyStatus === 'loading' ? null : (
         <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
           <View className="gap-6 px-6 pb-12 pt-2">
             <View className="gap-1">

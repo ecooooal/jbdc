@@ -93,7 +93,7 @@ function InlineCreationPanel({
  */
 export function NewDesignForm() {
   const database = useDatabase();
-  const { categories, collections, error: taxonomyError, isLoaded } = useTaxonomy();
+  const { categories, collections, error: taxonomyError, status } = useTaxonomy();
   const [state, dispatch] = useReducer(
     newDesignFormReducer,
     undefined,
@@ -196,7 +196,7 @@ export function NewDesignForm() {
               placeholder="No category"
               value={selectedCategory}
               items={categories}
-              disabled={!isLoaded}
+              disabled={status !== 'ready'}
               onSelect={(category) =>
                 dispatch({ type: 'category-chosen', categoryId: category?.id ?? null })
               }
@@ -230,7 +230,7 @@ export function NewDesignForm() {
               placeholder="No collection"
               value={selectedCollection}
               items={collections}
-              disabled={!isLoaded}
+              disabled={status !== 'ready'}
               itemLabel={(collection) =>
                 collection.year === null
                   ? collection.name

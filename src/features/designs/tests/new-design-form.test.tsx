@@ -1,8 +1,8 @@
-import { render, screen, userEvent } from '@testing-library/react-native';
+import { act, render, screen, userEvent } from '@testing-library/react-native';
 import { router } from 'expo-router';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { DatabaseProvider, type LiveQuery } from '@/features/database/react';
-import { createTempDatabase } from '@/features/database/testing';
+import { DatabaseProvider } from '@/features/database/react';
+import { createSyncSubscribe, createTempDatabase } from '@/features/database/testing';
 import { listDesigns } from '@/features/designs';
 import { NewDesignForm } from '@/features/designs/react';
 import { listCategories } from '@/features/taxonomy';
@@ -14,12 +14,7 @@ const INITIAL_METRICS = {
   insets: { top: 47, left: 0, right: 0, bottom: 34 },
 };
 
-/** The test adapter for the live-query seam: re-read each render, synchronously. */
-const syncLiveQuery = ((query: { all(): unknown[] }) => ({
-  data: query.all(),
-  error: undefined,
-  updatedAt: new Date(0),
-})) as unknown as LiveQuery;
+const live = createSyncSubscribe();
 
 test('a category created inline is selected and saved with the design', async () => {
   const { database, dispose } = createTempDatabase();
@@ -28,7 +23,7 @@ test('a category created inline is selected and saved with the design', async ()
   try {
     await render(
       <SafeAreaProvider initialMetrics={INITIAL_METRICS}>
-        <DatabaseProvider database={database} liveQuery={syncLiveQuery}>
+        <DatabaseProvider database={database} subscribe={live.subscribe}>
           <NewDesignForm />
         </DatabaseProvider>
       </SafeAreaProvider>
@@ -38,6 +33,7 @@ test('a category created inline is selected and saved with the design', async ()
     await user.press(screen.getByRole('button', { name: 'New category' }));
     await user.type(screen.getByLabelText('New category name'), 'Knitwear');
     await user.press(screen.getByRole('button', { name: 'Add category' }));
+    await act(async () => live.notify('categories'));
 
     expect(screen.getByText('Knitwear')).toBeTruthy();
 

@@ -1,23 +1,32 @@
 import { useMemo } from 'react';
-import { useDatabase, useLiveQuery } from '@/features/database/react';
+import { categories, collections, designs } from '@/features/database';
+import {
+  useDatabase,
+  useLiveRead,
+  type LiveReadStatus,
+} from '@/features/database/react';
 import { libraryDesignsQuery, type LibraryDesign } from './query';
 
 export type LibraryDesigns = {
   designs: LibraryDesign[];
   error: Error | undefined;
-  /** False until the first read resolves, so an empty catalog is not shown early. */
-  isLoaded: boolean;
+  /** `loading` until the first read resolves, so an empty catalog is not shown early. */
+  status: LiveReadStatus;
 };
 
 /**
- * Subscribes to the Library's default query. Creates and edits land in the
+ * Subscribes to the Library's default query, including the Category and
+ * Collection names it joins. Creates, edits, and taxonomy renames land in the
  * returned designs without a manual refresh. The query builder stays
- * module-private; callers never wire `useLiveQuery` themselves.
+ * module-private; callers never wire the subscription themselves.
  */
 export function useLibraryDesigns(): LibraryDesigns {
   const database = useDatabase();
-  const query = useMemo(() => libraryDesignsQuery(database), [database]);
-  const { data, error, updatedAt } = useLiveQuery(query, [query]);
+  const run = useMemo(() => () => libraryDesignsQuery(database).all(), [database]);
+  const { data, error, status } = useLiveRead({
+    tables: [designs, categories, collections],
+    run,
+  });
 
-  return { designs: data, error, isLoaded: updatedAt !== undefined };
+  return { designs: data ?? [], error, status };
 }
