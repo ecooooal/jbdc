@@ -89,6 +89,7 @@
     "lint": "expo lint",
     "typecheck": "tsc --noEmit",
     "test": "jest",
+    "check": "pnpm typecheck && pnpm lint && node scripts/check-feature-boundaries.mjs && node scripts/check-frontend-state.mjs && pnpm test",
     "db:generate": "drizzle-kit generate && node scripts/make-migrations-idempotent.mjs"
   },
   "private": true

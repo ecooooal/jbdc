@@ -8,7 +8,7 @@ Implement the work described by the user in the spec or tickets.
 
 If the user passes a ticket reference, fetch it from the issue tracker and state its title before starting. If the reference is ambiguous, ask.
 
-Call the Skill tool with "tdd" where possible, at pre-agreed seams.
+Call the Skill tool with "tdd" at the reducer and records seams. If no seams are pre-agreed, name up to three in one line in your first response and proceed unless the user redirects.
 
 Run typechecking regularly, single test files regularly, and the full test suite once at the end.
 

@@ -10,7 +10,7 @@ This is the elaboration of **"State lives in reducers"** in `CODING_STANDARDS.md
 
 `src/features/<feature>/lib/<surface>-reducer.ts`, with no React import and no database access. Its test is `src/features/<feature>/tests/<surface>-reducer.test.ts`. Both stay private to the feature; a component reaches the reducer through the feature's own tree, not through `index.ts`/`react.ts` unless a screen genuinely needs it.
 
-One file per **surface**, not per feature: two screens that do not share a state machine get two reducers.
+One file per **surface**, not per feature: two screens that do not share a state machine get two reducers. A surface may delegate a slice to a private reducer in the same folder — Edit's Material use editor is one — but the surface still exports one state, event, and effect type. The slice is not a second surface.
 
 ## The pattern
 
@@ -52,15 +52,18 @@ The reducer owns decisions, not everything that changes on screen.
 - **Mid-gesture state is not reducer state.** `react-native-gesture-handler` decides during the gesture; dispatch at the end.
 - **Route state belongs to expo-router.** Read it at the edge and pass what a rule needs (`{ type: "edit-opened", designId }`).
 - **Live data belongs to `useLiveRead`.** Do not copy catalog rows into reducer state. A selection is an id; derive the selected row and its label from the live list. An entry created inline is selected by id immediately, and its label appears when the live read observes the insert. A read declares every table it watches, joins included (ADR-0005). The reducer holds the surface's decisions — the draft, the step, the error — not the catalog.
-- **One modal, one field.** Two `is…Open` booleans that cannot both be true are one piece of state: `openModal: "rename" | "copy" | null`.
+- **One panel, one field.** Editors that cannot both be open are one piece of state, even when one half lives in the surface reducer and the other in a component: `panel: { kind: "add" } | { kind: "edit"; editor: EditState } | null`. A component boolean beside a reducer-owned editor is a split; move both into the union.
 
 ## When plain `useState` is fine
+
+A **flush exit** is any way a draft can leave the screen: blur, Done/close, a tab change, app backgrounding, or unmount. A draft whose only flush exit is blur can stay local; a draft that must survive any other exit belongs to the surface reducer, because that exit has to declare the write.
 
 A component may keep `useState` when **all** of these are true:
 
 - The state is the component's own presentation: a text draft, a hover, a popover that is open.
 - No other state is updated in step with it, and no rule decides how it changes beyond "set it to what the user just typed or clicked".
 - No effect writes to it.
+- Its only flush exit is blur.
 
 A single text draft and its refusal are fine this way: one field, no effect. `NewDesignForm` crossed that line when its Category and Collection pickers arrived — name, two optional selections, and an inline draft now change together — so its decisions live in `new-design-form-reducer.ts`. A third coupled field turns a `useState` form into a reducer.
 
@@ -82,6 +85,7 @@ Two layers. The rule is which layer gets what.
 - `renderHook` is for bridge hooks (rule 7): assert that a subscription dispatches what it hears and cleans up on unmount.
 - Prefer `getByRole`, then accessible name and placeholder; `getByTestId` is the last resort. Prefer `userEvent` over `fireEvent`. The Jest matchers extend on import; no setup file is needed.
 - Do not mock the port or the driver. `@/features/database/testing` opens a real temporary database and supplies `createSyncSubscribe()`, whose `notify(table)` fires the listeners watching that table. A screen test that needs the catalogue passes a temp `database` and that adapter's `subscribe` to `DatabaseProvider` — the seam is the provider, not a mock of it. `src/features/designs/tests/new-design-form.test.tsx` is the first such test.
+- A native `Select` does not open in Jest. `@rn-primitives/select` positions its portal from the trigger's `measure` callback, which RNTL never fires. Test the picker's rule at the records/reducer seam; to cover trigger wiring, fire the `onValueChange` handler directly.
 - A reducer test replaces the component test for the same rule. Do not check one rule in both layers.
 
 ## The guard

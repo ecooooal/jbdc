@@ -10,7 +10,14 @@ The user has asked for a **retrospective**. You are suggesting improvements to t
 
 1. Call the Skill tool with `writing-for-agents` for the writing style guide.
 
-2. Read the primary sources for the session the user specifies. This may mean searching through session logs on this machine. If the user doesn't specify a session, default to the current one.
+2. Read the primary sources for the session the user specifies. If the user doesn't specify a session, default to the current one. OpenCode V2 stores sessions in `~/.local/share/opencode/opencode.db`: `session_v2` holds the session id, title, directory, cost, and token counts; `session_message` holds the transcript as JSON in `data`, ordered by `seq` (`content` parts are `reasoning`, `text`, or `tool`). Query it read-only with `sqlite3`. `~/.local/state/opencode/prompt-history.jsonl` lists the user's prompts.
+
+   Find the session first:
+
+   ```sh
+   sqlite3 -header -column ~/.local/share/opencode/opencode.db \
+     "select id, title, cost, tokens_cache_read from session_v2 order by time_updated desc limit 10;"
+   ```
 
 3. Look for candidates for improvement in these categories.
 
