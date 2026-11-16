@@ -33,8 +33,12 @@ The owner-managed lists of Categories and Collections that a design picks from. 
 _Avoid_: classification, tags, lookup tables
 
 **Material**:
-A fabric or trim the owner uses, kept as a named entry in her own list so that the same fabric is spelled the same way everywhere. A design can use several Materials, each with the colour used and a role: main, secondary, or other.
+A fabric or trim the owner uses, kept as a named entry in her own list so that the same fabric is spelled the same way everywhere. A design reaches its Materials through **Material uses**.
 _Avoid_: fabric, textile, cloth, swatch — and "marketing material", a different concept that belongs to a later release.
+
+**Material use**:
+One design's use of a Material: the colour used, and the role it plays — main, secondary, or other. A design has zero or more, and may use the same Material twice in different colours. The colour belongs to the use, not to the Material.
+_Avoid_: link, swatch, colourway, fabric entry
 
 **Prototype**:
 An image kind: a photograph of a physical sample. There is no Prototype status, because a sample can exist while the design is still In Development — the two facts cannot share one field.
