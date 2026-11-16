@@ -22,12 +22,23 @@ const EMPTY_SPECIFICATION = {
   constructionNotes: null,
 } as const;
 
+const EMPTY_CREATIVE_DIRECTION = {
+  concept: null,
+  mood: null,
+  inspiration: null,
+  intendedFeeling: null,
+  audience: null,
+  styling: null,
+  palette: null,
+} as const;
+
 const DESIGN: DesignFields = {
   name: 'Silk slip dress',
   description: 'Bias cut',
   categoryId: DRESS,
   collectionId: null,
   ...EMPTY_SPECIFICATION,
+  ...EMPTY_CREATIVE_DIRECTION,
 };
 
 /** A visit that has read its Design and is ready to edit. */
@@ -57,6 +68,13 @@ describe('edit design reducer', () => {
         sizeRange: '',
         measurements: '',
         constructionNotes: '',
+        concept: '',
+        mood: '',
+        inspiration: '',
+        intendedFeeling: '',
+        audience: '',
+        styling: '',
+        palette: '',
       },
       saved: {
         name: '',
@@ -64,9 +82,11 @@ describe('edit design reducer', () => {
         categoryId: null,
         collectionId: null,
         ...EMPTY_SPECIFICATION,
+        ...EMPTY_CREATIVE_DIRECTION,
       },
       sessionStart: null,
       editing: null,
+      tab: 'specification',
       error: null,
     });
   });
@@ -88,10 +108,18 @@ describe('edit design reducer', () => {
         sizeRange: '',
         measurements: '',
         constructionNotes: '',
+        concept: '',
+        mood: '',
+        inspiration: '',
+        intendedFeeling: '',
+        audience: '',
+        styling: '',
+        palette: '',
       },
       saved: DESIGN,
       sessionStart: DESIGN,
       editing: null,
+      tab: 'specification',
       error: null,
     });
   });
@@ -108,6 +136,21 @@ describe('edit design reducer', () => {
       silhouette: 'Relaxed A-line',
       measurements: 'Bust 96',
       neckline: '',
+    });
+  });
+
+  test('seeds Creative direction drafts from the stored values', () => {
+    const tester = createReducerTester(editDesignReducer, createInitialEditDesignState(DESIGN_ID));
+
+    tester.send({
+      type: 'design-loaded',
+      design: { ...DESIGN, concept: 'Sunday afternoons', palette: 'Ivory and cream' },
+    });
+
+    expect(tester.getState().draft).toMatchObject({
+      concept: 'Sunday afternoons',
+      palette: 'Ivory and cream',
+      mood: '',
     });
   });
 
@@ -385,6 +428,95 @@ describe('edit design reducer', () => {
     expect(tester.getState()).toMatchObject({
       draft: { name: 'Wool coat' },
       saved: { name: 'Wool coat' },
+    });
+  });
+});
+
+describe('tab changes', () => {
+  test('a half-typed draft is written when its tab is left, and nothing is recorded', () => {
+    const tester = session();
+
+    tester.send({ type: 'row-opened', row: 'silhouette', now: NOW });
+    tester.send({ type: 'text-changed', field: 'silhouette', value: '  Relaxed A-line  ' });
+    tester.send({ type: 'tab-changed', tab: 'creativeDirection', now: LATER });
+
+    expect(tester.getEffects()).toEqual([
+      {
+        type: 'write-drafts',
+        designId: DESIGN_ID,
+        patch: { silhouette: '  Relaxed A-line  ' },
+        now: LATER,
+      },
+    ]);
+    expect(tester.getState()).toMatchObject({
+      tab: 'creativeDirection',
+      editing: null,
+      draft: { silhouette: '  Relaxed A-line  ' },
+      saved: { silhouette: null },
+    });
+  });
+
+  test('the visit still records one Event after a tab change and close', () => {
+    const tester = session();
+
+    tester.send({ type: 'tab-changed', tab: 'creativeDirection', now: NOW });
+    tester.send({ type: 'row-opened', row: 'mood', now: NOW });
+    tester.send({ type: 'text-changed', field: 'mood', value: ' Romantic, relaxed ' });
+    tester.send({ type: 'tab-changed', tab: 'specification', now: LATER });
+    tester.send({
+      type: 'drafts-written',
+      design: { ...DESIGN, mood: 'Romantic, relaxed' },
+    });
+    tester.send({ type: 'session-closed', now: LATER });
+
+    expect(tester.getEffects()).toEqual([
+      {
+        type: 'write-drafts',
+        designId: DESIGN_ID,
+        patch: { mood: ' Romantic, relaxed ' },
+        now: LATER,
+      },
+      {
+        type: 'record-session',
+        designId: DESIGN_ID,
+        before: DESIGN,
+        after: { ...DESIGN, mood: 'Romantic, relaxed' },
+        now: LATER,
+      },
+    ]);
+  });
+
+  test('a tab change with nothing half-typed declares no work', () => {
+    const tester = session();
+
+    tester.send({ type: 'tab-changed', tab: 'creativeDirection', now: NOW });
+
+    expect(tester.getEffects()).toEqual([]);
+    expect(tester.getState().tab).toBe('creativeDirection');
+  });
+
+  test('asking for the tab already shown changes nothing', () => {
+    const tester = session();
+    const before = tester.getState();
+
+    tester.send({ type: 'tab-changed', tab: 'specification', now: NOW });
+
+    expect(tester.getEffects()).toEqual([]);
+    expect(tester.getState()).toBe(before);
+  });
+
+  test('leaving a tab with a blank name restores the saved one', () => {
+    const tester = session();
+
+    tester.send({ type: 'row-opened', row: 'name', now: NOW });
+    tester.send({ type: 'text-changed', field: 'name', value: '   ' });
+    tester.send({ type: 'tab-changed', tab: 'creativeDirection', now: LATER });
+
+    expect(tester.getEffects()).toEqual([]);
+    expect(tester.getState()).toMatchObject({
+      tab: 'creativeDirection',
+      editing: null,
+      draft: { name: 'Silk slip dress' },
     });
   });
 });

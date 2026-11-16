@@ -107,6 +107,50 @@ test('Detail hides Specification rows the owner has not recorded', async () => {
   expect(screen.queryByText('Not set')).toBeNull();
 });
 
+test('Detail renders recorded Creative direction rows read-only', async () => {
+  const design = createDesign(database, {
+    name: 'Sunday Afternoon',
+    concept: 'A slow summer day',
+    mood: 'Romantic',
+  });
+
+  await renderDetail(design.id);
+
+  expect(screen.getByText('Creative direction')).toBeTruthy();
+  expect(screen.getByText('A slow summer day')).toBeTruthy();
+  expect(screen.getByText('Romantic')).toBeTruthy();
+  expect(screen.queryByText('Not set')).toBeNull();
+});
+
+test('Detail hides Creative direction rows the owner has not recorded', async () => {
+  const design = createDesign(database, {
+    name: 'Sunday Afternoon',
+    silhouette: 'Relaxed A-line',
+    mood: 'Romantic',
+  });
+
+  await renderDetail(design.id);
+
+  await userEvent.press(screen.getByRole('tab', { name: 'Creative direction' }));
+
+  expect(screen.getByText('Mood')).toBeTruthy();
+  expect(screen.queryByText('Inspiration')).toBeNull();
+  expect(screen.queryByText('Palette')).toBeNull();
+});
+
+test('an empty section waits with Nothing recorded yet', async () => {
+  const design = createDesign(database, {
+    name: 'Sunday Afternoon',
+    silhouette: 'Relaxed A-line',
+  });
+
+  await renderDetail(design.id);
+
+  await userEvent.press(screen.getByRole('tab', { name: 'Creative direction' }));
+
+  expect(screen.getByText('Nothing recorded yet')).toBeTruthy();
+});
+
 test('a design that has recorded nothing shows no tab content', async () => {
   const design = createDesign(database, { name: 'Unfinished idea' });
 

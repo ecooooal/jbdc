@@ -19,23 +19,26 @@ import { Icon } from '@/shared/components/ui/icon';
 import { Input } from '@/shared/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/tabs';
 import { Text } from '@/shared/components/ui/text';
+import { CREATIVE_DIRECTION_FIELDS } from '../lib/creative-direction-fields';
 import type { DesignTextEditableField } from '../lib/fields';
-import type { EditDesignRow } from '../lib/edit-design-reducer';
+import type { EditDesignRow, EditDesignTab } from '../lib/edit-design-reducer';
+import { SPECIFICATION_FIELDS } from '../lib/specification-fields';
 import { useDesignDetail } from '../lib/use-design-detail';
 import { useEditSession } from '../lib/use-edit-session';
 import { DesignImageStrip } from './design-image-strip';
 import { DesignStatusBadge } from './design-status-badge';
+import { FieldRows } from './field-rows';
 import { FormField } from './form-field';
-import { SpecificationRows } from './specification-rows';
 import { TaxonomySelect } from './taxonomy-select';
 
 /**
  * Edit for one Design. The hero holds the image strip and identity, which the
- * owner edits least; the Specification tab holds the technical rows. Every
- * row writes itself when it is left, so there is no Save button, toast, or
- * confirmation: the owner changes a field, leaves it, and the row is already
- * stored. Status is shown, not editable. Detail and the Library follow through
- * their live reads.
+ * owner edits least; the Specification and Creative direction tabs hold the
+ * long sections. Every row writes itself when it is left, so there is no Save
+ * button, toast, or confirmation: the owner changes a field, leaves it, and
+ * the row is already stored. A tab change writes the draft it unmounts but
+ * records nothing; Status is shown, not editable. Detail and the Library
+ * follow through their live reads.
  */
 export function EditDesignScreen({ designId }: { designId: string }) {
   const database = useDatabase();
@@ -110,6 +113,11 @@ export function EditDesignScreen({ designId }: { designId: string }) {
 
   function closeRow(): void {
     send({ type: 'row-closed' });
+  }
+
+  /** The tab it is leaving is unmounted, so the reducer writes its draft first. */
+  function changeTab(tab: EditDesignTab): void {
+    send({ type: 'tab-changed', tab, now: Date.now() });
   }
 
   function chooseCategory(categoryId: string | null): void {
@@ -268,15 +276,32 @@ export function EditDesignScreen({ designId }: { designId: string }) {
             <Text className="text-destructive text-sm">{taxonomyError.message}</Text>
           ) : null}
 
-          {/* One tab until Creative direction lands (#26); the shape stays final. */}
-          <Tabs value="specification" onValueChange={() => {}}>
+          <Tabs
+            value={state.tab}
+            onValueChange={(value) => changeTab(value as EditDesignTab)}
+          >
             <TabsList>
               <TabsTrigger value="specification">
                 <Text>Specification</Text>
               </TabsTrigger>
+              <TabsTrigger value="creativeDirection">
+                <Text>Creative direction</Text>
+              </TabsTrigger>
             </TabsList>
             <TabsContent value="specification">
-              <SpecificationRows
+              <FieldRows
+                fields={SPECIFICATION_FIELDS}
+                draft={state.draft}
+                editing={state.editing}
+                error={state.error}
+                onOpen={openRow}
+                onChange={changeText}
+                onCommit={commitText}
+              />
+            </TabsContent>
+            <TabsContent value="creativeDirection">
+              <FieldRows
+                fields={CREATIVE_DIRECTION_FIELDS}
                 draft={state.draft}
                 editing={state.editing}
                 error={state.error}

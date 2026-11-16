@@ -1,18 +1,19 @@
 import { Pressable, View } from 'react-native';
 import { Input } from '@/shared/components/ui/input';
 import { Text } from '@/shared/components/ui/text';
+import type { CreativeDirectionField } from '../lib/creative-direction-fields';
 import type { EditDesignState } from '../lib/edit-design-reducer';
-import {
-  SPECIFICATION_FIELDS,
-  type SpecificationField,
-} from '../lib/specification-fields';
+import type { SpecificationField } from '../lib/specification-fields';
+
+export type SectionField = SpecificationField | CreativeDirectionField;
 
 /**
- * The seven Specification rows. Read-first: a line of `Label … value` until
- * the owner taps it; then the same row becomes its editor, one row at a time.
- * A value the owner has not recorded reads `Not set` in muted text.
+ * One section's read-first rows: a line of `Label … value` until the owner
+ * taps it; then the same row becomes its editor, one row at a time. A value
+ * the owner has not recorded reads `Not set` in muted text.
  */
-export function SpecificationRows({
+export function FieldRows({
+  fields,
   draft,
   editing,
   error,
@@ -20,16 +21,22 @@ export function SpecificationRows({
   onChange,
   onCommit,
 }: {
+  fields: readonly {
+    field: SectionField;
+    label: string;
+    placeholder: string;
+    multiline: boolean;
+  }[];
   draft: EditDesignState['draft'];
   editing: EditDesignState['editing'];
   error: EditDesignState['error'];
-  onOpen: (field: SpecificationField) => void;
-  onChange: (field: SpecificationField, value: string) => void;
-  onCommit: (field: SpecificationField) => void;
+  onOpen: (field: SectionField) => void;
+  onChange: (field: SectionField, value: string) => void;
+  onCommit: (field: SectionField) => void;
 }) {
   return (
     <View className="border-border bg-background overflow-hidden rounded-xl border">
-      {SPECIFICATION_FIELDS.map(({ field, label, placeholder, multiline }) => {
+      {fields.map(({ field, label, placeholder, multiline }) => {
         if (editing === field) {
           return (
             <View key={field} className="border-border gap-2 border-b px-4 py-3 last:border-b-0">

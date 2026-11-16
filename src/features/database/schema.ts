@@ -57,8 +57,18 @@ export const designs = sqliteTable(
     sizeRange: text('size_range'),
     measurements: text('measurements'),
     constructionNotes: text('construction_notes'),
+    // Creative direction: the artistic intent behind a design. All optional;
+    // null means the owner has not recorded it. Description says what the piece
+    // is; concept says what it is trying to do.
+    concept: text('concept'),
+    mood: text('mood'),
+    inspiration: text('inspiration'),
+    intendedFeeling: text('intended_feeling'),
+    audience: text('audience'),
+    styling: text('styling'),
+    palette: text('palette'),
     status: text('status', { enum: DESIGN_STATUSES }).notNull(),
-    /** Lowercased name, description, Specification, category and collection, rebuilt on every write. */
+    /** Lowercased name, description, Specification, Creative direction, category and collection, rebuilt on every write. */
     searchText: text('search_text').notNull(),
     createdAt: timestamp('created_at').notNull(),
     updatedAt: timestamp('updated_at').notNull(),

@@ -4,6 +4,7 @@ import {
   designFieldsChanged,
   draftsFromFields,
   EMPTY_DESIGN_DRAFTS,
+  EMPTY_DESIGN_FIELDS,
   type DesignChoiceEditableField,
   type DesignDrafts,
   type DesignEditableField,
@@ -37,16 +38,21 @@ export type EditDesignState = {
   sessionStart: DesignFields | null;
   /** The one row whose editor is open. `taxonomy` is the Category · Collection pair. */
   editing: EditDesignRow | null;
+  /** The section tab Edit is showing. */
+  tab: EditDesignTab;
   error: { field: DesignEditableField; message: string } | null;
 };
 
 export type EditDesignRow = DesignEditableField | 'taxonomy';
+
+export type EditDesignTab = 'specification' | 'creativeDirection';
 
 export type EditDesignEvent =
   | { type: 'design-loaded'; design: DesignFields }
   | { type: 'text-changed'; field: DesignTextEditableField; value: string }
   | { type: 'choice-chosen'; field: DesignChoiceEditableField; value: string | null }
   | { type: 'row-opened'; row: EditDesignRow; now: number }
+  | { type: 'tab-changed'; tab: EditDesignTab; now: number }
   | { type: 'row-closed' }
   | { type: 'field-saved'; field: DesignEditableField; design: DesignFields }
   | { type: 'drafts-written'; design: DesignFields }
@@ -81,21 +87,10 @@ export function createInitialEditDesignState(designId: string): EditDesignState 
     isSeeded: false,
     isClosed: false,
     draft: EMPTY_DESIGN_DRAFTS,
-    saved: {
-      name: '',
-      description: null,
-      categoryId: null,
-      collectionId: null,
-      silhouette: null,
-      neckline: null,
-      sleeveType: null,
-      garmentDetails: null,
-      sizeRange: null,
-      measurements: null,
-      constructionNotes: null,
-    },
+    saved: EMPTY_DESIGN_FIELDS,
     sessionStart: null,
     editing: null,
+    tab: 'specification',
     error: null,
   };
 }
@@ -183,6 +178,21 @@ function only(state: EditDesignState): EditDesignResult {
   return { state, effects: [] };
 }
 
+/**
+ * The state after the owner leaves a row: a blank name falls back to the
+ * stored one, and a refusal on the row being left clears. The caller decides
+ * what opens next.
+ */
+function leftRow(state: EditDesignState, leaving: EditDesignRow | null): EditDesignState {
+  const invalidName = leaving === 'name' && designNameProblem(state.draft.name) !== null;
+
+  return {
+    ...state,
+    draft: invalidName ? { ...state.draft, name: state.saved.name } : state.draft,
+    error: state.error?.field === leaving ? null : state.error,
+  };
+}
+
 export function editDesignReducer(
   state: EditDesignState,
   event: EditDesignEvent
@@ -217,14 +227,7 @@ export function editDesignReducer(
       const leaving = state.editing;
       const leavingTextRow =
         leaving !== null && leaving !== event.row && leaving !== 'taxonomy' && !isChoiceField(leaving);
-      const invalidName =
-        leaving === 'name' && designNameProblem(state.draft.name) !== null;
-      const opened = {
-        ...state,
-        draft: invalidName ? { ...state.draft, name: state.saved.name } : state.draft,
-        error: state.error?.field === leaving ? null : state.error,
-        editing: event.row,
-      };
+      const opened = { ...leftRow(state, leaving), editing: event.row };
 
       if (!leavingTextRow) return only(opened);
 
@@ -236,6 +239,21 @@ export function editDesignReducer(
 
       return {
         state: opened,
+        effects: [{ type: 'write-drafts', designId: state.designId, patch, now: event.now }],
+      };
+    }
+    case 'tab-changed': {
+      if (event.tab === state.tab) return only(state);
+
+      // A tab is unmounted on iOS without firing blur, so the tab change
+      // writes the draft it holds. It records nothing: the visit is still open.
+      const next = { ...leftRow(state, state.editing), tab: event.tab, editing: null };
+      const patch = unwrittenFields(next);
+
+      if (!patch) return only(next);
+
+      return {
+        state: next,
         effects: [{ type: 'write-drafts', designId: state.designId, patch, now: event.now }],
       };
     }

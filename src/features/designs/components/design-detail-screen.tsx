@@ -1,5 +1,6 @@
 import { router } from 'expo-router';
 import { ChevronLeft } from 'lucide-react-native';
+import { useState } from 'react';
 import { ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { DesignDetail } from '@/features/designs';
@@ -8,6 +9,7 @@ import { Icon } from '@/shared/components/ui/icon';
 import { Separator } from '@/shared/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/tabs';
 import { Text } from '@/shared/components/ui/text';
+import { CREATIVE_DIRECTION_FIELDS } from '../lib/creative-direction-fields';
 import { SPECIFICATION_FIELDS } from '../lib/specification-fields';
 import { useDesignDetail } from '../lib/use-design-detail';
 import { DesignImageStrip } from './design-image-strip';
@@ -56,33 +58,80 @@ function DetailHero({ design }: { design: DesignDetail }) {
   );
 }
 
-/**
- * The Specification read-only. Filled rows only; a section the owner has not
- * recorded says so, and a design that has recorded nothing shows no tab
- * content at all.
- */
-function DetailSpecification({ design }: { design: DesignDetail }) {
-  const filled = SPECIFICATION_FIELDS.filter(({ field }) => Boolean(design[field]));
+type DetailTab = 'specification' | 'creativeDirection';
+
+type DetailField =
+  | (typeof SPECIFICATION_FIELDS)[number]
+  | (typeof CREATIVE_DIRECTION_FIELDS)[number];
+
+const DETAIL_SECTIONS: readonly {
+  tab: DetailTab;
+  label: string;
+  fields: readonly DetailField[];
+}[] = [
+  { tab: 'specification', label: 'Specification', fields: SPECIFICATION_FIELDS },
+  { tab: 'creativeDirection', label: 'Creative direction', fields: CREATIVE_DIRECTION_FIELDS },
+];
+
+function recordedRows(design: DesignDetail, fields: readonly DetailField[]): DetailField[] {
+  return fields.filter(({ field }) => Boolean(design[field]));
+}
+
+/** One section read-only: filled rows only, or a note when it has none. */
+function DetailSection({
+  design,
+  fields,
+}: {
+  design: DesignDetail;
+  fields: readonly DetailField[];
+}) {
+  const filled = recordedRows(design, fields);
 
   if (filled.length === 0) {
     return <Text variant="muted">Nothing recorded yet</Text>;
   }
 
   return (
-    // One tab until Creative direction lands (#26); the shape stays final.
-    <Tabs value="specification" onValueChange={() => {}}>
+    <View className="border-border rounded-xl border px-4 py-1">
+      {filled.map(({ field, label }) => (
+        <DetailRow key={field} label={label} value={design[field] ?? ''} />
+      ))}
+    </View>
+  );
+}
+
+/**
+ * The two long sections read-only. A design that has recorded nothing shows no
+ * tab content at all; otherwise both tabs are there, each hiding its empty
+ * rows and saying so when the whole section is empty. Detail opens on the
+ * first section that has something to show.
+ */
+function DetailSections({ design }: { design: DesignDetail }) {
+  const [chosen, setChosen] = useState<DetailTab | null>(null);
+  const recorded = DETAIL_SECTIONS.filter(
+    ({ fields }) => recordedRows(design, fields).length > 0
+  );
+
+  if (recorded.length === 0) {
+    return <Text variant="muted">Nothing recorded yet</Text>;
+  }
+
+  const tab = chosen ?? recorded[0].tab;
+
+  return (
+    <Tabs value={tab} onValueChange={(value) => setChosen(value as DetailTab)}>
       <TabsList>
-        <TabsTrigger value="specification">
-          <Text>Specification</Text>
-        </TabsTrigger>
+        {DETAIL_SECTIONS.map(({ tab: value, label }) => (
+          <TabsTrigger key={value} value={value}>
+            <Text>{label}</Text>
+          </TabsTrigger>
+        ))}
       </TabsList>
-      <TabsContent value="specification">
-        <View className="border-border rounded-xl border px-4 py-1">
-          {filled.map(({ field, label }) => (
-            <DetailRow key={field} label={label} value={design[field] ?? ''} />
-          ))}
-        </View>
-      </TabsContent>
+      {DETAIL_SECTIONS.map(({ tab: value, fields }) => (
+        <TabsContent key={value} value={value}>
+          <DetailSection design={design} fields={fields} />
+        </TabsContent>
+      ))}
     </Tabs>
   );
 }
@@ -98,7 +147,7 @@ function DesignDetailContent({ design }: { design: DesignDetail }) {
       <View className="gap-6 px-6 pb-12 pt-2">
         <DetailHero design={design} />
 
-        <DetailSpecification design={design} />
+        <DetailSections design={design} />
 
         <View className="border-border rounded-xl border px-4 py-1">
           <DetailRow label="Created" value={formatTimestamp(design.createdAt)} />

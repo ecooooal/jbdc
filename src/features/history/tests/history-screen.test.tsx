@@ -32,6 +32,13 @@ function fields(overrides: Partial<DesignFields> = {}): DesignFields {
     sizeRange: null,
     measurements: null,
     constructionNotes: null,
+    concept: null,
+    mood: null,
+    inspiration: null,
+    intendedFeeling: null,
+    audience: null,
+    styling: null,
+    palette: null,
     ...overrides,
   };
 }

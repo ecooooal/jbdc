@@ -64,6 +64,13 @@ describe('design records', () => {
       sizeRange: null,
       measurements: null,
       constructionNotes: null,
+      concept: null,
+      mood: null,
+      inspiration: null,
+      intendedFeeling: null,
+      audience: null,
+      styling: null,
+      palette: null,
       status: 'concept',
       createdAt: now,
       updatedAt: now,
@@ -109,6 +116,58 @@ describe('design records', () => {
       silhouette: null,
       neckline: null,
       measurements: null,
+    });
+  });
+
+  test('round-trips every Creative direction field through create', () => {
+    const design = createDesign(database, {
+      name: 'Sunday Afternoon',
+      concept: '  A dress that feels like a slow summer day  ',
+      mood: 'Romantic, relaxed, feminine',
+      inspiration: 'Slow summer afternoons',
+      intendedFeeling: 'Comfortable but elegant',
+      audience: 'Women who appreciate understated clothing',
+      styling: 'Minimal jewellery, sandals',
+      palette: 'Ivory, cream, muted beige',
+    });
+
+    expect(design).toMatchObject({
+      concept: 'A dress that feels like a slow summer day',
+      mood: 'Romantic, relaxed, feminine',
+      inspiration: 'Slow summer afternoons',
+      intendedFeeling: 'Comfortable but elegant',
+      audience: 'Women who appreciate understated clothing',
+      styling: 'Minimal jewellery, sandals',
+      palette: 'Ivory, cream, muted beige',
+    });
+    expect(getDesign(database, design.id)).toEqual(design);
+  });
+
+  test('creates a Creative direction field left blank as null', () => {
+    const design = createDesign(database, {
+      name: 'Sunday Afternoon',
+      concept: '   ',
+      mood: '',
+      palette: ' \n\t ',
+    });
+
+    expect(design).toMatchObject({
+      concept: null,
+      mood: null,
+      palette: null,
+    });
+  });
+
+  test('keeps description and concept as separate ideas', () => {
+    const design = createDesign(database, {
+      name: 'Sunday Afternoon',
+      description: 'A bias-cut slip dress with a cowl neck.',
+      concept: 'To make an ordinary afternoon feel considered.',
+    });
+
+    expect(design).toMatchObject({
+      description: 'A bias-cut slip dress with a cowl neck.',
+      concept: 'To make an ordinary afternoon feel considered.',
     });
   });
 
@@ -161,6 +220,22 @@ describe('design records', () => {
       .get();
 
     expect(row?.searchText).toBe('silk slip dress relaxed a-line concealed zip bust 96');
+  });
+
+  test('includes the Creative direction values in search text', () => {
+    createDesign(database, {
+      name: 'Sunday Afternoon',
+      concept: ' Slow summer day ',
+      mood: 'Romantic',
+      palette: ' Ivory and cream ',
+    });
+
+    const row = database.db
+      .select({ searchText: designs.searchText })
+      .from(designs)
+      .get();
+
+    expect(row?.searchText).toBe('sunday afternoon slow summer day romantic ivory and cream');
   });
 
   test('joins the chosen category and collection names everywhere a design is read', () => {
@@ -360,6 +435,70 @@ describe('design updates', () => {
     );
   });
 
+  test('persists every Creative direction field and rebuilds search text', () => {
+    const design = createDesign(database, { name: 'Sunday Afternoon' }, 10);
+
+    const updated = updateDesign(
+      database,
+      design.id,
+      {
+        concept: ' A slow summer day ',
+        mood: 'Romantic',
+        inspiration: 'Summer afternoons',
+        intendedFeeling: 'Comfortable but elegant',
+        audience: 'Understated dressers',
+        styling: 'Sandals',
+        palette: 'Ivory and cream',
+      },
+      20
+    );
+
+    expect(updated).toMatchObject({
+      name: 'Sunday Afternoon',
+      concept: 'A slow summer day',
+      mood: 'Romantic',
+      inspiration: 'Summer afternoons',
+      intendedFeeling: 'Comfortable but elegant',
+      audience: 'Understated dressers',
+      styling: 'Sandals',
+      palette: 'Ivory and cream',
+      updatedAt: 20,
+    });
+    expect(getDesign(database, design.id)).toEqual(updated);
+    expect(storedSearchText()).toBe(
+      'sunday afternoon a slow summer day romantic summer afternoons comfortable but elegant understated dressers sandals ivory and cream'
+    );
+  });
+
+  test('clears a Creative direction field with null or whitespace alone', () => {
+    const design = createDesign(
+      database,
+      { name: 'Sunday Afternoon', mood: 'Romantic', palette: 'Ivory' },
+      10
+    );
+
+    expect(updateDesign(database, design.id, { mood: null, palette: '   ' }, 20)).toMatchObject({
+      mood: null,
+      palette: null,
+      updatedAt: 20,
+    });
+  });
+
+  test('an update leaves Creative direction fields it does not name alone', () => {
+    const design = createDesign(
+      database,
+      { name: 'Sunday Afternoon', concept: 'Slow summer day', palette: 'Ivory' },
+      10
+    );
+
+    expect(updateDesign(database, design.id, { mood: 'Romantic' }, 20)).toMatchObject({
+      concept: 'Slow summer day',
+      palette: 'Ivory',
+      mood: 'Romantic',
+      updatedAt: 20,
+    });
+  });
+
   test('clears a Specification field with null or whitespace alone', () => {
     const design = createDesign(
       database,
@@ -487,6 +626,13 @@ describe('design detail', () => {
     sizeRange?: string | null;
     measurements?: string | null;
     constructionNotes?: string | null;
+    concept?: string | null;
+    mood?: string | null;
+    inspiration?: string | null;
+    intendedFeeling?: string | null;
+    audience?: string | null;
+    styling?: string | null;
+    palette?: string | null;
     status?: DesignStatus;
     createdAt?: number;
     updatedAt?: number;
@@ -511,6 +657,13 @@ describe('design detail', () => {
         sizeRange: input.sizeRange ?? null,
         measurements: input.measurements ?? null,
         constructionNotes: input.constructionNotes ?? null,
+        concept: input.concept ?? null,
+        mood: input.mood ?? null,
+        inspiration: input.inspiration ?? null,
+        intendedFeeling: input.intendedFeeling ?? null,
+        audience: input.audience ?? null,
+        styling: input.styling ?? null,
+        palette: input.palette ?? null,
         status: input.status ?? 'concept',
         searchText: input.name.toLowerCase(),
         createdAt: input.createdAt ?? 0,
@@ -564,10 +717,40 @@ describe('design detail', () => {
       sizeRange: 'UK 8–16',
       measurements: 'Bust 96',
       constructionNotes: 'French seams',
+      concept: null,
+      mood: null,
+      inspiration: null,
+      intendedFeeling: null,
+      audience: null,
+      styling: null,
+      palette: null,
       status: 'approved',
       createdAt: 10,
       updatedAt: 20,
       deletedAt: null,
+    });
+  });
+
+  test('reads every Creative direction field', () => {
+    const id = insertDetailDesign({
+      name: 'Sunday Afternoon',
+      concept: 'A slow summer day',
+      mood: 'Romantic',
+      inspiration: 'Summer afternoons',
+      intendedFeeling: 'Comfortable but elegant',
+      audience: 'Understated dressers',
+      styling: 'Sandals',
+      palette: 'Ivory and cream',
+    });
+
+    expect(getDesignDetail(database, id)).toMatchObject({
+      concept: 'A slow summer day',
+      mood: 'Romantic',
+      inspiration: 'Summer afternoons',
+      intendedFeeling: 'Comfortable but elegant',
+      audience: 'Understated dressers',
+      styling: 'Sandals',
+      palette: 'Ivory and cream',
     });
   });
 

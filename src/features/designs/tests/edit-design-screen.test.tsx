@@ -47,9 +47,13 @@ function newDesign() {
   });
 }
 
-/** Opens the read-first editor for a hero field or Specification row. */
+/** Opens the read-first editor for a hero field or a section row. */
 async function openRow(label: string) {
   await userEvent.press(screen.getByRole('button', { name: label }));
+}
+
+async function openTab(name: string) {
+  await userEvent.press(screen.getByRole('tab', { name }));
 }
 
 describe('edit hero', () => {
@@ -231,6 +235,105 @@ describe('Specification rows', () => {
     await view.unmount();
 
     expect(getDesign(database, design.id)).toMatchObject({ sizeRange: 'UK 8–16' });
+  });
+});
+
+describe('Creative direction rows', () => {
+  const LABELS = [
+    'Concept',
+    'Mood',
+    'Inspiration',
+    'Intended feeling',
+    'Audience',
+    'Styling',
+    'Palette',
+  ];
+
+  test('Edit shows both tabs and every Creative direction row read-first', async () => {
+    const design = newDesign();
+
+    await renderEdit(design.id);
+
+    expect(screen.getByRole('tab', { name: 'Specification' })).toBeTruthy();
+    expect(screen.getByRole('tab', { name: 'Creative direction' })).toBeTruthy();
+
+    await openTab('Creative direction');
+
+    for (const label of LABELS) {
+      expect(screen.getByRole('button', { name: label })).toBeTruthy();
+    }
+    expect(screen.getAllByText('Not set')).toHaveLength(7);
+  });
+
+  test('Concept asks what the piece is trying to do', async () => {
+    const design = newDesign();
+
+    await renderEdit(design.id);
+    await openTab('Creative direction');
+    await openRow('Concept');
+
+    expect(screen.getByPlaceholderText('What this piece is trying to do')).toBeTruthy();
+  });
+
+  test('a Creative direction row typed and left is stored and collapses', async () => {
+    const design = newDesign();
+
+    await renderEdit(design.id);
+    await openTab('Creative direction');
+    await openRow('Mood');
+
+    const mood = screen.getByLabelText('Mood');
+
+    expect(screen.getByPlaceholderText('Intended atmosphere or emotion')).toBeTruthy();
+
+    await fireEvent.changeText(mood, 'Romantic, relaxed');
+    await fireEvent(mood, 'blur');
+
+    expect(getDesign(database, design.id)).toMatchObject({ mood: 'Romantic, relaxed' });
+    expect(screen.getByRole('button', { name: 'Mood' })).toBeTruthy();
+    expect(screen.getByText('Romantic, relaxed')).toBeTruthy();
+    expect(screen.queryByPlaceholderText('Intended atmosphere or emotion')).toBeNull();
+  });
+});
+
+describe('tab change flushes drafts', () => {
+  test('switching tabs with a half-typed row stores it and records nothing', async () => {
+    const design = newDesign();
+    const view = await renderEdit(design.id);
+
+    await openRow('Silhouette');
+    await fireEvent.changeText(screen.getByLabelText('Silhouette'), 'Relaxed A-line');
+    await openTab('Creative direction');
+
+    expect(getDesign(database, design.id)).toMatchObject({ silhouette: 'Relaxed A-line' });
+    expect(listDesignEvents(database, design.id)).toEqual([]);
+
+    await view.unmount();
+
+    expect(listDesignEvents(database, design.id)).toHaveLength(1);
+  });
+
+  test('a visit that crosses both tabs still writes one Event carrying every field', async () => {
+    const design = newDesign();
+    const view = await renderEdit(design.id);
+
+    await openRow('Silhouette');
+    await fireEvent.changeText(screen.getByLabelText('Silhouette'), 'Relaxed A-line');
+    await openTab('Creative direction');
+    await openRow('Mood');
+    await fireEvent.changeText(screen.getByLabelText('Mood'), 'Romantic');
+    await view.unmount();
+
+    const events = listDesignEvents(database, design.id);
+
+    expect(events).toHaveLength(1);
+    expect(events[0]).toMatchObject({
+      kind: 'edit',
+      diff: {
+        silhouette: { from: null, to: 'Relaxed A-line' },
+        mood: { from: null, to: 'Romantic' },
+      },
+    });
   });
 });
 

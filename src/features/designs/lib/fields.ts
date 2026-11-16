@@ -1,3 +1,7 @@
+import {
+  CREATIVE_DIRECTION_FIELDS,
+  type CreativeDirectionField,
+} from './creative-direction-fields';
 import type { DesignFields } from './records';
 import { SPECIFICATION_FIELDS, type SpecificationField } from './specification-fields';
 
@@ -9,6 +13,7 @@ export const DESIGN_TEXT_FIELDS = [
   'name',
   'description',
   ...SPECIFICATION_FIELDS.map((specification) => specification.field),
+  ...CREATIVE_DIRECTION_FIELDS.map((creativeDirection) => creativeDirection.field),
 ] as const;
 
 export type DesignTextEditableField = (typeof DESIGN_TEXT_FIELDS)[number];
@@ -66,6 +71,9 @@ const FIELD_LABELS: Record<DesignEditableField, string> = {
   ...(Object.fromEntries(
     SPECIFICATION_FIELDS.map(({ field, label }) => [field, label])
   ) as Record<SpecificationField, string>),
+  ...(Object.fromEntries(
+    CREATIVE_DIRECTION_FIELDS.map(({ field, label }) => [field, label])
+  ) as Record<CreativeDirectionField, string>),
 };
 
 /** The owner-facing label for an editable field, declared beside the field. */
@@ -80,6 +88,18 @@ const emptyText = Object.fromEntries(
 /** A visit before any read has landed: every draft empty and nothing saved. */
 export const EMPTY_DESIGN_DRAFTS: DesignDrafts = {
   ...emptyText,
+  categoryId: null,
+  collectionId: null,
+};
+
+const emptyOptionalText = Object.fromEntries(
+  DESIGN_TEXT_FIELDS.filter((field) => field !== 'name').map((field) => [field, null])
+) as Record<Exclude<DesignTextEditableField, 'name'>, null>;
+
+/** A Design with nothing recorded: the row a visit holds until the first read. */
+export const EMPTY_DESIGN_FIELDS: DesignFields = {
+  ...emptyOptionalText,
+  name: '',
   categoryId: null,
   collectionId: null,
 };

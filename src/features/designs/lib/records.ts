@@ -2,6 +2,10 @@ import { and, desc, eq, isNull } from 'drizzle-orm';
 import type { Database, DesignStatus } from '@/features/database';
 import { designs } from '@/features/database';
 import { readTaxonomyNames } from '@/features/taxonomy';
+import {
+  CREATIVE_DIRECTION_FIELDS,
+  type CreativeDirectionField,
+} from './creative-direction-fields';
 import { designFieldsChanged, type DesignEditableField } from './fields';
 import { DESIGN_NAME_MAX_LENGTH, designNameProblem } from './limits';
 import { normalizeOptionalText } from './optional-text';
@@ -23,6 +27,13 @@ export type Design = {
   sizeRange: string | null;
   measurements: string | null;
   constructionNotes: string | null;
+  concept: string | null;
+  mood: string | null;
+  inspiration: string | null;
+  intendedFeeling: string | null;
+  audience: string | null;
+  styling: string | null;
+  palette: string | null;
   status: DesignStatus;
   createdAt: number;
   updatedAt: number;
@@ -72,26 +83,33 @@ const designColumns = {
   sizeRange: designs.sizeRange,
   measurements: designs.measurements,
   constructionNotes: designs.constructionNotes,
+  concept: designs.concept,
+  mood: designs.mood,
+  inspiration: designs.inspiration,
+  intendedFeeling: designs.intendedFeeling,
+  audience: designs.audience,
+  styling: designs.styling,
+  palette: designs.palette,
   status: designs.status,
   createdAt: designs.createdAt,
   updatedAt: designs.updatedAt,
   deletedAt: designs.deletedAt,
 };
 
-/** The seven Specification values, each trimmed; whitespace alone is null. */
-type SpecificationValues = Record<SpecificationField, string | null>;
+type OptionalTextField = SpecificationField | CreativeDirectionField;
 
 /**
- * The seven Specification values a write would store. An absent field keeps the
- * current value; null or whitespace clears it.
+ * The values of one optional-text section a write would store, each trimmed;
+ * whitespace alone is null. An absent field keeps the current value.
  */
-function specificationValues(
+function optionalTextValues<Field extends OptionalTextField>(
+  fields: readonly { field: Field }[],
   current: Design | null,
-  input: Partial<Record<SpecificationField, string | null | undefined>>
-): SpecificationValues {
-  const values = {} as SpecificationValues;
+  input: Partial<Record<Field, string | null | undefined>>
+): Record<Field, string | null> {
+  const values = {} as Record<Field, string | null>;
 
-  for (const { field } of SPECIFICATION_FIELDS) {
+  for (const { field } of fields) {
     values[field] =
       input[field] === undefined
         ? (current?.[field] ?? null)
@@ -111,9 +129,10 @@ function normalizeName(raw: string): string {
 }
 
 /**
- * Lowercased name, description, Specification, Category, and Collection,
- * rebuilt on every write. The taxonomy names are read from their tables, so a
- * rename lands in the search text the next time the design is written.
+ * Lowercased name, description, Specification, Creative direction, Category,
+ * and Collection, rebuilt on every write. The taxonomy names are read from
+ * their tables, so a rename lands in the search text the next time the design
+ * is written.
  */
 function buildSearchText(
   design: DesignFields,
@@ -124,6 +143,7 @@ function buildSearchText(
     design.name,
     design.description,
     ...SPECIFICATION_FIELDS.map(({ field }) => design[field]),
+    ...CREATIVE_DIRECTION_FIELDS.map(({ field }) => design[field]),
     category,
     collection,
   ]
@@ -150,7 +170,7 @@ function designTaxonomyNames(
  * Writes one Design and returns it. A name is the only required input; a blank,
  * whitespace-only, or over-long name throws before anything is written. The
  * Category and Collection are optional and arrive as the ids the pickers chose;
- * the Specification fields are optional text.
+ * the Specification and Creative direction fields are optional text.
  */
 export function createDesign(
   database: Database,
@@ -168,7 +188,8 @@ export function createDesign(
     description,
     categoryId,
     collectionId,
-    ...specificationValues(null, input),
+    ...optionalTextValues(SPECIFICATION_FIELDS, null, input),
+    ...optionalTextValues(CREATIVE_DIRECTION_FIELDS, null, input),
     status: 'concept',
     createdAt: now,
     updatedAt: now,
@@ -202,7 +223,8 @@ export function updateDesign(
   const current = getDesign(database, id);
   if (!current) return null;
 
-  const specification = specificationValues(current, input);
+  const specification = optionalTextValues(SPECIFICATION_FIELDS, current, input);
+  const creativeDirection = optionalTextValues(CREATIVE_DIRECTION_FIELDS, current, input);
   const next: Design = {
     ...current,
     name: input.name === undefined ? current.name : normalizeName(input.name),
@@ -213,6 +235,7 @@ export function updateDesign(
     categoryId: input.categoryId === undefined ? current.categoryId : input.categoryId,
     collectionId: input.collectionId === undefined ? current.collectionId : input.collectionId,
     ...specification,
+    ...creativeDirection,
   };
 
   if (!designFieldsChanged(next, current)) return current;
@@ -228,6 +251,7 @@ export function updateDesign(
       categoryId: next.categoryId,
       collectionId: next.collectionId,
       ...specification,
+      ...creativeDirection,
       updatedAt: next.updatedAt,
       searchText: buildSearchText(next, taxonomy.category, taxonomy.collection),
     })
