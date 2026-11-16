@@ -59,6 +59,8 @@ Each smell reads *what it is* → *how to fix*; match it against the diff:
 
 Issue both sub-agent calls together, in the foreground, and aggregate the reports they return.
 
+**Neither reviewer runs the repo's checks.** The implementation agent already ran typecheck, lint, tests, the boundary check, and the frontend-state guard; CI repeats them on push. A reviewer that reruns them spends the review budget producing output it cannot act on. End both prompts with: "Do not run the repo's checks. Assume they pass; if the diff looks like it cannot compile, say so from reading it."
+
 **Standards sub-agent prompt** should include:
 
 - The full diff command and commit list.
@@ -78,6 +80,12 @@ If the spec is missing, skip the Spec sub-agent and note this in the final repor
 Present the two reports under `## Standards` and `## Spec` headings, verbatim or lightly cleaned. Do **not** merge or rerank findings, because the two axes are deliberately separate (see _Why two axes_).
 
 End with a one-line summary: total findings per axis, and the worst issue _within each axis_ (if any). Don't pick a single winner across axes: that's the reranking the separation exists to prevent.
+
+### 6. Re-review only the delta
+
+After fixes, do not repeat both axes. Re-run only the axis (or axes) that reported a **hard** violation, against `git diff <reviewed-sha>..HEAD`, with the same spec/standards sources but a delta-sized brief. Cosmetic findings need no second review; the implementation agent checks those itself.
+
+Two review rounds is the normal ceiling. A third round is a signal that the first review's brief was too vague, not that the diff needs more reviewers.
 
 ## Why two axes
 

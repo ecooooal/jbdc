@@ -13,6 +13,13 @@ check can make. Mechanical rules live in code, not here:
   commit, and never let it hide inside a review diff.
 - **One ticket, one purpose.** If a change is not needed for the ticket's
   acceptance criteria, leave it out and file it.
+- **Subject names the ticket.** `<type> (#<ticket>): <reason>`, e.g.
+  `feat (#14): edit a design's fields without a Save button`. Types in use:
+  `feat`, `fix`, `refactor`, `test`, `docs`, `chore`. A change with no ticket
+  names the files it touches instead of inventing a number, comma-separated
+  when there are several: `chore (CODING_STANDARDS, AGENTS): …`.
+  The Spec review reads the ticket from the subject, so a commit without one is
+  unreviewable.
 
 ## Architecture
 
@@ -27,6 +34,9 @@ check can make. Mechanical rules live in code, not here:
 - **The schema is the vocabulary.** Do not invent a status, kind, or table that
   is absent from `GLOSSARY.md` and `schema.ts`. If the spec needs one, the spec
   changes first.
+- **useEffect**, used sensibly.
+- **State** lives in reducers. See `docs/FRONTEND_STATE.md`.
+- Client components get only what they use.
 
 ## Tests
 
@@ -34,3 +44,6 @@ check can make. Mechanical rules live in code, not here:
   `@/features/database/testing`; do not mock the port or the driver.
 - **Test the invariant, not the implementation.** A test should fail if the
   behaviour regresses, not if a private helper is renamed.
+- **Render only what a reducer cannot reach.** Decisions are tested on the
+  reducer; RNTL covers gestures, what a state looks like, and subscriptions.
+  Never check one rule in both layers. See `docs/FRONTEND_STATE.md`.

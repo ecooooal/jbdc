@@ -1,5 +1,11 @@
 import { randomUUID } from 'node:crypto';
-import { categories, collections, designs, type DesignStatus } from '@/features/database';
+import {
+  categories,
+  collections,
+  DESIGN_STATUSES,
+  designs,
+  type DesignStatus,
+} from '@/features/database';
 import { createTempDatabase } from '@/features/database/testing';
 import { listLibraryDesigns } from '@/features/library';
 
@@ -46,7 +52,7 @@ describe('library query', () => {
   }
 
   test('returns no rows for an empty database', () => {
-    expect(listLibraryDesigns(database.db)).toEqual([]);
+    expect(listLibraryDesigns(database)).toEqual([]);
   });
 
   test('excludes soft-deleted, rejected, and archived designs', () => {
@@ -55,9 +61,20 @@ describe('library query', () => {
     insertDesign('Archived', { status: 'archived' });
     insertDesign('Still in development', { status: 'in_development' });
 
-    expect(listLibraryDesigns(database.db).map((design) => design.name)).toEqual([
+    expect(listLibraryDesigns(database).map((design) => design.name)).toEqual([
       'Still in development',
     ]);
+  });
+
+  test('includes exactly the Statuses that are neither Rejected nor Archived', () => {
+    for (const status of DESIGN_STATUSES) insertDesign(status, { status });
+
+    const statuses = listLibraryDesigns(database).map((design) => design.status);
+    const shown = DESIGN_STATUSES.filter(
+      (status) => status !== 'rejected' && status !== 'archived'
+    );
+
+    expect([...statuses].sort()).toEqual([...shown].sort());
   });
 
   test('includes active statuses, most recently updated first', () => {
@@ -65,7 +82,7 @@ describe('library query', () => {
     insertDesign('Produced', { status: 'produced', updatedAt: 30 });
     insertDesign('Approved', { status: 'approved', updatedAt: 20 });
 
-    expect(listLibraryDesigns(database.db).map((design) => design.name)).toEqual([
+    expect(listLibraryDesigns(database).map((design) => design.name)).toEqual([
       'Produced',
       'Approved',
       'Concept',
@@ -85,7 +102,7 @@ describe('library query', () => {
     insertDesign('In a collection', { categoryId, collectionId, updatedAt: 40 });
     insertDesign('Bare design', { updatedAt: 50 });
 
-    const [bare, inCollection] = listLibraryDesigns(database.db);
+    const [bare, inCollection] = listLibraryDesigns(database);
 
     expect(bare).toMatchObject({
       name: 'Bare design',

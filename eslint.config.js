@@ -2,8 +2,9 @@ const { defineConfig } = require('eslint/config');
 const expoConfig = require('eslint-config-expo/flat');
 
 // Mechanical boundaries from AGENTS.md and docs/EXPO-DB.md. Patterns match the
-// import specifier, so they cover both `@/features/...` and relative paths
-// that cross into another feature package.
+// raw import specifier, so they cover `@/features/...` aliases and bare
+// specifiers. Relative escapes are resolved and checked by
+// scripts/check-feature-boundaries.mjs in pre-commit and CI.
 const boundaryRules = {
   entryPoints: {
     group: ['**/features/*/lib/**', '**/features/*/tests/**'],
@@ -19,13 +20,24 @@ const boundaryRules = {
   },
 };
 
-function restrictedImports(exempt = []) {
+// `src/app` is routing only: a route renders a screen from a feature entry
+// point, so it never composes shared UI or reaches into a feature's components.
+const routesOnly = {
+  group: ['@/shared/components/**', '**/features/*/components/**'],
+  message:
+    'src/app is routing only. Render the screen from a feature entry point; its UI lives in features/<feature>/components.',
+};
+
+function restrictedImports(exempt = [], extra = []) {
   return [
     'error',
     {
-      patterns: Object.entries(boundaryRules)
-        .filter(([name]) => !exempt.includes(name))
-        .map(([, rule]) => rule),
+      patterns: [
+        ...Object.entries(boundaryRules)
+          .filter(([name]) => !exempt.includes(name))
+          .map(([, rule]) => rule),
+        ...extra,
+      ],
     },
   ];
 }
@@ -39,6 +51,12 @@ module.exports = defineConfig([
     files: ['**/*.{ts,tsx}'],
     rules: {
       'no-restricted-imports': restrictedImports(),
+    },
+  },
+  {
+    files: ['src/app/**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-imports': restrictedImports([], [routesOnly]),
     },
   },
   {

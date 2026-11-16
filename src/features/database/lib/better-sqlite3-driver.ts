@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import BetterSqlite3 from 'better-sqlite3';
 import { drizzle } from 'drizzle-orm/better-sqlite3';
 import { createDatabase, type Database } from './port';
@@ -12,5 +13,5 @@ export function openTestDatabase(filePath: string): Database {
   client.pragma('journal_mode = WAL');
   client.pragma('foreign_keys = ON');
 
-  return createDatabase(drizzle({ client }), () => client.close());
+  return createDatabase(drizzle({ client }), () => client.close(), randomUUID);
 }

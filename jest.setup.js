@@ -10,3 +10,20 @@ void globalThis.TextDecoderStream;
 void globalThis.TextEncoderStream;
 void globalThis.fetch;
 void globalThis.__ExpoImportMetaRegistry;
+
+// Reanimated 4 initializes native worklets on import and cannot load under the
+// Node test environment. The UI kit only needs its Animated wrapper and the
+// fade presets, so a tiny stand-in keeps the render tests running without the
+// native worklets runtime.
+jest.mock('react-native-reanimated', () => {
+  const { View } = require('react-native');
+  const Animated = { View, createAnimatedComponent: (Component) => Component };
+
+  return {
+    __esModule: true,
+    default: Animated,
+    FadeIn: { reduceMotion: () => ({}) },
+    FadeOut: { reduceMotion: () => ({}) },
+    ReduceMotion: { System: 'system' },
+  };
+});

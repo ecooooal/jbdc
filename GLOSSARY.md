@@ -28,6 +28,10 @@ _Avoid_: type, tag, label
 A named, owner-managed group of designs, usually one season's body of work, with an optional year. A design belongs to at most one collection, and to none.
 _Avoid_: season, line, drop
 
+**Taxonomy**:
+The owner-managed lists of Categories and Collections that a design picks from. The module that reads and writes those lists.
+_Avoid_: classification, tags, lookup tables
+
 **Material**:
 A fabric or trim the owner uses, kept as a named entry in her own list so that the same fabric is spelled the same way everywhere. A design can use several Materials, each with the colour used and a role: main, secondary, or other.
 _Avoid_: fabric, textile, cloth, swatch — and "marketing material", a different concept that belongs to a later release.
@@ -37,6 +41,10 @@ An image kind: a photograph of a physical sample. There is no Prototype status, 
 _Avoid_: sample, toile, mockup
 
 ## History
+
+**History**:
+The append-only sequence of Events kept for one design, newest first when read. One editing session is one Event, so History reads as work, not keystrokes.
+_Avoid_: audit log, activity feed, revision history
 
 **Status**:
 Where a design stands right now: Concept, In Development, Approved, Produced, Rejected, or Archived. Exactly one at a time, changeable in any direction.
