@@ -8,6 +8,7 @@ import { useDatabase } from '@/features/database/react';
 import {
   DESIGN_NAME_MAX_LENGTH,
   InvalidDesignNameError,
+  removeMaterialUse,
   updateDesign,
   type DesignEditableField,
   type UpdateDesignInput,
@@ -20,7 +21,7 @@ import { Input } from '@/shared/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/tabs';
 import { Text } from '@/shared/components/ui/text';
 import type { DesignTextEditableField } from '../lib/fields';
-import type { EditDesignRow } from '../lib/edit-design-reducer';
+import { editingMaterialUse, type EditDesignRow } from '../lib/edit-design-reducer';
 import {
   DESIGN_SECTIONS,
   isDesignSectionTab,
@@ -132,6 +133,26 @@ export function EditDesignScreen({ designId }: { designId: string }) {
   function chooseCollection(collectionId: string | null): void {
     send({ type: 'choice-chosen', field: 'collectionId', value: collectionId });
     commit('collectionId', { collectionId });
+  }
+
+  /** Removal is one call; a use that is already gone refuses like a save. */
+  function removeUseEditor(): void {
+    const editor = editingMaterialUse(state);
+
+    if (!editor) return;
+
+    const removed = removeMaterialUse(database, designId, editor.saved.id);
+
+    if (!removed) {
+      send({
+        type: 'material-use-refused',
+        useId: editor.saved.id,
+        message: 'This material use is not here.',
+      });
+      return;
+    }
+
+    send({ type: 'material-use-removed', useId: removed.id });
   }
 
   function fieldError(field: DesignEditableField) {
@@ -309,6 +330,33 @@ export function EditDesignScreen({ designId }: { designId: string }) {
                     <MaterialUsesSection
                       designId={designId}
                       uses={design.materialUses}
+                      panel={state.materialUsePanel}
+                      onOpenUse={(use) =>
+                        send({ type: 'material-use-editor-opened', use, now: Date.now() })
+                      }
+                      onOpenAdd={() =>
+                        send({ type: 'material-use-add-opened', now: Date.now() })
+                      }
+                      onClosePanel={() =>
+                        send({ type: 'material-use-panel-closed', now: Date.now() })
+                      }
+                      onMaterialChosen={(materialId) =>
+                        send({
+                          type: 'material-use-material-chosen',
+                          materialId,
+                          now: Date.now(),
+                        })
+                      }
+                      onColourChanged={(colour) =>
+                        send({ type: 'material-use-colour-changed', colour })
+                      }
+                      onColourCommitted={() =>
+                        send({ type: 'material-use-colour-committed', now: Date.now() })
+                      }
+                      onRoleChosen={(role) =>
+                        send({ type: 'material-use-role-chosen', role, now: Date.now() })
+                      }
+                      onRemoveUse={removeUseEditor}
                       onUseAdded={(use) => send({ type: 'material-use-added', use })}
                     />
                   ) : null}

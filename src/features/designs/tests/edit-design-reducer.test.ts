@@ -60,6 +60,15 @@ function session() {
   return tester;
 }
 
+/** A visit whose Design already has one recorded Material use. */
+function sessionWithUse() {
+  const tester = createReducerTester(editDesignReducer, createInitialEditDesignState(DESIGN_ID));
+
+  tester.send({ type: 'design-loaded', design: DESIGN, materialUses: [WOOL_USE] });
+
+  return tester;
+}
+
 describe('edit design reducer', () => {
   test('starts unseeded, with the Design it edits and no baseline yet', () => {
     expect(createInitialEditDesignState(DESIGN_ID)).toEqual({
@@ -98,6 +107,7 @@ describe('edit design reducer', () => {
       sessionStart: null,
       sessionStartUses: [],
       editing: null,
+      materialUsePanel: null,
       tab: 'specification',
       error: null,
     });
@@ -133,6 +143,7 @@ describe('edit design reducer', () => {
       sessionStart: DESIGN,
       sessionStartUses: [],
       editing: null,
+      materialUsePanel: null,
       tab: 'specification',
       error: null,
     });
@@ -588,6 +599,56 @@ describe('edit session boundary', () => {
     ]);
   });
 
+  test('a corrected use replaces what the visit holds', () => {
+    const tester = sessionWithUse();
+    const corrected: MaterialUse = { ...WOOL_USE, colour: 'Black', role: 'secondary' };
+
+    tester.send({ type: 'material-use-saved', use: corrected });
+
+    expect(tester.getState().savedUses).toEqual([corrected]);
+    expect(tester.getState().sessionStartUses).toEqual([WOOL_USE]);
+  });
+
+  test('a removed use leaves what the visit holds', () => {
+    const tester = sessionWithUse();
+
+    tester.send({ type: 'material-use-removed', useId: WOOL_USE.id });
+
+    expect(tester.getState().savedUses).toEqual([]);
+    expect(tester.getState().sessionStartUses).toEqual([WOOL_USE]);
+  });
+
+  test('a use added then corrected in one visit records the corrected use', () => {
+    const tester = session();
+    const corrected: MaterialUse = { ...WOOL_USE, colour: 'Black' };
+
+    tester.send({ type: 'material-use-added', use: WOOL_USE });
+    tester.send({ type: 'material-use-saved', use: corrected });
+    tester.send({ type: 'session-closed', now: LATER });
+
+    expect(tester.getEffects()).toEqual([
+      {
+        type: 'record-session',
+        designId: DESIGN_ID,
+        before: DESIGN,
+        after: DESIGN,
+        addedMaterialUses: [corrected],
+        now: LATER,
+      },
+    ]);
+  });
+
+  test('a use added then removed in one visit records no Event', () => {
+    const tester = session();
+
+    tester.send({ type: 'material-use-added', use: WOOL_USE });
+    tester.send({ type: 'material-use-removed', useId: WOOL_USE.id });
+    tester.send({ type: 'session-closed', now: LATER });
+
+    expect(tester.getEffects()).toEqual([]);
+    expect(tester.getState().savedUses).toEqual([]);
+  });
+
   test('closing after a draft writes it, then records the whole visit once', () => {
     const tester = session();
 
@@ -836,5 +897,248 @@ describe('edit session boundary', () => {
     tester.send({ type: 'app-backgrounded', now: NOW });
 
     expect(tester.getEffects()).toEqual([]);
+  });
+});
+
+describe('Material use editor', () => {
+  function opened() {
+    const tester = sessionWithUse();
+
+    tester.send({ type: 'material-use-editor-opened', use: WOOL_USE, now: NOW });
+
+    return tester;
+  }
+
+  test('opening a use seeds the editor with its Material, colour, and role', () => {
+    const tester = opened();
+
+    expect(tester.getState().materialUsePanel).toEqual({
+      kind: 'edit',
+      editor: {
+        materialId: WOOL_USE.materialId,
+        colour: 'Charcoal',
+        role: 'main',
+        saved: WOOL_USE,
+        error: null,
+      },
+    });
+  });
+
+  test('the Add form and a correction share one panel', () => {
+    const tester = sessionWithUse();
+
+    tester.send({ type: 'material-use-add-opened', now: NOW });
+    expect(tester.getState().materialUsePanel).toEqual({ kind: 'add' });
+
+    tester.send({ type: 'material-use-editor-opened', use: WOOL_USE, now: LATER });
+    expect(tester.getState().materialUsePanel).toMatchObject({
+      kind: 'edit',
+      editor: { saved: WOOL_USE },
+    });
+
+    tester.send({ type: 'material-use-panel-closed', now: LATER });
+    expect(tester.getState().materialUsePanel).toBeNull();
+  });
+
+  test('a typed colour is not written until the field is left', () => {
+    const tester = opened();
+
+    tester.send({ type: 'material-use-colour-changed', colour: 'Black' });
+    expect(tester.getEffects()).toEqual([]);
+
+    tester.send({ type: 'material-use-colour-committed', now: LATER });
+
+    expect(tester.getEffects()).toEqual([
+      {
+        type: 'write-material-use',
+        designId: DESIGN_ID,
+        useId: WOOL_USE.id,
+        patch: { colour: 'Black' },
+        now: LATER,
+      },
+    ]);
+    expect(tester.getState()).toMatchObject({
+      materialUsePanel: { kind: 'edit', editor: { colour: 'Black' } },
+    });
+  });
+
+  test('changing the Material writes at once, carrying a typed colour with it', () => {
+    const tester = opened();
+
+    tester.send({ type: 'material-use-colour-changed', colour: 'Black' });
+    tester.send({
+      type: 'material-use-material-chosen',
+      materialId: 'material-silk',
+      now: LATER,
+    });
+
+    expect(tester.getEffects()).toEqual([
+      {
+        type: 'write-material-use',
+        designId: DESIGN_ID,
+        useId: WOOL_USE.id,
+        patch: { materialId: 'material-silk', colour: 'Black' },
+        now: LATER,
+      },
+    ]);
+    expect(tester.getState()).toMatchObject({
+      materialUsePanel: { kind: 'edit', editor: { materialId: 'material-silk' } },
+    });
+  });
+
+  test('changing the role writes at once', () => {
+    const tester = opened();
+
+    tester.send({ type: 'material-use-role-chosen', role: 'secondary', now: LATER });
+
+    expect(tester.getEffects()).toEqual([
+      {
+        type: 'write-material-use',
+        designId: DESIGN_ID,
+        useId: WOOL_USE.id,
+        patch: { role: 'secondary' },
+        now: LATER,
+      },
+    ]);
+  });
+
+  test('Done writes the colour draft and closes the editor', () => {
+    const tester = opened();
+
+    tester.send({ type: 'material-use-colour-changed', colour: 'Black' });
+    tester.send({ type: 'material-use-panel-closed', now: LATER });
+
+    expect(tester.getEffects()).toEqual([
+      {
+        type: 'write-material-use',
+        designId: DESIGN_ID,
+        useId: WOOL_USE.id,
+        patch: { colour: 'Black' },
+        now: LATER,
+      },
+    ]);
+    expect(tester.getState().materialUsePanel).toBeNull();
+  });
+
+  test('changing tabs writes the colour draft and closes the editor', () => {
+    const tester = opened();
+
+    tester.send({ type: 'material-use-colour-changed', colour: 'Black' });
+    tester.send({ type: 'tab-changed', tab: 'creativeDirection', now: LATER });
+
+    expect(tester.getEffects()).toEqual([
+      {
+        type: 'write-material-use',
+        designId: DESIGN_ID,
+        useId: WOOL_USE.id,
+        patch: { colour: 'Black' },
+        now: LATER,
+      },
+    ]);
+    expect(tester.getState()).toMatchObject({
+      tab: 'creativeDirection',
+      materialUsePanel: null,
+    });
+  });
+
+  test('closing the visit writes the colour draft before the Event', () => {
+    const tester = opened();
+
+    tester.send({ type: 'material-use-colour-changed', colour: 'Black' });
+    tester.send({ type: 'session-closed', now: LATER });
+
+    expect(tester.getEffects()).toEqual([
+      {
+        type: 'write-material-use',
+        designId: DESIGN_ID,
+        useId: WOOL_USE.id,
+        patch: { colour: 'Black' },
+        now: LATER,
+      },
+    ]);
+  });
+
+  test('a blank colour is not a write', () => {
+    const tester = opened();
+
+    tester.send({ type: 'material-use-colour-changed', colour: '   ' });
+    tester.send({ type: 'material-use-panel-closed', now: LATER });
+
+    expect(tester.getEffects()).toEqual([]);
+    expect(tester.getState().materialUsePanel).toBeNull();
+  });
+
+  test('a saved correction becomes the row and updates what the visit holds', () => {
+    const tester = opened();
+    const corrected: MaterialUse = { ...WOOL_USE, colour: 'Black', role: 'secondary' };
+
+    tester.send({ type: 'material-use-saved', use: corrected });
+
+    expect(tester.getState()).toMatchObject({
+      materialUsePanel: {
+        kind: 'edit',
+        editor: { colour: 'Black', role: 'secondary', saved: corrected },
+      },
+    });
+    expect(tester.getState().savedUses).toEqual([corrected]);
+  });
+
+  test('a late saved correction does not overwrite a different open editor', () => {
+    const tester = opened();
+    const silkUse: MaterialUse = {
+      ...WOOL_USE,
+      id: 'use-silk',
+      materialId: 'material-silk',
+      materialName: 'Silk crêpe',
+      colour: 'Ivory',
+      role: 'secondary',
+    };
+
+    tester.send({ type: 'material-use-editor-opened', use: silkUse, now: LATER });
+    tester.send({ type: 'material-use-saved', use: { ...WOOL_USE, colour: 'Black' } });
+
+    expect(tester.getState()).toMatchObject({
+      materialUsePanel: {
+        kind: 'edit',
+        editor: { materialId: silkUse.materialId, colour: 'Ivory', saved: silkUse },
+      },
+    });
+    expect(tester.getState().savedUses).toEqual([{ ...WOOL_USE, colour: 'Black' }]);
+  });
+
+  test('a refusal restores the stored use', () => {
+    const tester = opened();
+
+    tester.send({ type: 'material-use-colour-changed', colour: '   ' });
+    tester.send({
+      type: 'material-use-refused',
+      useId: WOOL_USE.id,
+      message: 'A material use needs a colour.',
+    });
+
+    expect(tester.getState()).toMatchObject({
+      materialUsePanel: {
+        kind: 'edit',
+        editor: { colour: 'Charcoal', error: 'A material use needs a colour.' },
+      },
+    });
+  });
+
+  test('opening a text row writes and closes the Material use editor', () => {
+    const tester = opened();
+
+    tester.send({ type: 'material-use-colour-changed', colour: 'Black' });
+    tester.send({ type: 'row-opened', row: 'silhouette', now: LATER });
+
+    expect(tester.getEffects()).toEqual([
+      {
+        type: 'write-material-use',
+        designId: DESIGN_ID,
+        useId: WOOL_USE.id,
+        patch: { colour: 'Black' },
+        now: LATER,
+      },
+    ]);
+    expect(tester.getState()).toMatchObject({ editing: 'silhouette', materialUsePanel: null });
   });
 });

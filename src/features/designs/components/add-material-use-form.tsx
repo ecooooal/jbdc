@@ -2,7 +2,6 @@ import { Plus } from 'lucide-react-native';
 import { useReducer } from 'react';
 import { View } from 'react-native';
 import { useDatabase } from '@/features/database/react';
-import { MATERIAL_USE_ROLES, type MaterialUseRole } from '@/features/database';
 import { addMaterialUse, InvalidMaterialUseError, type MaterialUse } from '@/features/designs';
 import {
   createMaterial,
@@ -13,49 +12,16 @@ import { useMaterials } from '@/features/materials/react';
 import { Button } from '@/shared/components/ui/button';
 import { Icon } from '@/shared/components/ui/icon';
 import { Input } from '@/shared/components/ui/input';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/shared/components/ui/select';
 import { Text } from '@/shared/components/ui/text';
 import {
   addMaterialUseReducer,
   canAddMaterialUse,
   createInitialAddMaterialUseState,
 } from '../lib/add-material-use-reducer';
-import { materialUseRoleLabel } from '../lib/material-use-role';
 import { FormField } from './form-field';
 import { InlineCreationPanel } from './inline-creation-panel';
+import { MaterialUseRoleSelect } from './material-use-role-select';
 import { TaxonomySelect } from './taxonomy-select';
-
-function RoleSelect({
-  value,
-  onChange,
-}: {
-  value: MaterialUseRole;
-  onChange: (role: MaterialUseRole) => void;
-}) {
-  return (
-    <Select
-      value={{ value, label: materialUseRoleLabel(value) }}
-      onValueChange={(option) => {
-        if (option) onChange(option.value as MaterialUseRole);
-      }}
-    >
-      <SelectTrigger accessibilityLabel="Role">
-        <SelectValue placeholder="Role" />
-      </SelectTrigger>
-      <SelectContent>
-        {MATERIAL_USE_ROLES.map((role) => (
-          <SelectItem key={role} value={role} label={materialUseRoleLabel(role)} />
-        ))}
-      </SelectContent>
-    </Select>
-  );
-}
 
 /**
  * The editor `＋ Add material` opens. It adds one Material use and can create a
@@ -167,7 +133,7 @@ export function AddMaterialUseForm({
       </FormField>
 
       <FormField label="Role">
-        <RoleSelect
+        <MaterialUseRoleSelect
           value={state.role}
           onChange={(role) => dispatch({ type: 'role-chosen', role })}
         />

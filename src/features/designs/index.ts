@@ -17,7 +17,9 @@ export {
   InvalidMaterialUseError,
   listDesigns,
   listMaterialUses,
+  removeMaterialUse,
   updateDesign,
+  updateMaterialUse,
 } from './lib/records';
 export type {
   AddMaterialUseInput,
@@ -27,5 +29,6 @@ export type {
   DesignFields,
   MaterialUse,
   UpdateDesignInput,
+  UpdateMaterialUseInput,
 } from './lib/records';
 export { designStatusLabel } from './lib/status';

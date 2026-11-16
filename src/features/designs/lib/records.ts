@@ -75,6 +75,9 @@ export type AddMaterialUseInput = {
   role: MaterialUseRole;
 };
 
+/** A partial correction of a recorded use: an absent field is left alone. */
+export type UpdateMaterialUseInput = Partial<AddMaterialUseInput>;
+
 /** A Design with the names Detail displays in place of its foreign keys. */
 export type DesignDetail = Design & {
   category: string | null;
@@ -245,9 +248,44 @@ function materialUsesFrom(db: DatabaseHandle, designId: string): MaterialUse[] {
     .sort(compareMaterialUses);
 }
 
+/** One use of this Design, or null when it is unknown or belongs to another. */
+function materialUseFrom(
+  db: DatabaseHandle,
+  designId: string,
+  useId: string
+): MaterialUse | null {
+  return materialUsesFrom(db, designId).find((use) => use.id === useId) ?? null;
+}
+
 /** Each linked Material's name and colour, ready for `buildSearchText`. */
 function materialUseSearchParts(db: DatabaseHandle, designId: string): string[] {
   return materialUsesFrom(db, designId).flatMap((use) => [use.materialName, use.colour]);
+}
+
+/**
+ * Rebuilds a Design's `search_text` from the uses it now holds and moves
+ * `updatedAt`, inside the caller's transaction. Every Material-use write lands
+ * with it, so search and Library order never disagree with the stored uses.
+ */
+function rebuildDesignSearchTextAndMoveUpdated(
+  tx: DatabaseHandle,
+  design: Design,
+  now: number
+): void {
+  const taxonomy = designTaxonomyNamesFrom(tx, design.categoryId, design.collectionId);
+
+  tx.update(designs)
+    .set({
+      updatedAt: now,
+      searchText: buildSearchText(
+        design,
+        taxonomy.category,
+        taxonomy.collection,
+        materialUseSearchParts(tx, design.id)
+      ),
+    })
+    .where(eq(designs.id, design.id))
+    .run();
 }
 
 /**
@@ -437,21 +475,98 @@ export function addMaterialUse(
 
     tx.insert(designMaterials).values(use).run();
 
-    const taxonomy = designTaxonomyNamesFrom(tx, design.categoryId, design.collectionId);
+    rebuildDesignSearchTextAndMoveUpdated(tx, design, now);
 
-    tx.update(designs)
-      .set({
-        updatedAt: now,
-        searchText: buildSearchText(
-          design,
-          taxonomy.category,
-          taxonomy.collection,
-          materialUseSearchParts(tx, designId)
-        ),
+    return materialUseFrom(tx, designId, use.id);
+  });
+}
+
+/**
+ * Corrects one recorded Material use. Only the fields present in `input` are
+ * written; the same transaction rebuilds the Design's `search_text` from every
+ * use it now holds and moves `updatedAt`. A correction that changes nothing
+ * writes nothing. Returns null when the Design or the use is unknown, and
+ * refuses a blank colour before writing anything.
+ */
+export function updateMaterialUse(
+  database: Database,
+  designId: string,
+  useId: string,
+  input: UpdateMaterialUseInput,
+  now: number = Date.now()
+): MaterialUse | null {
+  const colour = input.colour?.trim();
+
+  if (colour !== undefined && colour.length === 0) {
+    throw new InvalidMaterialUseError('empty_colour');
+  }
+
+  return database.transaction((tx) => {
+    const design = designFrom(tx, designId);
+
+    if (!design) return null;
+
+    const current = tx
+      .select({
+        materialId: designMaterials.materialId,
+        colour: designMaterials.colour,
+        role: designMaterials.role,
       })
-      .where(eq(designs.id, designId))
+      .from(designMaterials)
+      .where(and(eq(designMaterials.id, useId), eq(designMaterials.designId, designId)))
+      .get();
+
+    if (!current) return null;
+
+    const next = {
+      materialId: input.materialId ?? current.materialId,
+      colour: colour ?? current.colour,
+      role: input.role ?? current.role,
+    };
+
+    if (
+      next.materialId === current.materialId &&
+      next.colour === current.colour &&
+      next.role === current.role
+    ) {
+      return materialUseFrom(tx, designId, useId);
+    }
+
+    tx.update(designMaterials).set(next).where(eq(designMaterials.id, useId)).run();
+
+    rebuildDesignSearchTextAndMoveUpdated(tx, design, now);
+
+    return materialUseFrom(tx, designId, useId);
+  });
+}
+
+/**
+ * Removes one recorded Material use and returns it as it was. The deletion and
+ * the Design's rebuilt `search_text` — no longer carrying the removed
+ * Material's name or colour — land in one transaction with `updatedAt` moved.
+ * Returns null when the Design or the use is unknown.
+ */
+export function removeMaterialUse(
+  database: Database,
+  designId: string,
+  useId: string,
+  now: number = Date.now()
+): MaterialUse | null {
+  return database.transaction((tx) => {
+    const design = designFrom(tx, designId);
+
+    if (!design) return null;
+
+    const removed = materialUseFrom(tx, designId, useId);
+
+    if (!removed) return null;
+
+    tx.delete(designMaterials)
+      .where(and(eq(designMaterials.id, useId), eq(designMaterials.designId, designId)))
       .run();
 
-    return materialUsesFrom(tx, designId).find((entry) => entry.id === use.id) ?? null;
+    rebuildDesignSearchTextAndMoveUpdated(tx, design, now);
+
+    return removed;
   });
 }

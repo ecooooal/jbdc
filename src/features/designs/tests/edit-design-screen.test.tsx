@@ -4,9 +4,10 @@ import { AppState } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { DatabaseProvider } from '@/features/database/react';
 import { createSyncSubscribe, createTempDatabase } from '@/features/database/testing';
-import { createDesign, getDesign, listMaterialUses } from '@/features/designs';
+import { createDesign, addMaterialUse, getDesign, listMaterialUses } from '@/features/designs';
 import { EditDesignScreen } from '@/features/designs/react';
 import { listDesignEvents } from '@/features/history';
+import { createMaterial } from '@/features/materials';
 import { createCategory, createCollection } from '@/features/taxonomy';
 
 jest.mock('expo-router', () => ({ router: { back: jest.fn() } }));
@@ -337,6 +338,94 @@ describe('Materials', () => {
     expect(screen.getByText('Ivory')).toBeTruthy();
     expect(screen.getByText('Main')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Add material' })).toBeTruthy();
+  });
+
+  test('tapping a use opens its editor with the current Material, colour, and role', async () => {
+    const design = newDesign();
+    const wool = createMaterial(database, { name: 'Wool' });
+
+    addMaterialUse(database, design.id, {
+      materialId: wool.id,
+      colour: 'Charcoal',
+      role: 'main',
+    });
+
+    await renderEdit(design.id);
+
+    await userEvent.press(screen.getByRole('button', { name: 'Edit Wool (Charcoal)' }));
+
+    expect(screen.getByLabelText('Material')).toBeTruthy();
+    expect(screen.getByLabelText('Colour')).toHaveDisplayValue('Charcoal');
+    expect(screen.getByLabelText('Role')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Remove material use' })).toBeTruthy();
+  });
+
+  test('a colour typed and left writes the use with no Save action', async () => {
+    const design = newDesign();
+    const wool = createMaterial(database, { name: 'Wool' });
+
+    addMaterialUse(database, design.id, {
+      materialId: wool.id,
+      colour: 'Charcoal',
+      role: 'main',
+    });
+
+    await renderEdit(design.id);
+    await userEvent.press(screen.getByRole('button', { name: 'Edit Wool (Charcoal)' }));
+
+    const colour = screen.getByLabelText('Colour');
+
+    await fireEvent.changeText(colour, 'Black');
+    await fireEvent(colour, 'blur');
+
+    expect(listMaterialUses(database, design.id)).toEqual([
+      expect.objectContaining({ materialName: 'Wool', colour: 'Black', role: 'main' }),
+    ]);
+    expect(screen.queryByRole('button', { name: /save/i })).toBeNull();
+  });
+
+  test('a colour typed and finished with Done is written as the editor closes', async () => {
+    const design = newDesign();
+    const wool = createMaterial(database, { name: 'Wool' });
+
+    addMaterialUse(database, design.id, {
+      materialId: wool.id,
+      colour: 'Charcoal',
+      role: 'main',
+    });
+
+    await renderEdit(design.id);
+    await userEvent.press(screen.getByRole('button', { name: 'Edit Wool (Charcoal)' }));
+    await fireEvent.changeText(screen.getByLabelText('Colour'), 'Black');
+    await userEvent.press(screen.getByRole('button', { name: 'Done' }));
+
+    expect(listMaterialUses(database, design.id)).toEqual([
+      expect.objectContaining({ materialName: 'Wool', colour: 'Black', role: 'main' }),
+    ]);
+    expect(screen.getByRole('button', { name: 'Add material' })).toBeTruthy();
+  });
+
+  test('a use can be removed', async () => {
+    const design = newDesign();
+    const wool = createMaterial(database, { name: 'Wool' });
+
+    addMaterialUse(database, design.id, {
+      materialId: wool.id,
+      colour: 'Charcoal',
+      role: 'main',
+    });
+
+    await renderEdit(design.id);
+    await userEvent.press(screen.getByRole('button', { name: 'Edit Wool (Charcoal)' }));
+    await userEvent.press(screen.getByRole('button', { name: 'Remove material use' }));
+
+    await act(async () => {
+      live.notify('design_materials');
+      live.notify('designs');
+    });
+
+    expect(listMaterialUses(database, design.id)).toEqual([]);
+    expect(screen.getByText('No materials yet')).toBeTruthy();
   });
 });
 

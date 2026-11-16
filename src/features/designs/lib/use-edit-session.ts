@@ -7,7 +7,11 @@ import {
   type EditDesignEvent,
   type EditDesignState,
 } from './edit-design-reducer';
-import { updateDesign } from './records';
+import {
+  InvalidMaterialUseError,
+  updateDesign,
+  updateMaterialUse,
+} from './records';
 
 /**
  * Runs Edit's reducer and the work it asks for. Every catalog call is
@@ -33,6 +37,34 @@ export function useEditSession(
           case 'write-drafts': {
             const saved = updateDesign(database, effect.designId, effect.patch, effect.now);
             if (saved) send({ type: 'drafts-written', design: saved });
+            break;
+          }
+          case 'write-material-use': {
+            try {
+              const saved = updateMaterialUse(
+                database,
+                effect.designId,
+                effect.useId,
+                effect.patch,
+                effect.now
+              );
+
+              if (saved) send({ type: 'material-use-saved', use: saved });
+              else
+                send({
+                  type: 'material-use-refused',
+                  useId: effect.useId,
+                  message: 'This material use is not here.',
+                });
+            } catch (caught) {
+              if (!(caught instanceof InvalidMaterialUseError)) throw caught;
+
+              send({
+                type: 'material-use-refused',
+                useId: effect.useId,
+                message: caught.message,
+              });
+            }
             break;
           }
           case 'record-session':
