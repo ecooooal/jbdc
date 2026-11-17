@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react-native';
+import { render, screen, within } from '@testing-library/react-native';
 import { eq } from 'drizzle-orm';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { categories, collections } from '@/features/database';
@@ -197,6 +197,73 @@ test('shows a Material use a session added', async () => {
   await renderHistory(design.id);
 
   expect(screen.getByText('Wool (Charcoal, main) added')).toBeTruthy();
+});
+
+test('groups a card under Identity, Specification, Creative direction, and Materials', async () => {
+  const design = createDesign(database, { name: 'Silk slip dress' }, 10);
+  const wool = createMaterial(database, { name: 'Wool' });
+  const use = addMaterialUse(
+    database,
+    design.id,
+    { materialId: wool.id, colour: 'Charcoal', role: 'main' },
+    10
+  );
+
+  if (!use) throw new Error('the Material use should have been written');
+
+  recordEdit(
+    database,
+    design.id,
+    {
+      before: fields(),
+      after: fields({
+        description: 'Heavy twill',
+        silhouette: 'Relaxed A-line',
+        mood: 'Romantic, relaxed',
+      }),
+      addedMaterialUses: [use],
+    },
+    Date.UTC(2025, 0, 2, 3, 4)
+  );
+
+  await renderHistory(design.id);
+
+  expect(
+    within(screen.getByTestId('history-section-identity')).getByText(
+      'Description: None → Heavy twill'
+    )
+  ).toBeTruthy();
+  expect(
+    within(screen.getByTestId('history-section-specification')).getByText(
+      'Silhouette: None → Relaxed A-line'
+    )
+  ).toBeTruthy();
+  expect(
+    within(screen.getByTestId('history-section-creativeDirection')).getByText(
+      'Mood: None → Romantic, relaxed'
+    )
+  ).toBeTruthy();
+  expect(
+    within(screen.getByTestId('history-section-materials')).getByText('Wool (Charcoal, main) added')
+  ).toBeTruthy();
+});
+
+test('a section with nothing changed is not shown', async () => {
+  const design = createDesign(database, { name: 'Silk slip dress' }, 10);
+
+  recordEdit(
+    database,
+    design.id,
+    { before: fields(), after: fields({ silhouette: 'Relaxed A-line' }) },
+    Date.UTC(2025, 0, 2, 3, 4)
+  );
+
+  await renderHistory(design.id);
+
+  expect(screen.getByTestId('history-section-specification')).toBeTruthy();
+  expect(screen.queryByTestId('history-section-identity')).toBeNull();
+  expect(screen.queryByTestId('history-section-creativeDirection')).toBeNull();
+  expect(screen.queryByTestId('history-section-materials')).toBeNull();
 });
 
 test('a design with no History says so plainly', async () => {
