@@ -21,8 +21,8 @@ check can make. Mechanical rules live in code, not here:
   Their hundreds of lines hide every file beside them.
 - **A rename travels alone.** Moving a file and changing its behaviour in one
   commit hides both from the reviewer.
-- **A fat commit means a coarse ticket.** If the ticket does not name its seams
-  up front, the seams get invented at commit time — once, at the end. Split the
+- **A fat commit means a coarse ticket.** If the ticket does not name its steps
+  up front, the steps get invented at commit time — once, at the end. Split the
   ticket, not the commit.
 - **Subject names the ticket.** `<type> (#<ticket>): <reason>`, e.g.
   `feat (#14): edit a design's fields without a Save button`. Types in use:

@@ -81,6 +81,8 @@ Present the two reports under `## Standards` and `## Spec` headings, verbatim or
 
 End with a one-line summary: total findings per axis, and the worst issue _within each axis_ (if any). Don't pick a single winner across axes: that's the reranking the separation exists to prevent.
 
+State the reviewed SHA (`git rev-parse HEAD`) in the aggregate, so step 6 has the reference it compares against.
+
 ### 6. Re-review only the delta
 
 After fixes, do not repeat both axes. Re-run only the axis (or axes) that reported a **hard** violation, against `git diff <reviewed-sha>..HEAD`, with the same spec/standards sources but a delta-sized brief. Cosmetic findings need no second review; the implementation agent checks those itself.

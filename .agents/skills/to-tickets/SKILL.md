@@ -31,6 +31,8 @@ Break the work into **tracer bullet** tickets.
 - Each slice cuts a narrow but COMPLETE path through every layer (schema, API, UI, tests): vertical, NOT a horizontal slice of one layer
 - A completed slice is demoable or verifiable on its own
 - Each slice is sized to fit in a single fresh context window
+- One screen per ticket: count the screens the "What to build" paragraph names. Two screens is two tickets
+- Name the steps: up to four commits, inside out, each one green on its own. A ticket that cannot name its steps is not a ticket yet — split it
 - Any prefactoring should be done first
 
 </vertical-slice-rules>
@@ -46,6 +48,7 @@ Present the proposed breakdown as a numbered list. For each ticket, show:
 - **Title**: short descriptive name
 - **Blocked by**: which other tickets (if any) must complete first
 - **What it delivers**: the end-to-end behaviour this ticket makes work
+- **Steps**: the commits it names
 
 Ask the user:
 
@@ -74,6 +77,8 @@ Do NOT close or modify any parent issue.
 
 **Blocked by:** the numbers/titles of the tickets that gate this one, or "None (can start immediately)".
 
+**Steps:** the commits, inside out, each passing on its own. One line per step: what it changes, and the test that drives it.
+
 **Status:** ready-for-agent
 
 - [ ] Acceptance criterion 1
@@ -90,6 +95,10 @@ A reference to the parent issue on the tracker (if the source was an existing is
 ## What to build
 
 The end-to-end behaviour this ticket makes work, from the user's perspective, not layer-by-layer implementation.
+
+## Steps
+
+The commits, inside out, each passing on its own. One line per step: what it changes, and the test that drives it. One step is a valid answer.
 
 ## Acceptance criteria
 
