@@ -74,7 +74,8 @@ export function useEditSession(
               {
                 before: effect.before,
                 after: effect.after,
-                addedMaterialUses: effect.addedMaterialUses,
+                beforeMaterialUses: effect.beforeMaterialUses,
+                afterMaterialUses: effect.afterMaterialUses,
               },
               effect.now
             );

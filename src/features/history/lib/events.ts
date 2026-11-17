@@ -51,7 +51,10 @@ export type DesignEditDiff = Partial<Record<DesignEditableField, DesignFieldChan
 export type EditSession = {
   before: DesignFields;
   after: DesignFields;
-  addedMaterialUses?: readonly MaterialUse[];
+  /** The uses the row held when the visit opened; absent when they did not change. */
+  beforeMaterialUses?: readonly MaterialUse[];
+  /** The uses the row holds as the visit closes; absent when they did not change. */
+  afterMaterialUses?: readonly MaterialUse[];
 };
 
 /** One append-only entry in a Design's History, with its diff parsed. */
@@ -238,7 +241,10 @@ export function recordEdit(
   now: number = Date.now()
 ): DesignEvent | null {
   const diff: DesignEditDiff = diffDesignFields(session.before, session.after) ?? {};
-  const materials = diffMaterialUses([], session.addedMaterialUses ?? []);
+  const materials = diffMaterialUses(
+    session.beforeMaterialUses ?? [],
+    session.afterMaterialUses ?? []
+  );
 
   if (materials) diff.materials = materials;
 

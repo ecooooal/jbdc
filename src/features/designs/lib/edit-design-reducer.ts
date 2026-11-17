@@ -17,7 +17,7 @@ import {
   editMaterialUseReducer,
   type EditMaterialUseState,
 } from './edit-material-use-reducer';
-import { materialUsesAdded } from './material-use-changes';
+import { materialUsesChanged } from './material-use-changes';
 import { normalizeOptionalText } from './optional-text';
 import type { DesignFields, MaterialUse, UpdateMaterialUseInput } from './records';
 import { DESIGN_SECTIONS, type DesignSectionTab } from './sections';
@@ -111,8 +111,10 @@ export type EditDesignEffect =
       designId: string;
       before: DesignFields;
       after: DesignFields;
-      /** The uses the visit added, absent when it added none. */
-      addedMaterialUses?: MaterialUse[];
+      /** The uses the row held at open, absent when the visit changed none. */
+      beforeMaterialUses?: MaterialUse[];
+      /** The uses the row holds at close, absent when the visit changed none. */
+      afterMaterialUses?: MaterialUse[];
       now: number;
     };
 
@@ -560,16 +562,19 @@ export function editDesignReducer(
       }
 
       const after = fieldsAfterClose(state, patch);
-      const addedMaterialUses = materialUsesAdded(state.sessionStartUses, state.savedUses);
+      const usesChanged = materialUsesChanged(state.sessionStartUses, state.savedUses);
 
-      if (designFieldsChanged(before, after) || addedMaterialUses.length > 0) {
+      if (designFieldsChanged(before, after) || usesChanged) {
         effects.push({
           type: 'record-session',
           designId: state.designId,
           before,
           after,
           now: event.now,
-          ...(addedMaterialUses.length > 0 && { addedMaterialUses }),
+          ...(usesChanged && {
+            beforeMaterialUses: state.sessionStartUses,
+            afterMaterialUses: state.savedUses,
+          }),
         });
       }
 

@@ -568,7 +568,8 @@ describe('edit session boundary', () => {
         designId: DESIGN_ID,
         before: DESIGN,
         after: DESIGN,
-        addedMaterialUses: [WOOL_USE],
+        beforeMaterialUses: [],
+        afterMaterialUses: [WOOL_USE],
         now: LATER,
       },
     ]);
@@ -593,7 +594,8 @@ describe('edit session boundary', () => {
         designId: DESIGN_ID,
         before: DESIGN,
         after: { ...DESIGN, name: 'Wool coat' },
-        addedMaterialUses: [WOOL_USE],
+        beforeMaterialUses: [],
+        afterMaterialUses: [WOOL_USE],
         now: LATER,
       },
     ]);
@@ -618,6 +620,45 @@ describe('edit session boundary', () => {
     expect(tester.getState().sessionStartUses).toEqual([WOOL_USE]);
   });
 
+  test('a visit that corrects a recorded use records it as changed', () => {
+    const tester = sessionWithUse();
+    const corrected: MaterialUse = { ...WOOL_USE, colour: 'Black', role: 'secondary' };
+
+    tester.send({ type: 'material-use-saved', use: corrected });
+    tester.send({ type: 'session-closed', now: LATER });
+
+    expect(tester.getEffects()).toEqual([
+      {
+        type: 'record-session',
+        designId: DESIGN_ID,
+        before: DESIGN,
+        after: DESIGN,
+        beforeMaterialUses: [WOOL_USE],
+        afterMaterialUses: [corrected],
+        now: LATER,
+      },
+    ]);
+  });
+
+  test('a visit that removes a recorded use records the removal', () => {
+    const tester = sessionWithUse();
+
+    tester.send({ type: 'material-use-removed', useId: WOOL_USE.id });
+    tester.send({ type: 'session-closed', now: LATER });
+
+    expect(tester.getEffects()).toEqual([
+      {
+        type: 'record-session',
+        designId: DESIGN_ID,
+        before: DESIGN,
+        after: DESIGN,
+        beforeMaterialUses: [WOOL_USE],
+        afterMaterialUses: [],
+        now: LATER,
+      },
+    ]);
+  });
+
   test('a use added then corrected in one visit records the corrected use', () => {
     const tester = session();
     const corrected: MaterialUse = { ...WOOL_USE, colour: 'Black' };
@@ -632,7 +673,8 @@ describe('edit session boundary', () => {
         designId: DESIGN_ID,
         before: DESIGN,
         after: DESIGN,
-        addedMaterialUses: [corrected],
+        beforeMaterialUses: [],
+        afterMaterialUses: [corrected],
         now: LATER,
       },
     ]);

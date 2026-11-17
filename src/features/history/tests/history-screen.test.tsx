@@ -190,7 +190,7 @@ test('shows a Material use a session added', async () => {
   recordEdit(
     database,
     design.id,
-    { before: fields(), after: fields(), addedMaterialUses: [use] },
+    { before: fields(), after: fields(), beforeMaterialUses: [], afterMaterialUses: [use] },
     Date.UTC(2025, 0, 2, 3, 4)
   );
 
@@ -221,7 +221,8 @@ test('groups a card under Identity, Specification, Creative direction, and Mater
         silhouette: 'Relaxed A-line',
         mood: 'Romantic, relaxed',
       }),
-      addedMaterialUses: [use],
+      beforeMaterialUses: [],
+      afterMaterialUses: [use],
     },
     Date.UTC(2025, 0, 2, 3, 4)
   );

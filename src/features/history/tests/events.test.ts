@@ -174,6 +174,41 @@ describe('recordEdit', () => {
     expect(listDesignEvents(database, design.id)).toEqual([event]);
   });
 
+  test('one visit that changes fields and Material uses writes one Event carrying both', () => {
+    const design = createDesign(database, { name: 'Silk slip dress' }, 10);
+    const silk = createMaterial(database, { name: 'Silk crêpe' });
+    const ivory = addMaterialUse(
+      database,
+      design.id,
+      { materialId: silk.id, colour: 'Ivory', role: 'main' },
+      15
+    );
+
+    if (!ivory) throw new Error('the Material use should have been written');
+
+    const black = { ...ivory, colour: 'Black' };
+
+    const event = recordEdit(
+      database,
+      design.id,
+      {
+        before: BEFORE,
+        after: { ...BEFORE, name: 'Wool coat' },
+        beforeMaterialUses: [ivory],
+        afterMaterialUses: [black],
+      },
+      20
+    );
+
+    expect(event?.diff).toEqual({
+      name: { from: 'Silk slip dress', to: 'Wool coat' },
+      materials: {
+        changed: [{ from: changeOf(ivory), to: changeOf(black) }],
+      },
+    });
+    expect(listDesignEvents(database, design.id)).toEqual([event]);
+  });
+
   test('a session that only adds a Material use still writes one event', () => {
     const design = createDesign(database, { name: 'Silk slip dress' }, 10);
     const wool = createMaterial(database, { name: 'Wool' });
@@ -189,7 +224,7 @@ describe('recordEdit', () => {
     const event = recordEdit(
       database,
       design.id,
-      { before: BEFORE, after: BEFORE, addedMaterialUses: [use] },
+      { before: BEFORE, after: BEFORE, beforeMaterialUses: [], afterMaterialUses: [use] },
       30
     );
 
