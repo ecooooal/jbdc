@@ -134,6 +134,56 @@ export type EditDesignResult = {
   effects: EditDesignEffect[];
 };
 
+/** The writes that report back: everything the visit asks a row to store. */
+type DraftsWrite = Extract<EditDesignEffect, { type: 'write-drafts' }>;
+type MaterialUseWrite = Extract<EditDesignEffect, { type: 'write-material-use' }>;
+type RemovalWrite = Extract<EditDesignEffect, { type: 'remove-material-use' }>;
+
+/**
+ * What one write answered: the row it stored, its refusal, or nothing at all
+ * because the Design it targeted is no longer in the catalog.
+ */
+export type WriteReport<Stored> =
+  | { kind: 'stored'; value: Stored }
+  | { kind: 'refused'; message: string }
+  | { kind: 'nothing-stored' };
+
+/**
+ * One write the visit declared and the answer it got. The effect's own fields
+ * say which write this was, so a report cannot be paired with another kind.
+ */
+export type WriteAttempt =
+  | (DraftsWrite & { report: WriteReport<DesignFields> })
+  | (MaterialUseWrite & { report: WriteReport<MaterialUse> })
+  | (RemovalWrite & { report: WriteReport<MaterialUse> });
+
+/**
+ * The one place a write's answer becomes the event the visit settles on. The
+ * runner calls it once per write and dispatches whatever comes back, so every
+ * answer — including one from a row that is gone — settles somewhere.
+ */
+export function writeOutcome(attempt: WriteAttempt): EditDesignEvent {
+  const { type, report } = attempt;
+
+  if (report.kind === 'nothing-stored') return { type: 'nothing-stored' };
+
+  switch (type) {
+    // Only a name has a rule to refuse: every other field stores what it is given.
+    case 'write-drafts':
+      return report.kind === 'stored'
+        ? { type: 'drafts-written', design: report.value, patch: attempt.patch }
+        : { type: 'field-refused', field: 'name', message: report.message };
+    case 'write-material-use':
+      return report.kind === 'stored'
+        ? { type: 'material-use-saved', materialUse: report.value }
+        : { type: 'material-use-refused', useId: attempt.useId, message: report.message };
+    case 'remove-material-use':
+      return report.kind === 'stored'
+        ? { type: 'material-use-removed', useId: report.value.id }
+        : { type: 'material-use-refused', useId: attempt.useId, message: report.message };
+  }
+}
+
 export function createInitialEditDesignState(designId: string): EditDesignState {
   return {
     designId,

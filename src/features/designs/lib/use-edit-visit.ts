@@ -4,8 +4,10 @@ import { recordEdit } from '@/features/history';
 import {
   createInitialEditDesignState,
   editDesignReducer,
+  writeOutcome,
   type EditDesignEvent,
   type EditDesignState,
+  type WriteReport,
 } from './edit-design-reducer';
 import {
   InvalidDesignNameError,
@@ -15,11 +17,31 @@ import {
   updateMaterialUse,
 } from './records';
 
+/** The error a write's own rule throws; any other error is a bug, not an answer. */
+type Refusal = abstract new (...args: never[]) => Error;
+
+/**
+ * Runs one write and reports what came back: the row it stored, its refusal,
+ * or nothing because the row it targeted is gone.
+ */
+function attemptWrite<Stored>(write: () => Stored | null, refusal?: Refusal): WriteReport<Stored> {
+  try {
+    const value = write();
+
+    return value === null ? { kind: 'nothing-stored' } : { kind: 'stored', value };
+  } catch (caught) {
+    if (refusal && caught instanceof refusal) return { kind: 'refused', message: caught.message };
+
+    throw caught;
+  }
+}
+
 /**
  * Runs Edit's reducer and the work it asks for. Every catalog call is
  * synchronous, so an effect is performed inside `send` and its outcome is sent
  * straight back — no pending-effect list and no second render. The reducer
- * decides what to write and when; this bridge only performs the call.
+ * decides what to write and when; this bridge only performs the call and
+ * dispatches the event `writeOutcome` makes of its answer.
  */
 export function useEditVisit(
   designId: string
@@ -36,65 +58,45 @@ export function useEditVisit(
 
       for (const effect of result.effects) {
         switch (effect.type) {
-          case 'write-drafts': {
-            try {
-              const saved = updateDesign(database, effect.designId, effect.patch, effect.now);
-
-              if (saved) send({ type: 'drafts-written', design: saved, patch: effect.patch });
-            } catch (caught) {
-              // A name is the only field a write refuses, and it refuses before
-              // storing anything, so the row keeps the name it already had.
-              if (!(caught instanceof InvalidDesignNameError)) throw caught;
-
-              send({ type: 'field-refused', field: 'name', message: caught.message });
-            }
-            break;
-          }
-          case 'write-material-use': {
-            try {
-              const saved = updateMaterialUse(
-                database,
-                effect.designId,
-                effect.useId,
-                effect.patch,
-                effect.now
-              );
-
-              if (saved) send({ type: 'material-use-saved', materialUse: saved });
-              else
-                send({
-                  type: 'material-use-refused',
-                  useId: effect.useId,
-                  message: 'This material use is not here.',
-                });
-            } catch (caught) {
-              if (!(caught instanceof InvalidMaterialUseError)) throw caught;
-
-              send({
-                type: 'material-use-refused',
-                useId: effect.useId,
-                message: caught.message,
-              });
-            }
-            break;
-          }
-          case 'remove-material-use': {
-            const removed = removeMaterialUse(
-              database,
-              effect.designId,
-              effect.useId,
-              effect.now
+          case 'write-drafts':
+            send(
+              writeOutcome({
+                ...effect,
+                report: attemptWrite(
+                  () => updateDesign(database, effect.designId, effect.patch, effect.now),
+                  InvalidDesignNameError
+                ),
+              })
             );
-
-            if (removed) send({ type: 'material-use-removed', useId: removed.id });
-            else
-              send({
-                type: 'material-use-refused',
-                useId: effect.useId,
-                message: 'This material use is not here.',
-              });
             break;
-          }
+          case 'write-material-use':
+            send(
+              writeOutcome({
+                ...effect,
+                report: attemptWrite(
+                  () =>
+                    updateMaterialUse(
+                      database,
+                      effect.designId,
+                      effect.useId,
+                      effect.patch,
+                      effect.now
+                    ),
+                  InvalidMaterialUseError
+                ),
+              })
+            );
+            break;
+          case 'remove-material-use':
+            send(
+              writeOutcome({
+                ...effect,
+                report: attemptWrite(() =>
+                  removeMaterialUse(database, effect.designId, effect.useId, effect.now)
+                ),
+              })
+            );
+            break;
           case 'record-visit':
             recordEdit(
               database,
