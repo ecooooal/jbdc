@@ -16,6 +16,10 @@ _Avoid_: specs, tech pack
 The artistic intent behind a design: concept, mood, inspiration, intended feeling, audience, styling, palette. The part of a design that specifications cannot express.
 _Avoid_: vision, mood board — a mood board is a set of images, not the intent.
 
+**Identity**:
+The part of a design that names it: its name, description, Category, and Collection. Edited in place on the design's own screen rather than under a tab, because it changes least.
+_Avoid_: header, overview, basics, metadata
+
 **Image**:
 A visual file attached to a design, carrying an optional kind that says what role it plays in the process: `sketch`, `material`, `inspiration`, `prototype`, `final`, or `photoshoot`. The kind is a label, not history — an image can be reclassified as the design changes.
 _Avoid_: photo, picture, asset, attachment — and "design" for the sketch kind, which collides with Design itself.
