@@ -24,19 +24,19 @@ Communication to and from subagents should be sparse. Communicate primarily thro
 
 2. (optional) Use an **exploration subagent** to conduct any exploration required by the tickets - relevant codebase files or external documentation. Ensure the exploration subagent can save files - it should save its markdown notes in a directory outside the repo, accessible by all future subagents. This lets **implementer subagents** focus on implementation rather than exploration.
 
-3. Create the integration branch. If the issue tracker closes work through PRs, or the user asks for one, open a draft PR after the first merge in step 5 (a branch with no commits ahead of main can't open one), marked as closing the spec and tickets.
+3. Create the integration branch from the branch the user is on, unless they name a base. If the issue tracker closes work through PRs, or the user asks for one, open a draft PR after the first merge in step 5 (a branch with no commits ahead of main can't open one), marked as closing the spec and tickets.
 
-4. Use a fresh **implementer subagent** for each ticket, each in its own worktree on its own branch. Each implementer subagent:
+4. Use a fresh **implementer subagent** for each ticket, each in its own worktree on its own branch, with `pnpm install --frozen-lockfile` run in that worktree. A worktree that points `node_modules` at the primary checkout corrupts it: pnpm rewrites the shared hoist links with the worktree's path, and they dangle once the worktree is gone. Each implementer subagent:
    - confirms its worktree is based on the integration branch before starting, and resets onto it if not;
    - calls the Skill tool with `tdd` to build the ticket;
    - merges the integration branch tip into its own branch before reporting done
 
-5. Once an **implementer subagent** completes, merge its work to the integration branch with a **merger subagent**.
+5. Once an **implementer subagent** completes, merge its work to the integration branch with a **merger subagent**. A fast-forward whose tree already contains the integration tip needs the merge and a diff skim only; run the repo's checks when the merge creates a commit, resolves a conflict, or moves files.
 
 6. If this changes the **frontier** of available tickets, kick off more **implementer subagents** to work on the new tickets. This allows for maximum concurrency.
 
 7. Once all tickets are complete, call the Skill tool with `code-review` on the integration branch. Fix all issues raised by the code review in a single fresh **implementer subagent**.
 
-8. If a draft PR exists, mark it ready for review. Otherwise, resolve each ticket the way the issue tracker closes work, and report the integration branch.
+8. If a draft PR exists, mark it ready for review. Otherwise, resolve each ticket the way the issue tracker closes work, then merge the integration branch into its base (fast-forward when it was based on the base's tip) and report it. Leave it unmerged only when the user asked for that.
 
 9. Clean up all **implementer subagent** worktrees.
