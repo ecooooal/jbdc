@@ -393,8 +393,10 @@ function only(state: EditDesignState): EditDesignResult {
 /**
  * The one flush behind every gesture that leaves a draft behind: it writes what
  * the visit still owes and returns the state the gesture moves to. The gestures
- * differ in whether the visit's drafts are written — only a gesture that leaves
- * a text row, or the whole surface, writes them — so that is an argument.
+ * differ in two ways, so both are arguments: `writesDrafts` — a row swap writes
+ * the visit's drafts only when it left a text row, every other gesture writes
+ * them all — and `records`, which only a close sets. "How many writes are still
+ * owed" stays the visit's own bookkeeping.
  *
  * `next` still holds the Material use panel that was open, because its colour
  * is part of what the flush owes; the caller closes or replaces it on the
@@ -403,7 +405,7 @@ function only(state: EditDesignState): EditDesignResult {
 function flush(
   next: EditDesignState,
   now: number,
-  { writesDrafts }: { writesDrafts: boolean }
+  { writesDrafts, records }: { writesDrafts: boolean; records: boolean }
 ): EditDesignResult {
   const effects = materialUseFlushEffects(next, now);
   const patch = writesDrafts ? unwrittenFields(next) : null;
@@ -412,7 +414,20 @@ function flush(
     effects.push({ type: 'write-drafts', designId: next.designId, patch, now });
   }
 
-  return effects.length === 0 ? only(next) : { state: next, effects };
+  if (!records) return effects.length === 0 ? only(next) : { state: next, effects };
+
+  // A close arms the visit with the writes it just declared, so the Event waits
+  // for the rows those writes store rather than the drafts that asked for it.
+  const closed: EditDesignState = {
+    ...next,
+    closing: { at: now, outstanding: effects.length },
+  };
+
+  if (effects.length > 0) return { state: closed, effects };
+
+  const recorded = recordEffect(closed, now);
+
+  return { state: closed, effects: recorded ? [recorded] : [] };
 }
 
 /**
@@ -507,7 +522,7 @@ export function editDesignReducer(
       const flushed = flush(
         { ...leftRow(state, state.editing), editing: null },
         event.now,
-        { writesDrafts: true }
+        { writesDrafts: true, records: false }
       );
 
       return { ...flushed, state: { ...flushed.state, materialUsePanel: { kind: 'add' } } };
@@ -516,19 +531,14 @@ export function editDesignReducer(
       const flushed = flush(
         { ...leftRow(state, state.editing), editing: null },
         event.now,
-        { writesDrafts: true }
+        { writesDrafts: true, records: false }
       );
-
-      return {
-        ...flushed,
-        state: {
-          ...flushed.state,
-          materialUsePanel: {
-            kind: 'edit',
-            editor: createInitialEditMaterialUseState(event.materialUse),
-          },
-        },
+      const panel: MaterialUsePanel = {
+        kind: 'edit',
+        editor: createInitialEditMaterialUseState(event.materialUse),
       };
+
+      return { ...flushed, state: { ...flushed.state, materialUsePanel: panel } };
     }
     case 'material-use-panel-closed':
       return {
@@ -661,7 +671,7 @@ export function editDesignReducer(
       const flushed = flush(
         { ...leftRow(state, leaving), editing: event.row },
         event.now,
-        { writesDrafts: leavingTextRow }
+        { writesDrafts: leavingTextRow, records: false }
       );
 
       return { ...flushed, state: { ...flushed.state, materialUsePanel: null } };
@@ -675,7 +685,7 @@ export function editDesignReducer(
       const flushed = flush(
         { ...leftRow(state, state.editing), tab: event.tab, editing: null },
         event.now,
-        { writesDrafts: true }
+        { writesDrafts: true, records: false }
       );
 
       return { ...flushed, state: { ...flushed.state, materialUsePanel: null } };
@@ -708,28 +718,15 @@ export function editDesignReducer(
       return settledWithoutRow(state);
     case 'app-backgrounded':
       // Leaving the foreground flushes a draft; only a close records the visit.
-      return state.closing ? only(state) : flush(state, event.now, { writesDrafts: true });
+      return state.closing
+        ? only(state)
+        : flush(state, event.now, { writesDrafts: true, records: false });
     case 'visit-closed': {
       if (state.closing) return only(state);
 
-      const effects = materialUseFlushEffects(state, event.now);
-      const patch = unwrittenFields(state);
+      const flushed = flush(state, event.now, { writesDrafts: true, records: true });
 
-      if (patch) {
-        effects.push({ type: 'write-drafts', designId: state.designId, patch, now: event.now });
-      }
-
-      const closed: EditDesignState = {
-        ...state,
-        materialUsePanel: null,
-        closing: { at: event.now, outstanding: effects.length },
-      };
-
-      if (effects.length > 0) return { state: closed, effects };
-
-      const effect = recordEffect(closed, event.now);
-
-      return { state: closed, effects: effect ? [effect] : [] };
+      return { ...flushed, state: { ...flushed.state, materialUsePanel: null } };
     }
   }
 }
