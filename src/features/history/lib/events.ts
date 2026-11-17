@@ -6,6 +6,7 @@ import {
   type DesignEditableField,
   type DesignFields,
   type MaterialUse,
+  type MaterialUsesChange,
 } from '@/features/designs';
 
 /** What one field was before an edit and what it became. Null means empty. */
@@ -51,10 +52,8 @@ export type DesignEditDiff = Partial<Record<DesignEditableField, DesignFieldChan
 export type EditSession = {
   before: DesignFields;
   after: DesignFields;
-  /** The uses the row held when the visit opened; absent when they did not change. */
-  beforeMaterialUses?: readonly MaterialUse[];
-  /** The uses the row holds as the visit closes; absent when they did not change. */
-  afterMaterialUses?: readonly MaterialUse[];
+  /** The uses before and after the visit; absent when the visit changed none. */
+  materialUses?: MaterialUsesChange;
 };
 
 /** One append-only entry in a Design's History, with its diff parsed. */
@@ -241,10 +240,9 @@ export function recordEdit(
   now: number = Date.now()
 ): DesignEvent | null {
   const diff: DesignEditDiff = diffDesignFields(session.before, session.after) ?? {};
-  const materials = diffMaterialUses(
-    session.beforeMaterialUses ?? [],
-    session.afterMaterialUses ?? []
-  );
+  const materials = session.materialUses
+    ? diffMaterialUses(session.materialUses.before, session.materialUses.after)
+    : null;
 
   if (materials) diff.materials = materials;
 

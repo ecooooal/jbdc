@@ -78,6 +78,16 @@ export type AddMaterialUseInput = {
 /** A partial correction of a recorded use: an absent field is left alone. */
 export type UpdateMaterialUseInput = Partial<AddMaterialUseInput>;
 
+/**
+ * A Design's Material uses as a visit opened and as it will close. The two
+ * arrive together, so a caller cannot hand History one side and silently
+ * record every use as added or removed.
+ */
+export type MaterialUsesChange = {
+  before: readonly MaterialUse[];
+  after: readonly MaterialUse[];
+};
+
 /** A Design with the names Detail displays in place of its foreign keys. */
 export type DesignDetail = Design & {
   category: string | null;

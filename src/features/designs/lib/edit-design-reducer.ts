@@ -19,7 +19,7 @@ import {
 } from './edit-material-use-reducer';
 import { materialUsesChanged } from './material-use-changes';
 import { normalizeOptionalText } from './optional-text';
-import type { DesignFields, MaterialUse, UpdateMaterialUseInput } from './records';
+import type { DesignFields, MaterialUse, MaterialUsesChange, UpdateMaterialUseInput } from './records';
 import { DESIGN_SECTIONS, type DesignSectionTab } from './sections';
 
 /**
@@ -111,10 +111,8 @@ export type EditDesignEffect =
       designId: string;
       before: DesignFields;
       after: DesignFields;
-      /** The uses the row held at open, absent when the visit changed none. */
-      beforeMaterialUses?: MaterialUse[];
-      /** The uses the row holds at close, absent when the visit changed none. */
-      afterMaterialUses?: MaterialUse[];
+      /** The uses before and after the visit, absent when the visit changed none. */
+      materialUses?: MaterialUsesChange;
       now: number;
     };
 
@@ -592,8 +590,10 @@ export function editDesignReducer(
           after,
           now: event.now,
           ...(usesChanged && {
-            beforeMaterialUses: state.sessionStartUses,
-            afterMaterialUses: uses,
+            materialUses: {
+              before: state.sessionStartUses,
+              after: uses,
+            },
           }),
         });
       }

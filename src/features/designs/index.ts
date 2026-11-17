@@ -30,6 +30,7 @@ export type {
   DesignDetail,
   DesignFields,
   MaterialUse,
+  MaterialUsesChange,
   UpdateDesignInput,
   UpdateMaterialUseInput,
 } from './lib/records';

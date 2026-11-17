@@ -194,8 +194,7 @@ describe('recordEdit', () => {
       {
         before: BEFORE,
         after: { ...BEFORE, name: 'Wool coat' },
-        beforeMaterialUses: [ivory],
-        afterMaterialUses: [black],
+        materialUses: { before: [ivory], after: [black] },
       },
       20
     );
@@ -224,7 +223,7 @@ describe('recordEdit', () => {
     const event = recordEdit(
       database,
       design.id,
-      { before: BEFORE, after: BEFORE, beforeMaterialUses: [], afterMaterialUses: [use] },
+      { before: BEFORE, after: BEFORE, materialUses: { before: [], after: [use] } },
       30
     );
 

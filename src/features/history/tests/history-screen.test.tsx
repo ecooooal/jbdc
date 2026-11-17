@@ -197,8 +197,7 @@ test('groups a card under Identity, Specification, Creative direction, and Mater
         silhouette: 'Relaxed A-line',
         mood: 'Romantic, relaxed',
       }),
-      beforeMaterialUses: [],
-      afterMaterialUses: [use],
+      materialUses: { before: [], after: [use] },
     },
     Date.UTC(2025, 0, 2, 3, 4)
   );

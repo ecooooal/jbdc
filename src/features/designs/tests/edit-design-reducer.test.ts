@@ -568,8 +568,7 @@ describe('edit session boundary', () => {
         designId: DESIGN_ID,
         before: DESIGN,
         after: DESIGN,
-        beforeMaterialUses: [],
-        afterMaterialUses: [WOOL_USE],
+        materialUses: { before: [], after: [WOOL_USE] },
         now: LATER,
       },
     ]);
@@ -594,8 +593,7 @@ describe('edit session boundary', () => {
         designId: DESIGN_ID,
         before: DESIGN,
         after: { ...DESIGN, name: 'Wool coat' },
-        beforeMaterialUses: [],
-        afterMaterialUses: [WOOL_USE],
+        materialUses: { before: [], after: [WOOL_USE] },
         now: LATER,
       },
     ]);
@@ -633,8 +631,7 @@ describe('edit session boundary', () => {
         designId: DESIGN_ID,
         before: DESIGN,
         after: DESIGN,
-        beforeMaterialUses: [WOOL_USE],
-        afterMaterialUses: [corrected],
+        materialUses: { before: [WOOL_USE], after: [corrected] },
         now: LATER,
       },
     ]);
@@ -652,8 +649,7 @@ describe('edit session boundary', () => {
         designId: DESIGN_ID,
         before: DESIGN,
         after: DESIGN,
-        beforeMaterialUses: [WOOL_USE],
-        afterMaterialUses: [],
+        materialUses: { before: [WOOL_USE], after: [] },
         now: LATER,
       },
     ]);
@@ -673,8 +669,7 @@ describe('edit session boundary', () => {
         designId: DESIGN_ID,
         before: DESIGN,
         after: DESIGN,
-        beforeMaterialUses: [],
-        afterMaterialUses: [corrected],
+        materialUses: { before: [], after: [corrected] },
         now: LATER,
       },
     ]);
@@ -1103,8 +1098,7 @@ describe('Material use editor', () => {
         designId: DESIGN_ID,
         before: DESIGN,
         after: DESIGN,
-        beforeMaterialUses: [WOOL_USE],
-        afterMaterialUses: [corrected],
+        materialUses: { before: [WOOL_USE], after: [corrected] },
         now: LATER,
       },
     ]);
