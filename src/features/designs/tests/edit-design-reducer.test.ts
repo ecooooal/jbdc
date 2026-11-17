@@ -1083,8 +1083,9 @@ describe('Material use editor', () => {
     });
   });
 
-  test('closing the visit writes the colour draft before the Event', () => {
+  test('a close writes the colour draft and records the use it becomes', () => {
     const tester = opened();
+    const corrected: MaterialUse = { ...WOOL_USE, colour: 'Black' };
 
     tester.send({ type: 'material-use-colour-changed', colour: 'Black' });
     tester.send({ type: 'session-closed', now: LATER });
@@ -1095,6 +1096,15 @@ describe('Material use editor', () => {
         designId: DESIGN_ID,
         useId: WOOL_USE.id,
         patch: { colour: 'Black' },
+        now: LATER,
+      },
+      {
+        type: 'record-session',
+        designId: DESIGN_ID,
+        before: DESIGN,
+        after: DESIGN,
+        beforeMaterialUses: [WOOL_USE],
+        afterMaterialUses: [corrected],
         now: LATER,
       },
     ]);

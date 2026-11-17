@@ -239,6 +239,25 @@ function fieldsAfterClose(
   return after;
 }
 
+/**
+ * The Material uses as they will stand once a close writes the open editor: the
+ * Material, colour, and role it still owes applied to the use it corrects.
+ * Without this the Event would be diffed against a row the close has not
+ * written yet, so a half-typed colour would record no use or the old one.
+ */
+function usesAfterClose(
+  state: EditDesignState,
+  patch: UpdateMaterialUseInput | null
+): MaterialUse[] {
+  const editor = editingMaterialUse(state);
+
+  if (!editor || !patch) return state.savedUses;
+
+  return state.savedUses.map((use) =>
+    use.id === editor.saved.id ? { ...use, ...patch } : use
+  );
+}
+
 /** Updates the draft a save confirmed, so the row reads the stored value. */
 function draftsAfterSave(
   draft: DesignDrafts,
@@ -562,7 +581,8 @@ export function editDesignReducer(
       }
 
       const after = fieldsAfterClose(state, patch);
-      const usesChanged = materialUsesChanged(state.sessionStartUses, state.savedUses);
+      const uses = usesAfterClose(state, unwrittenMaterialUseFields(editingMaterialUse(state)));
+      const usesChanged = materialUsesChanged(state.sessionStartUses, uses);
 
       if (designFieldsChanged(before, after) || usesChanged) {
         effects.push({
@@ -573,7 +593,7 @@ export function editDesignReducer(
           now: event.now,
           ...(usesChanged && {
             beforeMaterialUses: state.sessionStartUses,
-            afterMaterialUses: state.savedUses,
+            afterMaterialUses: uses,
           }),
         });
       }
