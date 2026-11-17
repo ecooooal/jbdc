@@ -16,7 +16,7 @@ Run typechecking regularly, single test files regularly, and the full test suite
 
 Once done, call the Skill tool with "code-review" to review the work since `Base`.
 
-After the review returns, write the repair brief as a comment on the ticket, then dispatch one fresh repair subagent on the same branch with that brief and the review report attached as context that adds no scope. It commits one `fix (#<n>)` per numbered item and reports back the SHA range plus any item it could not complete. Then re-review the delta per `code-review` §6.
+After the review returns, write the repair brief as a comment on the ticket, then dispatch one fresh repair subagent on the same branch with that brief and the review report attached as context that adds no scope. It commits one `fix (#<n>)` per numbered item and reports back the SHA range plus any item it could not complete. Then re-review the delta per `code-review` §6. This step is done when the subagent's SHA range is in hand and the delta re-review has returned, not when the dispatch is announced. A subagent that fails to start follows `code-review`'s retry rule.
 
 <repair-brief>
 
