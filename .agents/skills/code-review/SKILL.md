@@ -83,6 +83,8 @@ End with a one-line summary: total findings per axis, and the worst issue _withi
 
 State the reviewed SHA (`git rev-parse HEAD`) in the aggregate, so step 6 has the reference it compares against.
 
+Open the aggregate with the range the review covered, so a wrong fixed point is visible rather than silent: `Range: <sha>..<HEAD> — <n> commits — #<refs>`. Use short SHAs, the count from `git rev-list --count <fixed-point>..HEAD`, and the distinct ticket refs found in the commit messages.
+
 ### 6. Re-review only the delta
 
 After fixes, do not repeat both axes. Re-run only the axis (or axes) that reported a **hard** violation, against `git diff <reviewed-sha>..HEAD`, with the same spec/standards sources but a delta-sized brief. Cosmetic findings need no second review; the implementation agent checks those itself.
