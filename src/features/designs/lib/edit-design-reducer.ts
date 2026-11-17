@@ -197,13 +197,19 @@ export type WriteReport<Stored> =
   | { kind: 'nothing-stored' };
 
 /**
+ * What a write with no refusal rule answered. Its port returns the row it
+ * stored or nothing, so it can never report a refusal.
+ */
+export type StoredOrNothingReport<Stored> = Exclude<WriteReport<Stored>, { kind: 'refused' }>;
+
+/**
  * One write the visit declared and the answer it got. The effect's own fields
  * say which write this was, so a report cannot be paired with another kind.
  */
 export type WriteAttempt =
   | (DraftsWrite & { report: WriteReport<DesignFields> })
   | (MaterialUseWrite & { report: WriteReport<MaterialUse> })
-  | (RemovalWrite & { report: WriteReport<MaterialUse> });
+  | (RemovalWrite & { report: StoredOrNothingReport<MaterialUse> });
 
 /**
  * The one place a write's answer becomes the event the visit settles on. The
@@ -226,9 +232,8 @@ export function writeOutcome(attempt: WriteAttempt): EditDesignEvent {
         ? { type: 'material-use-saved', materialUse: report.value }
         : { type: 'material-use-refused', useId: attempt.useId, message: report.message };
     case 'remove-material-use':
-      return report.kind === 'stored'
-        ? { type: 'material-use-removed', useId: report.value.id }
-        : { type: 'material-use-refused', useId: attempt.useId, message: report.message };
+      // A removal has no refusal rule: it deleted the use or found none.
+      return { type: 'material-use-removed', useId: report.value.id };
   }
 }
 

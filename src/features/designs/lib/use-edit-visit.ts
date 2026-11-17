@@ -9,6 +9,7 @@ import {
   type EditDesignEvent,
   type EditDesignGesture,
   type EditDesignState,
+  type StoredOrNothingReport,
   type WriteReport,
 } from './edit-design-reducer';
 import {
@@ -26,6 +27,9 @@ type Refusal = abstract new (...args: never[]) => Error;
  * Runs one write and reports what came back: the row it stored, its refusal,
  * or nothing because the row it targeted is gone.
  */
+function attemptWrite<Stored>(write: () => Stored | null, refusal: Refusal): WriteReport<Stored>;
+/** A write with no refusal rule can only have stored a row or found none. */
+function attemptWrite<Stored>(write: () => Stored | null): StoredOrNothingReport<Stored>;
 function attemptWrite<Stored>(write: () => Stored | null, refusal?: Refusal): WriteReport<Stored> {
   try {
     const value = write();
