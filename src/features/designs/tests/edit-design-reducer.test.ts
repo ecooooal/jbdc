@@ -1109,7 +1109,15 @@ describe('edit visit boundary', () => {
 
     tester.send({ type: 'nothing-stored' });
 
-    expect(tester.getEffects()).toHaveLength(1);
+    expect(tester.getEffects()).toEqual([
+      {
+        type: 'write-material-use',
+        designId: DESIGN_ID,
+        useId: WOOL_USE.id,
+        patch: { colour: 'Black' },
+        now: LATER,
+      },
+    ]);
     expect(tester.getState().closing).toEqual({ at: LATER, outstanding: 0 });
   });
 
@@ -1122,7 +1130,14 @@ describe('edit visit boundary', () => {
 
     tester.send({ type: 'nothing-stored' });
 
-    expect(tester.getEffects()).toHaveLength(1);
+    expect(tester.getEffects()).toEqual([
+      {
+        type: 'write-drafts',
+        designId: DESIGN_ID,
+        patch: { name: 'Wool coat' },
+        now: NOW,
+      },
+    ]);
     expect(tester.getState()).toEqual(flushed);
     expect(tester.getState().closing).toBeNull();
   });
