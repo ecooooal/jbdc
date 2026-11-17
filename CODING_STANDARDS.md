@@ -37,6 +37,11 @@ check can make. Mechanical rules live in code, not here:
 - **Adapters stay mechanical.** `expo.ts` and `lib/better-sqlite3-driver.ts`
   translate calls only. Semantics live in the port (`lib/port.ts`); a rule that
   can be tested on the port does not belong in an adapter.
+- **A write names the row it missed.** A write returns the row it stored, or
+  `null` for exactly one reason: the row it targeted is missing. A write that
+  can miss more than one row — a Design and one of its Material uses — says
+  which in its return type. A caller cannot infer it from `null`, and a surface
+  that guesses records the wrong thing.
 - **Screens hold no persistence.** `src/app/**` calls feature entry points. It
   does not build queries, import a driver, or own migration/seed logic.
 - **Shipped migrations are immutable.** Never hand-edit a migration that has
