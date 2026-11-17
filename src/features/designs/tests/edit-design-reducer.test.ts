@@ -1020,6 +1020,78 @@ describe('edit visit boundary', () => {
     });
   });
 
+  test('a close whose name write found no row settles without recording', () => {
+    const tester = visit();
+
+    tester.send({ type: 'text-changed', field: 'name', value: 'Wool coat' });
+    tester.send({ type: 'visit-closed', now: NOW });
+
+    expect(tester.getEffects()).toEqual([
+      {
+        type: 'write-drafts',
+        designId: DESIGN_ID,
+        patch: { name: 'Wool coat' },
+        now: NOW,
+      },
+    ]);
+    expect(tester.getState().closing).toEqual({ at: NOW, outstanding: 1 });
+
+    tester.send({ type: 'nothing-stored' });
+
+    // The row is gone: nothing the close still owes can be stored, so it stops
+    // waiting and records no Event.
+    expect(tester.getEffects()).toEqual([
+      {
+        type: 'write-drafts',
+        designId: DESIGN_ID,
+        patch: { name: 'Wool coat' },
+        now: NOW,
+      },
+    ]);
+    expect(tester.getState()).toMatchObject({
+      closing: { at: NOW, outstanding: 0 },
+      error: null,
+    });
+  });
+
+  test('a close whose Material use write found no row settles without recording', () => {
+    const tester = visitWithUse();
+
+    tester.send({ type: 'material-use-editor-opened', materialUse: WOOL_USE, now: NOW });
+    tester.send({ type: 'material-use-colour-changed', colour: 'Black' });
+    tester.send({ type: 'visit-closed', now: LATER });
+
+    expect(tester.getEffects()).toEqual([
+      {
+        type: 'write-material-use',
+        designId: DESIGN_ID,
+        useId: WOOL_USE.id,
+        patch: { colour: 'Black' },
+        now: LATER,
+      },
+    ]);
+    expect(tester.getState().closing).toEqual({ at: LATER, outstanding: 1 });
+
+    tester.send({ type: 'nothing-stored' });
+
+    expect(tester.getEffects()).toHaveLength(1);
+    expect(tester.getState().closing).toEqual({ at: LATER, outstanding: 0 });
+  });
+
+  test('a write that found no row outside a close changes nothing', () => {
+    const tester = visit();
+
+    tester.send({ type: 'text-changed', field: 'name', value: 'Wool coat' });
+    tester.send({ type: 'app-backgrounded', now: NOW });
+    const flushed = tester.getState();
+
+    tester.send({ type: 'nothing-stored' });
+
+    expect(tester.getEffects()).toHaveLength(1);
+    expect(tester.getState()).toEqual(flushed);
+    expect(tester.getState().closing).toBeNull();
+  });
+
   test('a close before the read lands declares nothing', () => {
     const tester = createReducerTester(
       editDesignReducer,

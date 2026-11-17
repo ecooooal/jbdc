@@ -97,6 +97,8 @@ export type EditDesignEvent =
   | { type: 'row-closed' }
   | { type: 'drafts-written'; design: DesignFields; patch: UpdateDesignInput }
   | { type: 'field-refused'; field: DesignEditableField; message: string }
+  /** A write found no Design row to store into: the row is no longer in the catalog. */
+  | { type: 'nothing-stored' }
   | { type: 'app-backgrounded'; now: number }
   | { type: 'visit-closed'; now: number };
 
@@ -277,6 +279,20 @@ function settled(state: EditDesignState): EditDesignResult {
   const effect = recordEffect(next, closing.at);
 
   return effect ? { state: next, effects: [effect] } : only(next);
+}
+
+/**
+ * A write found no Design row to store into: the Design this visit edits is no
+ * longer in the catalog. The close stops waiting, because no write it still
+ * owes can be stored either, and records no Event, because there is no row to
+ * describe. Nothing is shown for it: the screen has nothing left to show.
+ */
+function settledWithoutRow(state: EditDesignState): EditDesignResult {
+  const closing = state.closing;
+
+  if (!closing) return only(state);
+
+  return only({ ...state, closing: { at: closing.at, outstanding: 0 } });
 }
 
 /** The drafts a confirmed write updates: only the fields it stored. */
@@ -643,6 +659,8 @@ export function editDesignReducer(
         },
         error: { field: event.field, message: event.message },
       });
+    case 'nothing-stored':
+      return settledWithoutRow(state);
     case 'app-backgrounded':
       // Leaving the foreground flushes a draft; only a close records the visit.
       return state.closing ? only(state) : flushing(state, event.now);
