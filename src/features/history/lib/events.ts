@@ -6,7 +6,7 @@ import {
   type DesignEditableField,
   type DesignFields,
   type MaterialUse,
-  type MaterialUsesChange,
+  type MaterialUsesPair,
 } from '@/features/designs';
 
 /** What one field was before an edit and what it became. Null means empty. */
@@ -15,19 +15,19 @@ export type DesignFieldChange = {
   to: string | null;
 };
 
-/** One Material use a session added, removed, or corrected, as History reads it back. */
-export type MaterialUseChange = Omit<MaterialUse, 'designId' | 'createdAt'>;
+/** One Material use a visit added, removed, or corrected, as History reads it back. */
+export type RecordedMaterialUse = Omit<MaterialUse, 'designId' | 'createdAt'>;
 
 /** A corrected Material use: what it was before the visit and what it became. */
 export type MaterialUseCorrection = {
-  from: MaterialUseChange;
-  to: MaterialUseChange;
+  from: RecordedMaterialUse;
+  to: RecordedMaterialUse;
 };
 
-/** What one editing session did to a Design's Material uses. */
-export type DesignMaterialsChange = {
-  added?: MaterialUseChange[];
-  removed?: MaterialUseChange[];
+/** What one visit did to a Design's Material uses. */
+export type MaterialUsesDiff = {
+  added?: RecordedMaterialUse[];
+  removed?: RecordedMaterialUse[];
   changed?: MaterialUseCorrection[];
 };
 
@@ -38,18 +38,18 @@ export type MaterialUseLine = {
 };
 
 /**
- * What one editing session changed: the fields whose values differ, each with
+ * What one visit changed: the fields whose values differ, each with
  * its old and new value, plus the Material uses it added, removed, or
  * corrected. The uses are a key of their own rather than a field, because they
  * live in their own table; an Event written before that key existed simply has
  * no `materials`.
  */
 export type DesignEditDiff = Partial<Record<DesignEditableField, DesignFieldChange>> & {
-  materials?: DesignMaterialsChange;
+  materials?: MaterialUsesDiff;
 };
 
 /** A visit's changes, as the Edit screen hands them to History at close. */
-export type EditSession = {
+export type Visit = {
   before: DesignFields;
   after: DesignFields;
   /**
@@ -57,7 +57,7 @@ export type EditSession = {
    * changed or not, so emptiness is decided here; a caller that does not track
    * uses may omit it.
    */
-  materialUses?: MaterialUsesChange;
+  materialUses?: MaterialUsesPair;
 };
 
 /** One append-only entry in a Design's History, with its diff parsed. */
@@ -77,8 +77,8 @@ type DesignEventRow = Omit<DesignEvent, 'diff'> & {
 };
 
 /**
- * The diff for one edit session: the fields whose values differ, each carrying
- * its old and new value, or null when the session changed nothing. Pure, so
+ * The diff for one visit: the fields whose values differ, each carrying
+ * its old and new value, or null when the visit changed nothing. Pure, so
  * coalescing is tested without a screen or a database (ADR-0004).
  */
 export function diffDesignFields(
@@ -98,13 +98,13 @@ export function diffDesignFields(
 }
 
 /** A stored use, without what History never stores. */
-function materialUseChangeOf(use: MaterialUse): MaterialUseChange {
+function materialUseChangeOf(materialUse: MaterialUse): RecordedMaterialUse {
   return {
-    id: use.id,
-    materialId: use.materialId,
-    materialName: use.materialName,
-    colour: use.colour,
-    role: use.role,
+    id: materialUse.id,
+    materialId: materialUse.materialId,
+    materialName: materialUse.materialName,
+    colour: materialUse.colour,
+    role: materialUse.role,
   };
 }
 
@@ -118,35 +118,35 @@ function materialUseChangeOf(use: MaterialUse): MaterialUseChange {
 export function diffMaterialUses(
   before: readonly MaterialUse[],
   after: readonly MaterialUse[]
-): DesignMaterialsChange | null {
-  const beforeById = new Map(before.map((use) => [use.id, use]));
-  const afterById = new Map(after.map((use) => [use.id, use]));
-  const added: MaterialUseChange[] = [];
-  const removed: MaterialUseChange[] = [];
+): MaterialUsesDiff | null {
+  const beforeById = new Map(before.map((materialUse) => [materialUse.id, materialUse]));
+  const afterById = new Map(after.map((materialUse) => [materialUse.id, materialUse]));
+  const added: RecordedMaterialUse[] = [];
+  const removed: RecordedMaterialUse[] = [];
   const changed: MaterialUseCorrection[] = [];
 
-  for (const [id, use] of afterById) {
+  for (const [id, materialUse] of afterById) {
     const previous = beforeById.get(id);
 
     if (!previous) {
-      added.push(materialUseChangeOf(use));
+      added.push(materialUseChangeOf(materialUse));
       continue;
     }
 
     if (
-      previous.materialId !== use.materialId ||
-      previous.colour !== use.colour ||
-      previous.role !== use.role
+      previous.materialId !== materialUse.materialId ||
+      previous.colour !== materialUse.colour ||
+      previous.role !== materialUse.role
     ) {
       changed.push({
         from: materialUseChangeOf(previous),
-        to: materialUseChangeOf(use),
+        to: materialUseChangeOf(materialUse),
       });
     }
   }
 
-  for (const [id, use] of beforeById) {
-    if (!afterById.has(id)) removed.push(materialUseChangeOf(use));
+  for (const [id, materialUse] of beforeById) {
+    if (!afterById.has(id)) removed.push(materialUseChangeOf(materialUse));
   }
 
   if (added.length + removed.length + changed.length === 0) return null;
@@ -159,8 +159,8 @@ export function diffMaterialUses(
 }
 
 /** One Material use written the way History reads it: name, colour, role. */
-function materialUseWords(use: MaterialUseChange): string {
-  return `${use.materialName} (${use.colour}, ${use.role})`;
+function materialUseWords(materialUse: RecordedMaterialUse): string {
+  return `${materialUse.materialName} (${materialUse.colour}, ${materialUse.role})`;
 }
 
 /**
@@ -168,17 +168,17 @@ function materialUseWords(use: MaterialUseChange): string {
  * order. The wording lives here, beside the diff it reads, so the screen only
  * decides where a line sits.
  */
-export function materialUseLines(materials: DesignMaterialsChange | undefined): MaterialUseLine[] {
+export function materialUseLines(materials: MaterialUsesDiff | undefined): MaterialUseLine[] {
   if (!materials) return [];
 
   return [
-    ...(materials.added ?? []).map((use) => ({
-      key: `added:${use.id}`,
-      text: `${materialUseWords(use)} added`,
+    ...(materials.added ?? []).map((materialUse) => ({
+      key: `added:${materialUse.id}`,
+      text: `${materialUseWords(materialUse)} added`,
     })),
-    ...(materials.removed ?? []).map((use) => ({
-      key: `removed:${use.id}`,
-      text: `${materialUseWords(use)} removed`,
+    ...(materials.removed ?? []).map((materialUse) => ({
+      key: `removed:${materialUse.id}`,
+      text: `${materialUseWords(materialUse)} removed`,
     })),
     ...(materials.changed ?? []).map(({ from, to }) => ({
       key: `changed:${from.id}`,
@@ -189,7 +189,7 @@ export function materialUseLines(materials: DesignMaterialsChange | undefined): 
 
 /** A diff row as stored, including the key rows written before #29 carry. */
 type StoredDesignEditDiff = DesignEditDiff & {
-  materialUses?: { added: MaterialUseChange[] };
+  materialUses?: { added: RecordedMaterialUse[] };
 };
 
 function parseDiff(raw: string | null): DesignEditDiff | null {
@@ -232,20 +232,20 @@ export function designEventsQuery(database: Database, designId: string) {
 }
 
 /**
- * Records one edit session: diffs the fields before and after, diffs the
+ * Records one visit: diffs the fields before and after, diffs the
  * Material uses it was handed, then appends a single Event when anything
- * changed. A session that changed nothing writes nothing and returns null.
- * Written once, never updated: a later session appends another Event.
+ * changed. A visit that changed nothing writes nothing and returns null.
+ * Written once, never updated: a later visit appends another Event.
  */
 export function recordEdit(
   database: Database,
   designId: string,
-  session: EditSession,
+  visit: Visit,
   now: number = Date.now()
 ): DesignEvent | null {
-  const diff: DesignEditDiff = diffDesignFields(session.before, session.after) ?? {};
-  const materials = session.materialUses
-    ? diffMaterialUses(session.materialUses.before, session.materialUses.after)
+  const diff: DesignEditDiff = diffDesignFields(visit.before, visit.after) ?? {};
+  const materials = visit.materialUses
+    ? diffMaterialUses(visit.materialUses.before, visit.materialUses.after)
     : null;
 
   if (materials) diff.materials = materials;

@@ -2,10 +2,10 @@
  * History — the append-only Events kept for one Design. It owns the edit diff
  * format (`{ field: { from, to } }`, null meaning empty, plus a `materials` key
  * carrying the Material uses the visit added, removed, or corrected), the one
- * call that records a session's changes, and the read order. The editable field
+ * call that records a visit's changes, and the read order. The editable field
  * set and the sections a card groups under are the Design's
  * (`DESIGN_EDITABLE_FIELDS`, `DESIGN_HISTORY_SECTIONS`). History holds no
- * session state: the Edit screen owns the snapshot (ADR-0004).
+ * visit state: the Edit screen owns the snapshot (ADR-0004).
  */
 export {
   diffDesignFields,
@@ -18,9 +18,9 @@ export type {
   DesignEditDiff,
   DesignEvent,
   DesignFieldChange,
-  DesignMaterialsChange,
-  EditSession,
-  MaterialUseChange,
+  MaterialUsesDiff,
   MaterialUseCorrection,
   MaterialUseLine,
+  RecordedMaterialUse,
+  Visit,
 } from './lib/events';

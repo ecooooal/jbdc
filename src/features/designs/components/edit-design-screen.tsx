@@ -23,7 +23,7 @@ import {
   type DesignSectionTab,
 } from '../lib/sections';
 import { useDesignDetail } from '../lib/use-design-detail';
-import { useEditSession } from '../lib/use-edit-session';
+import { useEditVisit } from '../lib/use-edit-visit';
 import { DesignImageStrip } from './design-image-strip';
 import { DesignStatusBadge } from './design-status-badge';
 import { FieldRows } from './field-rows';
@@ -44,7 +44,7 @@ export function EditDesignScreen({ designId }: { designId: string }) {
   const { design, error: readError, status: readStatus } = useDesignDetail(designId);
   const { categories, collections, error: taxonomyError, status: taxonomyStatus } =
     useTaxonomy();
-  const [state, send] = useEditSession(designId);
+  const [state, send] = useEditVisit(designId);
 
   useEffect(() => {
     if (!design) return;
@@ -69,7 +69,7 @@ export function EditDesignScreen({ designId }: { designId: string }) {
 
     return () => {
       subscription.remove();
-      send({ type: 'session-closed', now: Date.now() });
+      send({ type: 'visit-closed', now: Date.now() });
     };
   }, [send]);
 
@@ -290,8 +290,12 @@ export function EditDesignScreen({ designId }: { designId: string }) {
                       designId={designId}
                       uses={design.materialUses}
                       panel={state.materialUsePanel}
-                      onOpenUse={(use) =>
-                        send({ type: 'material-use-editor-opened', use, now: Date.now() })
+                      onOpenUse={(materialUse) =>
+                        send({
+                          type: 'material-use-editor-opened',
+                          materialUse,
+                          now: Date.now(),
+                        })
                       }
                       onOpenAdd={() =>
                         send({ type: 'material-use-add-opened', now: Date.now() })
@@ -316,7 +320,9 @@ export function EditDesignScreen({ designId }: { designId: string }) {
                         send({ type: 'material-use-role-chosen', role, now: Date.now() })
                       }
                       onRemoveUse={removeUseEditor}
-                      onUseAdded={(use) => send({ type: 'material-use-added', use })}
+                      onUseAdded={(materialUse) =>
+                        send({ type: 'material-use-added', materialUse })
+                      }
                     />
                   ) : null}
                 </View>

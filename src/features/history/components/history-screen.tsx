@@ -69,7 +69,7 @@ function sectionChanges(
   return changes;
 }
 
-/** One editing session: when it happened and every field or use it changed. */
+/** One visit: when it happened and every field or use it changed. */
 function EventCard({ event, taxonomy }: { event: DesignEvent; taxonomy: TaxonomyNames }) {
   const diff = event.diff;
 
@@ -113,7 +113,7 @@ function EventCard({ event, taxonomy }: { event: DesignEvent; taxonomy: Taxonomy
 
 /**
  * The append-only History of one Design, newest first. Each entry is one
- * editing session, named by the fields it changed with their old and new
+ * visit, named by the fields it changed with their old and new
  * values.
  */
 export function HistoryScreen({ designId }: { designId: string }) {
@@ -139,7 +139,7 @@ export function HistoryScreen({ designId }: { designId: string }) {
           <View className="gap-6 px-6 pb-12 pt-2">
             <View className="gap-1">
               <Text variant="h3">History</Text>
-              <Text variant="muted">One entry per editing session, newest first.</Text>
+              <Text variant="muted">One entry per visit, newest first.</Text>
             </View>
 
             {events.length === 0 ? (

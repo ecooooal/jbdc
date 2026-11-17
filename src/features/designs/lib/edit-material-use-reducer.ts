@@ -20,15 +20,17 @@ export type EditMaterialUseEvent =
   | { type: 'material-chosen'; materialId: string }
   | { type: 'colour-changed'; colour: string }
   | { type: 'role-chosen'; role: MaterialUseRole }
-  | { type: 'material-use-saved'; use: MaterialUse }
+  | { type: 'material-use-saved'; materialUse: MaterialUse }
   | { type: 'material-use-refused'; message: string };
 
-export function createInitialEditMaterialUseState(use: MaterialUse): EditMaterialUseState {
+export function createInitialEditMaterialUseState(
+  materialUse: MaterialUse
+): EditMaterialUseState {
   return {
-    materialId: use.materialId,
-    colour: use.colour,
-    role: use.role,
-    saved: use,
+    materialId: materialUse.materialId,
+    colour: materialUse.colour,
+    role: materialUse.role,
+    saved: materialUse,
     error: null,
   };
 }
@@ -61,10 +63,10 @@ export function editMaterialUseReducer(
     case 'material-use-saved':
       return {
         ...state,
-        materialId: event.use.materialId,
-        colour: event.use.colour,
-        role: event.use.role,
-        saved: event.use,
+        materialId: event.materialUse.materialId,
+        colour: event.materialUse.colour,
+        role: event.materialUse.role,
+        saved: event.materialUse,
         error: null,
       };
     case 'material-use-refused':

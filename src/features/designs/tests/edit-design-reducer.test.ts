@@ -52,7 +52,7 @@ const WOOL_USE: MaterialUse = {
 };
 
 /** A visit that has read its Design and is ready to edit. */
-function session() {
+function visit() {
   const tester = createReducerTester(editDesignReducer, createInitialEditDesignState(DESIGN_ID));
 
   tester.send({ type: 'design-loaded', design: DESIGN });
@@ -61,7 +61,7 @@ function session() {
 }
 
 /** A visit whose Design already has one recorded Material use. */
-function sessionWithUse() {
+function visitWithUse() {
   const tester = createReducerTester(editDesignReducer, createInitialEditDesignState(DESIGN_ID));
 
   tester.send({ type: 'design-loaded', design: DESIGN, materialUses: [WOOL_USE] });
@@ -104,8 +104,8 @@ describe('edit design reducer', () => {
         ...EMPTY_CREATIVE_DIRECTION,
       },
       savedUses: [],
-      sessionStart: null,
-      sessionStartUses: [],
+      visitStart: null,
+      visitStartUses: [],
       editing: null,
       materialUsePanel: null,
       tab: 'specification',
@@ -114,7 +114,7 @@ describe('edit design reducer', () => {
   });
 
   test('seeds the drafts, the row values, and the visit baseline from the first read', () => {
-    expect(session().getState()).toEqual({
+    expect(visit().getState()).toEqual({
       designId: DESIGN_ID,
       isSeeded: true,
       closing: null,
@@ -140,8 +140,8 @@ describe('edit design reducer', () => {
       },
       saved: DESIGN,
       savedUses: [],
-      sessionStart: DESIGN,
-      sessionStartUses: [],
+      visitStart: DESIGN,
+      visitStartUses: [],
       editing: null,
       materialUsePanel: null,
       tab: 'specification',
@@ -180,7 +180,7 @@ describe('edit design reducer', () => {
   });
 
   test('a later live read does not overwrite what the owner is typing', () => {
-    const tester = session();
+    const tester = visit();
     tester.send({ type: 'text-changed', field: 'name', value: 'Wool coat' });
 
     const editing = tester.getState();
@@ -190,7 +190,7 @@ describe('edit design reducer', () => {
   });
 
   test('typing a name clears the previous refusal', () => {
-    const tester = session();
+    const tester = visit();
 
     tester.send({
       type: 'field-refused',
@@ -203,7 +203,7 @@ describe('edit design reducer', () => {
   });
 
   test('one row is open at a time', () => {
-    const tester = session();
+    const tester = visit();
 
     tester.send({ type: 'row-opened', row: 'silhouette', now: NOW });
     expect(tester.getState().editing).toBe('silhouette');
@@ -216,7 +216,7 @@ describe('edit design reducer', () => {
   });
 
   test('opening another row writes the draft the owner is leaving', () => {
-    const tester = session();
+    const tester = visit();
 
     tester.send({ type: 'row-opened', row: 'silhouette', now: NOW });
     tester.send({ type: 'text-changed', field: 'silhouette', value: '  Relaxed A-line  ' });
@@ -234,7 +234,7 @@ describe('edit design reducer', () => {
   });
 
   test('leaving a name row with a blank draft restores the saved name', () => {
-    const tester = session();
+    const tester = visit();
 
     tester.send({ type: 'row-opened', row: 'name', now: NOW });
     tester.send({ type: 'text-changed', field: 'name', value: '   ' });
@@ -248,7 +248,7 @@ describe('edit design reducer', () => {
   });
 
   test('opening another row clears the refusal of the row being left', () => {
-    const tester = session();
+    const tester = visit();
 
     tester.send({ type: 'row-opened', row: 'name', now: NOW });
     tester.send({ type: 'field-refused', field: 'name', message: 'A design needs a name.' });
@@ -258,7 +258,7 @@ describe('edit design reducer', () => {
   });
 
   test('a saved name is trimmed and becomes the value a refusal restores', () => {
-    const tester = session();
+    const tester = visit();
 
     tester.send({ type: 'text-changed', field: 'name', value: '  Wool coat  ' });
     tester.send({
@@ -286,7 +286,7 @@ describe('edit design reducer', () => {
   });
 
   test('choosing a Category updates the draft until the write confirms it', () => {
-    const tester = session();
+    const tester = visit();
 
     tester.send({ type: 'choice-chosen', field: 'categoryId', value: KNITWEAR, now: NOW });
     expect(tester.getState()).toMatchObject({
@@ -306,7 +306,7 @@ describe('edit design reducer', () => {
   });
 
   test('a refused selection falls back to the committed one', () => {
-    const tester = session();
+    const tester = visit();
 
     tester.send({ type: 'choice-chosen', field: 'categoryId', value: KNITWEAR, now: NOW });
     tester.send({
@@ -329,7 +329,7 @@ describe('edit design reducer', () => {
   });
 
   test('clearing a selection is a draft like any other', () => {
-    const tester = session();
+    const tester = visit();
 
     tester.send({ type: 'choice-chosen', field: 'categoryId', value: null, now: NOW });
 
@@ -340,7 +340,7 @@ describe('edit design reducer', () => {
   });
 
   test('a cleared description comes back as an empty draft, not the text null', () => {
-    const tester = session();
+    const tester = visit();
 
     tester.send({ type: 'text-changed', field: 'description', value: '' });
     tester.send({
@@ -357,7 +357,7 @@ describe('edit design reducer', () => {
   });
 
   test('a saved Specification row becomes its stored value and collapses', () => {
-    const tester = session();
+    const tester = visit();
 
     tester.send({ type: 'row-opened', row: 'silhouette', now: NOW });
     tester.send({ type: 'text-changed', field: 'silhouette', value: '  Relaxed A-line  ' });
@@ -375,7 +375,7 @@ describe('edit design reducer', () => {
   });
 
   test('saving a row that has since closed does not collapse the open one', () => {
-    const tester = session();
+    const tester = visit();
 
     tester.send({ type: 'row-opened', row: 'silhouette', now: NOW });
     tester.send({ type: 'row-opened', row: 'neckline', now: NOW });
@@ -389,7 +389,7 @@ describe('edit design reducer', () => {
   });
 
   test('a saved field leaves the other drafts where they are', () => {
-    const tester = session();
+    const tester = visit();
 
     tester.send({ type: 'text-changed', field: 'name', value: 'Wool coat' });
     tester.send({ type: 'text-changed', field: 'description', value: 'Heavy twill' });
@@ -405,7 +405,7 @@ describe('edit design reducer', () => {
   });
 
   test('the drafts that still differ from the row are what a flush writes', () => {
-    const tester = session();
+    const tester = visit();
     expect(unwrittenFields(tester.getState())).toBeNull();
 
     tester.send({ type: 'text-changed', field: 'name', value: '  Wool coat  ' });
@@ -420,7 +420,7 @@ describe('edit design reducer', () => {
   });
 
   test('a blank name is never pending, but a real description still is', () => {
-    const tester = session();
+    const tester = visit();
 
     tester.send({ type: 'text-changed', field: 'name', value: '   ' });
     tester.send({ type: 'text-changed', field: 'description', value: 'Heavy twill' });
@@ -429,7 +429,7 @@ describe('edit design reducer', () => {
   });
 
   test('clearing the description is a pending write', () => {
-    const tester = session();
+    const tester = visit();
 
     tester.send({ type: 'text-changed', field: 'description', value: '' });
 
@@ -449,7 +449,7 @@ describe('edit design reducer', () => {
   });
 
   test('whitespace-only Specification input is not a change', () => {
-    const tester = session();
+    const tester = visit();
 
     tester.send({ type: 'text-changed', field: 'constructionNotes', value: '   ' });
 
@@ -457,7 +457,7 @@ describe('edit design reducer', () => {
   });
 
   test('a draft written by leaving the app becomes the value a later refusal restores', () => {
-    const tester = session();
+    const tester = visit();
 
     tester.send({ type: 'text-changed', field: 'name', value: 'Wool coat' });
     tester.send({ type: 'app-backgrounded', now: NOW });
@@ -476,7 +476,7 @@ describe('edit design reducer', () => {
 
 describe('tab changes', () => {
   test('a half-typed draft is written when its tab is left, and nothing is recorded', () => {
-    const tester = session();
+    const tester = visit();
 
     tester.send({ type: 'row-opened', row: 'silhouette', now: NOW });
     tester.send({ type: 'text-changed', field: 'silhouette', value: '  Relaxed A-line  ' });
@@ -499,7 +499,7 @@ describe('tab changes', () => {
   });
 
   test('the visit still records one Event after a tab change and close', () => {
-    const tester = session();
+    const tester = visit();
 
     tester.send({ type: 'tab-changed', tab: 'creativeDirection', now: NOW });
     tester.send({ type: 'row-opened', row: 'mood', now: NOW });
@@ -510,7 +510,7 @@ describe('tab changes', () => {
       design: { ...DESIGN, mood: 'Romantic, relaxed' },
       patch: { mood: ' Romantic, relaxed ' },
     });
-    tester.send({ type: 'session-closed', now: LATER });
+    tester.send({ type: 'visit-closed', now: LATER });
 
     expect(tester.getEffects()).toEqual([
       {
@@ -520,7 +520,7 @@ describe('tab changes', () => {
         now: LATER,
       },
       {
-        type: 'record-session',
+        type: 'record-visit',
         designId: DESIGN_ID,
         before: DESIGN,
         after: { ...DESIGN, mood: 'Romantic, relaxed' },
@@ -531,7 +531,7 @@ describe('tab changes', () => {
   });
 
   test('a tab change with nothing half-typed declares no work', () => {
-    const tester = session();
+    const tester = visit();
 
     tester.send({ type: 'tab-changed', tab: 'creativeDirection', now: NOW });
 
@@ -540,7 +540,7 @@ describe('tab changes', () => {
   });
 
   test('asking for the tab already shown changes nothing', () => {
-    const tester = session();
+    const tester = visit();
     const before = tester.getState();
 
     tester.send({ type: 'tab-changed', tab: 'specification', now: NOW });
@@ -550,7 +550,7 @@ describe('tab changes', () => {
   });
 
   test('leaving a tab with a blank name restores the saved one', () => {
-    const tester = session();
+    const tester = visit();
 
     tester.send({ type: 'row-opened', row: 'name', now: NOW });
     tester.send({ type: 'text-changed', field: 'name', value: '   ' });
@@ -565,16 +565,16 @@ describe('tab changes', () => {
   });
 });
 
-describe('edit session boundary', () => {
+describe('edit visit boundary', () => {
   test('a visit that changed nothing still hands History the row it found', () => {
-    const tester = session();
+    const tester = visit();
 
-    tester.send({ type: 'session-closed', now: NOW });
+    tester.send({ type: 'visit-closed', now: NOW });
 
     // Whether the row changed is History's to decide, with the diff it stores.
     expect(tester.getEffects()).toEqual([
       {
-        type: 'record-session',
+        type: 'record-visit',
         designId: DESIGN_ID,
         before: DESIGN,
         after: DESIGN,
@@ -586,14 +586,14 @@ describe('edit session boundary', () => {
   });
 
   test('a visit that only adds a Material use records one Event naming the use', () => {
-    const tester = session();
+    const tester = visit();
 
-    tester.send({ type: 'material-use-added', use: WOOL_USE });
-    tester.send({ type: 'session-closed', now: LATER });
+    tester.send({ type: 'material-use-added', materialUse: WOOL_USE });
+    tester.send({ type: 'visit-closed', now: LATER });
 
     expect(tester.getEffects()).toEqual([
       {
-        type: 'record-session',
+        type: 'record-visit',
         designId: DESIGN_ID,
         before: DESIGN,
         after: DESIGN,
@@ -604,11 +604,11 @@ describe('edit session boundary', () => {
   });
 
   test('a Material use and a field change in one visit are one Event', () => {
-    const tester = session();
+    const tester = visit();
 
-    tester.send({ type: 'material-use-added', use: WOOL_USE });
+    tester.send({ type: 'material-use-added', materialUse: WOOL_USE });
     tester.send({ type: 'text-changed', field: 'name', value: 'Wool coat' });
-    tester.send({ type: 'session-closed', now: LATER });
+    tester.send({ type: 'visit-closed', now: LATER });
 
     // The close writes first; the Event waits for the write to report back.
     expect(tester.getEffects().slice(-1)).toEqual([
@@ -628,7 +628,7 @@ describe('edit session boundary', () => {
 
     expect(tester.getEffects().slice(-1)).toEqual([
       {
-        type: 'record-session',
+        type: 'record-visit',
         designId: DESIGN_ID,
         before: DESIGN,
         after: { ...DESIGN, name: 'Wool coat' },
@@ -639,34 +639,34 @@ describe('edit session boundary', () => {
   });
 
   test('a corrected use replaces what the visit holds', () => {
-    const tester = sessionWithUse();
+    const tester = visitWithUse();
     const corrected: MaterialUse = { ...WOOL_USE, colour: 'Black', role: 'secondary' };
 
-    tester.send({ type: 'material-use-saved', use: corrected });
+    tester.send({ type: 'material-use-saved', materialUse: corrected });
 
     expect(tester.getState().savedUses).toEqual([corrected]);
-    expect(tester.getState().sessionStartUses).toEqual([WOOL_USE]);
+    expect(tester.getState().visitStartUses).toEqual([WOOL_USE]);
   });
 
   test('a removed use leaves what the visit holds', () => {
-    const tester = sessionWithUse();
+    const tester = visitWithUse();
 
     tester.send({ type: 'material-use-removed', useId: WOOL_USE.id });
 
     expect(tester.getState().savedUses).toEqual([]);
-    expect(tester.getState().sessionStartUses).toEqual([WOOL_USE]);
+    expect(tester.getState().visitStartUses).toEqual([WOOL_USE]);
   });
 
   test('a visit that corrects a recorded use records it as changed', () => {
-    const tester = sessionWithUse();
+    const tester = visitWithUse();
     const corrected: MaterialUse = { ...WOOL_USE, colour: 'Black', role: 'secondary' };
 
-    tester.send({ type: 'material-use-saved', use: corrected });
-    tester.send({ type: 'session-closed', now: LATER });
+    tester.send({ type: 'material-use-saved', materialUse: corrected });
+    tester.send({ type: 'visit-closed', now: LATER });
 
     expect(tester.getEffects()).toEqual([
       {
-        type: 'record-session',
+        type: 'record-visit',
         designId: DESIGN_ID,
         before: DESIGN,
         after: DESIGN,
@@ -677,14 +677,14 @@ describe('edit session boundary', () => {
   });
 
   test('a visit that removes a recorded use records the removal', () => {
-    const tester = sessionWithUse();
+    const tester = visitWithUse();
 
     tester.send({ type: 'material-use-removed', useId: WOOL_USE.id });
-    tester.send({ type: 'session-closed', now: LATER });
+    tester.send({ type: 'visit-closed', now: LATER });
 
     expect(tester.getEffects()).toEqual([
       {
-        type: 'record-session',
+        type: 'record-visit',
         designId: DESIGN_ID,
         before: DESIGN,
         after: DESIGN,
@@ -695,16 +695,16 @@ describe('edit session boundary', () => {
   });
 
   test('a use added then corrected in one visit records the corrected use', () => {
-    const tester = session();
+    const tester = visit();
     const corrected: MaterialUse = { ...WOOL_USE, colour: 'Black' };
 
-    tester.send({ type: 'material-use-added', use: WOOL_USE });
-    tester.send({ type: 'material-use-saved', use: corrected });
-    tester.send({ type: 'session-closed', now: LATER });
+    tester.send({ type: 'material-use-added', materialUse: WOOL_USE });
+    tester.send({ type: 'material-use-saved', materialUse: corrected });
+    tester.send({ type: 'visit-closed', now: LATER });
 
     expect(tester.getEffects()).toEqual([
       {
-        type: 'record-session',
+        type: 'record-visit',
         designId: DESIGN_ID,
         before: DESIGN,
         after: DESIGN,
@@ -715,22 +715,22 @@ describe('edit session boundary', () => {
   });
 
   test('a use added then removed in one visit records no Event', () => {
-    const tester = session();
+    const tester = visit();
 
-    tester.send({ type: 'material-use-added', use: WOOL_USE });
+    tester.send({ type: 'material-use-added', materialUse: WOOL_USE });
     tester.send({ type: 'material-use-removed', useId: WOOL_USE.id });
     const firstClose = tester.getEffects();
-    tester.send({ type: 'session-closed', now: LATER });
+    tester.send({ type: 'visit-closed', now: LATER });
 
     expect(tester.getEffects()).toEqual(firstClose);
     expect(tester.getState().savedUses).toEqual([]);
   });
 
   test('closing after a draft writes it, then records the whole visit once', () => {
-    const tester = session();
+    const tester = visit();
 
     tester.send({ type: 'text-changed', field: 'name', value: 'Wool coat' });
-    tester.send({ type: 'session-closed', now: NOW });
+    tester.send({ type: 'visit-closed', now: NOW });
 
     expect(tester.getEffects().slice(-1)).toEqual([
       {
@@ -749,7 +749,7 @@ describe('edit session boundary', () => {
 
     expect(tester.getEffects().slice(-1)).toEqual([
       {
-        type: 'record-session',
+        type: 'record-visit',
         designId: DESIGN_ID,
         before: DESIGN,
         after: { ...DESIGN, name: 'Wool coat' },
@@ -760,11 +760,11 @@ describe('edit session boundary', () => {
   });
 
   test('a Specification draft is written and recorded like any other field', () => {
-    const tester = session();
+    const tester = visit();
 
     tester.send({ type: 'text-changed', field: 'silhouette', value: ' Relaxed A-line ' });
     tester.send({ type: 'text-changed', field: 'measurements', value: 'Bust 96, waist 104' });
-    tester.send({ type: 'session-closed', now: NOW });
+    tester.send({ type: 'visit-closed', now: NOW });
 
     tester.send({
       type: 'drafts-written',
@@ -774,7 +774,7 @@ describe('edit session boundary', () => {
 
     expect(tester.getEffects().slice(-1)).toEqual([
       {
-        type: 'record-session',
+        type: 'record-visit',
         designId: DESIGN_ID,
         before: DESIGN,
         after: { ...DESIGN, silhouette: 'Relaxed A-line', measurements: 'Bust 96, waist 104' },
@@ -790,7 +790,7 @@ describe('edit session boundary', () => {
 
     tester.send({ type: 'design-loaded', design: filled });
     tester.send({ type: 'text-changed', field: 'neckline', value: '   ' });
-    tester.send({ type: 'session-closed', now: NOW });
+    tester.send({ type: 'visit-closed', now: NOW });
 
     tester.send({
       type: 'drafts-written',
@@ -800,7 +800,7 @@ describe('edit session boundary', () => {
 
     expect(tester.getEffects().slice(-1)).toEqual([
       {
-        type: 'record-session',
+        type: 'record-visit',
         designId: DESIGN_ID,
         before: filled,
         after: DESIGN,
@@ -811,7 +811,7 @@ describe('edit session boundary', () => {
   });
 
   test('leaving the app writes the drafts but records nothing', () => {
-    const tester = session();
+    const tester = visit();
 
     tester.send({ type: 'text-changed', field: 'name', value: 'Wool coat' });
     tester.send({ type: 'app-backgrounded', now: NOW });
@@ -827,7 +827,7 @@ describe('edit session boundary', () => {
   });
 
   test('a visit backgrounded and later closed stays one Event against the open row', () => {
-    const tester = session();
+    const tester = visit();
 
     tester.send({ type: 'text-changed', field: 'name', value: 'Wool coat' });
     tester.send({ type: 'app-backgrounded', now: NOW });
@@ -836,7 +836,7 @@ describe('edit session boundary', () => {
       design: { ...DESIGN, name: 'Wool coat' },
       patch: { name: 'Wool coat' },
     });
-    tester.send({ type: 'session-closed', now: LATER });
+    tester.send({ type: 'visit-closed', now: LATER });
 
     expect(tester.getEffects()).toEqual([
       {
@@ -846,7 +846,7 @@ describe('edit session boundary', () => {
         now: NOW,
       },
       {
-        type: 'record-session',
+        type: 'record-visit',
         designId: DESIGN_ID,
         before: DESIGN,
         after: { ...DESIGN, name: 'Wool coat' },
@@ -857,7 +857,7 @@ describe('edit session boundary', () => {
   });
 
   test('a selection already written is recorded without a close-time write', () => {
-    const tester = session();
+    const tester = visit();
 
     tester.send({ type: 'choice-chosen', field: 'categoryId', value: KNITWEAR, now: NOW });
     tester.send({
@@ -865,11 +865,11 @@ describe('edit session boundary', () => {
       design: { ...DESIGN, categoryId: KNITWEAR },
       patch: { categoryId: KNITWEAR },
     });
-    tester.send({ type: 'session-closed', now: NOW });
+    tester.send({ type: 'visit-closed', now: NOW });
 
     expect(tester.getEffects().slice(-1)).toEqual([
       {
-        type: 'record-session',
+        type: 'record-visit',
         designId: DESIGN_ID,
         before: DESIGN,
         after: { ...DESIGN, categoryId: KNITWEAR },
@@ -880,7 +880,7 @@ describe('edit session boundary', () => {
   });
 
   test('a net-zero visit restores the earlier value but writes no Event', () => {
-    const tester = session();
+    const tester = visit();
 
     tester.send({ type: 'text-changed', field: 'name', value: 'Wool coat' });
     tester.send({
@@ -889,7 +889,7 @@ describe('edit session boundary', () => {
       patch: { name: 'Wool coat' },
     });
     tester.send({ type: 'text-changed', field: 'name', value: 'Silk slip dress' });
-    tester.send({ type: 'session-closed', now: NOW });
+    tester.send({ type: 'visit-closed', now: NOW });
 
     // The close writes the name back, but the row ends where the visit found
     // it, so no Event is recorded.
@@ -904,7 +904,7 @@ describe('edit session boundary', () => {
   });
 
   test('a selection written away and back hands History an unchanged row', () => {
-    const tester = session();
+    const tester = visit();
 
     tester.send({ type: 'choice-chosen', field: 'categoryId', value: KNITWEAR, now: NOW });
     tester.send({
@@ -914,21 +914,21 @@ describe('edit session boundary', () => {
     });
     tester.send({ type: 'choice-chosen', field: 'categoryId', value: DRESS, now: NOW });
     tester.send({ type: 'drafts-written', design: DESIGN, patch: { categoryId: DRESS } });
-    tester.send({ type: 'session-closed', now: NOW });
+    tester.send({ type: 'visit-closed', now: NOW });
 
     const recording = tester
       .getEffects()
-      .filter((effect) => effect.type === 'record-session');
+      .filter((effect) => effect.type === 'record-visit');
 
     expect(recording).toHaveLength(1);
     expect(recording[0]).toMatchObject({ before: DESIGN, after: DESIGN });
   });
 
   test('a second close declares nothing more', () => {
-    const tester = session();
+    const tester = visit();
 
     tester.send({ type: 'text-changed', field: 'name', value: 'Wool coat' });
-    tester.send({ type: 'session-closed', now: NOW });
+    tester.send({ type: 'visit-closed', now: NOW });
 
     expect(tester.getEffects()).toEqual([
       {
@@ -940,17 +940,17 @@ describe('edit session boundary', () => {
     ]);
 
     const firstClose = tester.getEffects();
-    tester.send({ type: 'session-closed', now: LATER });
+    tester.send({ type: 'visit-closed', now: LATER });
 
     expect(tester.getEffects()).toEqual(firstClose);
   });
 
   test('a close writes no blank name but still writes a valid description', () => {
-    const tester = session();
+    const tester = visit();
 
     tester.send({ type: 'text-changed', field: 'name', value: '   ' });
     tester.send({ type: 'text-changed', field: 'description', value: 'Heavy twill' });
-    tester.send({ type: 'session-closed', now: NOW });
+    tester.send({ type: 'visit-closed', now: NOW });
 
     tester.send({
       type: 'drafts-written',
@@ -960,7 +960,7 @@ describe('edit session boundary', () => {
 
     expect(tester.getEffects().slice(-1)).toEqual([
       {
-        type: 'record-session',
+        type: 'record-visit',
         designId: DESIGN_ID,
         before: DESIGN,
         after: { ...DESIGN, description: 'Heavy twill' },
@@ -971,10 +971,10 @@ describe('edit session boundary', () => {
   });
 
   test('the recorded description is the stored one, not the raw draft', () => {
-    const tester = session();
+    const tester = visit();
 
     tester.send({ type: 'text-changed', field: 'description', value: '  Heavy twill  ' });
-    tester.send({ type: 'session-closed', now: NOW });
+    tester.send({ type: 'visit-closed', now: NOW });
 
     tester.send({
       type: 'drafts-written',
@@ -984,7 +984,7 @@ describe('edit session boundary', () => {
 
     expect(tester.getEffects().slice(-1)).toEqual([
       {
-        type: 'record-session',
+        type: 'record-visit',
         designId: DESIGN_ID,
         before: DESIGN,
         after: { ...DESIGN, description: 'Heavy twill' },
@@ -995,10 +995,10 @@ describe('edit session boundary', () => {
   });
 
   test('a refused write is never recorded as if it landed', () => {
-    const tester = session();
+    const tester = visit();
 
     tester.send({ type: 'text-changed', field: 'name', value: '   ' });
-    tester.send({ type: 'session-closed', now: NOW });
+    tester.send({ type: 'visit-closed', now: NOW });
 
     // A blank name is refused before the row is touched, so the close settles
     // with the stored row and History writes no Event.
@@ -1006,7 +1006,7 @@ describe('edit session boundary', () => {
 
     expect(tester.getEffects()).toEqual([
       {
-        type: 'record-session',
+        type: 'record-visit',
         designId: DESIGN_ID,
         before: DESIGN,
         after: DESIGN,
@@ -1026,7 +1026,7 @@ describe('edit session boundary', () => {
       createInitialEditDesignState(DESIGN_ID)
     );
 
-    tester.send({ type: 'session-closed', now: NOW });
+    tester.send({ type: 'visit-closed', now: NOW });
 
     expect(tester.getEffects()).toEqual([]);
   });
@@ -1045,9 +1045,9 @@ describe('edit session boundary', () => {
 
 describe('Material use editor', () => {
   function opened() {
-    const tester = sessionWithUse();
+    const tester = visitWithUse();
 
-    tester.send({ type: 'material-use-editor-opened', use: WOOL_USE, now: NOW });
+    tester.send({ type: 'material-use-editor-opened', materialUse: WOOL_USE, now: NOW });
 
     return tester;
   }
@@ -1068,12 +1068,12 @@ describe('Material use editor', () => {
   });
 
   test('the Add form and a correction share one panel', () => {
-    const tester = sessionWithUse();
+    const tester = visitWithUse();
 
     tester.send({ type: 'material-use-add-opened', now: NOW });
     expect(tester.getState().materialUsePanel).toEqual({ kind: 'add' });
 
-    tester.send({ type: 'material-use-editor-opened', use: WOOL_USE, now: LATER });
+    tester.send({ type: 'material-use-editor-opened', materialUse: WOOL_USE, now: LATER });
     expect(tester.getState().materialUsePanel).toMatchObject({
       kind: 'edit',
       editor: { saved: WOOL_USE },
@@ -1189,7 +1189,7 @@ describe('Material use editor', () => {
     const corrected: MaterialUse = { ...WOOL_USE, colour: 'Black' };
 
     tester.send({ type: 'material-use-colour-changed', colour: 'Black' });
-    tester.send({ type: 'session-closed', now: LATER });
+    tester.send({ type: 'visit-closed', now: LATER });
 
     expect(tester.getEffects().slice(-1)).toEqual([
       {
@@ -1201,11 +1201,11 @@ describe('Material use editor', () => {
       },
     ]);
 
-    tester.send({ type: 'material-use-saved', use: corrected });
+    tester.send({ type: 'material-use-saved', materialUse: corrected });
 
     expect(tester.getEffects().slice(-1)).toEqual([
       {
-        type: 'record-session',
+        type: 'record-visit',
         designId: DESIGN_ID,
         before: DESIGN,
         after: DESIGN,
@@ -1220,13 +1220,13 @@ describe('Material use editor', () => {
     const corrected: MaterialUse = { ...WOOL_USE, colour: 'Black' };
 
     tester.send({ type: 'material-use-colour-changed', colour: '  Black  ' });
-    tester.send({ type: 'session-closed', now: LATER });
+    tester.send({ type: 'visit-closed', now: LATER });
 
-    tester.send({ type: 'material-use-saved', use: corrected });
+    tester.send({ type: 'material-use-saved', materialUse: corrected });
 
     expect(tester.getEffects().slice(-1)).toEqual([
       {
-        type: 'record-session',
+        type: 'record-visit',
         designId: DESIGN_ID,
         before: DESIGN,
         after: DESIGN,
@@ -1263,7 +1263,7 @@ describe('Material use editor', () => {
   });
 
   test('pressing remove with no editor open declares nothing', () => {
-    const tester = sessionWithUse();
+    const tester = visitWithUse();
 
     tester.send({ type: 'material-use-remove-pressed', now: LATER });
 
@@ -1274,7 +1274,7 @@ describe('Material use editor', () => {
     const tester = opened();
     const corrected: MaterialUse = { ...WOOL_USE, colour: 'Black', role: 'secondary' };
 
-    tester.send({ type: 'material-use-saved', use: corrected });
+    tester.send({ type: 'material-use-saved', materialUse: corrected });
 
     expect(tester.getState()).toMatchObject({
       materialUsePanel: {
@@ -1296,8 +1296,8 @@ describe('Material use editor', () => {
       role: 'secondary',
     };
 
-    tester.send({ type: 'material-use-editor-opened', use: silkUse, now: LATER });
-    tester.send({ type: 'material-use-saved', use: { ...WOOL_USE, colour: 'Black' } });
+    tester.send({ type: 'material-use-editor-opened', materialUse: silkUse, now: LATER });
+    tester.send({ type: 'material-use-saved', materialUse: { ...WOOL_USE, colour: 'Black' } });
 
     expect(tester.getState()).toMatchObject({
       materialUsePanel: {

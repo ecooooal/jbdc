@@ -36,7 +36,7 @@ export function AddMaterialUseForm({
   onCancel,
 }: {
   designId: string;
-  onAdded: (use: MaterialUse) => void;
+  onAdded: (materialUse: MaterialUse) => void;
   onCancel: () => void;
 }) {
   const database = useDatabase();
@@ -65,19 +65,19 @@ export function AddMaterialUseForm({
     if (state.materialId === null) return;
 
     try {
-      const use = addMaterialUse(database, designId, {
+      const materialUse = addMaterialUse(database, designId, {
         materialId: state.materialId,
         colour: state.colour,
         role: state.role,
       });
 
-      if (!use) {
+      if (!materialUse) {
         dispatch({ type: 'use-creation-refused', message: 'This design is not here.' });
         return;
       }
 
       dispatch({ type: 'use-created' });
-      onAdded(use);
+      onAdded(materialUse);
     } catch (caught) {
       if (!(caught instanceof InvalidMaterialUseError)) throw caught;
 

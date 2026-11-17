@@ -15,7 +15,7 @@ export function MaterialUsesTable({
   onUsePress,
 }: {
   uses: MaterialUse[];
-  onUsePress?: (use: MaterialUse) => void;
+  onUsePress?: (materialUse: MaterialUse) => void;
 }) {
   return (
     <View className="border-border overflow-hidden rounded-xl border">
@@ -36,20 +36,20 @@ export function MaterialUsesTable({
           No materials yet
         </Text>
       ) : (
-        uses.map((use) => (
+        uses.map((materialUse) => (
           <Pressable
-            key={use.id}
-            onPress={onUsePress ? () => onUsePress(use) : undefined}
+            key={materialUse.id}
+            onPress={onUsePress ? () => onUsePress(materialUse) : undefined}
             accessibilityRole={onUsePress ? 'button' : undefined}
             accessibilityLabel={
-              onUsePress ? `Edit ${use.materialName} (${use.colour})` : undefined
+              onUsePress ? `Edit ${materialUse.materialName} (${materialUse.colour})` : undefined
             }
             className={onUsePress ? `${ROW_CLASS} active:bg-accent` : ROW_CLASS}
           >
-            <Text className="flex-[2]">{use.materialName}</Text>
-            <Text className="flex-[2]">{use.colour}</Text>
+            <Text className="flex-[2]">{materialUse.materialName}</Text>
+            <Text className="flex-[2]">{materialUse.colour}</Text>
             <Text variant="muted" className="flex-1">
-              {materialUseRoleLabel(use.role)}
+              {materialUseRoleLabel(materialUse.role)}
             </Text>
           </Pressable>
         ))

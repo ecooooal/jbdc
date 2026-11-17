@@ -43,13 +43,13 @@ const WOOL_USE: MaterialUse = {
 };
 
 /** A Material use without what History never stores. */
-function changeOf(use: MaterialUse) {
+function changeOf(materialUse: MaterialUse) {
   return {
-    id: use.id,
-    materialId: use.materialId,
-    materialName: use.materialName,
-    colour: use.colour,
-    role: use.role,
+    id: materialUse.id,
+    materialId: materialUse.materialId,
+    materialName: materialUse.materialName,
+    colour: materialUse.colour,
+    role: materialUse.role,
   };
 }
 
@@ -85,15 +85,15 @@ describe('diffDesignFields', () => {
 });
 
 describe('diffMaterialUses', () => {
-  test('records a use the session added', () => {
+  test('records a use the visit added', () => {
     expect(diffMaterialUses([], [WOOL_USE])).toEqual({ added: [changeOf(WOOL_USE)] });
   });
 
-  test('records a use the session removed', () => {
+  test('records a use the visit removed', () => {
     expect(diffMaterialUses([WOOL_USE], [])).toEqual({ removed: [changeOf(WOOL_USE)] });
   });
 
-  test('records a use the session corrected, with what it was and what it became', () => {
+  test('records a use the visit corrected, with what it was and what it became', () => {
     const blackWool: MaterialUse = { ...WOOL_USE, colour: 'Black', role: 'secondary' };
 
     expect(diffMaterialUses([WOOL_USE], [blackWool])).toEqual({
@@ -101,7 +101,7 @@ describe('diffMaterialUses', () => {
     });
   });
 
-  test('leaves an unchanged session out', () => {
+  test('leaves an unchanged visit out', () => {
     expect(diffMaterialUses([WOOL_USE], [{ ...WOOL_USE }])).toBeNull();
   });
 });
@@ -147,7 +147,7 @@ describe('recordEdit', () => {
     dispose();
   });
 
-  test('an edit session appends one event whose diff reads as an object', () => {
+  test('an edit visit appends one event whose diff reads as an object', () => {
     const design = createDesign(database, { name: 'Silk slip dress' }, 10);
 
     const event = recordEdit(
@@ -208,22 +208,22 @@ describe('recordEdit', () => {
     expect(listDesignEvents(database, design.id)).toEqual([event]);
   });
 
-  test('a session that only adds a Material use still writes one event', () => {
+  test('a visit that only adds a Material use still writes one event', () => {
     const design = createDesign(database, { name: 'Silk slip dress' }, 10);
     const wool = createMaterial(database, { name: 'Wool' });
-    const use = addMaterialUse(
+    const materialUse = addMaterialUse(
       database,
       design.id,
       { materialId: wool.id, colour: 'Charcoal', role: 'main' },
       20
     );
 
-    if (!use) throw new Error('the Material use should have been written');
+    if (!materialUse) throw new Error('the Material use should have been written');
 
     const event = recordEdit(
       database,
       design.id,
-      { before: BEFORE, after: BEFORE, materialUses: { before: [], after: [use] } },
+      { before: BEFORE, after: BEFORE, materialUses: { before: [], after: [materialUse] } },
       30
     );
 
@@ -231,7 +231,7 @@ describe('recordEdit', () => {
       materials: {
         added: [
           {
-            id: use.id,
+            id: materialUse.id,
             materialId: wool.id,
             materialName: 'Wool',
             colour: 'Charcoal',
@@ -267,7 +267,7 @@ describe('recordEdit', () => {
     });
   });
 
-  test('a session that changed nothing writes no event', () => {
+  test('a visit that changed nothing writes no event', () => {
     const design = createDesign(database, { name: 'Silk slip dress' }, 10);
 
     expect(recordEdit(database, design.id, { before: BEFORE, after: { ...BEFORE } }, 20)).toBeNull();
@@ -292,7 +292,7 @@ describe('recordEdit', () => {
     expect(listDesignEvents(database, design.id)).toEqual([]);
   });
 
-  test('two sessions are two events, both kept as written', () => {
+  test('two visits are two events, both kept as written', () => {
     const design = createDesign(database, { name: 'Silk slip dress' }, 10);
     const renamed = { ...BEFORE, name: 'Silk slip' };
 

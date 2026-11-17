@@ -86,7 +86,7 @@ test('shows what changed, the old value, the new value, and when', async () => {
   expect(screen.getByText(/2025/)).toBeTruthy();
 });
 
-test('shows the names of the Categories a session changed', async () => {
+test('shows the names of the Categories a visit changed', async () => {
   const dress = createCategory(database, { name: 'Dress' });
   const knitwear = createCategory(database, { name: 'Knitwear' });
   const design = createDesign(database, { name: 'Silk slip dress' }, 10);
@@ -178,14 +178,14 @@ test('shows a Specification change by its owner-facing label', async () => {
 test('groups a card under Identity, Specification, Creative direction, and Materials', async () => {
   const design = createDesign(database, { name: 'Silk slip dress' }, 10);
   const wool = createMaterial(database, { name: 'Wool' });
-  const use = addMaterialUse(
+  const materialUse = addMaterialUse(
     database,
     design.id,
     { materialId: wool.id, colour: 'Charcoal', role: 'main' },
     10
   );
 
-  if (!use) throw new Error('the Material use should have been written');
+  if (!materialUse) throw new Error('the Material use should have been written');
 
   recordEdit(
     database,
@@ -197,7 +197,7 @@ test('groups a card under Identity, Specification, Creative direction, and Mater
         silhouette: 'Relaxed A-line',
         mood: 'Romantic, relaxed',
       }),
-      materialUses: { before: [], after: [use] },
+      materialUses: { before: [], after: [materialUse] },
     },
     Date.UTC(2025, 0, 2, 3, 4)
   );

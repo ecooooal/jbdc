@@ -20,7 +20,7 @@ import { normalizeOptionalText } from './optional-text';
 import type {
   DesignFields,
   MaterialUse,
-  MaterialUsesChange,
+  MaterialUsesPair,
   UpdateDesignInput,
   UpdateMaterialUseInput,
 } from './records';
@@ -39,7 +39,7 @@ export type MaterialUsePanel =
  * the one open row, and the one refusal on screen. The live read seeds it once;
  * later reads do not overwrite a draft the owner is still editing.
  *
- * A visit is one screen session (ADR-0004): `sessionStart` is the row the
+ * A visit is one trip through the Edit screen (ADR-0004): `visitStart` is the row the
  * first read returned and never advances, so every write in the visit
  * coalesces into one Event at close.
  */
@@ -55,9 +55,9 @@ export type EditDesignState = {
   /** The Material uses the row holds now, after this visit's additions, corrections, and removals. */
   savedUses: MaterialUse[];
   /** The row at open: what the visit's one Event is diffed against. */
-  sessionStart: DesignFields | null;
+  visitStart: DesignFields | null;
   /** The Material uses the row held at open. */
-  sessionStartUses: MaterialUse[];
+  visitStartUses: MaterialUse[];
   /** The one row whose editor is open. `taxonomy` is the Category · Collection pair. */
   editing: EditDesignRow | null;
   /** The one Materials editor open: adding a use or correcting one. */
@@ -80,15 +80,15 @@ export type EditDesignEvent =
   | { type: 'text-changed'; field: DesignTextEditableField; value: string }
   | { type: 'text-row-left'; field: DesignTextEditableField; now: number }
   | { type: 'choice-chosen'; field: DesignChoiceEditableField; value: string | null; now: number }
-  | { type: 'material-use-added'; use: MaterialUse }
+  | { type: 'material-use-added'; materialUse: MaterialUse }
   | { type: 'material-use-add-opened'; now: number }
-  | { type: 'material-use-editor-opened'; use: MaterialUse; now: number }
+  | { type: 'material-use-editor-opened'; materialUse: MaterialUse; now: number }
   | { type: 'material-use-panel-closed'; now: number }
   | { type: 'material-use-colour-changed'; colour: string }
   | { type: 'material-use-colour-committed'; now: number }
   | { type: 'material-use-material-chosen'; materialId: string; now: number }
   | { type: 'material-use-role-chosen'; role: MaterialUseRole; now: number }
-  | { type: 'material-use-saved'; use: MaterialUse }
+  | { type: 'material-use-saved'; materialUse: MaterialUse }
   | { type: 'material-use-refused'; useId: string; message: string }
   | { type: 'material-use-remove-pressed'; now: number }
   | { type: 'material-use-removed'; useId: string }
@@ -98,11 +98,11 @@ export type EditDesignEvent =
   | { type: 'drafts-written'; design: DesignFields; patch: UpdateDesignInput }
   | { type: 'field-refused'; field: DesignEditableField; message: string }
   | { type: 'app-backgrounded'; now: number }
-  | { type: 'session-closed'; now: number };
+  | { type: 'visit-closed'; now: number };
 
 /**
  * The work a visit asks for. `write-drafts`, `write-material-use`,
- * `remove-material-use`, and `record-session` are separate because leaving the
+ * `remove-material-use`, and `record-visit` are separate because leaving the
  * app flushes a draft but records nothing, while a close does all of them. The
  * runner makes one call per effect and dispatches the outcome back as an event;
  * the screen calls no record module itself.
@@ -118,12 +118,12 @@ export type EditDesignEffect =
     }
   | { type: 'remove-material-use'; designId: string; useId: string; now: number }
   | {
-      type: 'record-session';
+      type: 'record-visit';
       designId: string;
       before: DesignFields;
       after: DesignFields;
       /** The uses before and after the visit; History decides whether they differ. */
-      materialUses: MaterialUsesChange;
+      materialUses: MaterialUsesPair;
       now: number;
     };
 
@@ -139,8 +139,8 @@ export function createInitialEditDesignState(designId: string): EditDesignState 
     draft: EMPTY_DESIGN_DRAFTS,
     saved: EMPTY_DESIGN_FIELDS,
     savedUses: [],
-    sessionStart: null,
-    sessionStartUses: [],
+    visitStart: null,
+    visitStartUses: [],
     editing: null,
     materialUsePanel: null,
     tab: DESIGN_SECTIONS[0].tab,
@@ -243,16 +243,16 @@ function materialUseFlushEffects(state: EditDesignState, now: number): EditDesig
  * back, so a refused write is never recorded as if it landed.
  */
 function recordEffect(state: EditDesignState, at: number): EditDesignEffect | null {
-  const before = state.sessionStart;
+  const before = state.visitStart;
 
   if (!before) return null;
 
   return {
-    type: 'record-session',
+    type: 'record-visit',
     designId: state.designId,
     before,
     after: state.saved,
-    materialUses: { before: state.sessionStartUses, after: state.savedUses },
+    materialUses: { before: state.visitStartUses, after: state.savedUses },
     now: at,
   };
 }
@@ -370,8 +370,8 @@ export function editDesignReducer(
         draft: draftsFromFields(event.design),
         saved: event.design,
         savedUses: [...(event.materialUses ?? [])],
-        sessionStart: event.design,
-        sessionStartUses: [...(event.materialUses ?? [])],
+        visitStart: event.design,
+        visitStartUses: [...(event.materialUses ?? [])],
         editing: null,
         materialUsePanel: null,
         error: null,
@@ -421,11 +421,11 @@ export function editDesignReducer(
     }
     case 'material-use-added':
       // The use is already written; the visit only keeps it for the Event it
-      // records at close, so adding one does not end the session.
+      // records at close, so adding one does not end the visit.
       return only({
         ...state,
         materialUsePanel: null,
-        savedUses: [...state.savedUses, event.use],
+        savedUses: [...state.savedUses, event.materialUse],
       });
     case 'material-use-add-opened': {
       // One editor at a time: a text row being left is written, and a Material
@@ -458,7 +458,7 @@ export function editDesignReducer(
         editing: null,
         materialUsePanel: {
           kind: 'edit',
-          editor: createInitialEditMaterialUseState(event.use),
+          editor: createInitialEditMaterialUseState(event.materialUse),
         } as const,
       };
 
@@ -522,7 +522,7 @@ export function editDesignReducer(
     }
     case 'material-use-saved': {
       const editor = editingMaterialUse(state);
-      const isTheSameUse = editor !== null && editor.saved.id === event.use.id;
+      const isTheSameUse = editor !== null && editor.saved.id === event.materialUse.id;
 
       return settled({
         ...state,
@@ -534,13 +534,15 @@ export function editDesignReducer(
                 kind: 'edit',
                 editor: editMaterialUseReducer(editor, {
                   type: 'material-use-saved',
-                  use: event.use,
+                  materialUse: event.materialUse,
                 }),
               }
             : state.materialUsePanel,
         // The correction is already written; the visit keeps what the row holds
         // now, so a use added and then corrected still reads as one addition.
-        savedUses: state.savedUses.map((use) => (use.id === event.use.id ? event.use : use)),
+        savedUses: state.savedUses.map((materialUse) =>
+          materialUse.id === event.materialUse.id ? event.materialUse : materialUse
+        ),
       });
     }
     case 'material-use-refused': {
@@ -644,7 +646,7 @@ export function editDesignReducer(
     case 'app-backgrounded':
       // Leaving the foreground flushes a draft; only a close records the visit.
       return state.closing ? only(state) : flushing(state, event.now);
-    case 'session-closed': {
+    case 'visit-closed': {
       if (state.closing) return only(state);
 
       const effects = materialUseFlushEffects(state, event.now);

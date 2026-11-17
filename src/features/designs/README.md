@@ -24,7 +24,7 @@ uses recorded on it, and the screens that show and edit it. Public entries are
 | The add-Material-use editor | `lib/add-material-use-reducer.ts` |
 | New Design | `lib/new-design-form-reducer.ts` |
 
-`use-edit-session.ts` runs the Edit reducer's effects; `use-design-detail.ts`
+`use-edit-visit.ts` runs the Edit reducer's effects; `use-design-detail.ts`
 is Detail's live read.
 
 ## The Material use path

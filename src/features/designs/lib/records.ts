@@ -83,7 +83,7 @@ export type UpdateMaterialUseInput = Partial<AddMaterialUseInput>;
  * arrive together, so a caller cannot hand History one side and silently
  * record every use as added or removed.
  */
-export type MaterialUsesChange = {
+export type MaterialUsesPair = {
   before: readonly MaterialUse[];
   after: readonly MaterialUse[];
 };

@@ -21,7 +21,7 @@ import {
  * straight back — no pending-effect list and no second render. The reducer
  * decides what to write and when; this bridge only performs the call.
  */
-export function useEditSession(
+export function useEditVisit(
   designId: string
 ): readonly [EditDesignState, (event: EditDesignEvent) => void] {
   const database = useDatabase();
@@ -60,7 +60,7 @@ export function useEditSession(
                 effect.now
               );
 
-              if (saved) send({ type: 'material-use-saved', use: saved });
+              if (saved) send({ type: 'material-use-saved', materialUse: saved });
               else
                 send({
                   type: 'material-use-refused',
@@ -95,7 +95,7 @@ export function useEditSession(
               });
             break;
           }
-          case 'record-session':
+          case 'record-visit':
             recordEdit(
               database,
               effect.designId,

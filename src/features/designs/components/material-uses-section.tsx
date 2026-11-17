@@ -35,7 +35,7 @@ export function MaterialUsesSection({
   designId: string;
   uses: MaterialUse[];
   panel: MaterialUsePanel | null;
-  onOpenUse: (use: MaterialUse) => void;
+  onOpenUse: (materialUse: MaterialUse) => void;
   onOpenAdd: () => void;
   onClosePanel: () => void;
   onMaterialChosen: (materialId: string) => void;
@@ -43,7 +43,7 @@ export function MaterialUsesSection({
   onColourCommitted: () => void;
   onRoleChosen: (role: MaterialUseRole) => void;
   onRemoveUse: () => void;
-  onUseAdded: (use: MaterialUse) => void;
+  onUseAdded: (materialUse: MaterialUse) => void;
 }) {
   const editor: EditMaterialUseState | null = panel?.kind === 'edit' ? panel.editor : null;
 

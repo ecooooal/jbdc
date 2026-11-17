@@ -67,7 +67,7 @@ describe('edit material use reducer', () => {
     };
     const state = editMaterialUseReducer(createInitialEditMaterialUseState(WOOL_USE), {
       type: 'material-use-saved',
-      use: silkUse,
+      materialUse: silkUse,
     });
 
     expect(state).toEqual({

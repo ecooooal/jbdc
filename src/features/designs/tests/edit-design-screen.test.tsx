@@ -448,8 +448,8 @@ describe('tab change wiring', () => {
   });
 });
 
-describe('edit session history', () => {
-  test('two fields changed in one session are one Event with both old and new values', async () => {
+describe('edit visit history', () => {
+  test('two fields changed in one visit are one Event with both old and new values', async () => {
     const design = newDesign();
     const view = await renderEdit(design.id);
 
@@ -492,7 +492,7 @@ describe('edit session history', () => {
     });
   });
 
-  test('a session that changes nothing writes no Event', async () => {
+  test('a visit that changes nothing writes no Event', async () => {
     const design = newDesign();
     const view = await renderEdit(design.id);
 
@@ -501,7 +501,7 @@ describe('edit session history', () => {
     expect(listDesignEvents(database, design.id)).toEqual([]);
   });
 
-  test('two separate sessions write two Events', async () => {
+  test('two separate visits write two Events', async () => {
     const design = newDesign();
 
     const first = await renderEdit(design.id);
