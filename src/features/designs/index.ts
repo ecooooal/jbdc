@@ -5,6 +5,8 @@
  */
 export { DESIGN_EDITABLE_FIELDS, designFieldLabel } from './lib/fields';
 export type { DesignEditableField } from './lib/fields';
+export { DESIGN_HISTORY_SECTIONS } from './lib/sections';
+export type { DesignHistorySection, DesignHistorySectionDefinition } from './lib/sections';
 export { materialUseRoleLabel } from './lib/material-use-role';
 export {
   addMaterialUse,

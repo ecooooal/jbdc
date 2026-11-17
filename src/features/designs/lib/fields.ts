@@ -24,6 +24,18 @@ export const DESIGN_CHOICE_FIELDS = ['categoryId', 'collectionId'] as const;
 export type DesignChoiceEditableField = (typeof DESIGN_CHOICE_FIELDS)[number];
 
 /**
+ * Identity: the fields the hero edits in place. They have no tab because they
+ * are edited least, which is why History groups them ahead of the two sections.
+ */
+export const DESIGN_IDENTITY_FIELDS = [
+  'name',
+  'description',
+  ...DESIGN_CHOICE_FIELDS,
+] as const;
+
+export type DesignIdentityField = (typeof DESIGN_IDENTITY_FIELDS)[number];
+
+/**
  * The fields Edit can change, in the order History lists them. Status,
  * timestamps, and Images are not editable here. This is the one declaration:
  * `DesignFields` is a `Pick` of `Design`, so a listed field must be a stored

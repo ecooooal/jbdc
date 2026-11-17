@@ -1,4 +1,5 @@
 import { CREATIVE_DIRECTION_FIELDS } from './creative-direction-fields';
+import { DESIGN_IDENTITY_FIELDS, type DesignEditableField } from './fields';
 import { SPECIFICATION_FIELDS } from './specification-fields';
 
 /** One row's definition, as the two field lists declare it. */
@@ -25,3 +26,28 @@ export type DesignSectionTab = (typeof DESIGN_SECTIONS)[number]['tab'];
 export function isDesignSectionTab(value: string): value is DesignSectionTab {
   return DESIGN_SECTIONS.some((section) => section.tab === value);
 }
+
+/** What one History card groups its lines under. Materials carries uses, not fields. */
+export type DesignHistorySection = 'identity' | DesignSectionTab | 'materials';
+
+export type DesignHistorySectionDefinition = {
+  section: DesignHistorySection;
+  label: string;
+  fields: readonly DesignEditableField[];
+};
+
+/**
+ * The four sections a History card groups its lines under, in reading order.
+ * Identity has no tab; the other two take their fields from `DESIGN_SECTIONS`,
+ * so a field cannot land in two sections. Materials holds Material use lines
+ * rather than fields: uses live in their own table.
+ */
+export const DESIGN_HISTORY_SECTIONS: readonly DesignHistorySectionDefinition[] = [
+  { section: 'identity', label: 'Identity', fields: DESIGN_IDENTITY_FIELDS },
+  ...DESIGN_SECTIONS.map(({ tab, label, fields }) => ({
+    section: tab,
+    label,
+    fields: fields.map(({ field }) => field),
+  })),
+  { section: 'materials', label: 'Materials', fields: [] },
+];
