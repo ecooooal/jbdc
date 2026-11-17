@@ -443,6 +443,11 @@ function only(state: EditDesignState): EditDesignResult {
   return { state, effects: [] };
 }
 
+/** The result with the visit's one open Materials editor replaced. */
+function withPanel(result: EditDesignResult, panel: MaterialUsePanel | null): EditDesignResult {
+  return { ...result, state: { ...result.state, materialUsePanel: panel } };
+}
+
 /**
  * The one flush behind every gesture that leaves a draft behind: it writes what
  * the visit still owes and returns the state the gesture moves to. The gestures
@@ -580,7 +585,7 @@ export function editDesignReducer(
         { writesDrafts: true, records: false }
       );
 
-      return { ...flushed, state: { ...flushed.state, materialUsePanel: { kind: 'add' } } };
+      return withPanel(flushed, { kind: 'add' });
     }
     case 'material-use-editor-opened': {
       const flushed = flush(
@@ -593,7 +598,7 @@ export function editDesignReducer(
         editor: createInitialEditMaterialUseState(event.materialUse),
       };
 
-      return { ...flushed, state: { ...flushed.state, materialUsePanel: panel } };
+      return withPanel(flushed, panel);
     }
     case 'material-use-panel-closed':
       return {
@@ -729,7 +734,7 @@ export function editDesignReducer(
         { writesDrafts: leavingTextRow, records: false }
       );
 
-      return { ...flushed, state: { ...flushed.state, materialUsePanel: null } };
+      return withPanel(flushed, null);
     }
     case 'tab-changed': {
       if (event.tab === state.tab) return only(state);
@@ -743,7 +748,7 @@ export function editDesignReducer(
         { writesDrafts: true, records: false }
       );
 
-      return { ...flushed, state: { ...flushed.state, materialUsePanel: null } };
+      return withPanel(flushed, null);
     }
     case 'row-closed':
       return only({ ...state, editing: null });
@@ -785,7 +790,7 @@ export function editDesignReducer(
 
       const flushed = flush(state, event.now, { writesDrafts: true, records: true });
 
-      return { ...flushed, state: { ...flushed.state, materialUsePanel: null } };
+      return withPanel(flushed, null);
     }
   }
 }
