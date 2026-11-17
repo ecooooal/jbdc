@@ -109,7 +109,10 @@ export function EditDesignScreen({ designId }: { designId: string }) {
     send({ type: 'choice-chosen', field: 'collectionId', value: collectionId });
   }
 
-  /** Removal is one declared write; a use that is already gone refuses like a save. */
+  /**
+   * Removal is one declared write; a use that is already gone reports nothing
+   * stored and the visit settles.
+   */
   function removeUseEditor(): void {
     send({ type: 'material-use-remove-pressed' });
   }
