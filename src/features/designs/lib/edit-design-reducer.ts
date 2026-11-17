@@ -189,7 +189,8 @@ type RemovalWrite = Extract<EditDesignEffect, { type: 'remove-material-use' }>;
 
 /**
  * What one write answered: the row it stored, its refusal, or nothing at all
- * because the Design it targeted is no longer in the catalog.
+ * because what it targeted is no longer stored — the Design's row for a field
+ * write, the use itself for a removal.
  */
 export type WriteReport<Stored> =
   | { kind: 'stored'; value: Stored }
@@ -219,6 +220,20 @@ export type WriteAttempt =
 export function writeOutcome(attempt: WriteAttempt): EditDesignEvent {
   const { type, designId, report } = attempt;
 
+  // A removal's answer is about the use, not the Design. It either deleted the
+  // use or found it already gone, and either way the use is no longer recorded:
+  // the visit closes the editor, drops the use from its record, and can still
+  // record its Event for the Design that exists. A removal never reports the
+  // Design gone, so it never reports nothing stored.
+  if (type === 'remove-material-use') {
+    return {
+      type: 'material-use-removed',
+      useId: report.kind === 'stored' ? report.value.id : attempt.useId,
+    };
+  }
+
+  // Every other write targets the Design's row: nothing stored means that row
+  // is no longer in the catalog, so the visit has nothing to record against.
   if (report.kind === 'nothing-stored') return { type: 'nothing-stored', designId };
 
   switch (type) {
@@ -231,9 +246,6 @@ export function writeOutcome(attempt: WriteAttempt): EditDesignEvent {
       return report.kind === 'stored'
         ? { type: 'material-use-saved', materialUse: report.value }
         : { type: 'material-use-refused', useId: attempt.useId, message: report.message };
-    case 'remove-material-use':
-      // A removal has no refusal rule: it deleted the use or found none.
-      return { type: 'material-use-removed', useId: report.value.id };
   }
 }
 

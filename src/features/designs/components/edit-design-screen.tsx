@@ -110,8 +110,9 @@ export function EditDesignScreen({ designId }: { designId: string }) {
   }
 
   /**
-   * Removal is one declared write; a use that is already gone reports nothing
-   * stored and the visit settles.
+   * Removal is one declared write. A use that is already gone still reports the
+   * use as removed, so its editor closes and the use leaves the visit's record;
+   * the visit can still record its Event.
    */
   function removeUseEditor(): void {
     send({ type: 'material-use-remove-pressed' });

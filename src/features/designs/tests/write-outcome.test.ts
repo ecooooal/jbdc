@@ -53,10 +53,6 @@ describe('a write outcome', () => {
     expect(writeOutcome({ ...MATERIAL_USE, report: { kind: 'stored', value: WOOL_USE } })).toEqual(
       { type: 'material-use-saved', materialUse: WOOL_USE }
     );
-    expect(writeOutcome({ ...REMOVAL, report: { kind: 'stored', value: WOOL_USE } })).toEqual({
-      type: 'material-use-removed',
-      useId: WOOL_USE.id,
-    });
   });
 
   test('a write that refused becomes the refusal the visit restores', () => {
@@ -87,9 +83,19 @@ describe('a write outcome', () => {
       type: 'nothing-stored',
       designId: DESIGN_ID,
     });
+  });
+
+  test('a removal reports the use as removed whether it deleted it or found it gone', () => {
+    // A removal's answer is about the use, not the Design: the Design still
+    // exists, so the visit closes its editor, drops the use from its record,
+    // and can still record the Event that visit owes.
+    expect(writeOutcome({ ...REMOVAL, report: { kind: 'stored', value: WOOL_USE } })).toEqual({
+      type: 'material-use-removed',
+      useId: WOOL_USE.id,
+    });
     expect(writeOutcome({ ...REMOVAL, report: { kind: 'nothing-stored' } })).toEqual({
-      type: 'nothing-stored',
-      designId: DESIGN_ID,
+      type: 'material-use-removed',
+      useId: REMOVAL.useId,
     });
   });
 });
