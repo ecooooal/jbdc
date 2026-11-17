@@ -391,14 +391,22 @@ function only(state: EditDesignState): EditDesignResult {
 }
 
 /**
- * Moves to `next` and writes the drafts it still holds. Several gestures leave
- * a text row — opening another, changing tabs, leaving the app — and all of
- * them declare the same single write, plus any Material use write the open
- * editor still owes.
+ * The one flush behind every gesture that leaves a draft behind: it writes what
+ * the visit still owes and returns the state the gesture moves to. The gestures
+ * differ in whether the visit's drafts are written — only a gesture that leaves
+ * a text row, or the whole surface, writes them — so that is an argument.
+ *
+ * `next` still holds the Material use panel that was open, because its colour
+ * is part of what the flush owes; the caller closes or replaces it on the
+ * result.
  */
-function flushing(next: EditDesignState, now: number): EditDesignResult {
+function flush(
+  next: EditDesignState,
+  now: number,
+  { writesDrafts }: { writesDrafts: boolean }
+): EditDesignResult {
   const effects = materialUseFlushEffects(next, now);
-  const patch = unwrittenFields(next);
+  const patch = writesDrafts ? unwrittenFields(next) : null;
 
   if (patch) {
     effects.push({ type: 'write-drafts', designId: next.designId, patch, now });
@@ -680,10 +688,13 @@ export function editDesignReducer(
       // A tab is unmounted on iOS without firing blur, so the tab change
       // writes the draft it holds, plus any Material use editor it closes. It
       // records nothing: the visit is still open.
-      const next = { ...leftRow(state, state.editing), tab: event.tab, editing: null };
-      const flushed = flushing(next, event.now);
+      const flushed = flush(
+        { ...leftRow(state, state.editing), tab: event.tab, editing: null },
+        event.now,
+        { writesDrafts: true }
+      );
 
-      return { state: { ...flushed.state, materialUsePanel: null }, effects: flushed.effects };
+      return { ...flushed, state: { ...flushed.state, materialUsePanel: null } };
     }
     case 'row-closed':
       return only({ ...state, editing: null });
@@ -713,7 +724,7 @@ export function editDesignReducer(
       return settledWithoutRow(state);
     case 'app-backgrounded':
       // Leaving the foreground flushes a draft; only a close records the visit.
-      return state.closing ? only(state) : flushing(state, event.now);
+      return state.closing ? only(state) : flush(state, event.now, { writesDrafts: true });
     case 'visit-closed': {
       if (state.closing) return only(state);
 
