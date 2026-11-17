@@ -52,7 +52,11 @@ export type DesignEditDiff = Partial<Record<DesignEditableField, DesignFieldChan
 export type EditSession = {
   before: DesignFields;
   after: DesignFields;
-  /** The uses before and after the visit; absent when the visit changed none. */
+  /**
+   * The uses before and after the visit. The Edit screen always sends the pair,
+   * changed or not, so emptiness is decided here; a caller that does not track
+   * uses may omit it.
+   */
   materialUses?: MaterialUsesChange;
 };
 
@@ -228,8 +232,8 @@ export function designEventsQuery(database: Database, designId: string) {
 }
 
 /**
- * Records one edit session: diffs the fields before and after, adds the
- * Material uses the visit changed, then appends a single Event when anything
+ * Records one edit session: diffs the fields before and after, diffs the
+ * Material uses it was handed, then appends a single Event when anything
  * changed. A session that changed nothing writes nothing and returns null.
  * Written once, never updated: a later session appends another Event.
  */

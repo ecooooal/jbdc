@@ -524,6 +524,7 @@ describe('tab changes', () => {
         designId: DESIGN_ID,
         before: DESIGN,
         after: { ...DESIGN, mood: 'Romantic, relaxed' },
+        materialUses: { before: [], after: [] },
         now: LATER,
       },
     ]);
@@ -565,12 +566,22 @@ describe('tab changes', () => {
 });
 
 describe('edit session boundary', () => {
-  test('a visit that changed nothing declares no work at all', () => {
+  test('a visit that changed nothing still hands History the row it found', () => {
     const tester = session();
 
     tester.send({ type: 'session-closed', now: NOW });
 
-    expect(tester.getEffects()).toEqual([]);
+    // Whether the row changed is History's to decide, with the diff it stores.
+    expect(tester.getEffects()).toEqual([
+      {
+        type: 'record-session',
+        designId: DESIGN_ID,
+        before: DESIGN,
+        after: DESIGN,
+        materialUses: { before: [], after: [] },
+        now: NOW,
+      },
+    ]);
     expect(tester.getState().closing).toEqual({ at: NOW, outstanding: 0 });
   });
 
@@ -742,6 +753,7 @@ describe('edit session boundary', () => {
         designId: DESIGN_ID,
         before: DESIGN,
         after: { ...DESIGN, name: 'Wool coat' },
+        materialUses: { before: [], after: [] },
         now: NOW,
       },
     ]);
@@ -766,6 +778,7 @@ describe('edit session boundary', () => {
         designId: DESIGN_ID,
         before: DESIGN,
         after: { ...DESIGN, silhouette: 'Relaxed A-line', measurements: 'Bust 96, waist 104' },
+        materialUses: { before: [], after: [] },
         now: NOW,
       },
     ]);
@@ -791,6 +804,7 @@ describe('edit session boundary', () => {
         designId: DESIGN_ID,
         before: filled,
         after: DESIGN,
+        materialUses: { before: [], after: [] },
         now: NOW,
       },
     ]);
@@ -836,6 +850,7 @@ describe('edit session boundary', () => {
         designId: DESIGN_ID,
         before: DESIGN,
         after: { ...DESIGN, name: 'Wool coat' },
+        materialUses: { before: [], after: [] },
         now: LATER,
       },
     ]);
@@ -858,6 +873,7 @@ describe('edit session boundary', () => {
         designId: DESIGN_ID,
         before: DESIGN,
         after: { ...DESIGN, categoryId: KNITWEAR },
+        materialUses: { before: [], after: [] },
         now: NOW,
       },
     ]);
@@ -887,7 +903,7 @@ describe('edit session boundary', () => {
     ]);
   });
 
-  test('a selection written away and back writes no Event', () => {
+  test('a selection written away and back hands History an unchanged row', () => {
     const tester = session();
 
     tester.send({ type: 'choice-chosen', field: 'categoryId', value: KNITWEAR, now: NOW });
@@ -900,9 +916,12 @@ describe('edit session boundary', () => {
     tester.send({ type: 'drafts-written', design: DESIGN, patch: { categoryId: DRESS } });
     tester.send({ type: 'session-closed', now: NOW });
 
-    expect(tester.getEffects().filter((effect) => effect.type === 'record-session')).toEqual(
-      []
-    );
+    const recording = tester
+      .getEffects()
+      .filter((effect) => effect.type === 'record-session');
+
+    expect(recording).toHaveLength(1);
+    expect(recording[0]).toMatchObject({ before: DESIGN, after: DESIGN });
   });
 
   test('a second close declares nothing more', () => {
@@ -945,6 +964,7 @@ describe('edit session boundary', () => {
         designId: DESIGN_ID,
         before: DESIGN,
         after: { ...DESIGN, description: 'Heavy twill' },
+        materialUses: { before: [], after: [] },
         now: NOW,
       },
     ]);
@@ -968,6 +988,7 @@ describe('edit session boundary', () => {
         designId: DESIGN_ID,
         before: DESIGN,
         after: { ...DESIGN, description: 'Heavy twill' },
+        materialUses: { before: [], after: [] },
         now: NOW,
       },
     ]);
@@ -980,10 +1001,19 @@ describe('edit session boundary', () => {
     tester.send({ type: 'session-closed', now: NOW });
 
     // A blank name is refused before the row is touched, so the close settles
-    // with the stored name still in place and writes no Event.
+    // with the stored row and History writes no Event.
     tester.send({ type: 'field-refused', field: 'name', message: 'A design needs a name.' });
 
-    expect(tester.getEffects()).toEqual([]);
+    expect(tester.getEffects()).toEqual([
+      {
+        type: 'record-session',
+        designId: DESIGN_ID,
+        before: DESIGN,
+        after: DESIGN,
+        materialUses: { before: [], after: [] },
+        now: NOW,
+      },
+    ]);
     expect(tester.getState()).toMatchObject({
       saved: { name: 'Silk slip dress' },
       closing: { at: NOW, outstanding: 0 },

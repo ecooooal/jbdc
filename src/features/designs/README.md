@@ -12,7 +12,7 @@ uses recorded on it, and the screens that show and edit it. Public entries are
 | The two tab sections, and the four a History card groups by | `lib/sections.ts` |
 | The Specification and Creative direction field lists | `lib/specification-fields.ts`, `lib/creative-direction-fields.ts` |
 | Reading and writing a Design, and its Material uses | `lib/records.ts` |
-| Whether a visit changed its Material uses | `lib/material-use-changes.ts` |
+| Whether a visit changed anything — the diff History stores | `history/lib/events.ts` (`recordEdit`) |
 | Role labels, name limits, whitespace-to-null, Status labels | `lib/material-use-role.ts`, `lib/limits.ts`, `lib/optional-text.ts`, `lib/status.ts` |
 
 ## One reducer per surface
@@ -33,7 +33,9 @@ is Detail's live read.
 can be open, and picks between `add-material-use-form.tsx` and
 `edit-material-use-form.tsx`. Those dispatch into the reducers above, whose
 effects call `addMaterialUse` / `updateMaterialUse` / `removeMaterialUse` in
-`lib/records.ts`. The visit's one Event is recorded at close.
+`lib/records.ts`. At close the visit hands History the row and its uses as it
+found them and as the writes left them; History decides whether that is worth
+an Event.
 
 ## Screens and pieces
 

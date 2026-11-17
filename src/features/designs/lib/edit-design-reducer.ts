@@ -2,7 +2,6 @@ import type { MaterialUseRole } from '@/features/database';
 import {
   DESIGN_CHOICE_FIELDS,
   DESIGN_TEXT_FIELDS,
-  designFieldsChanged,
   draftsFromFields,
   EMPTY_DESIGN_DRAFTS,
   EMPTY_DESIGN_FIELDS,
@@ -17,7 +16,6 @@ import {
   editMaterialUseReducer,
   type EditMaterialUseState,
 } from './edit-material-use-reducer';
-import { materialUsesChanged } from './material-use-changes';
 import { normalizeOptionalText } from './optional-text';
 import type {
   DesignFields,
@@ -124,8 +122,8 @@ export type EditDesignEffect =
       designId: string;
       before: DesignFields;
       after: DesignFields;
-      /** The uses before and after the visit, absent when the visit changed none. */
-      materialUses?: MaterialUsesChange;
+      /** The uses before and after the visit; History decides whether they differ. */
+      materialUses: MaterialUsesChange;
       now: number;
     };
 
@@ -166,6 +164,12 @@ function draftPatch<T extends DesignEditableField>(
  * The drafts the row has not seen yet. Only text is drafted; a Category or
  * Collection writes the moment it is chosen. An invalid name is never here,
  * so closing the screen cannot commit a blank one.
+ *
+ * This narrows a write to the fields it should carry; it is not a second rule
+ * for whether the visit changed anything. It asks the same
+ * `normalizeOptionalText` the store writes with, so a field skipped here is one
+ * the store would have left alone. Emptiness is History's, decided once in
+ * `recordEdit`.
  */
 export function unwrittenFields(state: EditDesignState): UnwrittenDesignFields | null {
   const patch: UnwrittenDesignFields = {};
@@ -232,32 +236,24 @@ function materialUseFlushEffects(state: EditDesignState, now: number): EditDesig
 }
 
 /**
- * The one Event a close records: the fields and Material uses the writes left
- * behind, diffed against the row the visit opened on. Null when the visit left
- * the row as it found it. The after-state is what `saved` and `savedUses` hold
- * when the last write reports back, so a refused write is never recorded as if
- * it landed.
+ * The one Event a close records: the row it opened on and the row the writes
+ * left behind. Whether that is a change is History's to decide, with the same
+ * diff it stores — the visit does not keep a second rule for emptiness. The
+ * after-state is what `saved` and `savedUses` hold when the last write reports
+ * back, so a refused write is never recorded as if it landed.
  */
 function recordEffect(state: EditDesignState, at: number): EditDesignEffect | null {
   const before = state.sessionStart;
 
   if (!before) return null;
 
-  const after = state.saved;
-  const uses = state.savedUses;
-  const usesChanged = materialUsesChanged(state.sessionStartUses, uses);
-
-  if (!designFieldsChanged(before, after) && !usesChanged) return null;
-
   return {
     type: 'record-session',
     designId: state.designId,
     before,
-    after,
+    after: state.saved,
+    materialUses: { before: state.sessionStartUses, after: state.savedUses },
     now: at,
-    ...(usesChanged && {
-      materialUses: { before: state.sessionStartUses, after: uses },
-    }),
   };
 }
 

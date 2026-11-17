@@ -274,6 +274,24 @@ describe('recordEdit', () => {
     expect(listDesignEvents(database, design.id)).toEqual([]);
   });
 
+  test('an unchanged Material uses pair writes no event either', () => {
+    const design = createDesign(database, { name: 'Silk slip dress' }, 10);
+
+    expect(
+      recordEdit(
+        database,
+        design.id,
+        {
+          before: BEFORE,
+          after: { ...BEFORE },
+          materialUses: { before: [WOOL_USE], after: [WOOL_USE] },
+        },
+        20
+      )
+    ).toBeNull();
+    expect(listDesignEvents(database, design.id)).toEqual([]);
+  });
+
   test('two sessions are two events, both kept as written', () => {
     const design = createDesign(database, { name: 'Silk slip dress' }, 10);
     const renamed = { ...BEFORE, name: 'Silk slip' };
