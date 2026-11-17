@@ -4,14 +4,9 @@ import { useEffect } from 'react';
 import { AppState, Pressable, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
-import { useDatabase } from '@/features/database/react';
 import {
   DESIGN_NAME_MAX_LENGTH,
-  InvalidDesignNameError,
-  removeMaterialUse,
-  updateDesign,
   type DesignEditableField,
-  type UpdateDesignInput,
 } from '@/features/designs';
 import { taxonomyLabel } from '@/features/taxonomy';
 import { useTaxonomy } from '@/features/taxonomy/react';
@@ -21,7 +16,7 @@ import { Input } from '@/shared/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/tabs';
 import { Text } from '@/shared/components/ui/text';
 import type { DesignTextEditableField } from '../lib/fields';
-import { editingMaterialUse, type EditDesignRow } from '../lib/edit-design-reducer';
+import type { EditDesignRow } from '../lib/edit-design-reducer';
 import {
   DESIGN_SECTIONS,
   isDesignSectionTab,
@@ -46,7 +41,6 @@ import { TaxonomySelect } from './taxonomy-select';
  * follow through their live reads.
  */
 export function EditDesignScreen({ designId }: { designId: string }) {
-  const database = useDatabase();
   const { design, error: readError, status: readStatus } = useDesignDetail(designId);
   const { categories, collections, error: taxonomyError, status: taxonomyStatus } =
     useTaxonomy();
@@ -86,26 +80,8 @@ export function EditDesignScreen({ designId }: { designId: string }) {
     selectedCollection?.name ?? 'No collection'
   }`;
 
-  function commit(field: DesignEditableField, patch: UpdateDesignInput): void {
-    try {
-      const saved = updateDesign(database, designId, patch);
-
-      if (!saved) {
-        send({ type: 'field-refused', field, message: 'This design is not here.' });
-        return;
-      }
-
-      send({ type: 'field-saved', field, design: saved });
-    } catch (caught) {
-      if (!(caught instanceof InvalidDesignNameError)) throw caught;
-
-      send({ type: 'field-refused', field, message: caught.message });
-    }
-  }
-
-  /** Leaves a text row: what is on screen is what the row should hold. */
-  function commitText(field: DesignTextEditableField): void {
-    commit(field, { [field]: state.draft[field] } as UpdateDesignInput);
+  function textRowLeft(field: DesignTextEditableField): void {
+    send({ type: 'text-row-left', field, now: Date.now() });
   }
 
   function changeText(field: DesignTextEditableField, value: string): void {
@@ -126,33 +102,16 @@ export function EditDesignScreen({ designId }: { designId: string }) {
   }
 
   function chooseCategory(categoryId: string | null): void {
-    send({ type: 'choice-chosen', field: 'categoryId', value: categoryId });
-    commit('categoryId', { categoryId });
+    send({ type: 'choice-chosen', field: 'categoryId', value: categoryId, now: Date.now() });
   }
 
   function chooseCollection(collectionId: string | null): void {
-    send({ type: 'choice-chosen', field: 'collectionId', value: collectionId });
-    commit('collectionId', { collectionId });
+    send({ type: 'choice-chosen', field: 'collectionId', value: collectionId, now: Date.now() });
   }
 
-  /** Removal is one call; a use that is already gone refuses like a save. */
+  /** Removal is one declared write; a use that is already gone refuses like a save. */
   function removeUseEditor(): void {
-    const editor = editingMaterialUse(state);
-
-    if (!editor) return;
-
-    const removed = removeMaterialUse(database, designId, editor.saved.id);
-
-    if (!removed) {
-      send({
-        type: 'material-use-refused',
-        useId: editor.saved.id,
-        message: 'This material use is not here.',
-      });
-      return;
-    }
-
-    send({ type: 'material-use-removed', useId: removed.id });
+    send({ type: 'material-use-remove-pressed', now: Date.now() });
   }
 
   function fieldError(field: DesignEditableField) {
@@ -203,8 +162,8 @@ export function EditDesignScreen({ designId }: { designId: string }) {
                 <Input
                   value={state.draft.name}
                   onChangeText={(value) => changeText('name', value)}
-                  onBlur={() => commitText('name')}
-                  onSubmitEditing={() => commitText('name')}
+                  onBlur={() => textRowLeft('name')}
+                  onSubmitEditing={() => textRowLeft('name')}
                   returnKeyType="done"
                   maxLength={DESIGN_NAME_MAX_LENGTH}
                   autoFocus
@@ -270,7 +229,7 @@ export function EditDesignScreen({ designId }: { designId: string }) {
                 <Input
                   value={state.draft.description}
                   onChangeText={(value) => changeText('description', value)}
-                  onBlur={() => commitText('description')}
+                  onBlur={() => textRowLeft('description')}
                   multiline
                   autoFocus
                   textAlignVertical="top"
@@ -324,7 +283,7 @@ export function EditDesignScreen({ designId }: { designId: string }) {
                     error={state.error}
                     onOpen={openRow}
                     onChange={changeText}
-                    onCommit={commitText}
+                    onCommit={textRowLeft}
                   />
                   {tab === 'specification' ? (
                     <MaterialUsesSection

@@ -19,7 +19,13 @@ import {
 } from './edit-material-use-reducer';
 import { materialUsesChanged } from './material-use-changes';
 import { normalizeOptionalText } from './optional-text';
-import type { DesignFields, MaterialUse, MaterialUsesChange, UpdateMaterialUseInput } from './records';
+import type {
+  DesignFields,
+  MaterialUse,
+  MaterialUsesChange,
+  UpdateDesignInput,
+  UpdateMaterialUseInput,
+} from './records';
 import { DESIGN_SECTIONS, type DesignSectionTab } from './sections';
 
 /**
@@ -44,8 +50,6 @@ export type EditDesignState = {
   designId: string;
   /** False until the first live read seeds the drafts. */
   isSeeded: boolean;
-  /** True once the visit closed; a second close declares nothing more. */
-  isClosed: boolean;
   /** What the owner has typed or picked, not necessarily written yet. */
   draft: DesignDrafts;
   /** What the row holds now; a refused save restores these values. */
@@ -63,6 +67,12 @@ export type EditDesignState = {
   /** The section tab Edit is showing. */
   tab: DesignSectionTab;
   error: { field: DesignEditableField; message: string } | null;
+  /**
+   * Set once the visit closes, with the number of writes it still owes. The
+   * visit records its one Event when the last of them reports back, so the
+   * Event describes the rows the writes stored, not the drafts that asked.
+   */
+  closing: { at: number; outstanding: number } | null;
 };
 
 export type EditDesignRow = DesignEditableField | 'taxonomy';
@@ -70,7 +80,8 @@ export type EditDesignRow = DesignEditableField | 'taxonomy';
 export type EditDesignEvent =
   | { type: 'design-loaded'; design: DesignFields; materialUses?: readonly MaterialUse[] }
   | { type: 'text-changed'; field: DesignTextEditableField; value: string }
-  | { type: 'choice-chosen'; field: DesignChoiceEditableField; value: string | null }
+  | { type: 'text-row-left'; field: DesignTextEditableField; now: number }
+  | { type: 'choice-chosen'; field: DesignChoiceEditableField; value: string | null; now: number }
   | { type: 'material-use-added'; use: MaterialUse }
   | { type: 'material-use-add-opened'; now: number }
   | { type: 'material-use-editor-opened'; use: MaterialUse; now: number }
@@ -81,24 +92,25 @@ export type EditDesignEvent =
   | { type: 'material-use-role-chosen'; role: MaterialUseRole; now: number }
   | { type: 'material-use-saved'; use: MaterialUse }
   | { type: 'material-use-refused'; useId: string; message: string }
+  | { type: 'material-use-remove-pressed'; now: number }
   | { type: 'material-use-removed'; useId: string }
   | { type: 'row-opened'; row: EditDesignRow; now: number }
   | { type: 'tab-changed'; tab: DesignSectionTab; now: number }
   | { type: 'row-closed' }
-  | { type: 'field-saved'; field: DesignEditableField; design: DesignFields }
-  | { type: 'drafts-written'; design: DesignFields }
+  | { type: 'drafts-written'; design: DesignFields; patch: UpdateDesignInput }
   | { type: 'field-refused'; field: DesignEditableField; message: string }
   | { type: 'app-backgrounded'; now: number }
   | { type: 'session-closed'; now: number };
 
 /**
- * The work a visit asks for. `write-drafts`, `write-material-use`, and
- * `record-session` are separate because leaving the app flushes a draft but
- * records nothing, while a close does all three. The runner makes one call per
- * effect and dispatches the outcome back as an event.
+ * The work a visit asks for. `write-drafts`, `write-material-use`,
+ * `remove-material-use`, and `record-session` are separate because leaving the
+ * app flushes a draft but records nothing, while a close does all of them. The
+ * runner makes one call per effect and dispatches the outcome back as an event;
+ * the screen calls no record module itself.
  */
 export type EditDesignEffect =
-  | { type: 'write-drafts'; designId: string; patch: UnwrittenDesignFields; now: number }
+  | { type: 'write-drafts'; designId: string; patch: UpdateDesignInput; now: number }
   | {
       type: 'write-material-use';
       designId: string;
@@ -106,6 +118,7 @@ export type EditDesignEffect =
       patch: UpdateMaterialUseInput;
       now: number;
     }
+  | { type: 'remove-material-use'; designId: string; useId: string; now: number }
   | {
       type: 'record-session';
       designId: string;
@@ -125,7 +138,6 @@ export function createInitialEditDesignState(designId: string): EditDesignState 
   return {
     designId,
     isSeeded: false,
-    isClosed: false,
     draft: EMPTY_DESIGN_DRAFTS,
     saved: EMPTY_DESIGN_FIELDS,
     savedUses: [],
@@ -135,11 +147,20 @@ export function createInitialEditDesignState(designId: string): EditDesignState 
     materialUsePanel: null,
     tab: DESIGN_SECTIONS[0].tab,
     error: null,
+    closing: null,
   };
 }
 
 /** The text drafts that still differ from the row, ready for `updateDesign`. */
 export type UnwrittenDesignFields = Partial<Record<DesignTextEditableField, string>>;
+
+/** One field's draft, as the write it asks for. */
+function draftPatch<T extends DesignEditableField>(
+  field: T,
+  value: DesignFields[T]
+): UpdateDesignInput {
+  return { [field]: value };
+}
 
 /**
  * The drafts the row has not seen yet. Only text is drafted; a Category or
@@ -211,65 +232,84 @@ function materialUseFlushEffects(state: EditDesignState, now: number): EditDesig
 }
 
 /**
- * The row as it will stand once a close writes the drafts: a valid name is
- * written trimmed, every other text field is written normalized, and Category
- * and Collection come from what the row holds because they write on choice.
+ * The one Event a close records: the fields and Material uses the writes left
+ * behind, diffed against the row the visit opened on. Null when the visit left
+ * the row as it found it. The after-state is what `saved` and `savedUses` hold
+ * when the last write reports back, so a refused write is never recorded as if
+ * it landed.
  */
-function fieldsAfterClose(
-  state: EditDesignState,
-  patch: UnwrittenDesignFields | null
-): DesignFields {
-  const after: DesignFields = { ...state.saved };
+function recordEffect(state: EditDesignState, at: number): EditDesignEffect | null {
+  const before = state.sessionStart;
 
-  for (const field of DESIGN_TEXT_FIELDS) {
-    const raw = patch?.[field];
+  if (!before) return null;
 
-    if (raw === undefined) continue;
+  const after = state.saved;
+  const uses = state.savedUses;
+  const usesChanged = materialUsesChanged(state.sessionStartUses, uses);
 
-    if (field === 'name') {
-      after.name = raw.trim();
-      continue;
-    }
+  if (!designFieldsChanged(before, after) && !usesChanged) return null;
 
-    after[field] = normalizeOptionalText(raw);
-  }
-
-  return after;
+  return {
+    type: 'record-session',
+    designId: state.designId,
+    before,
+    after,
+    now: at,
+    ...(usesChanged && {
+      materialUses: { before: state.sessionStartUses, after: uses },
+    }),
+  };
 }
 
 /**
- * The Material uses as they will stand once a close writes the open editor: the
- * Material, colour, and role it still owes applied to the use it corrects. The
- * colour is trimmed exactly as `updateMaterialUse` stores it, so the Event names
- * the row the write leaves behind. Without this the Event would be diffed
- * against a row the close has not written yet, so a half-typed colour would
- * record no use or the old one.
+ * One write the visit declared has reported back. When the last one settles,
+ * the close records the visit; until then the Event is not written, so it can
+ * never describe a row the write did not store.
  */
-function usesAfterClose(state: EditDesignState): MaterialUse[] {
-  const editor = editingMaterialUse(state);
-  const patch = unwrittenMaterialUseFields(editor);
+function settled(state: EditDesignState): EditDesignResult {
+  const closing = state.closing;
 
-  if (!editor || !patch) return state.savedUses;
+  if (!closing || closing.outstanding === 0) return only(state);
 
-  const owed = {
-    ...patch,
-    ...(patch.colour !== undefined && { colour: patch.colour.trim() }),
+  const next = {
+    ...state,
+    closing: { ...closing, outstanding: closing.outstanding - 1 },
   };
 
-  return state.savedUses.map((use) => (use.id === editor.saved.id ? { ...use, ...owed } : use));
+  if (next.closing.outstanding > 0) return only(next);
+
+  const effect = recordEffect(next, closing.at);
+
+  return effect ? { state: next, effects: [effect] } : only(next);
 }
 
-/** Updates the draft a save confirmed, so the row reads the stored value. */
-function draftsAfterSave(
+/** The drafts a confirmed write updates: only the fields it stored. */
+function draftsAfterWrite(
   draft: DesignDrafts,
-  field: DesignEditableField,
-  design: DesignFields
+  design: DesignFields,
+  patch: UpdateDesignInput
 ): DesignDrafts {
-  if (field === 'categoryId' || field === 'collectionId') {
-    return { ...draft, [field]: design[field] };
+  const next = { ...draft };
+
+  for (const field of DESIGN_TEXT_FIELDS) {
+    if (field in patch) next[field] = design[field] ?? '';
   }
 
-  return { ...draft, [field]: design[field] ?? '' };
+  for (const field of DESIGN_CHOICE_FIELDS) {
+    if (field in patch) next[field] = design[field];
+  }
+
+  return next;
+}
+
+/** The row a confirmed write collapses: the one it stored, if it is still open. */
+function collapsedRow(
+  editing: EditDesignRow | null,
+  patch: UpdateDesignInput
+): EditDesignRow | null {
+  if (editing === null || editing === 'taxonomy') return editing;
+
+  return editing in patch ? null : editing;
 }
 
 /** Clears the refusal for the field that just changed, and only that field. */
@@ -347,12 +387,42 @@ export function editDesignReducer(
         draft: { ...state.draft, [event.field]: event.value },
         error: clearedError(state.error, event.field),
       });
-    case 'choice-chosen':
-      return only({
+    case 'text-row-left': {
+      // Leaving a text row writes what it holds; whether that is a change is
+      // the write's to decide, not the visit's.
+      const next = leftRow(state, event.field);
+
+      return {
+        state: next,
+        effects: [
+          {
+            type: 'write-drafts',
+            designId: next.designId,
+            patch: draftPatch(event.field, state.draft[event.field]),
+            now: event.now,
+          },
+        ],
+      };
+    }
+    case 'choice-chosen': {
+      const next = {
         ...state,
         draft: { ...state.draft, [event.field]: event.value },
         error: clearedError(state.error, event.field),
-      });
+      };
+
+      return {
+        state: next,
+        effects: [
+          {
+            type: 'write-drafts',
+            designId: state.designId,
+            patch: draftPatch(event.field, event.value),
+            now: event.now,
+          },
+        ],
+      };
+    }
     case 'material-use-added':
       // The use is already written; the visit only keeps it for the Event it
       // records at close, so adding one does not end the session.
@@ -458,7 +528,7 @@ export function editDesignReducer(
       const editor = editingMaterialUse(state);
       const isTheSameUse = editor !== null && editor.saved.id === event.use.id;
 
-      return only({
+      return settled({
         ...state,
         // A late outcome for a use the editor has moved on from updates the
         // row, not the open editor.
@@ -480,9 +550,9 @@ export function editDesignReducer(
     case 'material-use-refused': {
       const editor = editingMaterialUse(state);
 
-      if (!editor || editor.saved.id !== event.useId) return only(state);
+      if (!editor || editor.saved.id !== event.useId) return settled(state);
 
-      return only({
+      return settled({
         ...state,
         materialUsePanel: {
           kind: 'edit',
@@ -492,6 +562,23 @@ export function editDesignReducer(
           }),
         },
       });
+    }
+    case 'material-use-remove-pressed': {
+      const editor = editingMaterialUse(state);
+
+      if (!editor) return only(state);
+
+      return {
+        state,
+        effects: [
+          {
+            type: 'remove-material-use',
+            designId: state.designId,
+            useId: editor.saved.id,
+            now: event.now,
+          },
+        ],
+      };
     }
     case 'material-use-removed':
       return only({
@@ -536,21 +623,19 @@ export function editDesignReducer(
     }
     case 'row-closed':
       return only({ ...state, editing: null });
-    case 'field-saved':
-      return only({
-        ...state,
-        draft: draftsAfterSave(state.draft, event.field, event.design),
-        saved: event.design,
-        editing: state.editing === event.field ? null : state.editing,
-        error: clearedError(state.error, event.field),
-      });
     case 'drafts-written':
-      return only({
+      // The row the write stored is what the visit now reads, and the drafts it
+      // wrote follow it so a trimmed name shows as it was stored.
+      return settled({
         ...state,
+        draft: draftsAfterWrite(state.draft, event.design, event.patch),
         saved: event.design,
+        editing: collapsedRow(state.editing, event.patch),
+        error:
+          state.error && state.error.field in event.patch ? null : state.error,
       });
     case 'field-refused':
-      return only({
+      return settled({
         ...state,
         draft: {
           ...state.draft,
@@ -562,49 +647,28 @@ export function editDesignReducer(
       });
     case 'app-backgrounded':
       // Leaving the foreground flushes a draft; only a close records the visit.
-      return state.isClosed ? only(state) : flushing(state, event.now);
+      return state.closing ? only(state) : flushing(state, event.now);
     case 'session-closed': {
-      if (state.isClosed) return only(state);
+      if (state.closing) return only(state);
 
-      const before = state.sessionStart;
-      if (!before) {
-        return {
-          state: { ...state, isClosed: true, materialUsePanel: null },
-          effects: [],
-        };
-      }
-
-      const effects: EditDesignEffect[] = materialUseFlushEffects(state, event.now);
+      const effects = materialUseFlushEffects(state, event.now);
       const patch = unwrittenFields(state);
 
       if (patch) {
         effects.push({ type: 'write-drafts', designId: state.designId, patch, now: event.now });
       }
 
-      const after = fieldsAfterClose(state, patch);
-      const uses = usesAfterClose(state);
-      const usesChanged = materialUsesChanged(state.sessionStartUses, uses);
-
-      if (designFieldsChanged(before, after) || usesChanged) {
-        effects.push({
-          type: 'record-session',
-          designId: state.designId,
-          before,
-          after,
-          now: event.now,
-          ...(usesChanged && {
-            materialUses: {
-              before: state.sessionStartUses,
-              after: uses,
-            },
-          }),
-        });
-      }
-
-      return {
-        state: { ...state, isClosed: true, materialUsePanel: null },
-        effects,
+      const closed: EditDesignState = {
+        ...state,
+        materialUsePanel: null,
+        closing: { at: event.now, outstanding: effects.length },
       };
+
+      if (effects.length > 0) return { state: closed, effects };
+
+      const effect = recordEffect(closed, event.now);
+
+      return { state: closed, effects: effect ? [effect] : [] };
     }
   }
 }

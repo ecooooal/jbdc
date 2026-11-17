@@ -8,7 +8,9 @@ import {
   type EditDesignState,
 } from './edit-design-reducer';
 import {
+  InvalidDesignNameError,
   InvalidMaterialUseError,
+  removeMaterialUse,
   updateDesign,
   updateMaterialUse,
 } from './records';
@@ -35,8 +37,17 @@ export function useEditSession(
       for (const effect of result.effects) {
         switch (effect.type) {
           case 'write-drafts': {
-            const saved = updateDesign(database, effect.designId, effect.patch, effect.now);
-            if (saved) send({ type: 'drafts-written', design: saved });
+            try {
+              const saved = updateDesign(database, effect.designId, effect.patch, effect.now);
+
+              if (saved) send({ type: 'drafts-written', design: saved, patch: effect.patch });
+            } catch (caught) {
+              // A name is the only field a write refuses, and it refuses before
+              // storing anything, so the row keeps the name it already had.
+              if (!(caught instanceof InvalidDesignNameError)) throw caught;
+
+              send({ type: 'field-refused', field: 'name', message: caught.message });
+            }
             break;
           }
           case 'write-material-use': {
@@ -65,6 +76,23 @@ export function useEditSession(
                 message: caught.message,
               });
             }
+            break;
+          }
+          case 'remove-material-use': {
+            const removed = removeMaterialUse(
+              database,
+              effect.designId,
+              effect.useId,
+              effect.now
+            );
+
+            if (removed) send({ type: 'material-use-removed', useId: removed.id });
+            else
+              send({
+                type: 'material-use-refused',
+                useId: effect.useId,
+                message: 'This material use is not here.',
+              });
             break;
           }
           case 'record-session':
