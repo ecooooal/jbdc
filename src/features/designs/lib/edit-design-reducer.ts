@@ -613,10 +613,7 @@ export function editDesignReducer(
       return withPanel(flushed, panel);
     }
     case 'material-use-panel-closed':
-      return {
-        state: { ...state, materialUsePanel: null },
-        effects: materialUseFlushEffects(state, event.now),
-      };
+      return withPanel({ state, effects: materialUseFlushEffects(state, event.now) }, null);
     case 'material-use-colour-changed': {
       const editor = editingMaterialUse(state);
 
