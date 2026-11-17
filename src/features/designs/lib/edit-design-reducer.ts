@@ -504,39 +504,31 @@ export function editDesignReducer(
     case 'material-use-add-opened': {
       // One editor at a time: a text row being left is written, and a Material
       // use editor being left writes the colour it still owes.
-      const effects = materialUseFlushEffects(state, event.now);
-      const patch = unwrittenFields(state);
+      const flushed = flush(
+        { ...leftRow(state, state.editing), editing: null },
+        event.now,
+        { writesDrafts: true }
+      );
 
-      if (patch) {
-        effects.push({ type: 'write-drafts', designId: state.designId, patch, now: event.now });
-      }
-
-      const opened = {
-        ...leftRow(state, state.editing),
-        editing: null,
-        materialUsePanel: { kind: 'add' } as const,
-      };
-
-      return effects.length === 0 ? only(opened) : { state: opened, effects };
+      return { ...flushed, state: { ...flushed.state, materialUsePanel: { kind: 'add' } } };
     }
     case 'material-use-editor-opened': {
-      const effects = materialUseFlushEffects(state, event.now);
-      const patch = unwrittenFields(state);
+      const flushed = flush(
+        { ...leftRow(state, state.editing), editing: null },
+        event.now,
+        { writesDrafts: true }
+      );
 
-      if (patch) {
-        effects.push({ type: 'write-drafts', designId: state.designId, patch, now: event.now });
-      }
-
-      const opened = {
-        ...leftRow(state, state.editing),
-        editing: null,
-        materialUsePanel: {
-          kind: 'edit',
-          editor: createInitialEditMaterialUseState(event.materialUse),
-        } as const,
+      return {
+        ...flushed,
+        state: {
+          ...flushed.state,
+          materialUsePanel: {
+            kind: 'edit',
+            editor: createInitialEditMaterialUseState(event.materialUse),
+          },
+        },
       };
-
-      return effects.length === 0 ? only(opened) : { state: opened, effects };
     }
     case 'material-use-panel-closed':
       return {
@@ -662,25 +654,17 @@ export function editDesignReducer(
       const leaving = state.editing;
       const leavingTextRow =
         leaving !== null && leaving !== event.row && leaving !== 'taxonomy' && !isChoiceField(leaving);
-      const opened = {
-        ...leftRow(state, leaving),
-        editing: event.row,
-        materialUsePanel: null,
-      };
-      const effects = materialUseFlushEffects(state, event.now);
 
-      if (leavingTextRow) {
-        // A row unmounted on iOS does not reliably fire blur, so opening
-        // another row writes the one being left. The visit still records one
-        // Event.
-        const patch = unwrittenFields(opened);
+      // A row unmounted on iOS does not reliably fire blur, so opening another
+      // row writes the one being left. Only a text row owes a draft; the visit
+      // still records one Event.
+      const flushed = flush(
+        { ...leftRow(state, leaving), editing: event.row },
+        event.now,
+        { writesDrafts: leavingTextRow }
+      );
 
-        if (patch) {
-          effects.push({ type: 'write-drafts', designId: opened.designId, patch, now: event.now });
-        }
-      }
-
-      return effects.length === 0 ? only(opened) : { state: opened, effects };
+      return { ...flushed, state: { ...flushed.state, materialUsePanel: null } };
     }
     case 'tab-changed': {
       if (event.tab === state.tab) return only(state);
