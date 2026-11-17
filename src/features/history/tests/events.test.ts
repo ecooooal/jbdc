@@ -1,7 +1,14 @@
+import { designEvents } from '@/features/database';
 import { createTempDatabase } from '@/features/database/testing';
-import type { DesignFields } from '@/features/designs';
+import type { DesignFields, MaterialUse } from '@/features/designs';
 import { addMaterialUse, createDesign } from '@/features/designs';
-import { diffDesignFields, listDesignEvents, recordEdit } from '@/features/history';
+import {
+  diffDesignFields,
+  diffMaterialUses,
+  listDesignEvents,
+  materialUseLines,
+  recordEdit,
+} from '@/features/history';
 import { createMaterial } from '@/features/materials';
 
 const BEFORE: DesignFields = {
@@ -24,6 +31,27 @@ const BEFORE: DesignFields = {
   styling: null,
   palette: null,
 };
+
+const WOOL_USE: MaterialUse = {
+  id: 'use-wool',
+  designId: 'design-silk-slip',
+  materialId: 'material-wool',
+  materialName: 'Wool',
+  colour: 'Charcoal',
+  role: 'main',
+  createdAt: 10,
+};
+
+/** A Material use without what History never stores. */
+function changeOf(use: MaterialUse) {
+  return {
+    id: use.id,
+    materialId: use.materialId,
+    materialName: use.materialName,
+    colour: use.colour,
+    role: use.role,
+  };
+}
 
 describe('diffDesignFields', () => {
   test('nothing changed is no diff at all', () => {
@@ -53,6 +81,57 @@ describe('diffDesignFields', () => {
     expect(diffDesignFields(BEFORE, { ...BEFORE, collectionId: 'collection-spring' })).toEqual({
       collectionId: { from: null, to: 'collection-spring' },
     });
+  });
+});
+
+describe('diffMaterialUses', () => {
+  test('records a use the session added', () => {
+    expect(diffMaterialUses([], [WOOL_USE])).toEqual({ added: [changeOf(WOOL_USE)] });
+  });
+
+  test('records a use the session removed', () => {
+    expect(diffMaterialUses([WOOL_USE], [])).toEqual({ removed: [changeOf(WOOL_USE)] });
+  });
+
+  test('records a use the session corrected, with what it was and what it became', () => {
+    const blackWool: MaterialUse = { ...WOOL_USE, colour: 'Black', role: 'secondary' };
+
+    expect(diffMaterialUses([WOOL_USE], [blackWool])).toEqual({
+      changed: [{ from: changeOf(WOOL_USE), to: changeOf(blackWool) }],
+    });
+  });
+
+  test('leaves an unchanged session out', () => {
+    expect(diffMaterialUses([WOOL_USE], [{ ...WOOL_USE }])).toBeNull();
+  });
+});
+
+describe('materialUseLines', () => {
+  test('an added use reads as its name, colour, role, and change', () => {
+    expect(materialUseLines({ added: [changeOf(WOOL_USE)] })).toEqual([
+      { key: `added:${WOOL_USE.id}`, text: 'Wool (Charcoal, main) added' },
+    ]);
+  });
+
+  test('a removed use reads as what was taken away', () => {
+    expect(materialUseLines({ removed: [changeOf(WOOL_USE)] })).toEqual([
+      { key: `removed:${WOOL_USE.id}`, text: 'Wool (Charcoal, main) removed' },
+    ]);
+  });
+
+  test('a corrected use reads from what it was to what it became', () => {
+    const blackWool: MaterialUse = { ...WOOL_USE, colour: 'Black', role: 'secondary' };
+
+    expect(
+      materialUseLines({
+        changed: [{ from: changeOf(WOOL_USE), to: changeOf(blackWool) }],
+      })
+    ).toEqual([
+      {
+        key: `changed:${WOOL_USE.id}`,
+        text: 'Wool (Charcoal, main) changed to Wool (Black, secondary)',
+      },
+    ]);
   });
 });
 
@@ -115,7 +194,7 @@ describe('recordEdit', () => {
     );
 
     expect(event?.diff).toEqual({
-      materialUses: {
+      materials: {
         added: [
           {
             id: use.id,
@@ -126,6 +205,31 @@ describe('recordEdit', () => {
           },
         ],
       },
+    });
+  });
+
+  test('an Event written before the materials key still reads its Material use', () => {
+    const design = createDesign(database, { name: 'Silk slip dress' }, 10);
+
+    database.db
+      .insert(designEvents)
+      .values({
+        id: 'event-old',
+        designId: design.id,
+        kind: 'edit',
+        reason: null,
+        potentialImprovements: null,
+        diff: JSON.stringify({
+          name: { from: 'Silk slip dress', to: 'Wool coat' },
+          materialUses: { added: [changeOf(WOOL_USE)] },
+        }),
+        createdAt: 20,
+      })
+      .run();
+
+    expect(listDesignEvents(database, design.id)[0].diff).toEqual({
+      name: { from: 'Silk slip dress', to: 'Wool coat' },
+      materials: { added: [changeOf(WOOL_USE)] },
     });
   });
 

@@ -196,7 +196,7 @@ test('shows a Material use a session added', async () => {
 
   await renderHistory(design.id);
 
-  expect(screen.getByText('Material use: Wool (Charcoal, Main) added')).toBeTruthy();
+  expect(screen.getByText('Wool (Charcoal, main) added')).toBeTruthy();
 });
 
 test('a design with no History says so plainly', async () => {
