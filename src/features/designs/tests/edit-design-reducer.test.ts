@@ -1154,6 +1154,14 @@ describe('edit visit boundary', () => {
 
     expect(tester.getState()).toEqual(closed);
     expect(tester.getState().closing).toEqual({ at: NOW, outstanding: 1 });
+    expect(tester.getEffects()).toEqual([
+      {
+        type: 'write-drafts',
+        designId: DESIGN_ID,
+        patch: { name: 'Wool coat' },
+        now: NOW,
+      },
+    ]);
   });
 
   test('a close before the read lands declares nothing', () => {
