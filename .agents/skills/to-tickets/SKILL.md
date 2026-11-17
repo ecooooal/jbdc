@@ -32,7 +32,7 @@ Break the work into **tracer bullet** tickets.
 - A completed slice is demoable or verifiable on its own
 - Each slice is sized to fit in a single fresh context window
 - One screen per ticket: count the screens the "What to build" paragraph names. Two screens is two tickets
-- Name the steps: up to four commits, inside out, each one green on its own. A ticket that cannot name its steps is not a ticket yet — split it
+- Name the steps: up to four commits, inside out, each one green on its own. A ticket that cannot name its steps is not a ticket yet — split it. The review repair is one commit per ticket and does not count against the four. A step that only edits prose is not a step: it rides in the step it describes
 - Any prefactoring should be done first
 
 </vertical-slice-rules>

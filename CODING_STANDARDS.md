@@ -13,9 +13,15 @@ check can make. Mechanical rules live in code, not here:
   commit, and never let it hide inside a review diff.
 - **One ticket, one purpose.** If a change is not needed for the ticket's
   acceptance criteria, leave it out and file it.
-- **One green cycle, one commit.** The test and the code that passes it land
-  together; a code-only commit proves nothing. Never split an implementation
-  from the test that drove it.
+- **One step, one commit.** A step is the unit the ticket names. Its tests and
+  the code that passes them land together; a code-only commit proves nothing.
+  Never split an implementation from the test that drove it. Inside a step,
+  red → green repeats as often as the work needs; those cycles do not each earn
+  a commit.
+- **Prose rides with what it describes.** A comment, a glossary line, or an ADR
+  line lands in the commit whose behaviour it explains. If that commit is
+  already pushed, it lands in the ticket's repair commit. Never amend pushed
+  work, and never give a one-line prose change its own commit.
 - **Generated files travel alone.** `snapshot.json`, `migration.sql`, and
   `migrations.js` share a commit with their schema change and nothing else.
   Their hundreds of lines hide every file beside them.

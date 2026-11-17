@@ -16,7 +16,7 @@ Run typechecking regularly, single test files regularly, and the full test suite
 
 Once done, call the Skill tool with "code-review" to review the work since `Base`.
 
-After the review returns, write the repair brief as a comment on the ticket, then dispatch one fresh repair subagent on the same branch with that brief and the review report attached as context that adds no scope. It commits one `fix (#<n>)` per numbered item and reports back the SHA range plus any item it could not complete. Then re-review the delta per `code-review` §6. This step is done when the subagent's SHA range is in hand and the delta re-review has returned, not when the dispatch is announced. A subagent that fails to start follows `code-review`'s retry rule.
+After the review returns, write the repair brief as a comment on the ticket, then dispatch one fresh repair subagent on the same branch with that brief and the review report attached as context that adds no scope. It lands one repair commit per ticket, typed `fix (#<n>)`, with every item it repaired listed in the body — prose items in that same commit — and reports back the SHA plus any item it could not complete. Then re-review the delta per `code-review` §6. This step is done when the subagent's SHA range is in hand and the delta re-review has returned, not when the dispatch is announced. A subagent that fails to start follows `code-review`'s retry rule.
 
 <repair-brief>
 
@@ -27,7 +27,7 @@ Fix         — <item>. [Standards: <file:line>] | [Spec: AC n]
 Skip        — <item>. Cosmetic; not re-reviewed.
 Reject      — <item>. <why the finding is wrong>.
 Split       — <item>. Real, out of scope → new ticket.
-Constraints — touch only these steps; one fix (#<n>) commit per item.
+Constraints — touch only these items; one `fix (#<n>)` commit for the ticket, items in the body.
 Report back — SHA range, and any item you could not complete.
 Scope       — items 1-N only. Report anything else; do not change it.
 ```
@@ -36,4 +36,14 @@ Scope       — items 1-N only. Report anything else; do not change it.
 
 Six numbered items is the maximum. More than that means the review brief was too vague or the ticket was too coarse: do not write a longer brief.
 
-Commit each green cycle: the test and the code that passes it, together.
+## Commits
+
+Commit when a step is green, not when a test is green. The ticket's `## Steps` list is the commit list: up to four, inside out. No `## Steps` section means stop and report — never invent boundaries at commit time. Inside a step the loop is unchanged: red, green, refactor, repeat, no commit.
+
+A step is green when three things pass: the step's test files, every test file its diff touches, and `pnpm typecheck && pnpm lint`. Then commit once, `<type> (#<n>): <the step's behaviour in one sentence>`, holding that step's tests, its code, and any prose the step describes — the comment, the glossary line, the ADR line.
+
+Run `pnpm check` once, at the end of the ticket.
+
+Three rules override the step boundary: generated files travel alone, a rename travels alone, and a broken baseline gets its own commit before the ticket.
+
+Never amend a pushed commit, never `rebase -i` to tidy, never commit red, and never leave the tree dirty across a review. Prose that arrives after its step is pushed waits for the repair commit.
