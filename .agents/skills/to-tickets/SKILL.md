@@ -77,7 +77,7 @@ Do NOT close or modify any parent issue.
 
 **Blocked by:** the numbers/titles of the tickets that gate this one, or "None (can start immediately)".
 
-**Steps:** the commits, inside out, each passing on its own. One line per step: what it changes, and the test that drives it.
+**Steps:** the commits, inside out, each passing on its own. One line per step: what it changes, and the seam the test drives — the entry point it calls, not the file it lives in. A test named only by its file leaves the implementer free to prove the wrong layer.
 
 **Status:** ready-for-agent
 
@@ -98,7 +98,7 @@ The end-to-end behaviour this ticket makes work, from the user's perspective, no
 
 ## Steps
 
-The commits, inside out, each passing on its own. One line per step: what it changes, and the test that drives it. One step is a valid answer.
+The commits, inside out, each passing on its own. One line per step: what it changes, and the seam the test drives — the entry point it calls, not the file it lives in. A test named only by its file leaves the implementer free to prove the wrong layer. One step is a valid answer.
 
 ## Acceptance criteria
 
