@@ -16,4 +16,4 @@ Once done, call the Skill tool with "code-review" to review the work.
 
 After fixing findings, re-run only the axis (or axes) that found a hard violation, against `git diff <reviewed-sha>..HEAD`. Do not buy another full two-axis review for cosmetic changes.
 
-Commit your work to the current branch.
+Commit each green cycle: the test and the code that passes it, together.

@@ -13,6 +13,17 @@ check can make. Mechanical rules live in code, not here:
   commit, and never let it hide inside a review diff.
 - **One ticket, one purpose.** If a change is not needed for the ticket's
   acceptance criteria, leave it out and file it.
+- **One green cycle, one commit.** The test and the code that passes it land
+  together; a code-only commit proves nothing. Never split an implementation
+  from the test that drove it.
+- **Generated files travel alone.** `snapshot.json`, `migration.sql`, and
+  `migrations.js` share a commit with their schema change and nothing else.
+  Their hundreds of lines hide every file beside them.
+- **A rename travels alone.** Moving a file and changing its behaviour in one
+  commit hides both from the reviewer.
+- **A fat commit means a coarse ticket.** If the ticket does not name its seams
+  up front, the seams get invented at commit time — once, at the end. Split the
+  ticket, not the commit.
 - **Subject names the ticket.** `<type> (#<ticket>): <reason>`, e.g.
   `feat (#14): edit a design's fields without a Save button`. Types in use:
   `feat`, `fix`, `refactor`, `test`, `docs`, `chore`. A change with no ticket
