@@ -64,12 +64,12 @@ export function EditDesignScreen({ designId }: { designId: string }) {
 
       // iOS `inactive` also fires for Control Centre and the app switcher, so
       // flush there too: a kill may never report `background`.
-      send({ type: 'app-backgrounded', now: Date.now() });
+      send({ type: 'app-backgrounded' });
     });
 
     return () => {
       subscription.remove();
-      send({ type: 'visit-closed', now: Date.now() });
+      send({ type: 'visit-closed' });
     };
   }, [send]);
 
@@ -81,7 +81,7 @@ export function EditDesignScreen({ designId }: { designId: string }) {
   }`;
 
   function textRowLeft(field: DesignTextEditableField): void {
-    send({ type: 'text-row-left', field, now: Date.now() });
+    send({ type: 'text-row-left', field });
   }
 
   function changeText(field: DesignTextEditableField, value: string): void {
@@ -89,7 +89,7 @@ export function EditDesignScreen({ designId }: { designId: string }) {
   }
 
   function openRow(row: EditDesignRow): void {
-    send({ type: 'row-opened', row, now: Date.now() });
+    send({ type: 'row-opened', row });
   }
 
   function closeRow(): void {
@@ -98,20 +98,20 @@ export function EditDesignScreen({ designId }: { designId: string }) {
 
   /** The tab it is leaving is unmounted, so the reducer writes its draft first. */
   function changeTab(tab: DesignSectionTab): void {
-    send({ type: 'tab-changed', tab, now: Date.now() });
+    send({ type: 'tab-changed', tab });
   }
 
   function chooseCategory(categoryId: string | null): void {
-    send({ type: 'choice-chosen', field: 'categoryId', value: categoryId, now: Date.now() });
+    send({ type: 'choice-chosen', field: 'categoryId', value: categoryId });
   }
 
   function chooseCollection(collectionId: string | null): void {
-    send({ type: 'choice-chosen', field: 'collectionId', value: collectionId, now: Date.now() });
+    send({ type: 'choice-chosen', field: 'collectionId', value: collectionId });
   }
 
   /** Removal is one declared write; a use that is already gone refuses like a save. */
   function removeUseEditor(): void {
-    send({ type: 'material-use-remove-pressed', now: Date.now() });
+    send({ type: 'material-use-remove-pressed' });
   }
 
   function fieldError(field: DesignEditableField) {
@@ -294,30 +294,22 @@ export function EditDesignScreen({ designId }: { designId: string }) {
                         send({
                           type: 'material-use-editor-opened',
                           materialUse,
-                          now: Date.now(),
                         })
                       }
-                      onOpenAdd={() =>
-                        send({ type: 'material-use-add-opened', now: Date.now() })
-                      }
-                      onClosePanel={() =>
-                        send({ type: 'material-use-panel-closed', now: Date.now() })
-                      }
+                      onOpenAdd={() => send({ type: 'material-use-add-opened' })}
+                      onClosePanel={() => send({ type: 'material-use-panel-closed' })}
                       onMaterialChosen={(materialId) =>
                         send({
                           type: 'material-use-material-chosen',
                           materialId,
-                          now: Date.now(),
                         })
                       }
                       onColourChanged={(colour) =>
                         send({ type: 'material-use-colour-changed', colour })
                       }
-                      onColourCommitted={() =>
-                        send({ type: 'material-use-colour-committed', now: Date.now() })
-                      }
+                      onColourCommitted={() => send({ type: 'material-use-colour-committed' })}
                       onRoleChosen={(role) =>
-                        send({ type: 'material-use-role-chosen', role, now: Date.now() })
+                        send({ type: 'material-use-role-chosen', role })
                       }
                       onRemoveUse={removeUseEditor}
                       onUseAdded={(materialUse) =>

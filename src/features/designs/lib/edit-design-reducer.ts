@@ -108,6 +108,49 @@ export type EditDesignEvent =
   | { type: 'visit-closed'; now: number };
 
 /**
+ * The gestures that carry the time they happened. The screen sends each of
+ * these without a clock — the visit hook stamps it — so the reducer still never
+ * reads one and no test depends on the wall clock.
+ */
+const TIMED_GESTURES = [
+  'text-row-left',
+  'choice-chosen',
+  'material-use-add-opened',
+  'material-use-editor-opened',
+  'material-use-panel-closed',
+  'material-use-colour-committed',
+  'material-use-material-chosen',
+  'material-use-role-chosen',
+  'material-use-remove-pressed',
+  'row-opened',
+  'tab-changed',
+  'app-backgrounded',
+  'visit-closed',
+] as const satisfies readonly Extract<EditDesignEvent, { now: number }>['type'][];
+
+type TimedGestureType = (typeof TIMED_GESTURES)[number];
+
+/** An event with the clock left to the visit, or one that never carried one. */
+type Clockless<Event> = Event extends { type: TimedGestureType } ? Omit<Event, 'now'> : Event;
+
+/** What the screen sends: a fact, with the time it happened left to the visit. */
+export type EditDesignGesture = Clockless<EditDesignEvent>;
+
+const TIMED = new Set<string>(TIMED_GESTURES);
+
+/**
+ * The visit's one clock: the gesture the screen sends becomes the event the
+ * reducer handles, stamped with the time the visit saw it. The screen never
+ * reads a clock and the reducer never reads one either (`FRONTEND_STATE` 5).
+ */
+export function stampedEvent(gesture: EditDesignGesture, now: number): EditDesignEvent {
+  // The visit's one cast, and its whole point: `EditDesignGesture` is this
+  // event union with the clock removed from exactly the gestures above, so
+  // putting the time back yields events the reducer already handles.
+  return (TIMED.has(gesture.type) ? { ...gesture, now } : gesture) as EditDesignEvent;
+}
+
+/**
  * The work a visit asks for. `write-drafts`, `write-material-use`,
  * `remove-material-use`, and `record-visit` are separate because leaving the
  * app flushes a draft but records nothing, while a close does all of them. The

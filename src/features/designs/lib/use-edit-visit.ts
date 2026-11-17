@@ -4,8 +4,10 @@ import { recordEdit } from '@/features/history';
 import {
   createInitialEditDesignState,
   editDesignReducer,
+  stampedEvent,
   writeOutcome,
   type EditDesignEvent,
+  type EditDesignGesture,
   type EditDesignState,
   type WriteReport,
 } from './edit-design-reducer';
@@ -38,20 +40,23 @@ function attemptWrite<Stored>(write: () => Stored | null, refusal?: Refusal): Wr
 
 /**
  * Runs Edit's reducer and the work it asks for. Every catalog call is
- * synchronous, so an effect is performed inside `send` and its outcome is sent
- * straight back — no pending-effect list and no second render. The reducer
+ * synchronous, so an effect is performed inside `dispatch` and its outcome is
+ * sent straight back — no pending-effect list and no second render. The reducer
  * decides what to write and when; this bridge only performs the call and
  * dispatches the event `writeOutcome` makes of its answer.
+ *
+ * The visit owns the clock (`FRONTEND_STATE` 5): the screen sends gestures with
+ * the time left out, and `send` is the one place that stamps it.
  */
 export function useEditVisit(
   designId: string
-): readonly [EditDesignState, (event: EditDesignEvent) => void] {
+): readonly [EditDesignState, (gesture: EditDesignGesture) => void] {
   const database = useDatabase();
   const [state, setState] = useState(() => createInitialEditDesignState(designId));
   const latest = useRef(state);
 
-  const send = useCallback(
-    function send(event: EditDesignEvent) {
+  const dispatch = useCallback(
+    function dispatch(event: EditDesignEvent) {
       const result = editDesignReducer(latest.current, event);
       latest.current = result.state;
       setState(result.state);
@@ -59,7 +64,7 @@ export function useEditVisit(
       for (const effect of result.effects) {
         switch (effect.type) {
           case 'write-drafts':
-            send(
+            dispatch(
               writeOutcome({
                 ...effect,
                 report: attemptWrite(
@@ -70,7 +75,7 @@ export function useEditVisit(
             );
             break;
           case 'write-material-use':
-            send(
+            dispatch(
               writeOutcome({
                 ...effect,
                 report: attemptWrite(
@@ -88,7 +93,7 @@ export function useEditVisit(
             );
             break;
           case 'remove-material-use':
-            send(
+            dispatch(
               writeOutcome({
                 ...effect,
                 report: attemptWrite(() =>
@@ -113,6 +118,11 @@ export function useEditVisit(
       }
     },
     [database]
+  );
+
+  const send = useCallback(
+    (gesture: EditDesignGesture) => dispatch(stampedEvent(gesture, Date.now())),
+    [dispatch]
   );
 
   return [state, send];
