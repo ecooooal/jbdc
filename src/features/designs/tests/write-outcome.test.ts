@@ -81,12 +81,15 @@ describe('a write outcome', () => {
   test('a write that found no row says so, whichever write it was', () => {
     expect(writeOutcome({ ...DRAFTS, report: { kind: 'nothing-stored' } })).toEqual({
       type: 'nothing-stored',
+      designId: DESIGN_ID,
     });
     expect(writeOutcome({ ...MATERIAL_USE, report: { kind: 'nothing-stored' } })).toEqual({
       type: 'nothing-stored',
+      designId: DESIGN_ID,
     });
     expect(writeOutcome({ ...REMOVAL, report: { kind: 'nothing-stored' } })).toEqual({
       type: 'nothing-stored',
+      designId: DESIGN_ID,
     });
   });
 });

@@ -1071,7 +1071,7 @@ describe('edit visit boundary', () => {
     ]);
     expect(tester.getState().closing).toEqual({ at: NOW, outstanding: 1 });
 
-    tester.send({ type: 'nothing-stored' });
+    tester.send({ type: 'nothing-stored', designId: DESIGN_ID });
 
     // The row is gone: nothing the close still owes can be stored, so it stops
     // waiting and records no Event.
@@ -1107,7 +1107,7 @@ describe('edit visit boundary', () => {
     ]);
     expect(tester.getState().closing).toEqual({ at: LATER, outstanding: 1 });
 
-    tester.send({ type: 'nothing-stored' });
+    tester.send({ type: 'nothing-stored', designId: DESIGN_ID });
 
     expect(tester.getEffects()).toEqual([
       {
@@ -1128,7 +1128,7 @@ describe('edit visit boundary', () => {
     tester.send({ type: 'app-backgrounded', now: NOW });
     const flushed = tester.getState();
 
-    tester.send({ type: 'nothing-stored' });
+    tester.send({ type: 'nothing-stored', designId: DESIGN_ID });
 
     expect(tester.getEffects()).toEqual([
       {
@@ -1140,6 +1140,20 @@ describe('edit visit boundary', () => {
     ]);
     expect(tester.getState()).toEqual(flushed);
     expect(tester.getState().closing).toBeNull();
+  });
+
+  test('a nothing-stored outcome for another design leaves the visit waiting', () => {
+    const tester = visit();
+
+    tester.send({ type: 'text-changed', field: 'name', value: 'Wool coat' });
+    tester.send({ type: 'visit-closed', now: NOW });
+    const closed = tester.getState();
+
+    // A late answer for a surface that has moved on is not this visit's.
+    tester.send({ type: 'nothing-stored', designId: 'design-wool-coat' });
+
+    expect(tester.getState()).toEqual(closed);
+    expect(tester.getState().closing).toEqual({ at: NOW, outstanding: 1 });
   });
 
   test('a close before the read lands declares nothing', () => {

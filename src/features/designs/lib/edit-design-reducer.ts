@@ -103,7 +103,7 @@ export type EditDesignEvent =
   | { type: 'drafts-written'; design: DesignFields; patch: UpdateDesignInput }
   | { type: 'field-refused'; field: DesignEditableField; message: string }
   /** A write found no Design row to store into: the row is no longer in the catalog. */
-  | { type: 'nothing-stored' }
+  | { type: 'nothing-stored'; designId: string }
   | { type: 'app-backgrounded'; now: number }
   | { type: 'visit-closed'; now: number };
 
@@ -211,9 +211,9 @@ export type WriteAttempt =
  * answer — including one from a row that is gone — settles somewhere.
  */
 export function writeOutcome(attempt: WriteAttempt): EditDesignEvent {
-  const { type, report } = attempt;
+  const { type, designId, report } = attempt;
 
-  if (report.kind === 'nothing-stored') return { type: 'nothing-stored' };
+  if (report.kind === 'nothing-stored') return { type: 'nothing-stored', designId };
 
   switch (type) {
     // Only a name has a rule to refuse: every other field stores what it is given.
@@ -765,6 +765,10 @@ export function editDesignReducer(
         error: { field: event.field, message: event.message },
       });
     case 'nothing-stored':
+      // A late outcome can belong to a surface that has moved on; only this
+      // visit's own row being gone settles it.
+      if (event.designId !== state.designId) return only(state);
+
       return settledWithoutRow(state);
     case 'app-backgrounded':
       // Leaving the foreground flushes a draft; only a close records the visit.
