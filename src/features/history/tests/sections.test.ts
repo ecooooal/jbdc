@@ -1,5 +1,5 @@
-import { DESIGN_EDITABLE_FIELDS } from '../lib/fields';
-import { DESIGN_HISTORY_SECTIONS, DESIGN_SECTIONS } from '../lib/sections';
+import { DESIGN_EDITABLE_FIELDS, DESIGN_SECTIONS } from '@/features/designs';
+import { DESIGN_HISTORY_SECTIONS } from '../lib/sections';
 
 function sectionFields(section: string) {
   return DESIGN_HISTORY_SECTIONS.find((entry) => entry.section === section)?.fields;

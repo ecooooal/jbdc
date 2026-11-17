@@ -9,7 +9,7 @@ uses recorded on it, and the screens that show and edit it. Public entries are
 | Question | File |
 | --- | --- |
 | Which fields are editable, in what order, and their labels | `lib/fields.ts` |
-| The two tab sections, and the four a History card groups by | `lib/sections.ts` |
+| The two tab sections Edit and Detail show | `lib/sections.ts` |
 | The Specification and Creative direction field lists | `lib/specification-fields.ts`, `lib/creative-direction-fields.ts` |
 | Reading and writing a Design, and its Material uses | `lib/records.ts` |
 | Whether a visit changed anything — the diff History stores | `history/lib/events.ts` (`recordEdit`) |

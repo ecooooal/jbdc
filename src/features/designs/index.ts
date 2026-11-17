@@ -3,10 +3,14 @@
  * validation, identity and timestamps on create, and the `search_text` every
  * write rebuilds.
  */
-export { DESIGN_EDITABLE_FIELDS, designFieldLabel } from './lib/fields';
+export {
+  DESIGN_EDITABLE_FIELDS,
+  DESIGN_IDENTITY_FIELDS,
+  designFieldLabel,
+} from './lib/fields';
 export type { DesignEditableField } from './lib/fields';
-export { DESIGN_HISTORY_SECTIONS } from './lib/sections';
-export type { DesignHistorySection, DesignHistorySectionDefinition } from './lib/sections';
+export { DESIGN_SECTIONS, isDesignSectionTab } from './lib/sections';
+export type { DesignSectionTab } from './lib/sections';
 export { materialUseRoleLabel } from './lib/material-use-role';
 export {
   addMaterialUse,

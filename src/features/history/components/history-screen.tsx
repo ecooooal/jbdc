@@ -3,7 +3,7 @@ import { ChevronLeft } from 'lucide-react-native';
 import { ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { DesignEditableField } from '@/features/designs';
-import { DESIGN_HISTORY_SECTIONS, designFieldLabel } from '@/features/designs';
+import { designFieldLabel } from '@/features/designs';
 import { taxonomyLabel, type TaxonomyNames } from '@/features/taxonomy';
 import { Button } from '@/shared/components/ui/button';
 import { Icon } from '@/shared/components/ui/icon';
@@ -14,6 +14,7 @@ import {
   type DesignEvent,
   type DesignFieldChange,
 } from '../lib/events';
+import { DESIGN_HISTORY_SECTIONS } from '../lib/sections';
 import { useDesignHistory } from '../lib/use-design-history';
 
 const TIMESTAMP_FORMAT = new Intl.DateTimeFormat(undefined, {
