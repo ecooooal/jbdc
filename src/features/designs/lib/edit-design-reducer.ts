@@ -35,11 +35,16 @@ export type MaterialUsePanel =
   | { kind: 'edit'; editor: EditMaterialUseState };
 
 /**
- * Edit's decisions: the drafts, the row's current values, the visit baseline,
- * the one open row, and the one refusal on screen. The live read seeds it once;
- * later reads do not overwrite a draft the owner is still editing.
+ * Edit's decisions: the drafts, the record of what its own writes stored, the
+ * visit baseline, the one open row, and the one refusal on screen.
  *
- * A visit is one trip through the Edit screen (ADR-0004): `visitStart` is the row the
+ * `stored` and `storedUses` are the record of what this visit's own writes
+ * stored, not a copy of the live read (ADR-0004). They are seeded once from the
+ * first read, advanced only by a write outcome, and never re-seeded by a later
+ * read. They answer what a refused write restores, what a blank name falls back
+ * to, and what the Event's after-state is.
+ *
+ * A visit is one trip through the Edit screen: `visitStart` is the row the
  * first read returned and never advances, so every write in the visit
  * coalesces into one Event at close.
  */
@@ -50,10 +55,10 @@ export type EditDesignState = {
   isSeeded: boolean;
   /** What the owner has typed or picked, not necessarily written yet. */
   draft: DesignDrafts;
-  /** What the row holds now; a refused save restores these values. */
-  saved: DesignFields;
-  /** The Material uses the row holds now, after this visit's additions, corrections, and removals. */
-  savedUses: MaterialUse[];
+  /** The row this visit's own writes stored; a refused write restores these values. */
+  stored: DesignFields;
+  /** The Material uses this visit's own writes stored, after its additions, corrections, and removals. */
+  storedUses: MaterialUse[];
   /** The row at open: what the visit's one Event is diffed against. */
   visitStart: DesignFields | null;
   /** The Material uses the row held at open. */
@@ -189,8 +194,8 @@ export function createInitialEditDesignState(designId: string): EditDesignState 
     designId,
     isSeeded: false,
     draft: EMPTY_DESIGN_DRAFTS,
-    saved: EMPTY_DESIGN_FIELDS,
-    savedUses: [],
+    stored: EMPTY_DESIGN_FIELDS,
+    storedUses: [],
     visitStart: null,
     visitStartUses: [],
     editing: null,
@@ -232,11 +237,11 @@ export function unwrittenFields(state: EditDesignState): UnwrittenDesignFields |
     if (field === 'name') {
       const name = draft.trim();
 
-      if (name !== state.saved.name && designNameProblem(name) === null) patch.name = name;
+      if (name !== state.stored.name && designNameProblem(name) === null) patch.name = name;
       continue;
     }
 
-    if (normalizeOptionalText(draft) !== state.saved[field]) patch[field] = draft;
+    if (normalizeOptionalText(draft) !== state.stored[field]) patch[field] = draft;
   }
 
   return Object.keys(patch).length === 0 ? null : patch;
@@ -291,8 +296,8 @@ function materialUseFlushEffects(state: EditDesignState, now: number): EditDesig
  * The one Event a close records: the row it opened on and the row the writes
  * left behind. Whether that is a change is History's to decide, with the same
  * diff it stores — the visit does not keep a second rule for emptiness. The
- * after-state is what `saved` and `savedUses` hold when the last write reports
- * back, so a refused write is never recorded as if it landed.
+ * after-state is what `stored` and `storedUses` hold when the last write
+ * reports back, so a refused write is never recorded as if it landed.
  */
 function recordEffect(state: EditDesignState, at: number): EditDesignEffect | null {
   const before = state.visitStart;
@@ -303,8 +308,8 @@ function recordEffect(state: EditDesignState, at: number): EditDesignEffect | nu
     type: 'record-visit',
     designId: state.designId,
     before,
-    after: state.saved,
-    materialUses: { before: state.visitStartUses, after: state.savedUses },
+    after: state.stored,
+    materialUses: { before: state.visitStartUses, after: state.storedUses },
     now: at,
   };
 }
@@ -440,7 +445,7 @@ function leftRow(state: EditDesignState, leaving: EditDesignRow | null): EditDes
 
   return {
     ...state,
-    draft: invalidName ? { ...state.draft, name: state.saved.name } : state.draft,
+    draft: invalidName ? { ...state.draft, name: state.stored.name } : state.draft,
     error: state.error?.field === leaving ? null : state.error,
   };
 }
@@ -451,14 +456,16 @@ export function editDesignReducer(
 ): EditDesignResult {
   switch (event.type) {
     case 'design-loaded': {
+      // A later read never re-seeds an open visit: `stored` is the record of
+      // this visit's own writes, and a read has not observed them.
       if (state.isSeeded) return only(state);
 
       return only({
         ...state,
         isSeeded: true,
         draft: draftsFromFields(event.design),
-        saved: event.design,
-        savedUses: [...(event.materialUses ?? [])],
+        stored: event.design,
+        storedUses: [...(event.materialUses ?? [])],
         visitStart: event.design,
         visitStartUses: [...(event.materialUses ?? [])],
         editing: null,
@@ -514,7 +521,7 @@ export function editDesignReducer(
       return only({
         ...state,
         materialUsePanel: null,
-        savedUses: [...state.savedUses, event.materialUse],
+        storedUses: [...state.storedUses, event.materialUse],
       });
     case 'material-use-add-opened': {
       // One editor at a time: a text row being left is written, and a Material
@@ -614,9 +621,9 @@ export function editDesignReducer(
                 }),
               }
             : state.materialUsePanel,
-        // The correction is already written; the visit keeps what the row holds
-        // now, so a use added and then corrected still reads as one addition.
-        savedUses: state.savedUses.map((materialUse) =>
+        // The correction is already written; the visit keeps what its own write
+        // stored, so a use added and then corrected still reads as one addition.
+        storedUses: state.storedUses.map((materialUse) =>
           materialUse.id === event.materialUse.id ? event.materialUse : materialUse
         ),
       });
@@ -658,7 +665,7 @@ export function editDesignReducer(
       return only({
         ...state,
         materialUsePanel: null,
-        savedUses: state.savedUses.filter((use) => use.id !== event.useId),
+        storedUses: state.storedUses.filter((use) => use.id !== event.useId),
       });
     case 'row-opened': {
       const leaving = state.editing;
@@ -693,12 +700,12 @@ export function editDesignReducer(
     case 'row-closed':
       return only({ ...state, editing: null });
     case 'drafts-written':
-      // The row the write stored is what the visit now reads, and the drafts it
+      // The row the write stored becomes the visit's record, and the drafts it
       // wrote follow it so a trimmed name shows as it was stored.
       return settled({
         ...state,
         draft: draftsAfterWrite(state.draft, event.design, event.patch),
-        saved: event.design,
+        stored: event.design,
         editing: collapsedRow(state.editing, event.patch),
         error:
           state.error && state.error.field in event.patch ? null : state.error,
@@ -709,8 +716,8 @@ export function editDesignReducer(
         draft: {
           ...state.draft,
           [event.field]: isChoiceField(event.field)
-            ? state.saved[event.field]
-            : (state.saved[event.field] ?? ''),
+            ? state.stored[event.field]
+            : (state.stored[event.field] ?? ''),
         },
         error: { field: event.field, message: event.message },
       });

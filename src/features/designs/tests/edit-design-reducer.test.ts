@@ -95,7 +95,7 @@ describe('edit design reducer', () => {
         styling: '',
         palette: '',
       },
-      saved: {
+      stored: {
         name: '',
         description: null,
         categoryId: null,
@@ -103,7 +103,7 @@ describe('edit design reducer', () => {
         ...EMPTY_SPECIFICATION,
         ...EMPTY_CREATIVE_DIRECTION,
       },
-      savedUses: [],
+      storedUses: [],
       visitStart: null,
       visitStartUses: [],
       editing: null,
@@ -138,8 +138,8 @@ describe('edit design reducer', () => {
         styling: '',
         palette: '',
       },
-      saved: DESIGN,
-      savedUses: [],
+      stored: DESIGN,
+      storedUses: [],
       visitStart: DESIGN,
       visitStartUses: [],
       editing: null,
@@ -269,7 +269,7 @@ describe('edit design reducer', () => {
 
     expect(tester.getState()).toMatchObject({
       draft: { name: 'Wool coat' },
-      saved: { name: 'Wool coat' },
+      stored: { name: 'Wool coat' },
       error: null,
     });
 
@@ -291,7 +291,7 @@ describe('edit design reducer', () => {
     tester.send({ type: 'choice-chosen', field: 'categoryId', value: KNITWEAR, now: NOW });
     expect(tester.getState()).toMatchObject({
       draft: { categoryId: KNITWEAR },
-      saved: { categoryId: DRESS },
+      stored: { categoryId: DRESS },
     });
 
     tester.send({
@@ -301,7 +301,7 @@ describe('edit design reducer', () => {
     });
     expect(tester.getState()).toMatchObject({
       draft: { categoryId: KNITWEAR },
-      saved: { categoryId: KNITWEAR },
+      stored: { categoryId: KNITWEAR },
     });
   });
 
@@ -324,7 +324,7 @@ describe('edit design reducer', () => {
 
     expect(tester.getState()).toMatchObject({
       draft: { categoryId: DRESS, collectionId: null },
-      saved: { categoryId: DRESS, collectionId: null },
+      stored: { categoryId: DRESS, collectionId: null },
     });
   });
 
@@ -335,7 +335,7 @@ describe('edit design reducer', () => {
 
     expect(tester.getState()).toMatchObject({
       draft: { categoryId: null },
-      saved: { categoryId: DRESS },
+      stored: { categoryId: DRESS },
     });
   });
 
@@ -351,7 +351,7 @@ describe('edit design reducer', () => {
 
     expect(tester.getState()).toMatchObject({
       draft: { description: '' },
-      saved: { description: null },
+      stored: { description: null },
       error: null,
     });
   });
@@ -369,7 +369,7 @@ describe('edit design reducer', () => {
 
     expect(tester.getState()).toMatchObject({
       draft: { silhouette: 'Relaxed A-line' },
-      saved: { silhouette: 'Relaxed A-line' },
+      stored: { silhouette: 'Relaxed A-line' },
       editing: null,
     });
   });
@@ -469,7 +469,7 @@ describe('edit design reducer', () => {
 
     expect(tester.getState()).toMatchObject({
       draft: { name: 'Wool coat' },
-      saved: { name: 'Wool coat' },
+      stored: { name: 'Wool coat' },
     });
   });
 });
@@ -494,7 +494,7 @@ describe('tab changes', () => {
       tab: 'creativeDirection',
       editing: null,
       draft: { silhouette: '  Relaxed A-line  ' },
-      saved: { silhouette: null },
+      stored: { silhouette: null },
     });
   });
 
@@ -644,7 +644,7 @@ describe('edit visit boundary', () => {
 
     tester.send({ type: 'material-use-saved', materialUse: corrected });
 
-    expect(tester.getState().savedUses).toEqual([corrected]);
+    expect(tester.getState().storedUses).toEqual([corrected]);
     expect(tester.getState().visitStartUses).toEqual([WOOL_USE]);
   });
 
@@ -653,7 +653,7 @@ describe('edit visit boundary', () => {
 
     tester.send({ type: 'material-use-removed', useId: WOOL_USE.id });
 
-    expect(tester.getState().savedUses).toEqual([]);
+    expect(tester.getState().storedUses).toEqual([]);
     expect(tester.getState().visitStartUses).toEqual([WOOL_USE]);
   });
 
@@ -723,7 +723,7 @@ describe('edit visit boundary', () => {
     tester.send({ type: 'visit-closed', now: LATER });
 
     expect(tester.getEffects()).toEqual(firstClose);
-    expect(tester.getState().savedUses).toEqual([]);
+    expect(tester.getState().storedUses).toEqual([]);
   });
 
   test('closing after a draft writes it, then records the whole visit once', () => {
@@ -1015,7 +1015,7 @@ describe('edit visit boundary', () => {
       },
     ]);
     expect(tester.getState()).toMatchObject({
-      saved: { name: 'Silk slip dress' },
+      stored: { name: 'Silk slip dress' },
       closing: { at: NOW, outstanding: 0 },
     });
   });
@@ -1354,7 +1354,7 @@ describe('Material use editor', () => {
         editor: { colour: 'Black', role: 'secondary', saved: corrected },
       },
     });
-    expect(tester.getState().savedUses).toEqual([corrected]);
+    expect(tester.getState().storedUses).toEqual([corrected]);
   });
 
   test('a late saved correction does not overwrite a different open editor', () => {
@@ -1377,7 +1377,7 @@ describe('Material use editor', () => {
         editor: { materialId: silkUse.materialId, colour: 'Ivory', saved: silkUse },
       },
     });
-    expect(tester.getState().savedUses).toEqual([{ ...WOOL_USE, colour: 'Black' }]);
+    expect(tester.getState().storedUses).toEqual([{ ...WOOL_USE, colour: 'Black' }]);
   });
 
   test('a refusal restores the stored use', () => {
