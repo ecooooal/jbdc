@@ -42,6 +42,24 @@ function restrictedImports(exempt = [], extra = []) {
   ];
 }
 
+// A reducer test asserts the whole effect list, so an extra or substituted
+// effect fails it (docs/FRONTEND_STATE.md §Testing). Counting the list lets a
+// wrong effect pass, so the count is banned on `getEffects()` itself — a
+// filtered local list may still be counted.
+const effectListAssertion = {
+  selector:
+    "CallExpression[callee.property.name='toHaveLength'][callee.object.arguments.0.callee.property.name='getEffects']",
+  message:
+    'Assert the whole effect list with toEqual (docs/FRONTEND_STATE.md §Testing); a length lets a substituted effect pass.',
+};
+
+const negatedEffectListAssertion = {
+  selector:
+    "CallExpression[callee.property.name='toHaveLength'][callee.object.object.arguments.0.callee.property.name='getEffects']",
+  message:
+    'Assert the whole effect list with toEqual (docs/FRONTEND_STATE.md §Testing); a length lets a substituted effect pass.',
+};
+
 module.exports = defineConfig([
   expoConfig,
   {
@@ -69,6 +87,12 @@ module.exports = defineConfig([
     files: ['src/features/database/lib/better-sqlite3-driver.ts'],
     rules: {
       'no-restricted-imports': restrictedImports(['betterSqlite3']),
+    },
+  },
+  {
+    files: ['**/tests/**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-syntax': ['error', effectListAssertion, negatedEffectListAssertion],
     },
   },
 ]);
