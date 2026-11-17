@@ -1104,6 +1104,32 @@ describe('Material use editor', () => {
     ]);
   });
 
+  test('a close records the colour the write stores, not the raw draft', () => {
+    const tester = opened();
+    const corrected: MaterialUse = { ...WOOL_USE, colour: 'Black' };
+
+    tester.send({ type: 'material-use-colour-changed', colour: '  Black  ' });
+    tester.send({ type: 'session-closed', now: LATER });
+
+    expect(tester.getEffects()).toEqual([
+      {
+        type: 'write-material-use',
+        designId: DESIGN_ID,
+        useId: WOOL_USE.id,
+        patch: { colour: '  Black  ' },
+        now: LATER,
+      },
+      {
+        type: 'record-session',
+        designId: DESIGN_ID,
+        before: DESIGN,
+        after: DESIGN,
+        materialUses: { before: [WOOL_USE], after: [corrected] },
+        now: LATER,
+      },
+    ]);
+  });
+
   test('a blank colour is not a write', () => {
     const tester = opened();
 
