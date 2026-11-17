@@ -16,3 +16,6 @@ entries; `lib/` and `tests/` are private.
 `index.ts` is driver-free: domain functions, constants, and types. `react.ts`
 holds components and hooks for route files. The anatomy and import rules live
 in `docs/EXPO-FOLDER-STRUCTURE.md`.
+
+`designs` is the largest package; its files and reducers are mapped in
+`src/features/designs/README.md`.
