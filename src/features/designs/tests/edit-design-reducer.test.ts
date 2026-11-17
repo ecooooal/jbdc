@@ -3,7 +3,6 @@ import {
   createInitialEditDesignState,
   editDesignReducer,
   stampedEvent,
-  unwrittenFields,
 } from '../lib/edit-design-reducer';
 import type { DesignFields, MaterialUse } from '../lib/records';
 
@@ -407,17 +406,27 @@ describe('edit design reducer', () => {
 
   test('the drafts that still differ from the row are what a flush writes', () => {
     const tester = visit();
-    expect(unwrittenFields(tester.getState())).toBeNull();
+
+    tester.send({ type: 'app-backgrounded', now: NOW });
+    expect(tester.getEffects()).toEqual([]);
 
     tester.send({ type: 'text-changed', field: 'name', value: '  Wool coat  ' });
     tester.send({ type: 'text-changed', field: 'description', value: ' Heavy twill ' });
     tester.send({ type: 'text-changed', field: 'silhouette', value: ' Relaxed A-line ' });
+    tester.send({ type: 'app-backgrounded', now: LATER });
 
-    expect(unwrittenFields(tester.getState())).toEqual({
-      name: 'Wool coat',
-      description: ' Heavy twill ',
-      silhouette: ' Relaxed A-line ',
-    });
+    expect(tester.getEffects()).toEqual([
+      {
+        type: 'write-drafts',
+        designId: DESIGN_ID,
+        patch: {
+          name: 'Wool coat',
+          description: ' Heavy twill ',
+          silhouette: ' Relaxed A-line ',
+        },
+        now: LATER,
+      },
+    ]);
   });
 
   test('a blank name is never pending, but a real description still is', () => {
@@ -425,16 +434,32 @@ describe('edit design reducer', () => {
 
     tester.send({ type: 'text-changed', field: 'name', value: '   ' });
     tester.send({ type: 'text-changed', field: 'description', value: 'Heavy twill' });
+    tester.send({ type: 'app-backgrounded', now: NOW });
 
-    expect(unwrittenFields(tester.getState())).toEqual({ description: 'Heavy twill' });
+    expect(tester.getEffects()).toEqual([
+      {
+        type: 'write-drafts',
+        designId: DESIGN_ID,
+        patch: { description: 'Heavy twill' },
+        now: NOW,
+      },
+    ]);
   });
 
   test('clearing the description is a pending write', () => {
     const tester = visit();
 
     tester.send({ type: 'text-changed', field: 'description', value: '' });
+    tester.send({ type: 'app-backgrounded', now: NOW });
 
-    expect(unwrittenFields(tester.getState())).toEqual({ description: '' });
+    expect(tester.getEffects()).toEqual([
+      {
+        type: 'write-drafts',
+        designId: DESIGN_ID,
+        patch: { description: '' },
+        now: NOW,
+      },
+    ]);
   });
 
   test('clearing a Specification row is a pending write', () => {
@@ -445,16 +470,25 @@ describe('edit design reducer', () => {
       design: { ...DESIGN, neckline: 'Wide boat neck' },
     });
     tester.send({ type: 'text-changed', field: 'neckline', value: '' });
+    tester.send({ type: 'app-backgrounded', now: NOW });
 
-    expect(unwrittenFields(tester.getState())).toEqual({ neckline: '' });
+    expect(tester.getEffects()).toEqual([
+      {
+        type: 'write-drafts',
+        designId: DESIGN_ID,
+        patch: { neckline: '' },
+        now: NOW,
+      },
+    ]);
   });
 
   test('whitespace-only Specification input is not a change', () => {
     const tester = visit();
 
     tester.send({ type: 'text-changed', field: 'constructionNotes', value: '   ' });
+    tester.send({ type: 'app-backgrounded', now: NOW });
 
-    expect(unwrittenFields(tester.getState())).toBeNull();
+    expect(tester.getEffects()).toEqual([]);
   });
 
   test('a draft written by leaving the app becomes the value a later refusal restores', () => {

@@ -250,7 +250,7 @@ export function createInitialEditDesignState(designId: string): EditDesignState 
 }
 
 /** The text drafts that still differ from the row, ready for `updateDesign`. */
-export type UnwrittenDesignFields = Partial<Record<DesignTextEditableField, string>>;
+type UnwrittenDesignFields = Partial<Record<DesignTextEditableField, string>>;
 
 /** One field's draft, as the write it asks for. */
 function draftPatch<T extends DesignEditableField>(
@@ -271,7 +271,7 @@ function draftPatch<T extends DesignEditableField>(
  * the store would have left alone. Emptiness is History's, decided once in
  * `recordEdit`.
  */
-export function unwrittenFields(state: EditDesignState): UnwrittenDesignFields | null {
+function unwrittenFields(state: EditDesignState): UnwrittenDesignFields | null {
   const patch: UnwrittenDesignFields = {};
 
   for (const field of DESIGN_TEXT_FIELDS) {
@@ -295,7 +295,7 @@ export function unwrittenFields(state: EditDesignState): UnwrittenDesignFields |
  * and role write on choice, so this is usually only a typed colour; a blank
  * colour is not a change, because a use always needs one. Null means no write.
  */
-export function unwrittenMaterialUseFields(
+function unwrittenMaterialUseFields(
   editor: EditMaterialUseState | null
 ): UpdateMaterialUseInput | null {
   if (!editor) return null;
@@ -313,7 +313,7 @@ export function unwrittenMaterialUseFields(
 }
 
 /** The editor an open correction holds, or null while adding or closed. */
-export function editingMaterialUse(state: EditDesignState): EditMaterialUseState | null {
+function editingMaterialUse(state: EditDesignState): EditMaterialUseState | null {
   return state.materialUsePanel?.kind === 'edit' ? state.materialUsePanel.editor : null;
 }
 
