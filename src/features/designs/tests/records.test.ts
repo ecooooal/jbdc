@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { eq } from 'drizzle-orm';
+import { eq, getTableColumns } from 'drizzle-orm';
 import {
   categories,
   collections,
@@ -98,6 +98,16 @@ describe('design records', () => {
     });
     expect(design.id).toMatch(UUID_V4);
     expect(getDesign(database, design.id)).toEqual(design);
+  });
+
+  test('a Design read carries every stored column except the derived search text', () => {
+    const design = createDesign(database, { name: 'Wool coat' }, 10);
+    const stored = getDesign(database, design.id)!;
+    const columns = Object.keys(getTableColumns(designs))
+      .filter((name) => name !== 'searchText')
+      .sort();
+
+    expect(Object.keys(stored).sort()).toEqual(columns);
   });
 
   test('round-trips every Specification field through create', () => {

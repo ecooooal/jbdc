@@ -1,8 +1,7 @@
-import { and, desc, eq, isNull } from 'drizzle-orm';
+import { and, desc, eq, getTableColumns, isNull } from 'drizzle-orm';
 import type {
   Database,
   DatabaseHandle,
-  DesignStatus,
   LiveReadDeclaration,
   MaterialUseRole,
 } from '@/features/database';
@@ -27,32 +26,12 @@ import { SPECIFICATION_FIELDS } from './specification-fields';
 
 export { DESIGN_NAME_MAX_LENGTH, designNameProblem } from './limits';
 
-/** A design as it is stored. Statuses and timestamps are never caller-supplied. */
-export type Design = {
-  id: string;
-  name: string;
-  description: string | null;
-  categoryId: string | null;
-  collectionId: string | null;
-  silhouette: string | null;
-  neckline: string | null;
-  sleeveType: string | null;
-  garmentDetails: string | null;
-  sizeRange: string | null;
-  measurements: string | null;
-  constructionNotes: string | null;
-  concept: string | null;
-  mood: string | null;
-  inspiration: string | null;
-  intendedFeeling: string | null;
-  audience: string | null;
-  styling: string | null;
-  palette: string | null;
-  status: DesignStatus;
-  createdAt: number;
-  updatedAt: number;
-  deletedAt: number | null;
-};
+/**
+ * A design as it is stored. Derived from the table, so a new section field is
+ * added in the schema and the field list, not here. `searchText` is derived on
+ * every write and is not part of the record a feature works with.
+ */
+export type Design = Omit<typeof designs.$inferSelect, 'searchText'>;
 
 /** The editable fields of a stored Design, from the one field list. Null means empty. */
 export type DesignFields = Pick<Design, DesignEditableField>;
@@ -155,31 +134,12 @@ export class InvalidMaterialUseError extends Error {
   }
 }
 
-const designColumns = {
-  id: designs.id,
-  name: designs.name,
-  description: designs.description,
-  categoryId: designs.categoryId,
-  collectionId: designs.collectionId,
-  silhouette: designs.silhouette,
-  neckline: designs.neckline,
-  sleeveType: designs.sleeveType,
-  garmentDetails: designs.garmentDetails,
-  sizeRange: designs.sizeRange,
-  measurements: designs.measurements,
-  constructionNotes: designs.constructionNotes,
-  concept: designs.concept,
-  mood: designs.mood,
-  inspiration: designs.inspiration,
-  intendedFeeling: designs.intendedFeeling,
-  audience: designs.audience,
-  styling: designs.styling,
-  palette: designs.palette,
-  status: designs.status,
-  createdAt: designs.createdAt,
-  updatedAt: designs.updatedAt,
-  deletedAt: designs.deletedAt,
-};
+/**
+ * The columns a read selects, derived from the table. `searchText` is derived
+ * on write and is the only column a caller never gets back; a new field added
+ * to the schema is selected here without another edit.
+ */
+const { searchText: _derivedSearchText, ...designColumns } = getTableColumns(designs);
 
 /**
  * The values of one optional-text section a write would store, each trimmed;
