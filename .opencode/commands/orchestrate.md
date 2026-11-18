@@ -22,7 +22,7 @@ cheap model and only executes steps.
 For each ticket number in $ARGUMENTS:
 
 ```
-gh issue view <n> --repo ecooooal/jbdc --json number,title,body,labels,blockedBy \
+gh issue view <n> --repo ecooooal/jbdc --json number,title,state,body,labels,blockedBy \
   --jq '{title, state, labels: [.labels[].name], open_blockers: [.blockedBy.nodes[] | select(.state=="OPEN") | .number], steps: (.body | contains("## Steps"))}'
 ```
 
