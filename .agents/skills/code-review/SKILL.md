@@ -57,7 +57,7 @@ Each smell reads *what it is* → *how to fix*; match it against the diff:
 
 ### 4. Spawn both sub-agents in parallel
 
-Issue both sub-agent calls together, in the foreground, and aggregate the reports they return. If a subagent fails to start, retry it once: a transient provider error is not a reason to change mechanism. If the retry also fails, run that axis in-session and say in one line which axis you ran yourself.
+Issue both sub-agent calls together, in the foreground, and aggregate the reports they return. When the two calls cannot be made at all — a subagent depth limit is structural, not transient — run both axes in-session and say so in one line. Any other failure to start gets one retry: a transient provider error does not justify changing mechanism.
 
 **Neither reviewer runs the repo's checks.** The implementation agent already ran typecheck, lint, tests, the boundary check, and the frontend-state guard; CI repeats them on push. A reviewer that reruns them spends the review budget producing output it cannot act on. End both prompts with: "Do not run the repo's checks. Assume they pass; if the diff looks like it cannot compile, say so from reading it."
 

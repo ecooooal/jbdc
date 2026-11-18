@@ -91,7 +91,7 @@ Nothing else — the agent file carries the procedure. Do not paste skills into 
 ## 4. Review each report
 
 1. `git -C /home/echo/workspace/wt/<n> log --oneline <base>..HEAD` — commit count must equal the ticket's `## Steps` count, one commit per step, typed `type (#<n>): behaviour`. A mismatch is a repair finding before any review runs.
-2. Dispatch the `code-review` skill with the worktree as its target: fixed point `<base>`, diff command `git -C /home/echo/workspace/wt/<n> diff <base>...HEAD`, commit list from the same worktree, spec the ticket itself (`gh issue view <n>`). Its Standards axis covers the `CODING_STANDARDS.md` judgement calls; its Spec axis covers each acceptance criterion and flags anything outside the ticket's scope.
+2. Load the `code-review` skill and run it here, against the worktree: fixed point `<base>`, diff command `git -C /home/echo/workspace/wt/<n> diff <base>...HEAD`, commit list from the same worktree, spec the ticket itself (`gh issue view <n>`). You own its step 4: start the two axis subagents yourself. The harness permits one level of subagent, so they run at level one from here; a subagent that loaded this skill would need level two, and the harness refuses it. Its Standards axis covers the `CODING_STANDARDS.md` judgement calls; its Spec axis covers each acceptance criterion and flags anything outside the ticket's scope.
 3. Aggregate the two reports, read the diff yourself, and rule. The reports inform the verdict, they are not it: anything outside the ticket's scope in the diff is a finding, not a bonus.
 
 Verdict: merge, or repair.
@@ -123,7 +123,7 @@ Report back — SHA range, and any item you could not complete.
 Scope       — items 1-N only. Report anything else; do not change it.
 ```
 
-Six items maximum. Then re-review the delta per `code-review` §6 — only the axis that reported a hard violation, against `git diff <reviewed-head>..ticket/<n>-<slug>`. Cosmetic findings need no second review; the implementer checks those itself.
+Six items maximum. Then re-review the delta the same way — load `code-review` §6 here, start only the axis that reported a hard violation, against `git diff <reviewed-head>..ticket/<n>-<slug>`. Cosmetic findings need no second review; the implementer checks those itself.
 
 ## 7. Stalls
 
