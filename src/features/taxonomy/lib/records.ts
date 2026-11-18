@@ -79,7 +79,7 @@ function normalizeYear(raw: number | null | undefined): number | null {
  * The owner's Categories, alphabetical, without any she has removed. The live
  * hook uses this same builder, so a picker and a direct read never disagree.
  */
-export function categoriesQuery(database: Database) {
+function categoriesQuery(database: Database) {
   return database.db
     .select({ id: categories.id, name: categories.name })
     .from(categories)
@@ -88,7 +88,7 @@ export function categoriesQuery(database: Database) {
 }
 
 /** The owner's Collections, alphabetical, without any she has removed. */
-export function collectionsQuery(database: Database) {
+function collectionsQuery(database: Database) {
   return database.db
     .select({ id: collections.id, name: collections.name, year: collections.year })
     .from(collections)

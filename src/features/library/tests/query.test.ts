@@ -147,4 +147,16 @@ describe('library query', () => {
 
     expect(listLibraryDesigns(database)[0].collection).toBe('Spring (2027)');
   });
+
+  test('shows a Collection stored without a year by its bare name', () => {
+    const collectionId = randomUUID();
+
+    database.db
+      .insert(collections)
+      .values({ id: collectionId, name: 'Spring', year: null, createdAt: 0 })
+      .run();
+    insertDesign('In a collection', { collectionId, updatedAt: 40 });
+
+    expect(listLibraryDesigns(database)[0].collection).toBe('Spring');
+  });
 });

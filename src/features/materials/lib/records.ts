@@ -41,7 +41,7 @@ function normalizeName(raw: string): string {
  * The owner's Materials, alphabetical, without any she has removed. The live
  * hook uses this same builder, so a picker and a direct read never disagree.
  */
-export function materialsQuery(database: Database) {
+function materialsQuery(database: Database) {
   return database.db
     .select({ id: materials.id, name: materials.name })
     .from(materials)

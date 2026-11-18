@@ -224,7 +224,7 @@ const eventColumns = {
  * insertion order, so two events written in the same millisecond still read in
  * the order they happened.
  */
-export function designEventsQuery(database: Database, designId: string) {
+function designEventsQuery(database: Database, designId: string) {
   return database.db
     .select(eventColumns)
     .from(designEvents)

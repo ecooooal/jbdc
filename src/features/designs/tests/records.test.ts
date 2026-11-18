@@ -846,6 +846,19 @@ describe('design detail', () => {
     expect(getDesignDetail(database, id)?.collection).toBe('Spring (2027)');
   });
 
+  test('shows a Collection stored without a year by its bare name', () => {
+    const collectionId = randomUUID();
+
+    database.db
+      .insert(collections)
+      .values({ id: collectionId, name: 'Spring', year: null, createdAt: 0 })
+      .run();
+
+    const id = insertDetailDesign({ name: 'Silk slip', collectionId });
+
+    expect(getDesignDetail(database, id)?.collection).toBe('Spring');
+  });
+
   test('a design with no description, category, or collection is still readable', () => {
     const id = insertDetailDesign({ name: 'Unfinished idea' });
 

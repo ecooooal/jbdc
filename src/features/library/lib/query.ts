@@ -45,10 +45,10 @@ type LibraryDesignRow = {
  * recently updated first. Taxonomy names are resolved separately, through the
  * one name read, so a rename or a delete is never stale beside the row.
  *
- * Module-private: it is the live-query adapter's builder, so only the React
- * entry (`useLibraryDesigns`) names it. The package entry exposes the hook.
+ * Module-private: only this module's own reads (`listLibraryDesigns` and
+ * `libraryDesignsRead`) name it; the package entry exposes those reads.
  */
-export function libraryDesignsQuery(database: Database) {
+function libraryDesignsQuery(database: Database) {
   return database.db
     .select({
       id: designs.id,

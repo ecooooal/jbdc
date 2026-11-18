@@ -140,6 +140,25 @@ test('keeps the names of a Category and Collection deleted after the edit', asyn
   expect(screen.queryByText(/Unknown Collection/)).toBeNull();
 });
 
+test('shows a Collection created without a year by its bare name', async () => {
+  const collection = createCollection(database, { name: 'Spring' });
+  const design = createDesign(database, { name: 'Silk slip dress' }, 10);
+
+  recordEdit(
+    database,
+    design.id,
+    {
+      before: fields(),
+      after: fields({ collectionId: collection.id }),
+    },
+    Date.UTC(2025, 0, 2, 3, 4)
+  );
+
+  await renderHistory(design.id);
+
+  expect(screen.getByText('Collection: None → Spring')).toBeTruthy();
+});
+
 test('a cleared Category reads as empty', async () => {
   const dress = createCategory(database, { name: 'Dress' });
   const design = createDesign(database, { name: 'Silk slip dress' }, 10);
