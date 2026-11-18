@@ -40,9 +40,35 @@ and it is the only record of the base if this session dies. The subagent is deni
 The subagent also reads `.agents/skills/implement/SKILL.md`, which tells it to comment the base itself. Your comment
 is what makes its override true; confirm the comment exists before dispatch, and never let a subagent write to a ticket.
 
+## 2b. Overlap gate
+
+Before you dispatch anything, look at what the tickets already in flight touch:
+
+```
+git -C /home/echo/workspace/wt/<m> status --short
+git -C /home/echo/workspace/wt/<m> log --name-only --format= <base-of-m>..HEAD
+git -C /home/echo/workspace/wt/<m> diff --name-only <base-of-m>
+```
+
+Estimate the candidate's paths from its `## Steps`, its acceptance criteria, and the feature package it names.
+
+A ticket does not run while another in-flight ticket can touch the same file. Count these as the same file: the same
+path, the same feature package under `src/features`, or a reducer and the test file that drives it.
+
+If they collide: do not dispatch. Do not cut its worktree. Do not post its Base. Hold it, and say so at once, in one
+line: `Held #<n>: overlaps #<m> on <path>. Queued behind #<m>.` Dispatch it only after `<m>` merges.
+
+If the overlap appears after both are already writing:
+
+- say it immediately;
+- stop merging either branch;
+- keep the one closer to green and cancel the other — the user stops that session, because no tool here kills a running
+  subagent;
+- never merge both and reconcile later.
+
 ## 3. Dispatch
 
-One subagent per ticket, `agent: "hy4-implementer"`, `background: true`, prompt:
+One subagent per ticket, `agent: "hy4-implementer"`, `background: true`, after the 2b gate passes. Prompt:
 
 ```
 #<n>. worktree /home/echo/workspace/wt/<n>, branch ticket/<n>-<slug>,
@@ -100,5 +126,6 @@ marks the ticket stalled: leave the branch, report, move on. Never attempt a thi
 ## 8. Report
 
 Per ticket: verdict, base sha, SHA range, commit list, AC status, findings, merge result.
+Held tickets, each with the blocking ticket and the path: `#<n> held behind #<m> (path)`.
 Then: slice tip, `pnpm check` result, tickets stalled or skipped with reasons, and the open question list.
 Never push, never close tickets, never tick AC boxes, never edit issue bodies or labels — the user does that.
