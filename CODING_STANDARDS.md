@@ -6,6 +6,10 @@ check can make. Mechanical rules live in code, not here:
 - Import boundaries and driver imports: `eslint.config.js`
 - Types, lint, tests: `.github/workflows/ci.yml` and `.githooks/pre-commit`
 
+A review reads the standards set together: `docs/FRONTEND_STATE.md`,
+`docs/EXPO-FOLDER-STRUCTURE.md`, `docs/EXPO-DB.md`, `GLOSSARY.md`, and the
+ADRs under `docs/adr/`.
+
 ## Commits
 
 - **Keep unrelated fixes separate.** A broken baseline (dependency, type, lint)
