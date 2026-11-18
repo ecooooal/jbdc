@@ -1,5 +1,6 @@
 import { designNameProblem } from './limits';
 import {
+  clearInlineRefusal,
   createInitialInlineCreationState,
   type InlineCreationEvent,
   type InlineCreationState,
@@ -111,11 +112,9 @@ export function newDesignFormReducer(
       return {
         ...state,
         inlineYear: event.year,
-        // A change to any inline field clears the refusal, by the slice's rule.
-        inline: inlineCreationReducer(state.inline, {
-          type: 'name-changed',
-          name: state.inline.name,
-        }),
+        // The year is this caller's field; clearing the slice's refusal is the
+        // slice's rule, so no unhappened name-change fact is invented here.
+        inline: clearInlineRefusal(state.inline),
       };
     case 'design-creation-refused':
       return { ...state, error: event.message };

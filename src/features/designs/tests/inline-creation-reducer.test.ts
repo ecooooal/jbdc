@@ -1,4 +1,5 @@
 import {
+  clearInlineRefusal,
   createInitialInlineCreationState,
   inlineCreationReducer,
   inlineCreationResult,
@@ -50,6 +51,21 @@ describe('inline creation slice', () => {
     expect(send(refused, { type: 'name-changed', name: 'Silk crêpe 2' })).toEqual({
       open: true,
       name: 'Silk crêpe 2',
+      error: null,
+    });
+  });
+
+  test('clearing a refusal keeps the typed name and the panel open', () => {
+    const refused = send(
+      createInitialInlineCreationState(),
+      { type: 'opened' },
+      { type: 'name-changed', name: 'Silk crêpe' },
+      { type: 'refused', message: 'That name is taken.' }
+    );
+
+    expect(clearInlineRefusal(refused)).toEqual({
+      open: true,
+      name: 'Silk crêpe',
       error: null,
     });
   });

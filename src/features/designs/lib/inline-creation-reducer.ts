@@ -45,6 +45,16 @@ export function inlineCreationResult<Created extends { id: string }>(
 }
 
 /**
+ * Clear a recorded refusal without disturbing what the owner typed or whether
+ * the panel is open. A caller editing another field of the same panel uses
+ * this rather than inventing a fact the slice never received: the clearing
+ * rule stays here, beside the facts that trigger it.
+ */
+export function clearInlineRefusal(state: InlineCreationState): InlineCreationState {
+  return { ...state, error: null };
+}
+
+/**
  * A refusal records its message only: the name the owner typed and the open
  * panel stay, so the refusal can be read and corrected in place. Opening or
  * completing a create drops the draft; changing the name clears the message.
@@ -60,7 +70,7 @@ export function inlineCreationReducer(
     case 'created':
       return createInitialInlineCreationState();
     case 'name-changed':
-      return { ...state, name: event.name, error: null };
+      return clearInlineRefusal({ ...state, name: event.name });
     case 'refused':
       return { ...state, error: event.message };
   }
