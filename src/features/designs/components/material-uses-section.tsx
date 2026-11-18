@@ -4,7 +4,7 @@ import { Button } from '@/shared/components/ui/button';
 import { Icon } from '@/shared/components/ui/icon';
 import { Text } from '@/shared/components/ui/text';
 import type { MaterialUseRole } from '@/features/database';
-import type { MaterialUse } from '@/features/designs';
+import type { AddMaterialUseInput, MaterialUse } from '@/features/designs';
 import type { EditMaterialUseState } from '../lib/edit-material-use-reducer';
 import type { MaterialUsePanel } from '../lib/edit-design-reducer';
 import { AddMaterialUseForm } from './add-material-use-form';
@@ -19,7 +19,6 @@ import { MaterialUsesTable } from './material-uses-table';
  * Edit does.
  */
 export function MaterialUsesSection({
-  designId,
   uses,
   panel,
   onOpenUse,
@@ -30,9 +29,8 @@ export function MaterialUsesSection({
   onColourCommitted,
   onRoleChosen,
   onRemoveUse,
-  onUseAdded,
+  onAddConfirmed,
 }: {
-  designId: string;
   uses: MaterialUse[];
   panel: MaterialUsePanel | null;
   onOpenUse: (materialUse: MaterialUse) => void;
@@ -43,7 +41,7 @@ export function MaterialUsesSection({
   onColourCommitted: () => void;
   onRoleChosen: (role: MaterialUseRole) => void;
   onRemoveUse: () => void;
-  onUseAdded: (materialUse: MaterialUse) => void;
+  onAddConfirmed: (input: AddMaterialUseInput) => void;
 }) {
   const editor: EditMaterialUseState | null = panel?.kind === 'edit' ? panel.editor : null;
 
@@ -66,8 +64,8 @@ export function MaterialUsesSection({
         />
       ) : panel?.kind === 'add' ? (
         <AddMaterialUseForm
-          designId={designId}
-          onAdded={onUseAdded}
+          error={panel.error}
+          onConfirm={onAddConfirmed}
           onCancel={onClosePanel}
         />
       ) : (

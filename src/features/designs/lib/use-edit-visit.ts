@@ -13,6 +13,7 @@ import {
   type WriteReport,
 } from './edit-design-reducer';
 import {
+  addMaterialUse,
   InvalidDesignNameError,
   InvalidMaterialUseError,
   removeMaterialUse,
@@ -67,6 +68,27 @@ export function useEditVisit(
 
       for (const effect of result.effects) {
         switch (effect.type) {
+          case 'add-material-use': {
+            try {
+              const materialUse = addMaterialUse(
+                database,
+                effect.designId,
+                effect.input,
+                effect.now
+              );
+
+              dispatch(
+                materialUse
+                  ? { type: 'material-use-added', materialUse }
+                  : { type: 'nothing-stored', designId: effect.designId }
+              );
+            } catch (caught) {
+              if (!(caught instanceof InvalidMaterialUseError)) throw caught;
+
+              dispatch({ type: 'material-use-add-refused', message: caught.message });
+            }
+            break;
+          }
           case 'write-drafts':
             dispatch(
               writeOutcome({

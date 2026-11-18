@@ -291,7 +291,6 @@ export function EditDesignScreen({ designId }: { designId: string }) {
                   />
                   {tab === 'specification' ? (
                     <MaterialUsesSection
-                      designId={designId}
                       uses={design.materialUses}
                       panel={state.materialUsePanel}
                       onOpenUse={(materialUse) =>
@@ -316,8 +315,8 @@ export function EditDesignScreen({ designId }: { designId: string }) {
                         send({ type: 'material-use-role-chosen', role })
                       }
                       onRemoveUse={removeUseEditor}
-                      onUseAdded={(materialUse) =>
-                        send({ type: 'material-use-added', materialUse })
+                      onAddConfirmed={(input) =>
+                        send({ type: 'material-use-add-confirmed', input })
                       }
                     />
                   ) : null}

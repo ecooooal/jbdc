@@ -18,6 +18,7 @@ import {
 } from './edit-material-use-reducer';
 import { normalizeOptionalText } from './optional-text';
 import type {
+  AddMaterialUseInput,
   DesignFields,
   MaterialUse,
   MaterialUsesPair,
@@ -31,7 +32,7 @@ import { DESIGN_SECTIONS, type DesignSectionTab } from './sections';
  * They cannot both be open, so they are one field (FRONTEND_STATE).
  */
 export type MaterialUsePanel =
-  | { kind: 'add' }
+  | { kind: 'add'; error: string | null }
   | { kind: 'edit'; editor: EditMaterialUseState };
 
 /**
@@ -86,6 +87,8 @@ export type EditDesignEvent =
   | { type: 'text-row-left'; field: DesignTextEditableField; now: number }
   | { type: 'choice-chosen'; field: DesignChoiceEditableField; value: string | null; now: number }
   | { type: 'material-use-added'; materialUse: MaterialUse }
+  | { type: 'material-use-add-confirmed'; input: AddMaterialUseInput; now: number }
+  | { type: 'material-use-add-refused'; message: string }
   | { type: 'material-use-add-opened'; now: number }
   | { type: 'material-use-editor-opened'; materialUse: MaterialUse; now: number }
   | { type: 'material-use-panel-closed'; now: number }
@@ -115,6 +118,7 @@ export type EditDesignEvent =
 const TIMED_GESTURES = [
   'text-row-left',
   'choice-chosen',
+  'material-use-add-confirmed',
   'material-use-add-opened',
   'material-use-editor-opened',
   'material-use-panel-closed',
@@ -151,13 +155,19 @@ export function stampedEvent(gesture: EditDesignGesture, now: number): EditDesig
 }
 
 /**
- * The work a visit asks for. `write-drafts`, `write-material-use`,
- * `remove-material-use`, and `record-visit` are separate because leaving the
- * app flushes a draft but records nothing, while a close does all of them. The
- * runner makes one call per effect and dispatches the outcome back as an event;
- * the screen calls no record module itself.
+ * The work a visit asks for. `add-material-use`, `write-drafts`,
+ * `write-material-use`, `remove-material-use`, and `record-visit` are separate
+ * because leaving the app flushes a draft but records nothing, while a close
+ * does all of them. The runner makes one call per effect and dispatches the
+ * outcome back as an event; the screen calls no record module itself.
  */
 export type EditDesignEffect =
+  | {
+      type: 'add-material-use';
+      designId: string;
+      input: AddMaterialUseInput;
+      now: number;
+    }
   | { type: 'write-drafts'; designId: string; patch: UpdateDesignInput; now: number }
   | {
       type: 'write-material-use';
@@ -580,6 +590,20 @@ export function editDesignReducer(
         ],
       };
     }
+    case 'material-use-add-confirmed':
+      // The panel keeps the choices until the write reports back, so a refusal
+      // can leave them on screen.
+      return {
+        state,
+        effects: [
+          {
+            type: 'add-material-use',
+            designId: state.designId,
+            input: event.input,
+            now: event.now,
+          },
+        ],
+      };
     case 'material-use-added':
       // The use is already written; the visit only keeps it for the Event it
       // records at close, so adding one does not end the visit.
@@ -588,6 +612,15 @@ export function editDesignReducer(
         materialUsePanel: null,
         storedUses: [...state.storedUses, event.materialUse],
       });
+    case 'material-use-add-refused':
+      return only(
+        state.materialUsePanel?.kind === 'add'
+          ? {
+              ...state,
+              materialUsePanel: { kind: 'add', error: event.message },
+            }
+          : state
+      );
     case 'material-use-add-opened': {
       // One editor at a time: a text row being left is written, and a Material
       // use editor being left writes the colour it still owes.
@@ -597,7 +630,7 @@ export function editDesignReducer(
         { writesDrafts: true, records: false }
       );
 
-      return withPanel(flushed, { kind: 'add' });
+      return withPanel(flushed, { kind: 'add', error: null });
     }
     case 'material-use-editor-opened': {
       const flushed = flush(

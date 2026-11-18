@@ -2,7 +2,7 @@ import { Plus } from 'lucide-react-native';
 import { useReducer } from 'react';
 import { View } from 'react-native';
 import { useDatabase } from '@/features/database/react';
-import { addMaterialUse, InvalidMaterialUseError, type MaterialUse } from '@/features/designs';
+import type { AddMaterialUseInput } from '@/features/designs';
 import {
   createMaterial,
   InvalidMaterialNameError,
@@ -24,19 +24,19 @@ import { MaterialUseRoleSelect } from './material-use-role-select';
 import { TaxonomySelect } from './taxonomy-select';
 
 /**
- * The editor `＋ Add material` opens. It adds one Material use and can create a
- * Material on the spot; the live list feeds the picker, so a new Material is
- * selectable as soon as the insert is observed. Adding writes the use, the
- * Design's search text, and its Updated timestamp in one transaction; the form
- * then closes and Edit reads the new row back through its live read.
+ * The editor `＋ Add material` opens. It holds the owner's choices and can
+ * create a Material on the spot; the live list feeds the picker, so a new
+ * Material is selectable as soon as the insert is observed. Confirming hands
+ * the choices to the visit, which declares and records the one write; the panel
+ * stays open with those choices if the write refuses them.
  */
 export function AddMaterialUseForm({
-  designId,
-  onAdded,
+  error,
+  onConfirm,
   onCancel,
 }: {
-  designId: string;
-  onAdded: (materialUse: MaterialUse) => void;
+  error: string | null;
+  onConfirm: (input: AddMaterialUseInput) => void;
   onCancel: () => void;
 }) {
   const database = useDatabase();
@@ -64,25 +64,7 @@ export function AddMaterialUseForm({
   function submit(): void {
     if (state.materialId === null) return;
 
-    try {
-      const materialUse = addMaterialUse(database, designId, {
-        materialId: state.materialId,
-        colour: state.colour,
-        role: state.role,
-      });
-
-      if (!materialUse) {
-        dispatch({ type: 'use-creation-refused', message: 'This design is not here.' });
-        return;
-      }
-
-      dispatch({ type: 'use-created' });
-      onAdded(materialUse);
-    } catch (caught) {
-      if (!(caught instanceof InvalidMaterialUseError)) throw caught;
-
-      dispatch({ type: 'use-creation-refused', message: caught.message });
-    }
+    onConfirm({ materialId: state.materialId, colour: state.colour, role: state.role });
   }
 
   return (
@@ -142,7 +124,7 @@ export function AddMaterialUseForm({
       {materialsError ? (
         <Text className="text-destructive text-sm">{materialsError.message}</Text>
       ) : null}
-      {state.error ? <Text className="text-destructive text-sm">{state.error}</Text> : null}
+      {error ? <Text className="text-destructive text-sm">{error}</Text> : null}
 
       <View className="flex-row justify-end gap-2">
         <Button size="sm" variant="ghost" onPress={onCancel}>

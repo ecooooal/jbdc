@@ -21,7 +21,6 @@ describe('add material use reducer', () => {
       inlineCreationOpen: false,
       inlineName: '',
       inlineError: null,
-      error: null,
     });
     expect(canAddMaterialUse(state)).toBe(false);
   });
@@ -99,29 +98,4 @@ describe('add material use reducer', () => {
     expect(state).toMatchObject({ inlineCreationOpen: false, inlineName: '', inlineError: null });
   });
 
-  test('a use refusal shows its message until the field changes', () => {
-    let state = addMaterialUseReducer(opened(), {
-      type: 'use-creation-refused',
-      message: 'A material use needs a colour.',
-    });
-
-    expect(state.error).toBe('A material use needs a colour.');
-
-    state = addMaterialUseReducer(state, { type: 'colour-changed', colour: 'Ivory' });
-
-    expect(state.error).toBeNull();
-  });
-
-  test('a created use returns the editor to its blank state', () => {
-    let state = addMaterialUseReducer(createInitialAddMaterialUseState(), {
-      type: 'material-chosen',
-      materialId: 'material-silk',
-    });
-    state = addMaterialUseReducer(state, { type: 'colour-changed', colour: 'Ivory' });
-    state = addMaterialUseReducer(state, { type: 'role-chosen', role: 'secondary' });
-
-    state = addMaterialUseReducer(state, { type: 'use-created' });
-
-    expect(state).toEqual(createInitialAddMaterialUseState());
-  });
 });

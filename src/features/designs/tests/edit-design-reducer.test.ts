@@ -1215,7 +1215,7 @@ describe('Material use editor', () => {
     const tester = visitWithUse();
 
     tester.send({ type: 'material-use-add-opened', now: NOW });
-    expect(tester.getState().materialUsePanel).toEqual({ kind: 'add' });
+    expect(tester.getState().materialUsePanel).toEqual({ kind: 'add', error: null });
 
     tester.send({ type: 'material-use-editor-opened', materialUse: WOOL_USE, now: LATER });
     expect(tester.getState().materialUsePanel).toMatchObject({
@@ -1486,6 +1486,63 @@ describe('Material use editor', () => {
       },
     ]);
     expect(tester.getState()).toMatchObject({ editing: 'silhouette', materialUsePanel: null });
+  });
+});
+
+describe('the add Material use panel', () => {
+  const INPUT = {
+    materialId: 'material-wool',
+    colour: 'Charcoal',
+    role: 'main' as const,
+  };
+
+  function adding() {
+    const tester = visit();
+
+    tester.send({ type: 'material-use-add-opened', now: NOW });
+
+    return tester;
+  }
+
+  test('confirm declares one add effect carrying the chosen Material, colour, and role', () => {
+    const tester = adding();
+
+    tester.send({ type: 'material-use-add-confirmed', input: INPUT, now: LATER });
+
+    expect(tester.getEffects()).toEqual([
+      {
+        type: 'add-material-use',
+        designId: DESIGN_ID,
+        input: INPUT,
+        now: LATER,
+      },
+    ]);
+    expect(tester.getState().materialUsePanel).toEqual({ kind: 'add', error: null });
+  });
+
+  test('a stored add closes the panel and keeps the use it stored', () => {
+    const tester = adding();
+
+    tester.send({ type: 'material-use-added', materialUse: WOOL_USE });
+
+    expect(tester.getState()).toMatchObject({
+      materialUsePanel: null,
+      storedUses: [WOOL_USE],
+    });
+  });
+
+  test('a refused add keeps the panel open and shows the refusal', () => {
+    const tester = adding();
+
+    tester.send({
+      type: 'material-use-add-refused',
+      message: 'A material use needs a colour.',
+    });
+
+    expect(tester.getState().materialUsePanel).toEqual({
+      kind: 'add',
+      error: 'A material use needs a colour.',
+    });
   });
 });
 
