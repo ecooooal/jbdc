@@ -763,15 +763,24 @@ describe('edit visit boundary', () => {
     ]);
   });
 
-  test('a use added then removed in one visit records no Event', () => {
+  test('a use added then removed in one visit hands History an unchanged row', () => {
     const tester = visit();
 
     tester.send({ type: 'material-use-added', materialUse: WOOL_USE });
     tester.send({ type: 'material-use-panel-fact', fact: { type: 'use-removed', useId: WOOL_USE.id }, now: NOW });
-    const firstClose = tester.getEffects();
     tester.send({ type: 'visit-closed', now: LATER });
 
-    expect(tester.getEffects()).toEqual(firstClose);
+    // The visit stored nothing net, so History finds no diff to record.
+    expect(tester.getEffects()).toEqual([
+      {
+        type: 'record-visit',
+        designId: DESIGN_ID,
+        before: DESIGN,
+        after: DESIGN,
+        materialUses: { before: [], after: [] },
+        now: LATER,
+      },
+    ]);
     expect(tester.getState().storedUses).toEqual([]);
   });
 

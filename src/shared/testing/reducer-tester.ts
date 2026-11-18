@@ -35,7 +35,9 @@ export function createReducerTester<State, Event, Effect>(
       return state;
     },
     getEffects() {
-      return effects;
+      // A snapshot, so a test that keeps an earlier list cannot compare it to
+      // itself after sending more events.
+      return [...effects];
     },
   };
 }
