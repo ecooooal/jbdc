@@ -23,6 +23,7 @@ import { Button } from '@/shared/components/ui/button';
 import { Icon } from '@/shared/components/ui/icon';
 import { Input } from '@/shared/components/ui/input';
 import { Text } from '@/shared/components/ui/text';
+import { inlineCreationResult } from '../lib/inline-creation-reducer';
 import {
   canCreateDesign,
   collectionYearFromInput,
@@ -50,38 +51,29 @@ export function NewDesignForm() {
   const selectedCollection =
     collections.find((collection) => collection.id === state.collectionId) ?? null;
 
-  function refuseInlineCreation(caught: unknown): void {
-    if (
-      !(caught instanceof InvalidTaxonomyNameError) &&
-      !(caught instanceof InvalidCollectionYearError)
-    ) {
-      throw caught;
-    }
-
-    dispatch({ type: 'inline-creation-refused', message: caught.message });
-  }
-
   function addCategory() {
-    try {
-      const category = createCategory(database, { name: state.inlineName });
-
-      dispatch({ type: 'category-created', categoryId: category.id });
-    } catch (caught) {
-      refuseInlineCreation(caught);
-    }
+    dispatch({
+      type: 'inline-fact',
+      fact: inlineCreationResult(
+        () => createCategory(database, { name: state.inline.name }),
+        InvalidTaxonomyNameError
+      ),
+    });
   }
 
   function addCollection() {
-    try {
-      const collection = createCollection(database, {
-        name: state.inlineName,
-        year: collectionYearFromInput(state.inlineYear),
-      });
-
-      dispatch({ type: 'collection-created', collectionId: collection.id });
-    } catch (caught) {
-      refuseInlineCreation(caught);
-    }
+    dispatch({
+      type: 'inline-fact',
+      fact: inlineCreationResult(
+        () =>
+          createCollection(database, {
+            name: state.inline.name,
+            year: collectionYearFromInput(state.inlineYear),
+          }),
+        InvalidTaxonomyNameError,
+        InvalidCollectionYearError
+      ),
+    });
   }
 
   function create() {
@@ -145,23 +137,25 @@ export function NewDesignForm() {
               dispatch({ type: 'category-chosen', categoryId: category?.id ?? null })
             }
           />
-          {state.inlineCreation === 'category' ? (
+          {state.inline.open && state.inlineKind === 'category' ? (
             <InlineCreationPanel
               title="New category"
               submitLabel="Add category"
-              name={state.inlineName}
-              error={state.inlineError}
+              name={state.inline.name}
+              error={state.inline.error}
               maxLength={TAXONOMY_NAME_MAX_LENGTH}
-              onNameChange={(name) => dispatch({ type: 'inline-name-changed', name })}
+              onNameChange={(name) =>
+                dispatch({ type: 'inline-fact', fact: { type: 'name-changed', name } })
+              }
               onSubmit={addCategory}
-              onCancel={() => dispatch({ type: 'inline-creation-closed' })}
+              onCancel={() => dispatch({ type: 'inline-fact', fact: { type: 'closed' } })}
             />
           ) : (
             <Button
               size="sm"
               variant="ghost"
               className="self-start"
-              onPress={() => dispatch({ type: 'inline-creation-opened', kind: 'category' })}
+              onPress={() => dispatch({ type: 'inline-opened', kind: 'category' })}
             >
               <Icon as={Plus} />
               <Text>New category</Text>
@@ -181,27 +175,29 @@ export function NewDesignForm() {
               dispatch({ type: 'collection-chosen', collectionId: collection?.id ?? null })
             }
           />
-          {state.inlineCreation === 'collection' ? (
+          {state.inline.open && state.inlineKind === 'collection' ? (
             <InlineCreationPanel
               title="New collection"
               submitLabel="Add collection"
-              name={state.inlineName}
+              name={state.inline.name}
               yearField={{
                 value: state.inlineYear,
                 onChange: (year) => dispatch({ type: 'inline-year-changed', year }),
               }}
-              error={state.inlineError}
+              error={state.inline.error}
               maxLength={TAXONOMY_NAME_MAX_LENGTH}
-              onNameChange={(name) => dispatch({ type: 'inline-name-changed', name })}
+              onNameChange={(name) =>
+                dispatch({ type: 'inline-fact', fact: { type: 'name-changed', name } })
+              }
               onSubmit={addCollection}
-              onCancel={() => dispatch({ type: 'inline-creation-closed' })}
+              onCancel={() => dispatch({ type: 'inline-fact', fact: { type: 'closed' } })}
             />
           ) : (
             <Button
               size="sm"
               variant="ghost"
               className="self-start"
-              onPress={() => dispatch({ type: 'inline-creation-opened', kind: 'collection' })}
+              onPress={() => dispatch({ type: 'inline-opened', kind: 'collection' })}
             >
               <Icon as={Plus} />
               <Text>New collection</Text>

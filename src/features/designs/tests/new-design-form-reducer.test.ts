@@ -20,10 +20,9 @@ describe('new design form reducer', () => {
       name: '',
       categoryId: null,
       collectionId: null,
-      inlineCreation: null,
-      inlineName: '',
+      inline: { open: false, name: '', error: null },
+      inlineKind: null,
       inlineYear: '',
-      inlineError: null,
       error: null,
     });
   });
@@ -60,66 +59,64 @@ describe('new design form reducer', () => {
     expect(cleared.collectionId).toBeNull();
   });
 
-  test('opening inline creation clears the previous draft and refusal', () => {
+  test('opening the other picker replaces the inline draft and remembers which one', () => {
     const opened = send(createInitialNewDesignFormState(), {
-      type: 'inline-creation-opened',
+      type: 'inline-opened',
       kind: 'category',
     });
 
-    expect(opened.inlineCreation).toBe('category');
-    expect(opened.inlineName).toBe('');
-    expect(opened.inlineYear).toBe('');
-    expect(opened.inlineError).toBeNull();
+    expect(opened.inline).toEqual({ open: true, name: '', error: null });
+    expect(opened.inlineKind).toBe('category');
 
-    const draft = send(
+    const typed = send(
       opened,
-      { type: 'inline-name-changed', name: 'Knitwear' },
-      { type: 'inline-creation-refused', message: 'A category needs a name.' }
+      { type: 'inline-fact', fact: { type: 'name-changed', name: 'Knitwear' } },
+      { type: 'inline-fact', fact: { type: 'refused', message: 'A category needs a name.' } }
     );
 
-    expect(draft.inlineName).toBe('Knitwear');
-    expect(draft.inlineError).toBe('A category needs a name.');
+    expect(typed.inline).toEqual({ open: true, name: 'Knitwear', error: 'A category needs a name.' });
 
-    const collection = send(draft, { type: 'inline-creation-opened', kind: 'collection' });
+    const collection = send(typed, { type: 'inline-opened', kind: 'collection' });
 
-    expect(collection.inlineCreation).toBe('collection');
-    expect(collection.inlineName).toBe('');
+    expect(collection.inline).toEqual({ open: true, name: '', error: null });
+    expect(collection.inlineKind).toBe('collection');
     expect(collection.inlineYear).toBe('');
-    expect(collection.inlineError).toBeNull();
   });
 
-  test('typing in the inline form clears its refusal but keeps the panel open', () => {
+  test('changing an inline field clears its refusal but keeps the panel open', () => {
     const refused = send(
       createInitialNewDesignFormState(),
-      { type: 'inline-creation-opened', kind: 'collection' },
-      { type: 'inline-creation-refused', message: 'A collection needs a name.' }
+      { type: 'inline-opened', kind: 'collection' },
+      { type: 'inline-fact', fact: { type: 'refused', message: 'A collection needs a name.' } }
     );
 
-    const typing = send(refused, { type: 'inline-name-changed', name: 'Resort' });
+    const typing = send(refused, {
+      type: 'inline-fact',
+      fact: { type: 'name-changed', name: 'Resort' },
+    });
 
-    expect(typing.inlineCreation).toBe('collection');
-    expect(typing.inlineError).toBeNull();
+    expect(typing.inline).toEqual({ open: true, name: 'Resort', error: null });
+    expect(typing.inlineKind).toBe('collection');
 
     const yearTyping = send(refused, { type: 'inline-year-changed', year: '2028' });
 
-    expect(yearTyping.inlineCreation).toBe('collection');
-    expect(yearTyping.inlineError).toBeNull();
+    expect(yearTyping.inline).toEqual({ open: true, name: '', error: null });
     expect(yearTyping.inlineYear).toBe('2028');
+    expect(yearTyping.inlineKind).toBe('collection');
   });
 
   test('a category created inline is selected and closes the inline form', () => {
     const knitwear = 'category-knitwear';
     const state = send(
       createInitialNewDesignFormState(),
-      { type: 'inline-creation-opened', kind: 'category' },
-      { type: 'inline-name-changed', name: 'Knitwear' },
-      { type: 'category-created', categoryId: knitwear }
+      { type: 'inline-opened', kind: 'category' },
+      { type: 'inline-fact', fact: { type: 'name-changed', name: 'Knitwear' } },
+      { type: 'inline-fact', fact: { type: 'created', id: knitwear } }
     );
 
     expect(state.categoryId).toBe(knitwear);
-    expect(state.inlineCreation).toBeNull();
-    expect(state.inlineName).toBe('');
-    expect(state.inlineError).toBeNull();
+    expect(state.inline).toEqual({ open: false, name: '', error: null });
+    expect(state.inlineKind).toBeNull();
   });
 
   test('a collection created inline is selected and keeps a chosen category', () => {
@@ -127,29 +124,28 @@ describe('new design form reducer', () => {
     const state = send(
       createInitialNewDesignFormState(),
       { type: 'category-chosen', categoryId: DRESS },
-      { type: 'inline-creation-opened', kind: 'collection' },
-      { type: 'inline-name-changed', name: 'Resort' },
-      { type: 'collection-created', collectionId: resort }
+      { type: 'inline-opened', kind: 'collection' },
+      { type: 'inline-fact', fact: { type: 'name-changed', name: 'Resort' } },
+      { type: 'inline-fact', fact: { type: 'created', id: resort } }
     );
 
     expect(state.collectionId).toBe(resort);
     expect(state.categoryId).toBe(DRESS);
-    expect(state.inlineCreation).toBeNull();
+    expect(state.inlineKind).toBeNull();
+    expect(state.inlineYear).toBe('');
   });
 
   test('closing inline creation drops its draft and keeps the chosen taxonomy', () => {
     const state = send(
       createInitialNewDesignFormState(),
       { type: 'category-chosen', categoryId: DRESS },
-      { type: 'inline-creation-opened', kind: 'category' },
-      { type: 'inline-name-changed', name: 'Knitwear' },
-      { type: 'inline-creation-closed' }
+      { type: 'inline-opened', kind: 'category' },
+      { type: 'inline-fact', fact: { type: 'name-changed', name: 'Knitwear' } },
+      { type: 'inline-fact', fact: { type: 'closed' } }
     );
 
-    expect(state.inlineCreation).toBeNull();
-    expect(state.inlineName).toBe('');
-    expect(state.inlineYear).toBe('');
-    expect(state.inlineError).toBeNull();
+    expect(state.inline).toEqual({ open: false, name: '', error: null });
+    expect(state.inlineKind).toBeNull();
     expect(state.categoryId).toBe(DRESS);
   });
 
