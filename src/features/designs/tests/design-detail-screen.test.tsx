@@ -5,7 +5,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { categories, materials } from '@/features/database';
 import { DatabaseProvider } from '@/features/database/react';
 import { createSyncSubscribe, createTempDatabase } from '@/features/database/testing';
-import { createDesign, addMaterialUse } from '@/features/designs';
+import { createDesign, writeDesign } from '@/features/designs';
 import { DesignDetailScreen } from '@/features/designs/react';
 import { createMaterial } from '@/features/materials';
 import { createCategory } from '@/features/taxonomy';
@@ -13,6 +13,16 @@ import { createCategory } from '@/features/taxonomy';
 jest.mock('expo-router', () => ({
   router: { back: jest.fn(), push: jest.fn() },
 }));
+
+/** Seeds a recorded use through the visit's one write path. */
+function addMaterialUse(
+  database: ReturnType<typeof createTempDatabase>['database'],
+  designId: string,
+  input: { materialId: string; colour: string; role: 'main' | 'secondary' | 'other' },
+  now?: number
+) {
+  writeDesign(database, designId, { uses: [{ kind: 'add', input }] }, now);
+}
 
 const INITIAL_METRICS = {
   frame: { x: 0, y: 0, width: 390, height: 844 },

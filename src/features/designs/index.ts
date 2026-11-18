@@ -13,7 +13,6 @@ export { DESIGN_SECTIONS, isDesignSectionTab } from './lib/sections';
 export type { DesignSectionTab } from './lib/sections';
 export { materialUseRoleLabel } from './lib/material-use-role';
 export {
-  addMaterialUse,
   createDesign,
   designDetailRead,
   DESIGN_NAME_MAX_LENGTH,
@@ -24,9 +23,6 @@ export {
   InvalidMaterialUseError,
   listDesigns,
   listMaterialUses,
-  removeMaterialUse,
-  updateDesign,
-  updateMaterialUse,
   writeDesign,
 } from './lib/records';
 export type {

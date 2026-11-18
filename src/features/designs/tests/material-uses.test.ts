@@ -1,17 +1,62 @@
 import { eq } from 'drizzle-orm';
+import type { Database } from '@/features/database';
 import { designMaterials, designs, materials } from '@/features/database';
 import { createTempDatabase } from '@/features/database/testing';
 import {
-  addMaterialUse,
   createDesign,
   getDesign,
   InvalidMaterialUseError,
   listMaterialUses,
-  removeMaterialUse,
-  updateDesign,
-  updateMaterialUse,
+  writeDesign,
+  type AddMaterialUseInput,
+  type MaterialUse,
+  type UpdateDesignInput,
+  type UpdateMaterialUseInput,
 } from '@/features/designs';
 import { createMaterial } from '@/features/materials';
+
+/** The visit's one write path, driven by a fixture for the tests that only need a use. */
+function addMaterialUse(
+  database: Database,
+  designId: string,
+  input: AddMaterialUseInput,
+  now?: number
+): MaterialUse | null {
+  return writeDesign(database, designId, { uses: [{ kind: 'add', input }] }, now)?.added[0] ?? null;
+}
+
+function updateMaterialUse(
+  database: Database,
+  designId: string,
+  useId: string,
+  input: UpdateMaterialUseInput,
+  now?: number
+): MaterialUse | null {
+  return (
+    writeDesign(database, designId, { uses: [{ kind: 'correct', useId, patch: input }] }, now)
+      ?.corrected[0] ?? null
+  );
+}
+
+function removeMaterialUse(
+  database: Database,
+  designId: string,
+  useId: string,
+  now?: number
+): MaterialUse | null {
+  return (
+    writeDesign(database, designId, { uses: [{ kind: 'remove', useId }] }, now)?.removed[0] ?? null
+  );
+}
+
+function updateDesign(
+  database: Database,
+  designId: string,
+  input: UpdateDesignInput,
+  now?: number
+) {
+  return writeDesign(database, designId, { fields: input }, now)?.design ?? null;
+}
 
 function storedSearchText(database: ReturnType<typeof createTempDatabase>['database']): string {
   return database.db.select({ searchText: designs.searchText }).from(designs).get()!.searchText;

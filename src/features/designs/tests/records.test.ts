@@ -21,12 +21,24 @@ import {
   getDesignDetail,
   InvalidDesignNameError,
   listDesigns,
-  updateDesign,
+  writeDesign,
+  type Design,
+  type UpdateDesignInput,
 } from '@/features/designs';
 import { listLibraryDesigns } from '@/features/library';
 import { createCategory, createCollection } from '@/features/taxonomy';
 
 const UUID_V4 = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
+
+/** The visit's one write path, driven by a fixture for the field tests. */
+function updateDesign(
+  database: ReturnType<typeof createTempDatabase>['database'],
+  designId: string,
+  input: UpdateDesignInput,
+  now?: number
+): Design | null {
+  return writeDesign(database, designId, { fields: input }, now)?.design ?? null;
+}
 
 let database: ReturnType<typeof createTempDatabase>['database'];
 let dispose: () => void;

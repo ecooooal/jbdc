@@ -497,22 +497,6 @@ export function writeDesign(
   });
 }
 
-/**
- * Writes the fields the owner changed and returns the stored Design. An
- * absent field is untouched; null clears an optional one. A blank or
- * over-long name throws before anything is written, so the previous name
- * survives a refused save. A patch that changes nothing skips the write, so
- * the Updated timestamp only moves when the row does.
- */
-export function updateDesign(
-  database: Database,
-  id: string,
-  input: UpdateDesignInput,
-  now: number = Date.now()
-): Design | null {
-  return writeDesign(database, id, { fields: input }, now)?.design ?? null;
-}
-
 /** Reads one live Design; a soft-deleted row is gone as far as readers are concerned. */
 export function getDesign(database: Database, id: string): Design | null {
   return designFrom(database.db, id);
@@ -592,38 +576,4 @@ export function listDesigns(database: Database): Design[] {
 /** One Design's Material uses, ordered by role then Material name. */
 export function listMaterialUses(database: Database, designId: string): MaterialUse[] {
   return materialUsesFrom(database.db, designId);
-}
-
-/** Records one Material use through the one write path. */
-export function addMaterialUse(
-  database: Database,
-  designId: string,
-  input: AddMaterialUseInput,
-  now: number = Date.now()
-): MaterialUse | null {
-  return writeDesign(database, designId, { uses: [{ kind: 'add', input }] }, now)?.added[0] ?? null;
-}
-
-/** Corrects one recorded Material use through the one write path. */
-export function updateMaterialUse(
-  database: Database,
-  designId: string,
-  useId: string,
-  input: UpdateMaterialUseInput,
-  now: number = Date.now()
-): MaterialUse | null {
-  return (
-    writeDesign(database, designId, { uses: [{ kind: 'correct', useId, patch: input }] }, now)
-      ?.corrected[0] ?? null
-  );
-}
-
-/** Removes one recorded Material use through the one write path. */
-export function removeMaterialUse(
-  database: Database,
-  designId: string,
-  useId: string,
-  now: number = Date.now()
-): MaterialUse | null {
-  return writeDesign(database, designId, { uses: [{ kind: 'remove', useId }] }, now)?.removed[0] ?? null;
 }

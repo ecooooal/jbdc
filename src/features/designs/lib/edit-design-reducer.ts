@@ -341,7 +341,7 @@ export function createInitialEditDesignState(designId: string): EditDesignState 
   };
 }
 
-/** The text drafts that still differ from the row, ready for `updateDesign`. */
+/** The text drafts that still differ from the row, ready for `writeDesign`. */
 type UnwrittenDesignFields = Partial<Record<DesignTextEditableField, string>>;
 
 /** One field's draft, as the write it asks for. */

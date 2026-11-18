@@ -1,7 +1,7 @@
 import { categories, collections, designEvents } from '@/features/database';
 import { createTempDatabase } from '@/features/database/testing';
 import type { DesignFields, MaterialUse } from '@/features/designs';
-import { addMaterialUse, createDesign } from '@/features/designs';
+import { createDesign, writeDesign } from '@/features/designs';
 import {
   designHistoryRead,
   diffDesignFields,
@@ -11,6 +11,16 @@ import {
   recordEdit,
 } from '@/features/history';
 import { createMaterial } from '@/features/materials';
+
+/** Seeds a recorded use through the visit's one write path. */
+function addMaterialUse(
+  database: ReturnType<typeof createTempDatabase>['database'],
+  designId: string,
+  input: { materialId: string; colour: string; role: 'main' | 'secondary' | 'other' },
+  now?: number
+): MaterialUse | null {
+  return writeDesign(database, designId, { uses: [{ kind: 'add', input }] }, now)?.added[0] ?? null;
+}
 
 const BEFORE: DesignFields = {
   name: 'Silk slip dress',
