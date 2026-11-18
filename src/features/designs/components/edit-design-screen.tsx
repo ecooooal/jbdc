@@ -115,7 +115,7 @@ export function EditDesignScreen({ designId }: { designId: string }) {
    * the visit can still record its Event.
    */
   function removeUseEditor(): void {
-    send({ type: 'material-use-remove-pressed' });
+    send({ type: 'material-use-panel-fact', fact: { type: 'remove-pressed' } });
   }
 
   function fieldError(field: DesignEditableField) {
@@ -300,19 +300,23 @@ export function EditDesignScreen({ designId }: { designId: string }) {
                         })
                       }
                       onOpenAdd={() => send({ type: 'material-use-add-opened' })}
-                      onClosePanel={() => send({ type: 'material-use-panel-closed' })}
+                      onClosePanel={() =>
+                        send({ type: 'material-use-panel-fact', fact: { type: 'closed' } })
+                      }
                       onMaterialChosen={(materialId) =>
                         send({
-                          type: 'material-use-material-chosen',
-                          materialId,
+                          type: 'material-use-panel-fact',
+                          fact: { type: 'material-chosen', materialId },
                         })
                       }
                       onColourChanged={(colour) =>
-                        send({ type: 'material-use-colour-changed', colour })
+                        send({ type: 'material-use-panel-fact', fact: { type: 'colour-changed', colour } })
                       }
-                      onColourCommitted={() => send({ type: 'material-use-colour-committed' })}
+                      onColourCommitted={() =>
+                        send({ type: 'material-use-panel-fact', fact: { type: 'colour-committed' } })
+                      }
                       onRoleChosen={(role) =>
-                        send({ type: 'material-use-role-chosen', role })
+                        send({ type: 'material-use-panel-fact', fact: { type: 'role-chosen', role } })
                       }
                       onRemoveUse={removeUseEditor}
                       onInlineCreationOpened={() =>

@@ -59,7 +59,7 @@ describe('a write outcome', () => {
       patch: DRAFTS.patch,
     });
     expect(writeOutcome({ ...MATERIAL_USE, report: { kind: 'stored', value: WOOL_USE } })).toEqual(
-      { type: 'material-use-saved', materialUse: WOOL_USE }
+      { type: 'material-use-panel-fact', fact: { type: 'saved', materialUse: WOOL_USE }, now: NOW }
     );
     expect(writeOutcome({ ...ADD, report: { kind: 'stored', value: WOOL_USE } })).toEqual({
       type: 'material-use-added',
@@ -80,9 +80,13 @@ describe('a write outcome', () => {
         report: { kind: 'refused', message: 'A material use needs a colour.' },
       })
     ).toEqual({
-      type: 'material-use-refused',
-      useId: MATERIAL_USE.useId,
-      message: 'A material use needs a colour.',
+      type: 'material-use-panel-fact',
+      fact: {
+        type: 'refused',
+        useId: MATERIAL_USE.useId,
+        message: 'A material use needs a colour.',
+      },
+      now: NOW,
     });
     expect(
       writeOutcome({
@@ -115,12 +119,14 @@ describe('a write outcome', () => {
     // exists, so the visit closes its editor, drops the use from its record,
     // and can still record the Event that visit owes.
     expect(writeOutcome({ ...REMOVAL, report: { kind: 'stored', value: WOOL_USE } })).toEqual({
-      type: 'material-use-removed',
-      useId: WOOL_USE.id,
+      type: 'material-use-panel-fact',
+      fact: { type: 'use-removed', useId: WOOL_USE.id },
+      now: NOW,
     });
     expect(writeOutcome({ ...REMOVAL, report: { kind: 'nothing-stored' } })).toEqual({
-      type: 'material-use-removed',
-      useId: REMOVAL.useId,
+      type: 'material-use-panel-fact',
+      fact: { type: 'use-removed', useId: REMOVAL.useId },
+      now: NOW,
     });
   });
 });

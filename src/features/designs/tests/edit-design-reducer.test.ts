@@ -678,7 +678,7 @@ describe('edit visit boundary', () => {
     const tester = visitWithUse();
     const corrected: MaterialUse = { ...WOOL_USE, colour: 'Black', role: 'secondary' };
 
-    tester.send({ type: 'material-use-saved', materialUse: corrected });
+    tester.send({ type: 'material-use-panel-fact', fact: { type: 'saved', materialUse: corrected }, now: NOW });
 
     expect(tester.getState().storedUses).toEqual([corrected]);
     expect(tester.getState().visitStartUses).toEqual([WOOL_USE]);
@@ -687,7 +687,7 @@ describe('edit visit boundary', () => {
   test('a removed use leaves what the visit holds', () => {
     const tester = visitWithUse();
 
-    tester.send({ type: 'material-use-removed', useId: WOOL_USE.id });
+    tester.send({ type: 'material-use-panel-fact', fact: { type: 'use-removed', useId: WOOL_USE.id }, now: NOW });
 
     expect(tester.getState().storedUses).toEqual([]);
     expect(tester.getState().visitStartUses).toEqual([WOOL_USE]);
@@ -697,7 +697,7 @@ describe('edit visit boundary', () => {
     const tester = visitWithUse();
     const corrected: MaterialUse = { ...WOOL_USE, colour: 'Black', role: 'secondary' };
 
-    tester.send({ type: 'material-use-saved', materialUse: corrected });
+    tester.send({ type: 'material-use-panel-fact', fact: { type: 'saved', materialUse: corrected }, now: NOW });
     tester.send({ type: 'visit-closed', now: LATER });
 
     expect(tester.getEffects()).toEqual([
@@ -715,7 +715,7 @@ describe('edit visit boundary', () => {
   test('a visit that removes a recorded use records the removal', () => {
     const tester = visitWithUse();
 
-    tester.send({ type: 'material-use-removed', useId: WOOL_USE.id });
+    tester.send({ type: 'material-use-panel-fact', fact: { type: 'use-removed', useId: WOOL_USE.id }, now: NOW });
     tester.send({ type: 'visit-closed', now: LATER });
 
     expect(tester.getEffects()).toEqual([
@@ -735,7 +735,7 @@ describe('edit visit boundary', () => {
     const corrected: MaterialUse = { ...WOOL_USE, colour: 'Black' };
 
     tester.send({ type: 'material-use-added', materialUse: WOOL_USE });
-    tester.send({ type: 'material-use-saved', materialUse: corrected });
+    tester.send({ type: 'material-use-panel-fact', fact: { type: 'saved', materialUse: corrected }, now: NOW });
     tester.send({ type: 'visit-closed', now: LATER });
 
     expect(tester.getEffects()).toEqual([
@@ -754,7 +754,7 @@ describe('edit visit boundary', () => {
     const tester = visit();
 
     tester.send({ type: 'material-use-added', materialUse: WOOL_USE });
-    tester.send({ type: 'material-use-removed', useId: WOOL_USE.id });
+    tester.send({ type: 'material-use-panel-fact', fact: { type: 'use-removed', useId: WOOL_USE.id }, now: NOW });
     const firstClose = tester.getEffects();
     tester.send({ type: 'visit-closed', now: LATER });
 
@@ -1094,7 +1094,7 @@ describe('edit visit boundary', () => {
     const tester = visitWithUse();
 
     tester.send({ type: 'material-use-editor-opened', materialUse: WOOL_USE, now: NOW });
-    tester.send({ type: 'material-use-colour-changed', colour: 'Black' });
+    tester.send({ type: 'material-use-panel-fact', fact: { type: 'colour-changed', colour: 'Black' }, now: NOW });
     tester.send({ type: 'visit-closed', now: LATER });
 
     expect(tester.getEffects()).toEqual([
@@ -1225,17 +1225,17 @@ describe('Material use editor', () => {
       stored: WOOL_USE,
     });
 
-    tester.send({ type: 'material-use-panel-closed', now: LATER });
+    tester.send({ type: 'material-use-panel-fact', fact: { type: 'closed' }, now: LATER });
     expect(tester.getState().materialUsePanel).toBeNull();
   });
 
   test('a typed colour is not written until the field is left', () => {
     const tester = opened();
 
-    tester.send({ type: 'material-use-colour-changed', colour: 'Black' });
+    tester.send({ type: 'material-use-panel-fact', fact: { type: 'colour-changed', colour: 'Black' }, now: NOW });
     expect(tester.getEffects()).toEqual([]);
 
-    tester.send({ type: 'material-use-colour-committed', now: LATER });
+    tester.send({ type: 'material-use-panel-fact', fact: { type: 'colour-committed' }, now: LATER });
 
     expect(tester.getEffects()).toEqual([
       {
@@ -1254,10 +1254,10 @@ describe('Material use editor', () => {
   test('changing the Material writes at once, carrying a typed colour with it', () => {
     const tester = opened();
 
-    tester.send({ type: 'material-use-colour-changed', colour: 'Black' });
+    tester.send({ type: 'material-use-panel-fact', fact: { type: 'colour-changed', colour: 'Black' }, now: NOW });
     tester.send({
-      type: 'material-use-material-chosen',
-      materialId: 'material-silk',
+      type: 'material-use-panel-fact',
+      fact: { type: 'material-chosen', materialId: 'material-silk' },
       now: LATER,
     });
 
@@ -1278,7 +1278,7 @@ describe('Material use editor', () => {
   test('changing the role writes at once', () => {
     const tester = opened();
 
-    tester.send({ type: 'material-use-role-chosen', role: 'secondary', now: LATER });
+    tester.send({ type: 'material-use-panel-fact', fact: { type: 'role-chosen', role: 'secondary' }, now: LATER });
 
     expect(tester.getEffects()).toEqual([
       {
@@ -1294,8 +1294,8 @@ describe('Material use editor', () => {
   test('Done writes the colour draft and closes the editor', () => {
     const tester = opened();
 
-    tester.send({ type: 'material-use-colour-changed', colour: 'Black' });
-    tester.send({ type: 'material-use-panel-closed', now: LATER });
+    tester.send({ type: 'material-use-panel-fact', fact: { type: 'colour-changed', colour: 'Black' }, now: NOW });
+    tester.send({ type: 'material-use-panel-fact', fact: { type: 'closed' }, now: LATER });
 
     expect(tester.getEffects()).toEqual([
       {
@@ -1312,7 +1312,7 @@ describe('Material use editor', () => {
   test('changing tabs writes the colour draft and closes the editor', () => {
     const tester = opened();
 
-    tester.send({ type: 'material-use-colour-changed', colour: 'Black' });
+    tester.send({ type: 'material-use-panel-fact', fact: { type: 'colour-changed', colour: 'Black' }, now: NOW });
     tester.send({ type: 'tab-changed', tab: 'creativeDirection', now: LATER });
 
     expect(tester.getEffects()).toEqual([
@@ -1334,7 +1334,7 @@ describe('Material use editor', () => {
     const tester = opened();
     const corrected: MaterialUse = { ...WOOL_USE, colour: 'Black' };
 
-    tester.send({ type: 'material-use-colour-changed', colour: 'Black' });
+    tester.send({ type: 'material-use-panel-fact', fact: { type: 'colour-changed', colour: 'Black' }, now: NOW });
     tester.send({ type: 'visit-closed', now: LATER });
 
     expect(tester.getEffects().slice(-1)).toEqual([
@@ -1347,7 +1347,7 @@ describe('Material use editor', () => {
       },
     ]);
 
-    tester.send({ type: 'material-use-saved', materialUse: corrected });
+    tester.send({ type: 'material-use-panel-fact', fact: { type: 'saved', materialUse: corrected }, now: NOW });
 
     expect(tester.getEffects().slice(-1)).toEqual([
       {
@@ -1365,10 +1365,10 @@ describe('Material use editor', () => {
     const tester = opened();
     const corrected: MaterialUse = { ...WOOL_USE, colour: 'Black' };
 
-    tester.send({ type: 'material-use-colour-changed', colour: '  Black  ' });
+    tester.send({ type: 'material-use-panel-fact', fact: { type: 'colour-changed', colour: '  Black  ' }, now: NOW });
     tester.send({ type: 'visit-closed', now: LATER });
 
-    tester.send({ type: 'material-use-saved', materialUse: corrected });
+    tester.send({ type: 'material-use-panel-fact', fact: { type: 'saved', materialUse: corrected }, now: NOW });
 
     expect(tester.getEffects().slice(-1)).toEqual([
       {
@@ -1385,8 +1385,8 @@ describe('Material use editor', () => {
   test('a blank colour is not a write', () => {
     const tester = opened();
 
-    tester.send({ type: 'material-use-colour-changed', colour: '   ' });
-    tester.send({ type: 'material-use-panel-closed', now: LATER });
+    tester.send({ type: 'material-use-panel-fact', fact: { type: 'colour-changed', colour: '   ' }, now: NOW });
+    tester.send({ type: 'material-use-panel-fact', fact: { type: 'closed' }, now: LATER });
 
     expect(tester.getEffects()).toEqual([]);
     expect(tester.getState().materialUsePanel).toBeNull();
@@ -1395,7 +1395,7 @@ describe('Material use editor', () => {
   test('removing a use declares the write instead of performing it', () => {
     const tester = opened();
 
-    tester.send({ type: 'material-use-remove-pressed', now: LATER });
+    tester.send({ type: 'material-use-panel-fact', fact: { type: 'remove-pressed' }, now: LATER });
 
     expect(tester.getEffects()).toEqual([
       {
@@ -1411,7 +1411,7 @@ describe('Material use editor', () => {
   test('pressing remove with no editor open declares nothing', () => {
     const tester = visitWithUse();
 
-    tester.send({ type: 'material-use-remove-pressed', now: LATER });
+    tester.send({ type: 'material-use-panel-fact', fact: { type: 'remove-pressed' }, now: LATER });
 
     expect(tester.getEffects()).toEqual([]);
   });
@@ -1420,7 +1420,7 @@ describe('Material use editor', () => {
     const tester = opened();
     const corrected: MaterialUse = { ...WOOL_USE, colour: 'Black', role: 'secondary' };
 
-    tester.send({ type: 'material-use-saved', materialUse: corrected });
+    tester.send({ type: 'material-use-panel-fact', fact: { type: 'saved', materialUse: corrected }, now: NOW });
 
     expect(tester.getState()).toMatchObject({
       materialUsePanel: {
@@ -1445,7 +1445,7 @@ describe('Material use editor', () => {
     };
 
     tester.send({ type: 'material-use-editor-opened', materialUse: silkUse, now: LATER });
-    tester.send({ type: 'material-use-saved', materialUse: { ...WOOL_USE, colour: 'Black' } });
+    tester.send({ type: 'material-use-panel-fact', fact: { type: 'saved', materialUse: { ...WOOL_USE, colour: 'Black' } }, now: NOW });
 
     expect(tester.getState()).toMatchObject({
       materialUsePanel: {
@@ -1461,11 +1461,11 @@ describe('Material use editor', () => {
   test('a refusal restores the stored use', () => {
     const tester = opened();
 
-    tester.send({ type: 'material-use-colour-changed', colour: '   ' });
+    tester.send({ type: 'material-use-panel-fact', fact: { type: 'colour-changed', colour: '   ' }, now: NOW });
     tester.send({
-      type: 'material-use-refused',
-      useId: WOOL_USE.id,
-      message: 'A material use needs a colour.',
+      type: 'material-use-panel-fact',
+      fact: { type: 'refused', useId: WOOL_USE.id, message: 'A material use needs a colour.' },
+      now: NOW,
     });
 
     expect(tester.getState()).toMatchObject({
@@ -1480,7 +1480,7 @@ describe('Material use editor', () => {
   test('opening a text row writes and closes the Material use editor', () => {
     const tester = opened();
 
-    tester.send({ type: 'material-use-colour-changed', colour: 'Black' });
+    tester.send({ type: 'material-use-panel-fact', fact: { type: 'colour-changed', colour: 'Black' }, now: NOW });
     tester.send({ type: 'row-opened', row: 'silhouette', now: LATER });
 
     expect(tester.getEffects()).toEqual([
@@ -1509,11 +1509,11 @@ describe('the add Material use panel', () => {
     const tester = adding();
 
     tester.send({
-      type: 'material-use-material-chosen',
-      materialId: 'material-wool',
+      type: 'material-use-panel-fact',
+      fact: { type: 'material-chosen', materialId: 'material-wool' },
       now: NOW,
     });
-    tester.send({ type: 'material-use-colour-changed', colour: 'Charcoal' });
+    tester.send({ type: 'material-use-panel-fact', fact: { type: 'colour-changed', colour: 'Charcoal' }, now: NOW });
 
     return tester;
   }
@@ -1538,7 +1538,7 @@ describe('the add Material use panel', () => {
   test('choosing a Material, colour, and role changes only the choices', () => {
     const tester = chosen();
 
-    tester.send({ type: 'material-use-role-chosen', role: 'secondary', now: LATER });
+    tester.send({ type: 'material-use-panel-fact', fact: { type: 'role-chosen', role: 'secondary' }, now: LATER });
 
     expect(tester.getEffects()).toEqual([]);
     expect(tester.getState().materialUsePanel).toMatchObject({
@@ -1575,11 +1575,11 @@ describe('the add Material use panel', () => {
     const tester = adding();
 
     tester.send({
-      type: 'material-use-material-chosen',
-      materialId: 'material-wool',
+      type: 'material-use-panel-fact',
+      fact: { type: 'material-chosen', materialId: 'material-wool' },
       now: NOW,
     });
-    tester.send({ type: 'material-use-colour-changed', colour: '   ' });
+    tester.send({ type: 'material-use-panel-fact', fact: { type: 'colour-changed', colour: '   ' }, now: NOW });
     tester.send({ type: 'material-use-add-confirmed', now: LATER });
 
     expect(tester.getEffects()).toEqual([
