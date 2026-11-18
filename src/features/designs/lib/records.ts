@@ -361,46 +361,44 @@ export function updateDesign(
   input: UpdateDesignInput,
   now: number = Date.now()
 ): Design | null {
-  const current = getDesign(database, id);
-  if (!current) return null;
+  return database.transaction((tx) => {
+    const current = designFrom(tx, id);
+    if (!current) return null;
 
-  const specification = optionalTextValues(SPECIFICATION_FIELDS, current, input);
-  const creativeDirection = optionalTextValues(CREATIVE_DIRECTION_FIELDS, current, input);
-  const next: Design = {
-    ...current,
-    name: input.name === undefined ? current.name : normalizeName(input.name),
-    description:
-      input.description === undefined
-        ? current.description
-        : normalizeOptionalText(input.description),
-    categoryId: input.categoryId === undefined ? current.categoryId : input.categoryId,
-    collectionId: input.collectionId === undefined ? current.collectionId : input.collectionId,
-    ...specification,
-    ...creativeDirection,
-  };
-
-  if (!designFieldsChanged(next, current)) return current;
-
-  const taxonomy = designTaxonomyNames(database, next.categoryId, next.collectionId);
-  const materialUseParts = materialUseSearchParts(database.db, id);
-
-  next.updatedAt = now;
-  database.db
-    .update(designs)
-    .set({
-      name: next.name,
-      description: next.description,
-      categoryId: next.categoryId,
-      collectionId: next.collectionId,
+    const specification = optionalTextValues(SPECIFICATION_FIELDS, current, input);
+    const creativeDirection = optionalTextValues(CREATIVE_DIRECTION_FIELDS, current, input);
+    const next: Design = {
+      ...current,
+      name: input.name === undefined ? current.name : normalizeName(input.name),
+      description:
+        input.description === undefined
+          ? current.description
+          : normalizeOptionalText(input.description),
+      categoryId: input.categoryId === undefined ? current.categoryId : input.categoryId,
+      collectionId: input.collectionId === undefined ? current.collectionId : input.collectionId,
       ...specification,
       ...creativeDirection,
-      updatedAt: next.updatedAt,
-      searchText: buildSearchText(next, taxonomy.category, taxonomy.collection, materialUseParts),
-    })
-    .where(eq(designs.id, id))
-    .run();
+    };
 
-  return next;
+    if (!designFieldsChanged(next, current)) return current;
+
+    tx.update(designs)
+      .set({
+        name: next.name,
+        description: next.description,
+        categoryId: next.categoryId,
+        collectionId: next.collectionId,
+        ...specification,
+        ...creativeDirection,
+      })
+      .where(eq(designs.id, id))
+      .run();
+
+    rebuildDesignSearchTextAndMoveUpdated(tx, next, now);
+    next.updatedAt = now;
+
+    return next;
+  });
 }
 
 /** Reads one live Design; a soft-deleted row is gone as far as readers are concerned. */
