@@ -15,6 +15,7 @@ export { materialUseRoleLabel } from './lib/material-use-role';
 export {
   addMaterialUse,
   createDesign,
+  designDetailRead,
   DESIGN_NAME_MAX_LENGTH,
   designNameProblem,
   getDesign,
@@ -32,6 +33,7 @@ export type {
   CreateDesignInput,
   Design,
   DesignDetail,
+  DesignDetailRows,
   DesignFields,
   MaterialUse,
   MaterialUsesPair,

@@ -12,5 +12,5 @@ export type Materials = MaterialsRows & LiveReadFields;
 export function useMaterials(): Materials {
   const { data, error, status } = useLiveRead(materialsRead);
 
-  return { ...(data ?? materialsRead.empty), error, status };
+  return { ...data, error, status };
 }

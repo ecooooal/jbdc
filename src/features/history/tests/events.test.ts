@@ -1,8 +1,9 @@
-import { designEvents } from '@/features/database';
+import { categories, collections, designEvents } from '@/features/database';
 import { createTempDatabase } from '@/features/database/testing';
 import type { DesignFields, MaterialUse } from '@/features/designs';
 import { addMaterialUse, createDesign } from '@/features/designs';
 import {
+  designHistoryRead,
   diffDesignFields,
   diffMaterialUses,
   listDesignEvents,
@@ -52,6 +53,30 @@ function changeOf(materialUse: MaterialUse) {
     role: materialUse.role,
   };
 }
+
+describe('the History live read', () => {
+  let database: ReturnType<typeof createTempDatabase>['database'];
+  let dispose: () => void;
+
+  beforeEach(() => {
+    ({ database, dispose } = createTempDatabase());
+  });
+
+  afterEach(() => {
+    dispose();
+  });
+
+  test('declares Events, Categories and Collections beside the query and one row shape', () => {
+    const declaration = designHistoryRead('design-silk-slip');
+
+    expect(declaration.tables).toEqual([designEvents, categories, collections]);
+    expect(declaration.empty).toEqual({
+      events: [],
+      taxonomy: { categories: new Map(), collections: new Map() },
+    });
+    expect(declaration.read(database).events).toEqual(listDesignEvents(database, 'design-silk-slip'));
+  });
+});
 
 describe('diffDesignFields', () => {
   test('nothing changed is no diff at all', () => {

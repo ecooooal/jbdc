@@ -7,7 +7,7 @@ import {
   type DesignStatus,
 } from '@/features/database';
 import { createTempDatabase } from '@/features/database/testing';
-import { listLibraryDesigns } from '@/features/library';
+import { libraryDesignsRead, listLibraryDesigns } from '@/features/library';
 
 type NewDesign = {
   status?: DesignStatus;
@@ -16,6 +16,25 @@ type NewDesign = {
   categoryId?: string;
   collectionId?: string;
 };
+
+describe('the Library live read', () => {
+  let database: ReturnType<typeof createTempDatabase>['database'];
+  let dispose: () => void;
+
+  beforeEach(() => {
+    ({ database, dispose } = createTempDatabase());
+  });
+
+  afterEach(() => {
+    dispose();
+  });
+
+  test('declares every table it watches beside the query and one row shape', () => {
+    expect(libraryDesignsRead.tables).toEqual([designs, categories, collections]);
+    expect(libraryDesignsRead.empty).toEqual({ designs: [] });
+    expect(libraryDesignsRead.read(database)).toEqual({ designs: listLibraryDesigns(database) });
+  });
+});
 
 describe('library query', () => {
   let database: ReturnType<typeof createTempDatabase>['database'];

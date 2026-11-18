@@ -1,5 +1,13 @@
 import { and, desc, inArray, isNull } from 'drizzle-orm';
-import { DESIGN_STATUSES, designs, type Database, type DesignStatus } from '@/features/database';
+import {
+  categories,
+  collections,
+  declareLiveRead,
+  DESIGN_STATUSES,
+  designs,
+  type Database,
+  type DesignStatus,
+} from '@/features/database';
 import { readTaxonomyNames } from '@/features/taxonomy';
 
 /**
@@ -74,3 +82,19 @@ function withTaxonomyNames(database: Database, rows: LibraryDesignRow[]): Librar
 export function listLibraryDesigns(database: Database): LibraryDesign[] {
   return withTaxonomyNames(database, libraryDesignsQuery(database).all());
 }
+
+/** The one row shape the Library's live read produces, before status. */
+export type LibraryRows = {
+  designs: LibraryDesign[];
+};
+
+/**
+ * The Library read: the default query's rows and the three tables it watches.
+ * The names come from the taxonomy name read, but a rename or a delete still
+ * has to re-run this read, so those tables are declared here (ADR-0005).
+ */
+export const libraryDesignsRead = declareLiveRead<LibraryRows>({
+  tables: [designs, categories, collections],
+  read: (database) => ({ designs: listLibraryDesigns(database) }),
+  empty: { designs: [] },
+});

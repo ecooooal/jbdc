@@ -1,6 +1,7 @@
 import { desc, eq, sql } from 'drizzle-orm';
-import type { Database, DesignEventKind } from '@/features/database';
-import { designEvents } from '@/features/database';
+import type { Database, DesignEventKind, LiveReadDeclaration } from '@/features/database';
+import { categories, collections, declareLiveRead, designEvents } from '@/features/database';
+import { readTaxonomyNames, type TaxonomyNames } from '@/features/taxonomy';
 import {
   DESIGN_EDITABLE_FIELDS,
   type DesignEditableField,
@@ -229,6 +230,33 @@ export function designEventsQuery(database: Database, designId: string) {
     .from(designEvents)
     .where(eq(designEvents.designId, designId))
     .orderBy(desc(designEvents.createdAt), desc(sql`design_events.rowid`));
+}
+
+/** The one row shape History's live read produces, before the hook adds status. */
+export type DesignHistoryRows = {
+  events: DesignEvent[];
+  /** Every Category and Collection name, deleted entries included (#7). */
+  taxonomy: TaxonomyNames;
+};
+
+/**
+ * History's one read: Events, Categories and Collections together, with all
+ * three tables declared beside the query (ADR-0005). A rename or an edit
+ * refreshes both parts together; the name read keeps deleted entries so an
+ * Event does not relabel them as unknown.
+ */
+export function designHistoryRead(designId: string): LiveReadDeclaration<DesignHistoryRows> {
+  return declareLiveRead<DesignHistoryRows>({
+    tables: [designEvents, categories, collections],
+    read: (database) => ({
+      events: designEventsQuery(database, designId).all().map(toDesignEvent),
+      taxonomy: readTaxonomyNames(database),
+    }),
+    empty: {
+      events: [],
+      taxonomy: { categories: new Map(), collections: new Map() },
+    },
+  });
 }
 
 /**

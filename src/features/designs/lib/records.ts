@@ -3,9 +3,18 @@ import type {
   Database,
   DatabaseHandle,
   DesignStatus,
+  LiveReadDeclaration,
   MaterialUseRole,
 } from '@/features/database';
-import { designMaterials, designs, MATERIAL_USE_ROLES } from '@/features/database';
+import {
+  categories,
+  collections,
+  declareLiveRead,
+  designMaterials,
+  designs,
+  MATERIAL_USE_ROLES,
+  materials,
+} from '@/features/database';
 import { readMaterialNamesFrom } from '@/features/materials';
 import { readTaxonomyNamesFrom } from '@/features/taxonomy';
 import { CREATIVE_DIRECTION_FIELDS } from './creative-direction-fields';
@@ -436,6 +445,24 @@ export function getDesignDetail(database: Database, id: string): DesignDetail | 
     ...designTaxonomyNames(database, design.categoryId, design.collectionId),
     materialUses: materialUsesFrom(database.db, id),
   };
+}
+
+/** The one row shape Detail's live read produces, before the hook adds status. */
+export type DesignDetailRows = {
+  design: DesignDetail | null;
+};
+
+/**
+ * The Detail read: the Design and every name and use it resolves, with all
+ * five tables it watches declared beside the query (ADR-0005). Adding a
+ * resolved name is one local edit here.
+ */
+export function designDetailRead(id: string): LiveReadDeclaration<DesignDetailRows> {
+  return declareLiveRead<DesignDetailRows>({
+    tables: [designs, categories, collections, designMaterials, materials],
+    read: (database) => ({ design: getDesignDetail(database, id) }),
+    empty: { design: null },
+  });
 }
 
 /** All live Designs, most recently updated first. */

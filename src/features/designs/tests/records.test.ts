@@ -3,7 +3,9 @@ import { eq } from 'drizzle-orm';
 import {
   categories,
   collections,
+  designMaterials,
   designs,
+  materials,
   type DesignStatus,
 } from '@/features/database';
 import {
@@ -12,6 +14,7 @@ import {
 } from '@/features/database/testing';
 import {
   createDesign,
+  designDetailRead,
   DESIGN_NAME_MAX_LENGTH,
   designNameProblem,
   getDesign,
@@ -34,6 +37,23 @@ beforeEach(() => {
 
 afterEach(() => {
   dispose();
+});
+
+describe('the Detail live read', () => {
+  test('declares every table it watches beside the query and one row shape', () => {
+    const design = createDesign(database, { name: 'Wool coat' });
+    const declaration = designDetailRead(design.id);
+
+    expect(declaration.tables).toEqual([
+      designs,
+      categories,
+      collections,
+      designMaterials,
+      materials,
+    ]);
+    expect(declaration.empty).toEqual({ design: null });
+    expect(declaration.read(database)).toEqual({ design: getDesignDetail(database, design.id) });
+  });
 });
 
 describe('design records', () => {

@@ -5,7 +5,6 @@ import {
   liveReadTableName,
   type LiveReadDeclaration,
   type LiveReadSubscribe,
-  type LiveReadTable,
 } from './lib/live-read';
 import type { Database } from './lib/port';
 
@@ -18,15 +17,10 @@ export type LiveReadFields = {
 };
 
 export type LiveReadResult<Row> = {
-  data: Row | undefined;
+  /** The declared row shape; before the first read it is the declared default. */
+  data: Row;
   error: Error | undefined;
   status: LiveReadStatus;
-};
-
-/** The pre-declaration input, kept while the five reads migrate one step at a time. */
-type LegacyLiveRead<Row> = {
-  tables: readonly LiveReadTable[];
-  run: () => Row;
 };
 
 const DatabaseContext = createContext<Database | null>(null);
@@ -45,7 +39,7 @@ function toError(caught: unknown): Error {
  * rather than a stale screen.
  */
 export function useLiveRead<Row extends object>(
-  input: LiveReadDeclaration<Row> | LegacyLiveRead<Row>
+  declaration: LiveReadDeclaration<Row>
 ): LiveReadResult<Row> {
   const database = useDatabase();
   const subscribe = useContext(SubscribeContext);
@@ -54,14 +48,8 @@ export function useLiveRead<Row extends object>(
     throw new Error('useLiveRead must be used inside <DatabaseProvider>.');
   }
 
-  const { tables } = input;
-  const read = 'read' in input ? input.read : undefined;
-  const empty = 'empty' in input ? input.empty : undefined;
-  const legacyRun = 'run' in input ? input.run : undefined;
-  const run = useMemo(
-    () => (read ? () => read(database) : legacyRun!),
-    [database, read, legacyRun]
-  );
+  const { read, empty, tables } = declaration;
+  const run = useMemo(() => () => read(database), [database, read]);
   const tableKey = tables.map(liveReadTableName).join(',');
   const [result, setResult] = useState<LiveReadResult<Row>>({
     data: empty,

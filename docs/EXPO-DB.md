@@ -28,11 +28,13 @@ const design = createDesign(database, { name: 'Silk slip dress' });
 ```
 
 `openAppDatabase()` enables change listeners so live reads can subscribe to
-table changes. A feature exposes its own hook (`useLibraryDesigns`) that reads
-`useDatabase()` and subscribes through `useLiveRead`, re-exported by
-`@/features/database/react`, never by importing a driver adapter. A live read
-declares the tables it watches, joins included (ADR-0005), because drizzle
-cannot derive them. Opening is synchronous because drizzle's expo-sqlite driver
+table changes. A feature declares each live read beside its query as one value — the query,
+the row shape it produces, and every table it watches — then its hook
+(`useLibraryDesigns`) hands that declaration to `useLiveRead`, re-exported by
+`@/features/database/react`. The one hook owns database access, the
+subscription and the status; a feature never imports a driver adapter. A live
+read declares the tables it watches, joins included (ADR-0005), because
+drizzle cannot derive them. Opening is synchronous because drizzle's expo-sqlite driver
 is synchronous; that driver landed in drizzle-orm 1.0 (currently pinned to an
 RC), which is why the ORM version is exact rather than a range.
 

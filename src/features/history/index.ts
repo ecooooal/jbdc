@@ -8,6 +8,7 @@
  * owns the snapshot (ADR-0004).
  */
 export {
+  designHistoryRead,
   diffDesignFields,
   diffMaterialUses,
   listDesignEvents,
@@ -19,6 +20,7 @@ export type { DesignHistorySection, DesignHistorySectionDefinition } from './lib
 export type {
   DesignEditDiff,
   DesignEvent,
+  DesignHistoryRows,
   DesignFieldChange,
   MaterialUsesDiff,
   MaterialUseCorrection,

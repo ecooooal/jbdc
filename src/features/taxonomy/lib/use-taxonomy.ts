@@ -1,7 +1,4 @@
-import {
-  useLiveRead,
-  type LiveReadFields,
-} from '@/features/database/react';
+import { useLiveRead, type LiveReadFields } from '@/features/database/react';
 import { taxonomyRead, type TaxonomyRows } from './records';
 
 /** The Taxonomy a picker reads: one declared row plus the shared status. */
@@ -15,5 +12,5 @@ export type Taxonomy = TaxonomyRows & LiveReadFields;
 export function useTaxonomy(): Taxonomy {
   const { data, error, status } = useLiveRead(taxonomyRead);
 
-  return { ...(data ?? taxonomyRead.empty), error, status };
+  return { ...data, error, status };
 }
