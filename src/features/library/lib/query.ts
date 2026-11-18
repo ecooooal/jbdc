@@ -8,7 +8,7 @@ import {
   type Database,
   type DesignStatus,
 } from '@/features/database';
-import { readTaxonomyNames } from '@/features/taxonomy';
+import { readTaxonomyNames, taxonomyLabel } from '@/features/taxonomy';
 
 /**
  * The two Statuses the default Library hides. Every other Status in the schema
@@ -68,14 +68,18 @@ export function libraryDesignsQuery(database: Database) {
 function withTaxonomyNames(database: Database, rows: LibraryDesignRow[]): LibraryDesign[] {
   const names = readTaxonomyNames(database);
 
-  return rows.map((row) => ({
-    id: row.id,
-    name: row.name,
-    category: row.categoryId ? (names.categories.get(row.categoryId) ?? null) : null,
-    collection: row.collectionId ? (names.collections.get(row.collectionId)?.name ?? null) : null,
-    status: row.status,
-    updatedAt: row.updatedAt,
-  }));
+  return rows.map((row) => {
+    const collection = row.collectionId ? names.collections.get(row.collectionId) : undefined;
+
+    return {
+      id: row.id,
+      name: row.name,
+      category: row.categoryId ? (names.categories.get(row.categoryId) ?? null) : null,
+      collection: collection ? taxonomyLabel(collection) : null,
+      status: row.status,
+      updatedAt: row.updatedAt,
+    };
+  });
 }
 
 /** Runs the default query once. The screen uses the live hook instead. */

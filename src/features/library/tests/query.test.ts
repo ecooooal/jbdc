@@ -131,8 +131,20 @@ describe('library query', () => {
     expect(inCollection).toMatchObject({
       name: 'In a collection',
       category: 'Dress',
-      collection: 'Spring 2027',
+      collection: 'Spring 2027 (2027)',
       status: 'concept',
     });
+  });
+
+  test('shows a Collection carrying a year with the year in its label', () => {
+    const collectionId = randomUUID();
+
+    database.db
+      .insert(collections)
+      .values({ id: collectionId, name: 'Spring', year: 2027, createdAt: 0 })
+      .run();
+    insertDesign('In a collection', { collectionId, updatedAt: 40 });
+
+    expect(listLibraryDesigns(database)[0].collection).toBe('Spring (2027)');
   });
 });

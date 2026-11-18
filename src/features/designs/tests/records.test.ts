@@ -285,7 +285,7 @@ describe('design records', () => {
     expect(listLibraryDesigns(database)[0]).toMatchObject({
       name: 'Silk Slip Dress',
       category: 'Dress',
-      collection: 'Spring 2027',
+      collection: 'Spring 2027 (2027)',
     });
 
     const row = database.db
@@ -415,7 +415,7 @@ describe('design updates', () => {
     expect(listLibraryDesigns(database)[0]).toMatchObject({
       name: 'Wool coat',
       category: 'Knitwear',
-      collection: 'Spring 2027',
+      collection: 'Spring 2027 (2027)',
     });
     expect(storedSearchText()).toBe('wool coat heavy twill knitwear spring 2027');
   });
