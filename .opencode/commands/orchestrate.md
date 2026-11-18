@@ -37,6 +37,8 @@ cd /home/echo/workspace/wt/<n> && pnpm install --frozen-lockfile
 
 The Base comment is mandatory and comes before any commit on the branch: it anchors the review diff,
 and it is the only record of the base if this session dies. The subagent is denied `gh issue comment`; you own it.
+The subagent also reads `.agents/skills/implement/SKILL.md`, which tells it to comment the base itself. Your comment
+is what makes its override true; confirm the comment exists before dispatch, and never let a subagent write to a ticket.
 
 ## 3. Dispatch
 
@@ -90,9 +92,10 @@ Six items maximum. Then re-review the delta only: `git diff <reviewed-head>..tic
 
 ## 7. Stalls
 
-A subagent that returns without a SHA range or with no commits gets one retry continuing from its last green commit
-(same worktree, same base). A second failure marks the ticket stalled: leave the branch, report, move on. Never attempt
-a third time, never "just fix it yourself".
+A step-0 report whose only content is `permission.rejected` is a configuration fault, not a ticket failure: fix the agent
+file, redispatch against the same base, and do not count an attempt. Any other subagent that returns without a SHA range
+or with no commits gets one retry continuing from its last green commit (same worktree, same base). A second failure
+marks the ticket stalled: leave the branch, report, move on. Never attempt a third time, never "just fix it yourself".
 
 ## 8. Report
 

@@ -136,11 +136,12 @@ Call the Skill tool with `implement` and follow it, with the overrides below. Ca
 Overrides, which win over the skill text:
 
 - Stop after the last step commit and a green `pnpm check`. Do not run the skill's `code-review` or repair-subagent step — the orchestrator reviews the diff instead.
+- The orchestrator already wrote `Base: <sha>` on the ticket and gave you that sha. Do not comment on the ticket. Do not write its body, labels, or state. You have no permission to do any of this, and `implement`'s instruction to comment the base yourself does not apply to you.
+- Do not merge the slice branch. The orchestrator merges after review.
 - One commit per `## Steps` entry: `<type> (#<n>): <the step's behaviour in one sentence>`. Never commit red, never amend, never squash.
 - Use `jest --maxWorkers=2` for test runs.
 - Touch only files this ticket needs. Adjacent work is reported, not done.
-- Before reporting, `git merge <slice branch>` into your branch, resolve inside your worktree, keep it green.
-- No `git push`, no `gh issue close`, no issue body or label edits.
+- If a tool answers `permission.rejected`, do not retry it and do not work around it. Report which action was denied and stop if the ticket cannot continue without it.
 - If the ticket has no `## Steps` section, if an acceptance criterion is impossible as written, or if a decision belongs to the user: stop and report. Never invent steps or widen scope.
 
 ## Report
