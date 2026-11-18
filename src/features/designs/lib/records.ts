@@ -16,7 +16,7 @@ import {
   materials,
 } from '@/features/database';
 import { readMaterialNamesFrom } from '@/features/materials';
-import { readTaxonomyNamesFrom } from '@/features/taxonomy';
+import { readTaxonomyNamesFrom, taxonomyLabel } from '@/features/taxonomy';
 import { CREATIVE_DIRECTION_FIELDS } from './creative-direction-fields';
 import { designFieldsChanged, type DesignEditableField } from './fields';
 import { DESIGN_NAME_MAX_LENGTH, designNameProblem } from './limits';
@@ -419,9 +419,9 @@ function designFrom(db: DatabaseHandle, id: string): Design | null {
 /**
  * The Detail read: one live Design, without taxonomy names. Detail shows a
  * Design in any status, so unlike the Library it never filters by status.
- * Private to the feature, like the Library's query builder.
+ * Module-private: its one caller sits in this file.
  */
-export function designDetailQuery(database: Database, id: string) {
+function designDetailQuery(database: Database, id: string) {
   return database.db
     .select(designColumns)
     .from(designs)
@@ -429,18 +429,22 @@ export function designDetailQuery(database: Database, id: string) {
 }
 
 /**
- * Reads one live Design for Detail, resolving its Category and Collection
- * through the taxonomy name read and its Material uses through the Material
- * name read; null when it is unknown or soft-deleted.
+ * Reads one live Design for Detail, resolving its Category name and its
+ * Collection label through the taxonomy name read, and its Material uses
+ * through the Material name read; null when it is unknown or soft-deleted.
  */
 export function getDesignDetail(database: Database, id: string): DesignDetail | null {
   const design = designDetailQuery(database, id).get();
 
   if (!design) return null;
 
+  const names = readTaxonomyNamesFrom(database.db);
+  const collection = design.collectionId ? names.collections.get(design.collectionId) : undefined;
+
   return {
     ...design,
-    ...designTaxonomyNames(database, design.categoryId, design.collectionId),
+    category: design.categoryId ? (names.categories.get(design.categoryId) ?? null) : null,
+    collection: collection ? taxonomyLabel(collection) : null,
     materialUses: materialUsesFrom(database.db, id),
   };
 }

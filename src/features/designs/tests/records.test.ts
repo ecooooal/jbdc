@@ -280,7 +280,7 @@ describe('design records', () => {
     });
     expect(getDesignDetail(database, design.id)).toMatchObject({
       category: 'Dress',
-      collection: 'Spring 2027',
+      collection: 'Spring 2027 (2027)',
     });
     expect(listLibraryDesigns(database)[0]).toMatchObject({
       name: 'Silk Slip Dress',
@@ -410,7 +410,7 @@ describe('design updates', () => {
       name: 'Wool coat',
       description: 'Heavy twill',
       category: 'Knitwear',
-      collection: 'Spring 2027',
+      collection: 'Spring 2027 (2027)',
     });
     expect(listLibraryDesigns(database)[0]).toMatchObject({
       name: 'Wool coat',
@@ -787,7 +787,7 @@ describe('design detail', () => {
       categoryId,
       collectionId,
       category: 'Dress',
-      collection: 'Spring 2027',
+      collection: 'Spring 2027 (2027)',
       silhouette: 'Bias cut',
       neckline: 'Cowl neck',
       sleeveType: 'Sleeveless',
@@ -831,6 +831,19 @@ describe('design detail', () => {
       styling: 'Sandals',
       palette: 'Ivory and cream',
     });
+  });
+
+  test('shows a Collection carrying a year with the year in its label', () => {
+    const collectionId = randomUUID();
+
+    database.db
+      .insert(collections)
+      .values({ id: collectionId, name: 'Spring', year: 2027, createdAt: 0 })
+      .run();
+
+    const id = insertDetailDesign({ name: 'Silk slip', collectionId });
+
+    expect(getDesignDetail(database, id)?.collection).toBe('Spring (2027)');
   });
 
   test('a design with no description, category, or collection is still readable', () => {
