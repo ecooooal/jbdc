@@ -6,6 +6,8 @@
  * adapters live in `./expo` (the app) and `./testing` (Jest).
  */
 export type { DatabaseHandle, Database } from './lib/port';
+export { declareLiveRead } from './lib/live-read';
+export type { LiveReadDeclaration, LiveReadTable } from './lib/live-read';
 export {
   categories,
   collections,
