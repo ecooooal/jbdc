@@ -193,6 +193,7 @@ export type EditDesignResult = {
 };
 
 /** The writes that report back: everything the visit asks a row to store. */
+type AddMaterialUseWrite = Extract<EditDesignEffect, { type: 'add-material-use' }>;
 type DraftsWrite = Extract<EditDesignEffect, { type: 'write-drafts' }>;
 type MaterialUseWrite = Extract<EditDesignEffect, { type: 'write-material-use' }>;
 type RemovalWrite = Extract<EditDesignEffect, { type: 'remove-material-use' }>;
@@ -218,6 +219,7 @@ export type StoredOrNothingReport<Stored> = Exclude<WriteReport<Stored>, { kind:
  * say which write this was, so a report cannot be paired with another kind.
  */
 export type WriteAttempt =
+  | (AddMaterialUseWrite & { report: WriteReport<MaterialUse> })
   | (DraftsWrite & { report: WriteReport<DesignFields> })
   | (MaterialUseWrite & { report: WriteReport<MaterialUse> })
   | (RemovalWrite & { report: StoredOrNothingReport<MaterialUse> });
@@ -247,6 +249,10 @@ export function writeOutcome(attempt: WriteAttempt): EditDesignEvent {
   if (report.kind === 'nothing-stored') return { type: 'nothing-stored', designId };
 
   switch (type) {
+    case 'add-material-use':
+      return report.kind === 'stored'
+        ? { type: 'material-use-added', materialUse: report.value }
+        : { type: 'material-use-add-refused', message: report.message };
     // Only a name has a rule to refuse: every other field stores what it is given.
     case 'write-drafts':
       return report.kind === 'stored'

@@ -17,9 +17,17 @@ const WOOL_USE: MaterialUse = {
   createdAt: NOW,
 };
 
+type AddMaterialUseWrite = Extract<EditDesignEffect, { type: 'add-material-use' }>;
 type DraftsWrite = Extract<EditDesignEffect, { type: 'write-drafts' }>;
 type MaterialUseWrite = Extract<EditDesignEffect, { type: 'write-material-use' }>;
 type RemovalWrite = Extract<EditDesignEffect, { type: 'remove-material-use' }>;
+
+const ADD: AddMaterialUseWrite = {
+  type: 'add-material-use',
+  designId: DESIGN_ID,
+  input: { materialId: WOOL_USE.materialId, colour: WOOL_USE.colour, role: WOOL_USE.role },
+  now: NOW,
+};
 
 const DRAFTS: DraftsWrite = {
   type: 'write-drafts',
@@ -53,6 +61,10 @@ describe('a write outcome', () => {
     expect(writeOutcome({ ...MATERIAL_USE, report: { kind: 'stored', value: WOOL_USE } })).toEqual(
       { type: 'material-use-saved', materialUse: WOOL_USE }
     );
+    expect(writeOutcome({ ...ADD, report: { kind: 'stored', value: WOOL_USE } })).toEqual({
+      type: 'material-use-added',
+      materialUse: WOOL_USE,
+    });
   });
 
   test('a write that refused becomes the refusal the visit restores', () => {
@@ -72,6 +84,15 @@ describe('a write outcome', () => {
       useId: MATERIAL_USE.useId,
       message: 'A material use needs a colour.',
     });
+    expect(
+      writeOutcome({
+        ...ADD,
+        report: { kind: 'refused', message: 'A material use needs a colour.' },
+      })
+    ).toEqual({
+      type: 'material-use-add-refused',
+      message: 'A material use needs a colour.',
+    });
   });
 
   test('a write that found no row says so, whichever write it was', () => {
@@ -80,6 +101,10 @@ describe('a write outcome', () => {
       designId: DESIGN_ID,
     });
     expect(writeOutcome({ ...MATERIAL_USE, report: { kind: 'nothing-stored' } })).toEqual({
+      type: 'nothing-stored',
+      designId: DESIGN_ID,
+    });
+    expect(writeOutcome({ ...ADD, report: { kind: 'nothing-stored' } })).toEqual({
       type: 'nothing-stored',
       designId: DESIGN_ID,
     });
