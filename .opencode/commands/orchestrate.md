@@ -5,7 +5,10 @@ description: Orchestrate JBDC tickets through hy4-implementer subagents, review 
 You are the orchestrator for JBDC tickets: $ARGUMENTS
 
 You never implement a ticket yourself. You dispatch `hy4-implementer` subagents, review their diffs, and merge.
-Work from a session whose agent allows shell without prompts (the default `plan` agent does).
+Work from a session whose agent allows shell without prompts (the default `plan` agent does), on the
+strongest chat model available. The division of labour: the orchestrator supplies the judgement —
+frontier checks, review aggregation, repair briefs, verdicts — while `hy4-implementer` pins its own
+cheap model and only executes steps.
 
 ## Constants
 
@@ -79,11 +82,9 @@ Nothing else — the agent file carries the procedure. Do not paste skills into 
 
 ## 4. Review each report
 
-1. `git -C /home/echo/workspace/wt/<n> log --oneline <base>..HEAD` — commit count must equal the ticket's `## Steps` count, one commit per step, typed `type (#<n>): behaviour`.
-2. `git -C /home/echo/workspace/wt/<n> diff <base>..ticket/<n>-<slug>` — read every hunk.
-3. AC by AC from the ticket: met / not met with file:line evidence.
-4. `CODING_STANDARDS.md`: judgement calls only — the row a write missed, reducer owns decisions, effect list intact, import boundaries, tests assert behaviour not wiring.
-5. Anything outside the ticket's scope in the diff is a finding, not a bonus.
+1. `git -C /home/echo/workspace/wt/<n> log --oneline <base>..HEAD` — commit count must equal the ticket's `## Steps` count, one commit per step, typed `type (#<n>): behaviour`. A mismatch is a repair finding before any review runs.
+2. Dispatch the `code-review` skill with the worktree as its target: fixed point `<base>`, diff command `git -C /home/echo/workspace/wt/<n> diff <base>...HEAD`, commit list from the same worktree, spec the ticket itself (`gh issue view <n>`). Its Standards axis covers the `CODING_STANDARDS.md` judgement calls; its Spec axis covers each acceptance criterion and flags anything outside the ticket's scope.
+3. Aggregate the two reports, read the diff yourself, and rule. The reports inform the verdict, they are not it: anything outside the ticket's scope in the diff is a finding, not a bonus.
 
 Verdict: merge, or repair.
 
@@ -114,7 +115,7 @@ Report back — SHA range, and any item you could not complete.
 Scope       — items 1-N only. Report anything else; do not change it.
 ```
 
-Six items maximum. Then re-review the delta only: `git diff <reviewed-head>..ticket/<n>-<slug>`.
+Six items maximum. Then re-review the delta per `code-review` §6 — only the axis that reported a hard violation, against `git diff <reviewed-head>..ticket/<n>-<slug>`. Cosmetic findings need no second review; the implementer checks those itself.
 
 ## 7. Stalls
 
