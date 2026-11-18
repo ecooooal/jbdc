@@ -1,5 +1,11 @@
 import type { MaterialUseRole } from '@/features/database';
 import {
+  addMaterialUseReducer,
+  canAddMaterialUse,
+  createInitialAddMaterialUseState,
+  type AddMaterialUseState,
+} from './add-material-use-reducer';
+import {
   DESIGN_CHOICE_FIELDS,
   DESIGN_TEXT_FIELDS,
   draftsFromFields,
@@ -32,7 +38,7 @@ import { DESIGN_SECTIONS, type DesignSectionTab } from './sections';
  * They cannot both be open, so they are one field (FRONTEND_STATE).
  */
 export type MaterialUsePanel =
-  | { kind: 'add'; error: string | null }
+  | { kind: 'add'; editor: AddMaterialUseState }
   | { kind: 'edit'; editor: EditMaterialUseState };
 
 /**
@@ -87,14 +93,19 @@ export type EditDesignEvent =
   | { type: 'text-row-left'; field: DesignTextEditableField; now: number }
   | { type: 'choice-chosen'; field: DesignChoiceEditableField; value: string | null; now: number }
   | { type: 'material-use-added'; materialUse: MaterialUse }
-  | { type: 'material-use-add-confirmed'; input: AddMaterialUseInput; now: number }
+  | { type: 'material-use-add-confirmed'; now: number }
   | { type: 'material-use-add-refused'; message: string }
   | { type: 'material-use-add-opened'; now: number }
   | { type: 'material-use-editor-opened'; materialUse: MaterialUse; now: number }
+  | { type: 'material-use-inline-creation-opened' }
+  | { type: 'material-use-inline-creation-closed' }
+  | { type: 'material-use-inline-name-changed'; name: string }
+  | { type: 'material-use-material-created'; materialId: string }
+  | { type: 'material-use-inline-creation-refused'; message: string }
   | { type: 'material-use-panel-closed'; now: number }
   | { type: 'material-use-colour-changed'; colour: string }
   | { type: 'material-use-colour-committed'; now: number }
-  | { type: 'material-use-material-chosen'; materialId: string; now: number }
+  | { type: 'material-use-material-chosen'; materialId: string | null; now: number }
   | { type: 'material-use-role-chosen'; role: MaterialUseRole; now: number }
   | { type: 'material-use-saved'; materialUse: MaterialUse }
   | { type: 'material-use-refused'; useId: string; message: string }
@@ -350,6 +361,19 @@ function editingMaterialUse(state: EditDesignState): EditMaterialUseState | null
   return state.materialUsePanel?.kind === 'edit' ? state.materialUsePanel.editor : null;
 }
 
+/** The choices an open add panel holds, or null while correcting or closed. */
+function addingMaterialUse(state: EditDesignState): AddMaterialUseState | null {
+  return state.materialUsePanel?.kind === 'add' ? state.materialUsePanel.editor : null;
+}
+
+/** The state with the add panel's choices replaced. */
+function withAddEditor(
+  state: EditDesignState,
+  editor: AddMaterialUseState
+): EditDesignState {
+  return { ...state, materialUsePanel: { kind: 'add', editor } };
+}
+
 /** The write an open Material use editor still owes, if any. */
 function materialUseFlushEffects(state: EditDesignState, now: number): EditDesignEffect[] {
   const editor = editingMaterialUse(state);
@@ -596,7 +620,13 @@ export function editDesignReducer(
         ],
       };
     }
-    case 'material-use-add-confirmed':
+    case 'material-use-add-confirmed': {
+      const editor = addingMaterialUse(state);
+
+      if (!editor || editor.materialId === null || !canAddMaterialUse(editor)) {
+        return only(state);
+      }
+
       // The panel keeps the choices until the write reports back, so a refusal
       // can leave them on screen.
       return {
@@ -605,11 +635,16 @@ export function editDesignReducer(
           {
             type: 'add-material-use',
             designId: state.designId,
-            input: event.input,
+            input: {
+              materialId: editor.materialId,
+              colour: editor.colour,
+              role: editor.role,
+            },
             now: event.now,
           },
         ],
       };
+    }
     case 'material-use-added':
       // The use is already written; the visit only keeps it for the Event it
       // records at close, so adding one does not end the visit.
@@ -618,15 +653,18 @@ export function editDesignReducer(
         materialUsePanel: null,
         storedUses: [...state.storedUses, event.materialUse],
       });
-    case 'material-use-add-refused':
+    case 'material-use-add-refused': {
+      const editor = addingMaterialUse(state);
+
+      if (!editor) return only(state);
+
       return only(
-        state.materialUsePanel?.kind === 'add'
-          ? {
-              ...state,
-              materialUsePanel: { kind: 'add', error: event.message },
-            }
-          : state
+        withAddEditor(
+          state,
+          addMaterialUseReducer(editor, { type: 'use-creation-refused', message: event.message })
+        )
       );
+    }
     case 'material-use-add-opened': {
       // One editor at a time: a text row being left is written, and a Material
       // use editor being left writes the colour it still owes.
@@ -636,7 +674,10 @@ export function editDesignReducer(
         { writesDrafts: true, records: false }
       );
 
-      return withPanel(flushed, { kind: 'add', error: null });
+      return withPanel(flushed, {
+        kind: 'add',
+        editor: createInitialAddMaterialUseState(),
+      });
     }
     case 'material-use-editor-opened': {
       const flushed = flush(
@@ -651,58 +692,162 @@ export function editDesignReducer(
 
       return withPanel(flushed, panel);
     }
-    case 'material-use-panel-closed':
-      return withPanel({ state, effects: materialUseFlushEffects(state, event.now) }, null);
-    case 'material-use-colour-changed': {
-      const editor = editingMaterialUse(state);
+    case 'material-use-inline-creation-opened': {
+      const editor = addingMaterialUse(state);
 
       if (!editor) return only(state);
 
-      return only({
-        ...state,
-        materialUsePanel: {
-          kind: 'edit',
-          editor: editMaterialUseReducer(editor, {
-            type: 'colour-changed',
-            colour: event.colour,
-          }),
-        },
-      });
+      return only(
+        withAddEditor(
+          state,
+          addMaterialUseReducer(editor, { type: 'inline-creation-opened' })
+        )
+      );
+    }
+    case 'material-use-inline-creation-closed': {
+      const editor = addingMaterialUse(state);
+
+      if (!editor) return only(state);
+
+      return only(
+        withAddEditor(
+          state,
+          addMaterialUseReducer(editor, { type: 'inline-creation-closed' })
+        )
+      );
+    }
+    case 'material-use-inline-name-changed': {
+      const editor = addingMaterialUse(state);
+
+      if (!editor) return only(state);
+
+      return only(
+        withAddEditor(
+          state,
+          addMaterialUseReducer(editor, { type: 'inline-name-changed', name: event.name })
+        )
+      );
+    }
+    case 'material-use-material-created': {
+      const editor = addingMaterialUse(state);
+
+      if (!editor) return only(state);
+
+      return only(
+        withAddEditor(
+          state,
+          addMaterialUseReducer(editor, {
+            type: 'material-created',
+            materialId: event.materialId,
+          })
+        )
+      );
+    }
+    case 'material-use-inline-creation-refused': {
+      const editor = addingMaterialUse(state);
+
+      if (!editor) return only(state);
+
+      return only(
+        withAddEditor(
+          state,
+          addMaterialUseReducer(editor, {
+            type: 'inline-creation-refused',
+            message: event.message,
+          })
+        )
+      );
+    }
+    case 'material-use-panel-closed':
+      return withPanel({ state, effects: materialUseFlushEffects(state, event.now) }, null);
+    case 'material-use-colour-changed': {
+      const editing = editingMaterialUse(state);
+
+      if (editing) {
+        return only({
+          ...state,
+          materialUsePanel: {
+            kind: 'edit',
+            editor: editMaterialUseReducer(editing, {
+              type: 'colour-changed',
+              colour: event.colour,
+            }),
+          },
+        });
+      }
+
+      const adding = addingMaterialUse(state);
+
+      if (!adding) return only(state);
+
+      return only(
+        withAddEditor(
+          state,
+          addMaterialUseReducer(adding, { type: 'colour-changed', colour: event.colour })
+        )
+      );
     }
     case 'material-use-colour-committed':
       return { state, effects: materialUseFlushEffects(state, event.now) };
     case 'material-use-material-chosen': {
-      const editor = editingMaterialUse(state);
+      const editing = editingMaterialUse(state);
 
-      if (!editor) return only(state);
+      if (editing) {
+        if (event.materialId === null) return only(state);
 
-      const next = {
-        ...state,
-        materialUsePanel: {
-          kind: 'edit' as const,
-          editor: editMaterialUseReducer(editor, {
+        const next = {
+          ...state,
+          materialUsePanel: {
+            kind: 'edit' as const,
+            editor: editMaterialUseReducer(editing, {
+              type: 'material-chosen',
+              materialId: event.materialId,
+            }),
+          },
+        };
+
+        return { state: next, effects: materialUseFlushEffects(next, event.now) };
+      }
+
+      const adding = addingMaterialUse(state);
+
+      if (!adding) return only(state);
+
+      return only(
+        withAddEditor(
+          state,
+          addMaterialUseReducer(adding, {
             type: 'material-chosen',
             materialId: event.materialId,
-          }),
-        },
-      };
-
-      return { state: next, effects: materialUseFlushEffects(next, event.now) };
+          })
+        )
+      );
     }
     case 'material-use-role-chosen': {
-      const editor = editingMaterialUse(state);
+      const editing = editingMaterialUse(state);
 
-      if (!editor) return only(state);
+      if (editing) {
+        const next = {
+          ...state,
+          materialUsePanel: {
+            kind: 'edit' as const,
+            editor: editMaterialUseReducer(editing, { type: 'role-chosen', role: event.role }),
+          },
+        };
 
-      const next = {
-        ...state,
-        materialUsePanel: {
-          kind: 'edit' as const,
-          editor: editMaterialUseReducer(editor, { type: 'role-chosen', role: event.role }),
-        },
-      };
+        return { state: next, effects: materialUseFlushEffects(next, event.now) };
+      }
 
-      return { state: next, effects: materialUseFlushEffects(next, event.now) };
+      const adding = addingMaterialUse(state);
+
+      if (!adding) return only(state);
+
+      return only(
+        withAddEditor(
+          state,
+          addMaterialUseReducer(adding, { type: 'role-chosen', role: event.role })
+        )
+      );
     }
     case 'material-use-saved': {
       const editor = editingMaterialUse(state);

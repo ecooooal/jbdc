@@ -21,6 +21,7 @@ describe('add material use reducer', () => {
       inlineCreationOpen: false,
       inlineName: '',
       inlineError: null,
+      error: null,
     });
     expect(canAddMaterialUse(state)).toBe(false);
   });
@@ -98,4 +99,16 @@ describe('add material use reducer', () => {
     expect(state).toMatchObject({ inlineCreationOpen: false, inlineName: '', inlineError: null });
   });
 
+  test('a use refusal clears when a choice changes', () => {
+    let state = addMaterialUseReducer(createInitialAddMaterialUseState(), {
+      type: 'use-creation-refused',
+      message: 'A material use needs a colour.',
+    });
+
+    expect(state.error).toBe('A material use needs a colour.');
+
+    state = addMaterialUseReducer(state, { type: 'colour-changed', colour: 'Ivory' });
+
+    expect(state.error).toBeNull();
+  });
 });

@@ -1,4 +1,5 @@
 import { createReducerTester } from '@/shared/testing/reducer-tester';
+import { createInitialAddMaterialUseState } from '../lib/add-material-use-reducer';
 import {
   createInitialEditDesignState,
   editDesignReducer,
@@ -1215,7 +1216,10 @@ describe('Material use editor', () => {
     const tester = visitWithUse();
 
     tester.send({ type: 'material-use-add-opened', now: NOW });
-    expect(tester.getState().materialUsePanel).toEqual({ kind: 'add', error: null });
+    expect(tester.getState().materialUsePanel).toEqual({
+      kind: 'add',
+      editor: createInitialAddMaterialUseState(),
+    });
 
     tester.send({ type: 'material-use-editor-opened', materialUse: WOOL_USE, now: LATER });
     expect(tester.getState().materialUsePanel).toMatchObject({
@@ -1490,12 +1494,6 @@ describe('Material use editor', () => {
 });
 
 describe('the add Material use panel', () => {
-  const INPUT = {
-    materialId: 'material-wool',
-    colour: 'Charcoal',
-    role: 'main' as const,
-  };
-
   function adding() {
     const tester = visit();
 
@@ -1504,24 +1502,74 @@ describe('the add Material use panel', () => {
     return tester;
   }
 
-  test('confirm declares one add effect carrying the chosen Material, colour, and role', () => {
+  function chosen() {
     const tester = adding();
 
-    tester.send({ type: 'material-use-add-confirmed', input: INPUT, now: LATER });
+    tester.send({
+      type: 'material-use-material-chosen',
+      materialId: 'material-wool',
+      now: NOW,
+    });
+    tester.send({ type: 'material-use-colour-changed', colour: 'Charcoal' });
+
+    return tester;
+  }
+
+  test('opens on no Material, a blank colour, the main role, and creation closed', () => {
+    const tester = adding();
+
+    expect(tester.getState().materialUsePanel).toEqual({
+      kind: 'add',
+      editor: {
+        materialId: null,
+        colour: '',
+        role: 'main',
+        inlineCreationOpen: false,
+        inlineName: '',
+        inlineError: null,
+        error: null,
+      },
+    });
+  });
+
+  test('choosing a Material, colour, and role changes only the choices', () => {
+    const tester = chosen();
+
+    tester.send({ type: 'material-use-role-chosen', role: 'secondary', now: LATER });
+
+    expect(tester.getEffects()).toEqual([]);
+    expect(tester.getState().materialUsePanel).toMatchObject({
+      kind: 'add',
+      editor: { materialId: 'material-wool', colour: 'Charcoal', role: 'secondary' },
+    });
+  });
+
+  test('confirm declares one add effect carrying the chosen Material, colour, and role', () => {
+    const tester = chosen();
+
+    tester.send({ type: 'material-use-add-confirmed', now: LATER });
 
     expect(tester.getEffects()).toEqual([
       {
         type: 'add-material-use',
         designId: DESIGN_ID,
-        input: INPUT,
+        input: { materialId: 'material-wool', colour: 'Charcoal', role: 'main' },
         now: LATER,
       },
     ]);
-    expect(tester.getState().materialUsePanel).toEqual({ kind: 'add', error: null });
+    expect(tester.getState().materialUsePanel).toMatchObject({ kind: 'add' });
+  });
+
+  test('confirm with no Material or colour declares nothing', () => {
+    const tester = adding();
+
+    tester.send({ type: 'material-use-add-confirmed', now: LATER });
+
+    expect(tester.getEffects()).toEqual([]);
   });
 
   test('a stored add closes the panel and keeps the use it stored', () => {
-    const tester = adding();
+    const tester = chosen();
 
     tester.send({ type: 'material-use-added', materialUse: WOOL_USE });
 
@@ -1531,8 +1579,8 @@ describe('the add Material use panel', () => {
     });
   });
 
-  test('a refused add keeps the panel open and shows the refusal', () => {
-    const tester = adding();
+  test('a refused add keeps the choices on screen and shows the refusal', () => {
+    const tester = chosen();
 
     tester.send({
       type: 'material-use-add-refused',
@@ -1541,7 +1589,55 @@ describe('the add Material use panel', () => {
 
     expect(tester.getState().materialUsePanel).toEqual({
       kind: 'add',
-      error: 'A material use needs a colour.',
+      editor: {
+        materialId: 'material-wool',
+        colour: 'Charcoal',
+        role: 'main',
+        inlineCreationOpen: false,
+        inlineName: '',
+        inlineError: null,
+        error: 'A material use needs a colour.',
+      },
+    });
+  });
+
+  test('a Material created inline becomes the chosen Material', () => {
+    const tester = adding();
+
+    tester.send({ type: 'material-use-inline-creation-opened' });
+    tester.send({ type: 'material-use-inline-name-changed', name: 'Silk crêpe' });
+    tester.send({
+      type: 'material-use-material-created',
+      materialId: 'material-silk',
+    });
+
+    expect(tester.getState().materialUsePanel).toMatchObject({
+      kind: 'add',
+      editor: {
+        materialId: 'material-silk',
+        inlineCreationOpen: false,
+        inlineName: '',
+      },
+    });
+  });
+
+  test('an inline creation refusal keeps the typed name and the panel open', () => {
+    const tester = adding();
+
+    tester.send({ type: 'material-use-inline-creation-opened' });
+    tester.send({ type: 'material-use-inline-name-changed', name: 'Silk crêpe' });
+    tester.send({
+      type: 'material-use-inline-creation-refused',
+      message: 'That material is already in the list.',
+    });
+
+    expect(tester.getState().materialUsePanel).toMatchObject({
+      kind: 'add',
+      editor: {
+        inlineCreationOpen: true,
+        inlineName: 'Silk crêpe',
+        inlineError: 'That material is already in the list.',
+      },
     });
   });
 });

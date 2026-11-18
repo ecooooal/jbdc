@@ -315,9 +315,22 @@ export function EditDesignScreen({ designId }: { designId: string }) {
                         send({ type: 'material-use-role-chosen', role })
                       }
                       onRemoveUse={removeUseEditor}
-                      onAddConfirmed={(input) =>
-                        send({ type: 'material-use-add-confirmed', input })
+                      onInlineCreationOpened={() =>
+                        send({ type: 'material-use-inline-creation-opened' })
                       }
+                      onInlineCreationClosed={() =>
+                        send({ type: 'material-use-inline-creation-closed' })
+                      }
+                      onInlineNameChanged={(name) =>
+                        send({ type: 'material-use-inline-name-changed', name })
+                      }
+                      onMaterialCreated={(materialId) =>
+                        send({ type: 'material-use-material-created', materialId })
+                      }
+                      onInlineCreationRefused={(message) =>
+                        send({ type: 'material-use-inline-creation-refused', message })
+                      }
+                      onAddConfirmed={() => send({ type: 'material-use-add-confirmed' })}
                     />
                   ) : null}
                 </View>

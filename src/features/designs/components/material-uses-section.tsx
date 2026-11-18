@@ -4,7 +4,7 @@ import { Button } from '@/shared/components/ui/button';
 import { Icon } from '@/shared/components/ui/icon';
 import { Text } from '@/shared/components/ui/text';
 import type { MaterialUseRole } from '@/features/database';
-import type { AddMaterialUseInput, MaterialUse } from '@/features/designs';
+import type { MaterialUse } from '@/features/designs';
 import type { EditMaterialUseState } from '../lib/edit-material-use-reducer';
 import type { MaterialUsePanel } from '../lib/edit-design-reducer';
 import { AddMaterialUseForm } from './add-material-use-form';
@@ -29,6 +29,11 @@ export function MaterialUsesSection({
   onColourCommitted,
   onRoleChosen,
   onRemoveUse,
+  onInlineCreationOpened,
+  onInlineCreationClosed,
+  onInlineNameChanged,
+  onMaterialCreated,
+  onInlineCreationRefused,
   onAddConfirmed,
 }: {
   uses: MaterialUse[];
@@ -36,12 +41,17 @@ export function MaterialUsesSection({
   onOpenUse: (materialUse: MaterialUse) => void;
   onOpenAdd: () => void;
   onClosePanel: () => void;
-  onMaterialChosen: (materialId: string) => void;
+  onMaterialChosen: (materialId: string | null) => void;
   onColourChanged: (colour: string) => void;
   onColourCommitted: () => void;
   onRoleChosen: (role: MaterialUseRole) => void;
   onRemoveUse: () => void;
-  onAddConfirmed: (input: AddMaterialUseInput) => void;
+  onInlineCreationOpened: () => void;
+  onInlineCreationClosed: () => void;
+  onInlineNameChanged: (name: string) => void;
+  onMaterialCreated: (materialId: string) => void;
+  onInlineCreationRefused: (message: string) => void;
+  onAddConfirmed: () => void;
 }) {
   const editor: EditMaterialUseState | null = panel?.kind === 'edit' ? panel.editor : null;
 
@@ -64,7 +74,15 @@ export function MaterialUsesSection({
         />
       ) : panel?.kind === 'add' ? (
         <AddMaterialUseForm
-          error={panel.error}
+          state={panel.editor}
+          onMaterialChosen={onMaterialChosen}
+          onColourChanged={onColourChanged}
+          onRoleChosen={onRoleChosen}
+          onInlineCreationOpened={onInlineCreationOpened}
+          onInlineCreationClosed={onInlineCreationClosed}
+          onInlineNameChanged={onInlineNameChanged}
+          onMaterialCreated={onMaterialCreated}
+          onInlineCreationRefused={onInlineCreationRefused}
           onConfirm={onAddConfirmed}
           onCancel={onClosePanel}
         />

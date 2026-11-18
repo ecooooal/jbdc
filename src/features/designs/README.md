@@ -31,11 +31,14 @@ is Detail's live read.
 
 `components/material-uses-section.tsx` holds the table and the one panel that
 can be open, and picks between `add-material-use-form.tsx` and
-`edit-material-use-form.tsx`. Those dispatch into the reducers above, whose
-effects call `addMaterialUse` / `updateMaterialUse` / `removeMaterialUse` in
-`lib/records.ts`. At close the visit hands History the row and its uses as it
-found them and as the writes left them; History decides whether that is worth
-an Event.
+`edit-material-use-form.tsx`. Both forms only render state and report gestures:
+the visit holds the open editor, declares the add, correction, and removal
+writes, and `lib/use-edit-visit.ts` performs them through `addMaterialUse` /
+`updateMaterialUse` / `removeMaterialUse` in `lib/records.ts`. A write's outcome
+folds back into the visit's record of what it stored, so a refused add leaves
+its choices on screen and never reaches that record. At close the visit hands
+History the row and its uses as it found them and as the writes left them;
+History decides whether that is worth an Event.
 
 ## Screens and pieces
 

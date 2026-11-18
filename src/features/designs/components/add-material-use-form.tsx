@@ -1,8 +1,7 @@
 import { Plus } from 'lucide-react-native';
-import { useReducer } from 'react';
 import { View } from 'react-native';
+import type { MaterialUseRole } from '@/features/database';
 import { useDatabase } from '@/features/database/react';
-import type { AddMaterialUseInput } from '@/features/designs';
 import {
   createMaterial,
   InvalidMaterialNameError,
@@ -14,9 +13,8 @@ import { Icon } from '@/shared/components/ui/icon';
 import { Input } from '@/shared/components/ui/input';
 import { Text } from '@/shared/components/ui/text';
 import {
-  addMaterialUseReducer,
   canAddMaterialUse,
-  createInitialAddMaterialUseState,
+  type AddMaterialUseState,
 } from '../lib/add-material-use-reducer';
 import { FormField } from './form-field';
 import { InlineCreationPanel } from './inline-creation-panel';
@@ -24,28 +22,40 @@ import { MaterialUseRoleSelect } from './material-use-role-select';
 import { TaxonomySelect } from './taxonomy-select';
 
 /**
- * The editor `＋ Add material` opens. It holds the owner's choices and can
- * create a Material on the spot; the live list feeds the picker, so a new
- * Material is selectable as soon as the insert is observed. Confirming hands
- * the choices to the visit, which declares and records the one write; the panel
- * stays open with those choices if the write refuses them.
+ * The editor `＋ Add material` opens. It renders the choices the visit holds and
+ * reports what the owner did; confirming declares the visit's one write, so the
+ * panel stays open with those choices if the write refuses them.
+ *
+ * The Material a new Material creates is selected by id at once, and the live
+ * list feeds the picker, so its label appears as soon as the insert is observed.
  */
 export function AddMaterialUseForm({
-  error,
+  state,
+  onMaterialChosen,
+  onColourChanged,
+  onRoleChosen,
+  onInlineCreationOpened,
+  onInlineCreationClosed,
+  onInlineNameChanged,
+  onMaterialCreated,
+  onInlineCreationRefused,
   onConfirm,
   onCancel,
 }: {
-  error: string | null;
-  onConfirm: (input: AddMaterialUseInput) => void;
+  state: AddMaterialUseState;
+  onMaterialChosen: (materialId: string | null) => void;
+  onColourChanged: (colour: string) => void;
+  onRoleChosen: (role: MaterialUseRole) => void;
+  onInlineCreationOpened: () => void;
+  onInlineCreationClosed: () => void;
+  onInlineNameChanged: (name: string) => void;
+  onMaterialCreated: (materialId: string) => void;
+  onInlineCreationRefused: (message: string) => void;
+  onConfirm: () => void;
   onCancel: () => void;
 }) {
   const database = useDatabase();
   const { materials, error: materialsError, status } = useMaterials();
-  const [state, dispatch] = useReducer(
-    addMaterialUseReducer,
-    undefined,
-    createInitialAddMaterialUseState
-  );
   const selectedMaterial = materials.find((material) => material.id === state.materialId) ?? null;
   const canAdd = canAddMaterialUse(state);
 
@@ -53,18 +63,12 @@ export function AddMaterialUseForm({
     try {
       const material = createMaterial(database, { name: state.inlineName });
 
-      dispatch({ type: 'material-created', materialId: material.id });
+      onMaterialCreated(material.id);
     } catch (caught) {
       if (!(caught instanceof InvalidMaterialNameError)) throw caught;
 
-      dispatch({ type: 'inline-creation-refused', message: caught.message });
+      onInlineCreationRefused(caught.message);
     }
-  }
-
-  function submit(): void {
-    if (state.materialId === null) return;
-
-    onConfirm({ materialId: state.materialId, colour: state.colour, role: state.role });
   }
 
   return (
@@ -76,9 +80,7 @@ export function AddMaterialUseForm({
           value={selectedMaterial}
           items={materials}
           disabled={status !== 'ready'}
-          onSelect={(material) =>
-            dispatch({ type: 'material-chosen', materialId: material?.id ?? null })
-          }
+          onSelect={(material) => onMaterialChosen(material?.id ?? null)}
         />
         {state.inlineCreationOpen ? (
           <InlineCreationPanel
@@ -87,16 +89,16 @@ export function AddMaterialUseForm({
             name={state.inlineName}
             error={state.inlineError}
             maxLength={MATERIAL_NAME_MAX_LENGTH}
-            onNameChange={(name) => dispatch({ type: 'inline-name-changed', name })}
+            onNameChange={onInlineNameChanged}
             onSubmit={createMaterialInline}
-            onCancel={() => dispatch({ type: 'inline-creation-closed' })}
+            onCancel={onInlineCreationClosed}
           />
         ) : (
           <Button
             size="sm"
             variant="ghost"
             className="self-start"
-            onPress={() => dispatch({ type: 'inline-creation-opened' })}
+            onPress={onInlineCreationOpened}
           >
             <Icon as={Plus} />
             <Text>New material</Text>
@@ -107,7 +109,7 @@ export function AddMaterialUseForm({
       <FormField label="Colour">
         <Input
           value={state.colour}
-          onChangeText={(colour) => dispatch({ type: 'colour-changed', colour })}
+          onChangeText={onColourChanged}
           placeholder="Ivory"
           autoFocus={state.materialId !== null}
           accessibilityLabel="Colour"
@@ -115,22 +117,19 @@ export function AddMaterialUseForm({
       </FormField>
 
       <FormField label="Role">
-        <MaterialUseRoleSelect
-          value={state.role}
-          onChange={(role) => dispatch({ type: 'role-chosen', role })}
-        />
+        <MaterialUseRoleSelect value={state.role} onChange={onRoleChosen} />
       </FormField>
 
       {materialsError ? (
         <Text className="text-destructive text-sm">{materialsError.message}</Text>
       ) : null}
-      {error ? <Text className="text-destructive text-sm">{error}</Text> : null}
+      {state.error ? <Text className="text-destructive text-sm">{state.error}</Text> : null}
 
       <View className="flex-row justify-end gap-2">
         <Button size="sm" variant="ghost" onPress={onCancel}>
           <Text>Cancel</Text>
         </Button>
-        <Button size="sm" disabled={!canAdd} onPress={submit} accessibilityLabel="Add material use">
+        <Button size="sm" disabled={!canAdd} onPress={onConfirm} accessibilityLabel="Add material use">
           <Text>Add</Text>
         </Button>
       </View>
