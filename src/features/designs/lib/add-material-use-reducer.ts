@@ -45,9 +45,9 @@ export function createInitialAddMaterialUseState(): AddMaterialUseState {
   };
 }
 
-/** Material and colour are required; role always has a value. */
+/** A Material must be chosen; the record write decides whether the colour is valid. */
 export function canAddMaterialUse(state: AddMaterialUseState): boolean {
-  return state.materialId !== null && state.colour.trim().length > 0;
+  return state.materialId !== null;
 }
 
 /**
@@ -78,6 +78,7 @@ export function addMaterialUseReducer(
         ...state,
         ...CLOSED_INLINE_CREATION,
         materialId: event.materialId,
+        error: null,
       };
     case 'inline-creation-refused':
       return { ...state, inlineError: event.message };

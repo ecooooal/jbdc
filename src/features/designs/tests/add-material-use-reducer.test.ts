@@ -26,18 +26,15 @@ describe('add material use reducer', () => {
     expect(canAddMaterialUse(state)).toBe(false);
   });
 
-  test('needs both a Material and a non-blank colour', () => {
-    let state = addMaterialUseReducer(createInitialAddMaterialUseState(), {
+  test('needs a Material; the colour is left to the record write', () => {
+    const state = addMaterialUseReducer(createInitialAddMaterialUseState(), {
       type: 'material-chosen',
       materialId: 'material-silk',
     });
-    expect(canAddMaterialUse(state)).toBe(false);
-
-    state = addMaterialUseReducer(state, { type: 'colour-changed', colour: '   ' });
-    expect(canAddMaterialUse(state)).toBe(false);
-
-    state = addMaterialUseReducer(state, { type: 'colour-changed', colour: ' Ivory ' });
     expect(canAddMaterialUse(state)).toBe(true);
+
+    const blank = addMaterialUseReducer(state, { type: 'colour-changed', colour: '   ' });
+    expect(canAddMaterialUse(blank)).toBe(true);
   });
 
   test('changes the role', () => {
@@ -97,6 +94,19 @@ describe('add material use reducer', () => {
     state = addMaterialUseReducer(state, { type: 'inline-creation-closed' });
 
     expect(state).toMatchObject({ inlineCreationOpen: false, inlineName: '', inlineError: null });
+  });
+
+  test('creating a Material inline clears a stale use refusal', () => {
+    let state = addMaterialUseReducer(createInitialAddMaterialUseState(), {
+      type: 'use-creation-refused',
+      message: 'A material use needs a colour.',
+    });
+    state = addMaterialUseReducer(state, {
+      type: 'material-created',
+      materialId: 'material-silk',
+    });
+
+    expect(state.error).toBeNull();
   });
 
   test('a use refusal clears when a choice changes', () => {

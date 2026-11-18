@@ -31,9 +31,10 @@ is Detail's live read.
 
 `components/material-uses-section.tsx` holds the table and the one panel that
 can be open, and picks between `add-material-use-form.tsx` and
-`edit-material-use-form.tsx`. Both forms only render state and report gestures:
-the visit holds the open editor, declares the add, correction, and removal
-writes, and `lib/use-edit-visit.ts` performs them through `addMaterialUse` /
+`edit-material-use-form.tsx`. The correction form only renders state and reports
+gestures; the add form also creates a Material inline. The visit holds the open
+editor, declares the add, correction, and removal writes, and
+`lib/use-edit-visit.ts` performs them through `addMaterialUse` /
 `updateMaterialUse` / `removeMaterialUse` in `lib/records.ts`. A write's outcome
 folds back into the visit's record of what it stored, so a refused add leaves
 its choices on screen and never reaches that record. At close the visit hands

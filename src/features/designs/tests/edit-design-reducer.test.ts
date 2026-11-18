@@ -1560,12 +1560,51 @@ describe('the add Material use panel', () => {
     expect(tester.getState().materialUsePanel).toMatchObject({ kind: 'add' });
   });
 
-  test('confirm with no Material or colour declares nothing', () => {
+  test('confirm with no Material declares nothing', () => {
     const tester = adding();
 
     tester.send({ type: 'material-use-add-confirmed', now: LATER });
 
     expect(tester.getEffects()).toEqual([]);
+  });
+
+  test('a blank colour still declares the write, whose refusal keeps the choices', () => {
+    const tester = adding();
+
+    tester.send({
+      type: 'material-use-material-chosen',
+      materialId: 'material-wool',
+      now: NOW,
+    });
+    tester.send({ type: 'material-use-colour-changed', colour: '   ' });
+    tester.send({ type: 'material-use-add-confirmed', now: LATER });
+
+    expect(tester.getEffects()).toEqual([
+      {
+        type: 'add-material-use',
+        designId: DESIGN_ID,
+        input: { materialId: 'material-wool', colour: '   ', role: 'main' },
+        now: LATER,
+      },
+    ]);
+
+    tester.send({
+      type: 'material-use-add-refused',
+      message: 'A material use needs a colour.',
+    });
+
+    expect(tester.getState().materialUsePanel).toEqual({
+      kind: 'add',
+      editor: {
+        materialId: 'material-wool',
+        colour: '   ',
+        role: 'main',
+        inlineCreationOpen: false,
+        inlineName: '',
+        inlineError: null,
+        error: 'A material use needs a colour.',
+      },
+    });
   });
 
   test('a stored add closes the panel and keeps the use it stored', () => {

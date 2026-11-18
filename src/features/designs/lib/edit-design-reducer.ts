@@ -1,8 +1,8 @@
 import type { MaterialUseRole } from '@/features/database';
 import {
   addMaterialUseReducer,
-  canAddMaterialUse,
   createInitialAddMaterialUseState,
+  type AddMaterialUseEvent,
   type AddMaterialUseState,
 } from './add-material-use-reducer';
 import {
@@ -374,6 +374,18 @@ function withAddEditor(
   return { ...state, materialUsePanel: { kind: 'add', editor } };
 }
 
+/** Folds one add-editor fact into the open add panel, when one is open. */
+function withAddEditorFact(
+  state: EditDesignState,
+  fact: AddMaterialUseEvent
+): EditDesignResult {
+  const editor = addingMaterialUse(state);
+
+  if (!editor) return only(state);
+
+  return only(withAddEditor(state, addMaterialUseReducer(editor, fact)));
+}
+
 /** The write an open Material use editor still owes, if any. */
 function materialUseFlushEffects(state: EditDesignState, now: number): EditDesignEffect[] {
   const editor = editingMaterialUse(state);
@@ -623,7 +635,7 @@ export function editDesignReducer(
     case 'material-use-add-confirmed': {
       const editor = addingMaterialUse(state);
 
-      if (!editor || editor.materialId === null || !canAddMaterialUse(editor)) {
+      if (!editor || editor.materialId === null) {
         return only(state);
       }
 
@@ -653,18 +665,11 @@ export function editDesignReducer(
         materialUsePanel: null,
         storedUses: [...state.storedUses, event.materialUse],
       });
-    case 'material-use-add-refused': {
-      const editor = addingMaterialUse(state);
-
-      if (!editor) return only(state);
-
-      return only(
-        withAddEditor(
-          state,
-          addMaterialUseReducer(editor, { type: 'use-creation-refused', message: event.message })
-        )
-      );
-    }
+    case 'material-use-add-refused':
+      return withAddEditorFact(state, {
+        type: 'use-creation-refused',
+        message: event.message,
+      });
     case 'material-use-add-opened': {
       // One editor at a time: a text row being left is written, and a Material
       // use editor being left writes the colour it still owes.
@@ -692,72 +697,22 @@ export function editDesignReducer(
 
       return withPanel(flushed, panel);
     }
-    case 'material-use-inline-creation-opened': {
-      const editor = addingMaterialUse(state);
-
-      if (!editor) return only(state);
-
-      return only(
-        withAddEditor(
-          state,
-          addMaterialUseReducer(editor, { type: 'inline-creation-opened' })
-        )
-      );
-    }
-    case 'material-use-inline-creation-closed': {
-      const editor = addingMaterialUse(state);
-
-      if (!editor) return only(state);
-
-      return only(
-        withAddEditor(
-          state,
-          addMaterialUseReducer(editor, { type: 'inline-creation-closed' })
-        )
-      );
-    }
-    case 'material-use-inline-name-changed': {
-      const editor = addingMaterialUse(state);
-
-      if (!editor) return only(state);
-
-      return only(
-        withAddEditor(
-          state,
-          addMaterialUseReducer(editor, { type: 'inline-name-changed', name: event.name })
-        )
-      );
-    }
-    case 'material-use-material-created': {
-      const editor = addingMaterialUse(state);
-
-      if (!editor) return only(state);
-
-      return only(
-        withAddEditor(
-          state,
-          addMaterialUseReducer(editor, {
-            type: 'material-created',
-            materialId: event.materialId,
-          })
-        )
-      );
-    }
-    case 'material-use-inline-creation-refused': {
-      const editor = addingMaterialUse(state);
-
-      if (!editor) return only(state);
-
-      return only(
-        withAddEditor(
-          state,
-          addMaterialUseReducer(editor, {
-            type: 'inline-creation-refused',
-            message: event.message,
-          })
-        )
-      );
-    }
+    case 'material-use-inline-creation-opened':
+      return withAddEditorFact(state, { type: 'inline-creation-opened' });
+    case 'material-use-inline-creation-closed':
+      return withAddEditorFact(state, { type: 'inline-creation-closed' });
+    case 'material-use-inline-name-changed':
+      return withAddEditorFact(state, { type: 'inline-name-changed', name: event.name });
+    case 'material-use-material-created':
+      return withAddEditorFact(state, {
+        type: 'material-created',
+        materialId: event.materialId,
+      });
+    case 'material-use-inline-creation-refused':
+      return withAddEditorFact(state, {
+        type: 'inline-creation-refused',
+        message: event.message,
+      });
     case 'material-use-panel-closed':
       return withPanel({ state, effects: materialUseFlushEffects(state, event.now) }, null);
     case 'material-use-colour-changed': {
