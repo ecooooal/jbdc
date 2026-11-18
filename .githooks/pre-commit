@@ -1,5 +1,7 @@
 #!/bin/sh
-# Local gate: typecheck, lint, both guards, then tests. CI repeats it on push.
+# Local gate: staged scope, then typecheck, lint, both guards, and tests. CI
+# repeats the checks on push.
 set -e
 
+node scripts/check-staged-scope.mjs
 pnpm check
