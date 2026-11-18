@@ -1,48 +1,19 @@
-import { useMemo } from 'react';
-import { categories, collections } from '@/features/database';
 import {
-  useDatabase,
   useLiveRead,
-  type LiveReadStatus,
+  type LiveReadFields,
 } from '@/features/database/react';
-import {
-  categoriesQuery,
-  collectionsQuery,
-  type Category,
-  type Collection,
-} from './records';
+import { taxonomyRead, type TaxonomyRows } from './records';
 
-export type Taxonomy = {
-  categories: Category[];
-  collections: Collection[];
-  error: Error | undefined;
-  /** `loading` until both lists resolve, so a picker never opens on stale emptiness. */
-  status: LiveReadStatus;
-};
+/** The Taxonomy a picker reads: one declared row plus the shared status. */
+export type Taxonomy = TaxonomyRows & LiveReadFields;
 
 /**
- * Subscribes to the owner's Categories and Collections with one read. An entry
- * created inline lands in the returned lists without a manual reload, so the
- * picker that created it can show it immediately.
+ * Subscribes to the owner's Categories and Collections through the one live
+ * read. An entry created inline lands in the returned lists without a manual
+ * reload, so the picker that created it can show it immediately.
  */
 export function useTaxonomy(): Taxonomy {
-  const database = useDatabase();
-  const run = useMemo(
-    () => () => ({
-      categories: categoriesQuery(database).all(),
-      collections: collectionsQuery(database).all(),
-    }),
-    [database]
-  );
-  const { data, error, status } = useLiveRead({
-    tables: [categories, collections],
-    run,
-  });
+  const { data, error, status } = useLiveRead(taxonomyRead);
 
-  return {
-    categories: data?.categories ?? [],
-    collections: data?.collections ?? [],
-    error,
-    status,
-  };
+  return { ...(data ?? taxonomyRead.empty), error, status };
 }

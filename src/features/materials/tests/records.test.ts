@@ -6,10 +6,27 @@ import {
   InvalidMaterialNameError,
   listMaterials,
   MATERIAL_NAME_MAX_LENGTH,
+  materialsRead,
   readMaterialNames,
 } from '@/features/materials';
 
 const UUID_V4 = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
+
+describe('the Materials live read', () => {
+  test('declares the watched table beside the query and one row shape', () => {
+    const { database, dispose } = createTempDatabase();
+
+    try {
+      createMaterial(database, { name: 'Silk crêpe' });
+
+      expect(materialsRead.tables).toEqual([materials]);
+      expect(materialsRead.empty).toEqual({ materials: [] });
+      expect(materialsRead.read(database)).toEqual({ materials: listMaterials(database) });
+    } finally {
+      dispose();
+    }
+  });
+});
 
 describe('material records', () => {
   let database: ReturnType<typeof createTempDatabase>['database'];

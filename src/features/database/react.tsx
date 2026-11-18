@@ -11,6 +11,12 @@ import type { Database } from './lib/port';
 
 export type LiveReadStatus = 'loading' | 'ready' | 'error';
 
+/** The status each declared read carries beside its declared row shape. */
+export type LiveReadFields = {
+  error: Error | undefined;
+  status: LiveReadStatus;
+};
+
 export type LiveReadResult<Row> = {
   data: Row | undefined;
   error: Error | undefined;

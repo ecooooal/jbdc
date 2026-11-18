@@ -1,6 +1,6 @@
 import { asc, eq, isNull } from 'drizzle-orm';
 import type { Database, DatabaseHandle } from '@/features/database';
-import { materials } from '@/features/database';
+import { declareLiveRead, materials } from '@/features/database';
 
 /** A name is trimmed and must survive trimming; this is the only cap. */
 export const MATERIAL_NAME_MAX_LENGTH = 120;
@@ -53,6 +53,18 @@ export function materialsQuery(database: Database) {
 export function listMaterials(database: Database): Material[] {
   return materialsQuery(database).all();
 }
+
+/** The one row shape this live read produces, before the hook adds status. */
+export type MaterialsRows = {
+  materials: Material[];
+};
+
+/** The Materials read: the list, its row shape, and the table it watches. */
+export const materialsRead = declareLiveRead<MaterialsRows>({
+  tables: [materials],
+  read: (database) => ({ materials: materialsQuery(database).all() }),
+  empty: { materials: [] },
+});
 
 /**
  * Every Material name, **including soft-deleted rows**, so a use written

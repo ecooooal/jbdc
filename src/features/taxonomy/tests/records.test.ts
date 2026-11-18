@@ -1,3 +1,4 @@
+import { categories, collections } from '@/features/database';
 import { createTempDatabase } from '@/features/database/testing';
 import {
   COLLECTION_YEAR_MAX,
@@ -9,9 +10,27 @@ import {
   listCategories,
   listCollections,
   TAXONOMY_NAME_MAX_LENGTH,
+  taxonomyRead,
 } from '@/features/taxonomy';
 
 const UUID_V4 = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
+
+describe('the Taxonomy live read', () => {
+  test('declares both watched tables beside the query and one row shape', () => {
+    const { database, dispose } = createTempDatabase();
+
+    try {
+      expect(taxonomyRead.tables).toEqual([categories, collections]);
+      expect(taxonomyRead.empty).toEqual({ categories: [], collections: [] });
+      expect(taxonomyRead.read(database)).toEqual({
+        categories: listCategories(database),
+        collections: listCollections(database),
+      });
+    } finally {
+      dispose();
+    }
+  });
+});
 
 describe('category records', () => {
   let database: ReturnType<typeof createTempDatabase>['database'];
