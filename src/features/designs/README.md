@@ -37,12 +37,14 @@ it changed in one `write-design` effect — not a choice among record functions.
 `lib/use-edit-visit.ts` hands those changes to `writeDesign` in `lib/records.ts`,
 the one write path: it reads the row and its uses once, decides once whether
 anything changed, and stores the row, its uses, the rebuilt `search_text`, and
-the moved `updatedAt` in one transaction. Each change's outcome folds back into
-the visit's record of what it stored, so a refused write leaves the panel's
-choices on screen and never reaches that record. At close the visit hands
-History the row and its uses as it found them and as the writes left them;
-History's diff — the same rule the write path used — decides whether that is
-worth an Event.
+the moved `updatedAt` in one transaction. The write answers once — `stored` with
+one outcome per declared change, `refused` with the field it refused, or
+`design-missing` — and the visit settles on that one answer. Each change's
+outcome folds back into the visit's record of what it stored, so a refused write
+leaves the panel's choices on screen and never reaches that record. At close the
+visit hands History the row and its uses as it found them and as the writes left
+them; History's diff — the same rule the write path used — decides whether that
+is worth an Event.
 
 ## Screens and pieces
 

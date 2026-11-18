@@ -38,13 +38,19 @@ function attempt(
   return { type: 'write-design', designId: DESIGN_ID, changes, now, result };
 }
 
+/** The one event that reports the write, closing every answer but a missing row. */
+const SETTLED = { type: 'write-settled', designId: DESIGN_ID } as const;
+
 describe('a write outcome', () => {
-  test('every stored change becomes its own event, in the order declared', () => {
+  test('every stored change becomes its own event, in the order declared, then one settle', () => {
     expect(
       writeOutcome(
         attempt({ fields: { name: 'Wool coat' } }, stored([{ kind: 'fields', design: STORED }]))
       )
-    ).toEqual([{ type: 'drafts-written', design: STORED, patch: { name: 'Wool coat' } }]);
+    ).toEqual([
+      { type: 'drafts-written', design: STORED, patch: { name: 'Wool coat' } },
+      SETTLED,
+    ]);
 
     expect(
       writeOutcome(
@@ -80,19 +86,25 @@ describe('a write outcome', () => {
         materialUse: { ...WOOL_USE, id: 'use-silk', colour: 'Ivory', role: 'other' },
       },
       { type: 'material-use-panel-fact', fact: { type: 'use-removed', useId: WOOL_USE.id }, now: NOW },
+      SETTLED,
     ]);
   });
 
-  test('a refused write restores each change it declared', () => {
+  test('a two-field patch refused by its name restores that field once, then settles', () => {
     expect(
       writeOutcome(
         attempt(
-          { fields: { name: '   ' } },
+          { fields: { name: '   ', description: 'Heavy twill' } },
           { kind: 'refused', field: 'name', message: 'A design needs a name.' }
         )
       )
-    ).toEqual([{ type: 'field-refused', field: 'name', message: 'A design needs a name.' }]);
+    ).toEqual([
+      { type: 'field-refused', field: 'name', message: 'A design needs a name.' },
+      SETTLED,
+    ]);
+  });
 
+  test('a refused colour restores only the panel it refused, then settles', () => {
     expect(
       writeOutcome(
         attempt(
@@ -106,6 +118,7 @@ describe('a write outcome', () => {
         fact: { type: 'refused', useId: WOOL_USE.id, message: 'A material use needs a colour.' },
         now: NOW,
       },
+      SETTLED,
     ]);
 
     expect(
@@ -117,30 +130,44 @@ describe('a write outcome', () => {
           { kind: 'refused', field: 'colour', message: 'A material use needs a colour.' }
         )
       )
-    ).toEqual([{ type: 'material-use-add-refused', message: 'A material use needs a colour.' }]);
+    ).toEqual([{ type: 'material-use-add-refused', message: 'A material use needs a colour.' }, SETTLED]);
   });
 
-  test('a write that found no Design row says so, whatever it changed', () => {
+  test('a refused write sends no removal for the use it collaterally removed', () => {
     expect(
       writeOutcome(
-        attempt({ fields: { name: 'Linen shirt' } }, { kind: 'design-missing' })
+        attempt(
+          {
+            uses: [
+              { kind: 'remove', useId: WOOL_USE.id },
+              { kind: 'correct', useId: WOOL_USE.id, patch: { colour: '   ' } },
+            ],
+          },
+          { kind: 'refused', field: 'colour', message: 'A material use needs a colour.' }
+        )
       )
-    ).toEqual([{ type: 'nothing-stored', designId: DESIGN_ID }]);
+    ).toEqual([
+      {
+        type: 'material-use-panel-fact',
+        fact: { type: 'refused', useId: WOOL_USE.id, message: 'A material use needs a colour.' },
+        now: NOW,
+      },
+      SETTLED,
+    ]);
+  });
+
+  test('a write that found no Design row ends the visit without a settle', () => {
+    expect(
+      writeOutcome(attempt({ fields: { name: 'Linen shirt' } }, { kind: 'design-missing' }))
+    ).toEqual([{ type: 'design-missing', designId: DESIGN_ID }]);
     expect(
       writeOutcome(
         attempt({ uses: [{ kind: 'remove', useId: WOOL_USE.id }] }, { kind: 'design-missing' })
       )
-    ).toEqual([{ type: 'nothing-stored', designId: DESIGN_ID }]);
+    ).toEqual([{ type: 'design-missing', designId: DESIGN_ID }]);
   });
 
-  test('a removal reports the use as removed whether it deleted it or found it gone', () => {
-    expect(
-      writeOutcome(
-        attempt({ uses: [{ kind: 'remove', useId: WOOL_USE.id }] }, stored([{ kind: 'remove', materialUse: WOOL_USE }]))
-      )
-    ).toEqual([
-      { type: 'material-use-panel-fact', fact: { type: 'use-removed', useId: WOOL_USE.id }, now: NOW },
-    ]);
+  test('a missing use is reported as use-missing and does not end the visit', () => {
     expect(
       writeOutcome(
         attempt(
@@ -149,7 +176,22 @@ describe('a write outcome', () => {
         )
       )
     ).toEqual([
-      { type: 'material-use-panel-fact', fact: { type: 'use-removed', useId: 'use-gone' }, now: NOW },
+      { type: 'material-use-panel-fact', fact: { type: 'use-missing', useId: 'use-gone' }, now: NOW },
+      SETTLED,
+    ]);
+  });
+
+  test('a removal reports the use it deleted', () => {
+    expect(
+      writeOutcome(
+        attempt(
+          { uses: [{ kind: 'remove', useId: WOOL_USE.id }] },
+          stored([{ kind: 'remove', materialUse: WOOL_USE }])
+        )
+      )
+    ).toEqual([
+      { type: 'material-use-panel-fact', fact: { type: 'use-removed', useId: WOOL_USE.id }, now: NOW },
+      SETTLED,
     ]);
   });
 });

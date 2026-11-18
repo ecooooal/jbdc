@@ -619,7 +619,7 @@ describe('edit visit boundary', () => {
         now: NOW,
       },
     ]);
-    expect(tester.getState().closing).toEqual({ at: NOW, outstanding: 0 });
+    expect(tester.getState().closing).toEqual({ at: NOW, writesOwed: 0 });
   });
 
   test('a visit that only adds a Material use records one Event naming the use', () => {
@@ -662,6 +662,18 @@ describe('edit visit boundary', () => {
       design: { ...DESIGN, name: 'Wool coat' },
       patch: { name: 'Wool coat' },
     });
+
+    // The outcome events update the visit; only the settle reports the write.
+    expect(tester.getEffects().slice(-1)).toEqual([
+      {
+        type: 'write-design',
+        designId: DESIGN_ID,
+        changes: { fields: { name: 'Wool coat' } },
+        now: LATER,
+      },
+    ]);
+
+    tester.send({ type: 'write-settled', designId: DESIGN_ID });
 
     expect(tester.getEffects().slice(-1)).toEqual([
       {
@@ -783,6 +795,7 @@ describe('edit visit boundary', () => {
       design: { ...DESIGN, name: 'Wool coat' },
       patch: { name: 'Wool coat' },
     });
+    tester.send({ type: 'write-settled', designId: DESIGN_ID });
 
     expect(tester.getEffects().slice(-1)).toEqual([
       {
@@ -808,6 +821,7 @@ describe('edit visit boundary', () => {
       design: { ...DESIGN, silhouette: 'Relaxed A-line', measurements: 'Bust 96, waist 104' },
       patch: { silhouette: ' Relaxed A-line ', measurements: 'Bust 96, waist 104' },
     });
+    tester.send({ type: 'write-settled', designId: DESIGN_ID });
 
     expect(tester.getEffects().slice(-1)).toEqual([
       {
@@ -834,6 +848,7 @@ describe('edit visit boundary', () => {
       design: DESIGN,
       patch: { neckline: '   ' },
     });
+    tester.send({ type: 'write-settled', designId: DESIGN_ID });
 
     expect(tester.getEffects().slice(-1)).toEqual([
       {
@@ -994,6 +1009,7 @@ describe('edit visit boundary', () => {
       design: { ...DESIGN, description: 'Heavy twill' },
       patch: { description: 'Heavy twill' },
     });
+    tester.send({ type: 'write-settled', designId: DESIGN_ID });
 
     expect(tester.getEffects().slice(-1)).toEqual([
       {
@@ -1018,6 +1034,7 @@ describe('edit visit boundary', () => {
       design: { ...DESIGN, description: 'Heavy twill' },
       patch: { description: '  Heavy twill  ' },
     });
+    tester.send({ type: 'write-settled', designId: DESIGN_ID });
 
     expect(tester.getEffects().slice(-1)).toEqual([
       {
@@ -1053,7 +1070,90 @@ describe('edit visit boundary', () => {
     ]);
     expect(tester.getState()).toMatchObject({
       stored: { name: 'Silk slip dress' },
-      closing: { at: NOW, outstanding: 0 },
+      closing: { at: NOW, writesOwed: 0 },
+    });
+  });
+
+  test('a two-field patch refused by one rule settles the visit once and records nothing', () => {
+    const tester = visit();
+
+    tester.send({ type: 'text-changed', field: 'name', value: 'Wool coat' });
+    tester.send({ type: 'text-changed', field: 'description', value: 'Heavy twill' });
+    tester.send({ type: 'visit-closed', now: NOW });
+
+    // One write carries both fields, so the close owes one write, not two.
+    expect(tester.getEffects()).toEqual([
+      {
+        type: 'write-design',
+        designId: DESIGN_ID,
+        changes: { fields: { name: 'Wool coat', description: 'Heavy twill' } },
+        now: NOW,
+      },
+    ]);
+    expect(tester.getState().closing).toEqual({ at: NOW, writesOwed: 1 });
+
+    // The refusal names the one field it refused; it does not settle the write.
+    tester.send({ type: 'field-refused', field: 'name', message: 'A design needs a name.' });
+    expect(tester.getState().closing).toEqual({ at: NOW, writesOwed: 1 });
+
+    tester.send({ type: 'write-settled', designId: DESIGN_ID });
+
+    const recording = tester.getEffects().filter((effect) => effect.type === 'record-visit');
+
+    expect(recording).toHaveLength(1);
+    // Nothing was stored, so the visit's after-state is the row it opened on.
+    expect(recording[0]).toMatchObject({ before: DESIGN, after: DESIGN });
+    expect(tester.getState().closing).toEqual({ at: NOW, writesOwed: 0 });
+  });
+
+  test('a missing use settles the write and keeps the visit open', () => {
+    const tester = visitWithUse();
+
+    tester.send({ type: 'material-use-editor-opened', materialUse: WOOL_USE, now: NOW });
+    tester.send({ type: 'material-use-panel-fact', fact: { type: 'colour-changed', colour: 'Black' }, now: NOW });
+    tester.send({ type: 'visit-closed', now: LATER });
+
+    tester.send({
+      type: 'material-use-panel-fact',
+      fact: { type: 'use-missing', useId: WOOL_USE.id },
+      now: LATER,
+    });
+    tester.send({ type: 'write-settled', designId: DESIGN_ID });
+
+    // The use is gone, but the Design row is not: the visit records its Event.
+    expect(tester.getState().storedUses).toEqual([]);
+    expect(tester.getState().materialUsePanel).toBeNull();
+    expect(tester.getState().closing).toEqual({ at: LATER, writesOwed: 0 });
+    expect(tester.getEffects().slice(-1)).toEqual([
+      {
+        type: 'record-visit',
+        designId: DESIGN_ID,
+        before: DESIGN,
+        after: DESIGN,
+        materialUses: { before: [WOOL_USE], after: [] },
+        now: LATER,
+      },
+    ]);
+  });
+
+  test('a refused remove keeps the use the visit holds on screen', () => {
+    const tester = visitWithUse();
+
+    tester.send({ type: 'material-use-editor-opened', materialUse: WOOL_USE, now: NOW });
+    tester.send({ type: 'material-use-panel-fact', fact: { type: 'remove-pressed' }, now: NOW });
+
+    // The refusal restores the panel it refused; the use stays in the record.
+    tester.send({
+      type: 'material-use-panel-fact',
+      fact: { type: 'refused', useId: WOOL_USE.id, message: 'A material use needs a colour.' },
+      now: NOW,
+    });
+
+    expect(tester.getState().storedUses).toEqual([WOOL_USE]);
+    expect(tester.getState().materialUsePanel).toMatchObject({
+      kind: 'edit',
+      stored: WOOL_USE,
+      error: 'A material use needs a colour.',
     });
   });
 
@@ -1071,9 +1171,9 @@ describe('edit visit boundary', () => {
         now: NOW,
       },
     ]);
-    expect(tester.getState().closing).toEqual({ at: NOW, outstanding: 1 });
+    expect(tester.getState().closing).toEqual({ at: NOW, writesOwed: 1 });
 
-    tester.send({ type: 'nothing-stored', designId: DESIGN_ID });
+    tester.send({ type: 'design-missing', designId: DESIGN_ID });
 
     // The row is gone: nothing the close still owes can be stored, so it stops
     // waiting and records no Event.
@@ -1086,7 +1186,7 @@ describe('edit visit boundary', () => {
       },
     ]);
     expect(tester.getState()).toMatchObject({
-      closing: { at: NOW, outstanding: 0 },
+      closing: { at: NOW, writesOwed: 0 },
       error: null,
     });
   });
@@ -1106,9 +1206,9 @@ describe('edit visit boundary', () => {
         now: LATER,
       },
     ]);
-    expect(tester.getState().closing).toEqual({ at: LATER, outstanding: 1 });
+    expect(tester.getState().closing).toEqual({ at: LATER, writesOwed: 1 });
 
-    tester.send({ type: 'nothing-stored', designId: DESIGN_ID });
+    tester.send({ type: 'design-missing', designId: DESIGN_ID });
 
     expect(tester.getEffects()).toEqual([
       {
@@ -1118,7 +1218,7 @@ describe('edit visit boundary', () => {
         now: LATER,
       },
     ]);
-    expect(tester.getState().closing).toEqual({ at: LATER, outstanding: 0 });
+    expect(tester.getState().closing).toEqual({ at: LATER, writesOwed: 0 });
   });
 
   test('a write that found no row outside a close changes nothing', () => {
@@ -1128,7 +1228,7 @@ describe('edit visit boundary', () => {
     tester.send({ type: 'app-backgrounded', now: NOW });
     const flushed = tester.getState();
 
-    tester.send({ type: 'nothing-stored', designId: DESIGN_ID });
+    tester.send({ type: 'design-missing', designId: DESIGN_ID });
 
     expect(tester.getEffects()).toEqual([
       {
@@ -1142,7 +1242,7 @@ describe('edit visit boundary', () => {
     expect(tester.getState().closing).toBeNull();
   });
 
-  test('a nothing-stored outcome for another design leaves the visit waiting', () => {
+  test('a design-missing outcome for another design leaves the visit waiting', () => {
     const tester = visit();
 
     tester.send({ type: 'text-changed', field: 'name', value: 'Wool coat' });
@@ -1150,10 +1250,10 @@ describe('edit visit boundary', () => {
     const closed = tester.getState();
 
     // A late answer for a surface that has moved on is not this visit's.
-    tester.send({ type: 'nothing-stored', designId: 'design-wool-coat' });
+    tester.send({ type: 'design-missing', designId: 'design-wool-coat' });
 
     expect(tester.getState()).toEqual(closed);
-    expect(tester.getState().closing).toEqual({ at: NOW, outstanding: 1 });
+    expect(tester.getState().closing).toEqual({ at: NOW, writesOwed: 1 });
     expect(tester.getEffects()).toEqual([
       {
         type: 'write-design',
@@ -1341,6 +1441,7 @@ describe('Material use editor', () => {
     ]);
 
     tester.send({ type: 'material-use-panel-fact', fact: { type: 'saved', materialUse: corrected }, now: NOW });
+    tester.send({ type: 'write-settled', designId: DESIGN_ID });
 
     expect(tester.getEffects().slice(-1)).toEqual([
       {
@@ -1362,6 +1463,7 @@ describe('Material use editor', () => {
     tester.send({ type: 'visit-closed', now: LATER });
 
     tester.send({ type: 'material-use-panel-fact', fact: { type: 'saved', materialUse: corrected }, now: NOW });
+    tester.send({ type: 'write-settled', designId: DESIGN_ID });
 
     expect(tester.getEffects().slice(-1)).toEqual([
       {

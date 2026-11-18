@@ -103,7 +103,7 @@ export type EditDesignState = {
    * visit records its one Event when the last of them reports back, so the
    * Event describes the rows the writes stored, not the drafts that asked.
    */
-  closing: { at: number; outstanding: number } | null;
+  closing: { at: number; writesOwed: number } | null;
 };
 
 export type EditDesignRow = DesignEditableField | 'taxonomy';
@@ -122,6 +122,8 @@ export type MaterialUsePanelFact =
   | { type: 'remove-pressed' }
   | { type: 'saved'; materialUse: MaterialUse }
   | { type: 'refused'; useId: string; message: string }
+  /** A correction or removal named a use the write could no longer find. */
+  | { type: 'use-missing'; useId: string }
   | { type: 'use-removed'; useId: string };
 
 export type EditDesignEvent =
@@ -142,7 +144,9 @@ export type EditDesignEvent =
   | { type: 'drafts-written'; design: DesignFields; patch: UpdateDesignInput }
   | { type: 'field-refused'; field: DesignEditableField; message: string }
   /** A write found no Design row to store into: the row is no longer in the catalog. */
-  | { type: 'nothing-stored'; designId: string }
+  | { type: 'design-missing'; designId: string }
+  /** One declared write reports back. The only event that settles the visit. */
+  | { type: 'write-settled'; designId: string }
   | { type: 'app-backgrounded'; now: number }
   | { type: 'visit-closed'; now: number };
 
@@ -229,84 +233,101 @@ export type WriteAttempt = {
   result: DesignWriteResult;
 };
 
+/** True for the use change whose colour a refusal named: a blank one. */
+function refusedUseChange(changes: DesignChanges): MaterialUseChange | undefined {
+  return (changes.uses ?? []).find((change) => {
+    if (change.kind === 'add') return change.input.colour.trim().length === 0;
+    if (change.kind === 'correct') return change.patch.colour?.trim().length === 0;
+    return false;
+  });
+}
+
 /**
- * The one place a write's answer becomes the events the visit settles on. Each
- * declared change gets one event, so a flush of a field and a Material use
- * correction settles twice — once per change — whether the write stored them
- * or a rule refused the whole write. The runner calls this once per write and
- * dispatches whatever comes back.
+ * The events a refusal produces: only what it refused. The offending field is
+ * restored and flagged, an open add or correct panel gets the refusal, and a
+ * collateral change gets no event — it was not the reason the write stopped.
+ */
+function refusalEvents(
+  changes: DesignChanges,
+  result: Extract<DesignWriteResult, { kind: 'refused' }>,
+  now: number
+): EditDesignEvent[] {
+  if (result.field === 'name') {
+    return [{ type: 'field-refused', field: 'name', message: result.message }];
+  }
+
+  const change = refusedUseChange(changes);
+
+  if (!change) return [];
+  if (change.kind === 'add') return [{ type: 'material-use-add-refused', message: result.message }];
+  if (change.kind === 'correct') {
+    return [
+      {
+        type: 'material-use-panel-fact',
+        fact: { type: 'refused', useId: change.useId, message: result.message },
+        now,
+      },
+    ];
+  }
+
+  return [];
+}
+
+/**
+ * The one place a write's answer becomes the events the visit handles. Each
+ * declared change gets one event, in declared order, and the answer ends with
+ * one `write-settled` — the only event that decrements the close's debt. A
+ * refusal names only what it refused; a missing Design row ends the visit.
+ * The runner calls this once per write and dispatches whatever comes back.
  */
 export function writeOutcome(attempt: WriteAttempt): EditDesignEvent[] {
   const { changes, designId, now, result } = attempt;
 
-  // Every change targets the Design's row: nothing stored means that row is no
-  // longer in the catalog, so the visit has nothing to record against.
-  if (result.kind === 'design-missing') return [{ type: 'nothing-stored', designId }];
+  // Every change targets the Design's row: a missing row means the visit has
+  // nothing left to record against, so no write can settle it.
+  if (result.kind === 'design-missing') return [{ type: 'design-missing', designId }];
 
-  if (result.kind === 'refused') {
-    const events: EditDesignEvent[] = [];
-    const message = result.message;
+  const settled: EditDesignEvent = { type: 'write-settled', designId };
 
-    for (const field of Object.keys(changes.fields ?? {}) as DesignEditableField[]) {
-      events.push({ type: 'field-refused', field, message });
-    }
-    for (const change of changes.uses ?? []) {
-      if (change.kind === 'add') {
-        events.push({ type: 'material-use-add-refused', message });
-      } else {
-        events.push({
-          type: 'material-use-panel-fact',
-          fact:
-            change.kind === 'correct'
-              ? { type: 'refused', useId: change.useId, message }
-              : { type: 'use-removed', useId: change.useId },
-          now,
-        });
-      }
-    }
-
-    return events;
-  }
+  if (result.kind === 'refused') return [...refusalEvents(changes, result, now), settled];
 
   // The result's per-change outcomes come back in the order the changes were
   // declared, so each declared change gets exactly one event.
-  return result.outcomes.flatMap((outcome): EditDesignEvent[] => {
-    switch (outcome.kind) {
-      case 'fields':
-        return [{ type: 'drafts-written', design: outcome.design, patch: changes.fields ?? {} }];
-      case 'add':
-        return [{ type: 'material-use-added', materialUse: outcome.materialUse }];
-      case 'correct':
-        return [
-          {
-            type: 'material-use-panel-fact',
-            fact: { type: 'saved', materialUse: outcome.materialUse },
-            now,
-          },
-        ];
-      case 'remove':
-        return [
-          {
-            type: 'material-use-panel-fact',
-            fact: { type: 'use-removed', useId: outcome.materialUse.id },
-            now,
-          },
-        ];
-      case 'use-missing':
-        return [
-          {
-            type: 'material-use-panel-fact',
-            fact: { type: 'use-removed', useId: outcome.useId },
-            now,
-          },
-        ];
-    }
-  });
-}
-
-/** How many changes one write effect declared, and so how many outcomes it owes. */
-export function changeCount(changes: DesignChanges): number {
-  return (changes.fields ? 1 : 0) + (changes.uses?.length ?? 0);
+  return [
+    ...result.outcomes.flatMap((outcome): EditDesignEvent[] => {
+      switch (outcome.kind) {
+        case 'fields':
+          return [{ type: 'drafts-written', design: outcome.design, patch: changes.fields ?? {} }];
+        case 'add':
+          return [{ type: 'material-use-added', materialUse: outcome.materialUse }];
+        case 'correct':
+          return [
+            {
+              type: 'material-use-panel-fact',
+              fact: { type: 'saved', materialUse: outcome.materialUse },
+              now,
+            },
+          ];
+        case 'remove':
+          return [
+            {
+              type: 'material-use-panel-fact',
+              fact: { type: 'use-removed', useId: outcome.materialUse.id },
+              now,
+            },
+          ];
+        case 'use-missing':
+          return [
+            {
+              type: 'material-use-panel-fact',
+              fact: { type: 'use-missing', useId: outcome.useId },
+              now,
+            },
+          ];
+      }
+    }),
+    settled,
+  ];
 }
 
 export function createInitialEditDesignState(designId: string): EditDesignState {
@@ -480,20 +501,21 @@ function recordEffect(state: EditDesignState, at: number): EditDesignEffect | nu
 }
 
 /**
- * One write the visit declared has reported back. When the last one settles, the close records the visit; until then the Event is not
+ * One write the visit declared has reported back. When the last of the writes
+ * it owes settles, the close records the visit; until then the Event is not
  * written, so it can never describe a row the write did not store.
  */
 function settled(state: EditDesignState): EditDesignResult {
   const closing = state.closing;
 
-  if (!closing || closing.outstanding === 0) return only(state);
+  if (!closing || closing.writesOwed === 0) return only(state);
 
   const next = {
     ...state,
-    closing: { ...closing, outstanding: closing.outstanding - 1 },
+    closing: { ...closing, writesOwed: closing.writesOwed - 1 },
   };
 
-  if (next.closing.outstanding > 0) return only(next);
+  if (next.closing.writesOwed > 0) return only(next);
 
   const effect = recordEffect(next, closing.at);
 
@@ -511,7 +533,7 @@ function settledWithoutRow(state: EditDesignState): EditDesignResult {
 
   if (!closing) return only(state);
 
-  return only({ ...state, closing: { at: closing.at, outstanding: 0 } });
+  return only({ ...state, closing: { at: closing.at, writesOwed: 0 } });
 }
 
 /** The drafts a confirmed write updates: only the fields it stored. */
@@ -570,7 +592,7 @@ function withPanel(result: EditDesignResult, panel: MaterialUsePanel | null): Ed
  * differ in two ways, so both are arguments: `writesDrafts` — a row swap writes
  * the visit's drafts only when it left a text row, every other gesture writes
  * them all — and `records`, which only a close sets. The changes ride together
- * in one effect; "how many changes are still owed" is the visit's bookkeeping.
+ * in one effect; the number of writes the visit still owes is its bookkeeping.
  *
  * `next` still holds the Material use panel that was open, because its colour
  * is part of what the flush owes; the caller closes or replaces it on the
@@ -588,7 +610,7 @@ function flush(
   if (uses.length > 0) changes.uses = uses;
   if (fields) changes.fields = fields;
 
-  const owesWrite = changeCount(changes) > 0;
+  const owesWrite = changes.fields !== undefined || (changes.uses?.length ?? 0) > 0;
   const effects = owesWrite ? [writeEffect(next, changes, now)] : [];
 
   if (!records) return owesWrite ? { state: next, effects } : only(next);
@@ -597,7 +619,7 @@ function flush(
   // for the rows they store rather than the drafts that asked for them.
   const closed: EditDesignState = {
     ...next,
-    closing: { at: now, outstanding: owesWrite ? changeCount(changes) : 0 },
+    closing: { at: now, writesOwed: effects.length },
   };
 
   if (owesWrite) return { state: closed, effects };
@@ -840,7 +862,7 @@ export function editDesignReducer(
         case 'saved': {
           const isTheSameUse = editing !== null && editing.stored.id === fact.materialUse.id;
 
-          return settled({
+          return only({
             ...state,
             // A late outcome for a use the editor has moved on from updates the
             // row, not the open editor.
@@ -863,9 +885,9 @@ export function editDesignReducer(
           });
         }
         case 'refused': {
-          if (!editing || editing.stored.id !== fact.useId) return settled(state);
+          if (!editing || editing.stored.id !== fact.useId) return only(state);
 
-          return settled({
+          return only({
             ...state,
             materialUsePanel: {
               kind: 'edit',
@@ -877,6 +899,15 @@ export function editDesignReducer(
             },
           });
         }
+        case 'use-missing':
+          // The use is no longer stored, so there is nothing left to correct or
+          // remove. Only the row's own disappearance ends the visit.
+          return only({
+            ...state,
+            materialUsePanel:
+              editing?.stored.id === fact.useId ? null : state.materialUsePanel,
+            storedUses: state.storedUses.filter((use) => use.id !== fact.useId),
+          });
         case 'use-removed':
           return only({
             ...state,
@@ -919,8 +950,9 @@ export function editDesignReducer(
       return only({ ...state, editing: null });
     case 'drafts-written':
       // The row the write stored becomes the visit's record, and the drafts it
-      // wrote follow it so a trimmed name shows as it was stored.
-      return settled({
+      // wrote follow it so a trimmed name shows as it was stored. The write is
+      // not settled by its own outcome events; `write-settled` does that.
+      return only({
         ...state,
         draft: draftsAfterWrite(state.draft, event.design, event.patch),
         stored: event.design,
@@ -929,7 +961,9 @@ export function editDesignReducer(
           state.error && state.error.field in event.patch ? null : state.error,
       });
     case 'field-refused':
-      return settled({
+      // Only the field the write refused is restored; the drafts beside it stay
+      // as the owner left them, still unwritten.
+      return only({
         ...state,
         draft: {
           ...state.draft,
@@ -939,12 +973,18 @@ export function editDesignReducer(
         },
         error: { field: event.field, message: event.message },
       });
-    case 'nothing-stored':
+    case 'design-missing':
       // A late outcome can belong to a surface that has moved on; only this
-      // visit's own row being gone settles it.
+      // visit's own row being gone ends it.
       if (event.designId !== state.designId) return only(state);
 
       return settledWithoutRow(state);
+    case 'write-settled':
+      // One write reports back, whether it stored, refused, or missed a use.
+      // Only this event decrements the close's debt and records the visit.
+      if (event.designId !== state.designId) return only(state);
+
+      return settled(state);
     case 'app-backgrounded':
       // Leaving the foreground flushes a draft; only a close records the visit.
       return state.closing
