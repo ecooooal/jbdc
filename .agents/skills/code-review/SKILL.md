@@ -22,6 +22,8 @@ Capture the diff command once: `git diff <fixed-point>...HEAD` (three-dot, so th
 
 Before going further, confirm the fixed point resolves (`git rev-parse <fixed-point>`) and the diff is non-empty. A bad ref or empty diff should fail here, not inside two parallel sub-agents.
 
+If the range holds commits that do not carry the ticket ref — a user commit landing mid-ticket, say — name them in the commit list and tell both sub-agents to exclude their paths. The review covers the ticket's commits only.
+
 ### 2. Identify the spec source
 
 Look for the originating spec, in this order:
