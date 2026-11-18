@@ -17,6 +17,7 @@ import {
   type DesignEditableField,
   type DesignTextEditableField,
 } from './fields';
+import type { InlineCreationEvent } from './inline-creation-reducer';
 import { designNameProblem } from './limits';
 import { normalizeOptionalText } from './optional-text';
 import type {
@@ -131,11 +132,7 @@ export type EditDesignEvent =
   | { type: 'material-use-add-refused'; message: string }
   | { type: 'material-use-add-opened'; now: number }
   | { type: 'material-use-editor-opened'; materialUse: MaterialUse; now: number }
-  | { type: 'material-use-inline-creation-opened' }
-  | { type: 'material-use-inline-creation-closed' }
-  | { type: 'material-use-inline-name-changed'; name: string }
-  | { type: 'material-use-material-created'; materialId: string }
-  | { type: 'material-use-inline-creation-refused'; message: string }
+  | { type: 'material-use-inline-fact'; fact: InlineCreationEvent }
   | { type: 'material-use-panel-fact'; fact: MaterialUsePanelFact; now: number }
   | { type: 'row-opened'; row: EditDesignRow; now: number }
   | { type: 'tab-changed'; tab: DesignSectionTab; now: number }
@@ -740,22 +737,8 @@ export function editDesignReducer(
         ...editingMaterialUseFrom(event.materialUse),
       });
     }
-    case 'material-use-inline-creation-opened':
-      return withAddEditorFact(state, { type: 'inline-creation-opened' });
-    case 'material-use-inline-creation-closed':
-      return withAddEditorFact(state, { type: 'inline-creation-closed' });
-    case 'material-use-inline-name-changed':
-      return withAddEditorFact(state, { type: 'inline-name-changed', name: event.name });
-    case 'material-use-material-created':
-      return withAddEditorFact(state, {
-        type: 'material-created',
-        materialId: event.materialId,
-      });
-    case 'material-use-inline-creation-refused':
-      return withAddEditorFact(state, {
-        type: 'inline-creation-refused',
-        message: event.message,
-      });
+    case 'material-use-inline-fact':
+      return withAddEditorFact(state, { type: 'inline-fact', fact: event.fact });
     case 'material-use-panel-fact': {
       const { fact } = event;
       const editing = editingMaterialUse(state);

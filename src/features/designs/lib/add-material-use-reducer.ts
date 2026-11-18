@@ -1,17 +1,23 @@
 import type { MaterialUseRole } from '@/features/database';
+import {
+  createInitialInlineCreationState,
+  type InlineCreationEvent,
+  type InlineCreationState,
+  inlineCreationReducer,
+} from './inline-creation-reducer';
 
 /**
  * The add-Material-use editor's decisions: the Material chosen or created
  * inline, the colour draft, the role, and the one refusal on screen. The
  * Material rows themselves stay in `useMaterials`; the visit owns the write.
+ * The inline form is the shared slice — this editor only selects the id a
+ * completed create reports.
  */
 export type AddMaterialUseState = {
   materialId: string | null;
   colour: string;
   role: MaterialUseRole;
-  inlineCreationOpen: boolean;
-  inlineName: string;
-  inlineError: string | null;
+  inline: InlineCreationState;
   error: string | null;
 };
 
@@ -19,28 +25,15 @@ export type AddMaterialUseEvent =
   | { type: 'material-chosen'; materialId: string | null }
   | { type: 'colour-changed'; colour: string }
   | { type: 'role-chosen'; role: MaterialUseRole }
-  | { type: 'inline-creation-opened' }
-  | { type: 'inline-creation-closed' }
-  | { type: 'inline-name-changed'; name: string }
-  | { type: 'material-created'; materialId: string }
-  | { type: 'inline-creation-refused'; message: string }
+  | { type: 'inline-fact'; fact: InlineCreationEvent }
   | { type: 'use-creation-refused'; message: string };
-
-const CLOSED_INLINE_CREATION = {
-  inlineCreationOpen: false,
-  inlineName: '',
-  inlineError: null,
-} satisfies Pick<
-  AddMaterialUseState,
-  'inlineCreationOpen' | 'inlineName' | 'inlineError'
->;
 
 export function createInitialAddMaterialUseState(): AddMaterialUseState {
   return {
     materialId: null,
     colour: '',
     role: 'main',
-    ...CLOSED_INLINE_CREATION,
+    inline: createInitialInlineCreationState(),
     error: null,
   };
 }
@@ -67,21 +60,15 @@ export function addMaterialUseReducer(
       return { ...state, colour: event.colour, error: null };
     case 'role-chosen':
       return { ...state, role: event.role };
-    case 'inline-creation-opened':
-      return { ...state, ...CLOSED_INLINE_CREATION, inlineCreationOpen: true };
-    case 'inline-creation-closed':
-      return { ...state, ...CLOSED_INLINE_CREATION };
-    case 'inline-name-changed':
-      return { ...state, inlineName: event.name, inlineError: null };
-    case 'material-created':
-      return {
-        ...state,
-        ...CLOSED_INLINE_CREATION,
-        materialId: event.materialId,
-        error: null,
-      };
-    case 'inline-creation-refused':
-      return { ...state, inlineError: event.message };
+    case 'inline-fact': {
+      const inline = inlineCreationReducer(state.inline, event.fact);
+
+      if (event.fact.type !== 'created') return { ...state, inline };
+
+      // The slice only reports an id; selecting it and clearing a stale use
+      // refusal are this editor's decisions.
+      return { ...state, inline, materialId: event.fact.id, error: null };
+    }
     case 'use-creation-refused':
       return { ...state, error: event.message };
   }

@@ -16,6 +16,10 @@ import {
   canAddMaterialUse,
   type AddMaterialUseState,
 } from '../lib/add-material-use-reducer';
+import {
+  inlineCreationResult,
+  type InlineCreationEvent,
+} from '../lib/inline-creation-reducer';
 import { FormField } from './form-field';
 import { InlineCreationPanel } from './inline-creation-panel';
 import { MaterialUseRoleSelect } from './material-use-role-select';
@@ -34,11 +38,7 @@ export function AddMaterialUseForm({
   onMaterialChosen,
   onColourChanged,
   onRoleChosen,
-  onInlineCreationOpened,
-  onInlineCreationClosed,
-  onInlineNameChanged,
-  onMaterialCreated,
-  onInlineCreationRefused,
+  onInlineFact,
   onConfirm,
   onCancel,
 }: {
@@ -46,11 +46,7 @@ export function AddMaterialUseForm({
   onMaterialChosen: (materialId: string | null) => void;
   onColourChanged: (colour: string) => void;
   onRoleChosen: (role: MaterialUseRole) => void;
-  onInlineCreationOpened: () => void;
-  onInlineCreationClosed: () => void;
-  onInlineNameChanged: (name: string) => void;
-  onMaterialCreated: (materialId: string) => void;
-  onInlineCreationRefused: (message: string) => void;
+  onInlineFact: (fact: InlineCreationEvent) => void;
   onConfirm: () => void;
   onCancel: () => void;
 }) {
@@ -60,15 +56,12 @@ export function AddMaterialUseForm({
   const canAdd = canAddMaterialUse(state);
 
   function createMaterialInline(): void {
-    try {
-      const material = createMaterial(database, { name: state.inlineName });
-
-      onMaterialCreated(material.id);
-    } catch (caught) {
-      if (!(caught instanceof InvalidMaterialNameError)) throw caught;
-
-      onInlineCreationRefused(caught.message);
-    }
+    onInlineFact(
+      inlineCreationResult(
+        () => createMaterial(database, { name: state.inline.name }),
+        InvalidMaterialNameError
+      )
+    );
   }
 
   return (
@@ -82,23 +75,23 @@ export function AddMaterialUseForm({
           disabled={status !== 'ready'}
           onSelect={(material) => onMaterialChosen(material?.id ?? null)}
         />
-        {state.inlineCreationOpen ? (
+        {state.inline.open ? (
           <InlineCreationPanel
             title="New material"
             submitLabel="Add to list"
-            name={state.inlineName}
-            error={state.inlineError}
+            name={state.inline.name}
+            error={state.inline.error}
             maxLength={MATERIAL_NAME_MAX_LENGTH}
-            onNameChange={onInlineNameChanged}
+            onNameChange={(name) => onInlineFact({ type: 'name-changed', name })}
             onSubmit={createMaterialInline}
-            onCancel={onInlineCreationClosed}
+            onCancel={() => onInlineFact({ type: 'closed' })}
           />
         ) : (
           <Button
             size="sm"
             variant="ghost"
             className="self-start"
-            onPress={onInlineCreationOpened}
+            onPress={() => onInlineFact({ type: 'opened' })}
           >
             <Icon as={Plus} />
             <Text>New material</Text>

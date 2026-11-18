@@ -56,21 +56,7 @@ export function MaterialUsesSection({
           onRoleChosen={(role) =>
             send({ type: 'material-use-panel-fact', fact: { type: 'role-chosen', role } })
           }
-          onInlineCreationOpened={() =>
-            send({ type: 'material-use-inline-creation-opened' })
-          }
-          onInlineCreationClosed={() =>
-            send({ type: 'material-use-inline-creation-closed' })
-          }
-          onInlineNameChanged={(name) =>
-            send({ type: 'material-use-inline-name-changed', name })
-          }
-          onMaterialCreated={(materialId) =>
-            send({ type: 'material-use-material-created', materialId })
-          }
-          onInlineCreationRefused={(message) =>
-            send({ type: 'material-use-inline-creation-refused', message })
-          }
+          onInlineFact={(fact) => send({ type: 'material-use-inline-fact', fact })}
           onConfirm={() => send({ type: 'material-use-add-confirmed' })}
           onCancel={() => send({ type: 'material-use-panel-fact', fact: { type: 'closed' } })}
         />

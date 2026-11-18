@@ -1592,9 +1592,7 @@ describe('the add Material use panel', () => {
         materialId: null,
         colour: '',
         role: 'main',
-        inlineCreationOpen: false,
-        inlineName: '',
-        inlineError: null,
+        inline: { open: false, name: '', error: null },
         error: null,
       },
     });
@@ -1667,9 +1665,7 @@ describe('the add Material use panel', () => {
         materialId: 'material-wool',
         colour: '   ',
         role: 'main',
-        inlineCreationOpen: false,
-        inlineName: '',
-        inlineError: null,
+        inline: { open: false, name: '', error: null },
         error: 'A material use needs a colour.',
       },
     });
@@ -1700,9 +1696,7 @@ describe('the add Material use panel', () => {
         materialId: 'material-wool',
         colour: 'Charcoal',
         role: 'main',
-        inlineCreationOpen: false,
-        inlineName: '',
-        inlineError: null,
+        inline: { open: false, name: '', error: null },
         error: 'A material use needs a colour.',
       },
     });
@@ -1711,19 +1705,21 @@ describe('the add Material use panel', () => {
   test('a Material created inline becomes the chosen Material', () => {
     const tester = adding();
 
-    tester.send({ type: 'material-use-inline-creation-opened' });
-    tester.send({ type: 'material-use-inline-name-changed', name: 'Silk crêpe' });
+    tester.send({ type: 'material-use-inline-fact', fact: { type: 'opened' } });
     tester.send({
-      type: 'material-use-material-created',
-      materialId: 'material-silk',
+      type: 'material-use-inline-fact',
+      fact: { type: 'name-changed', name: 'Silk crêpe' },
+    });
+    tester.send({
+      type: 'material-use-inline-fact',
+      fact: { type: 'created', id: 'material-silk' },
     });
 
     expect(tester.getState().materialUsePanel).toMatchObject({
       kind: 'add',
       editor: {
         materialId: 'material-silk',
-        inlineCreationOpen: false,
-        inlineName: '',
+        inline: { open: false, name: '', error: null },
       },
     });
   });
@@ -1731,19 +1727,20 @@ describe('the add Material use panel', () => {
   test('an inline creation refusal keeps the typed name and the panel open', () => {
     const tester = adding();
 
-    tester.send({ type: 'material-use-inline-creation-opened' });
-    tester.send({ type: 'material-use-inline-name-changed', name: 'Silk crêpe' });
+    tester.send({ type: 'material-use-inline-fact', fact: { type: 'opened' } });
     tester.send({
-      type: 'material-use-inline-creation-refused',
-      message: 'That material is already in the list.',
+      type: 'material-use-inline-fact',
+      fact: { type: 'name-changed', name: 'Silk crêpe' },
+    });
+    tester.send({
+      type: 'material-use-inline-fact',
+      fact: { type: 'refused', message: 'That material is already in the list.' },
     });
 
     expect(tester.getState().materialUsePanel).toMatchObject({
       kind: 'add',
       editor: {
-        inlineCreationOpen: true,
-        inlineName: 'Silk crêpe',
-        inlineError: 'That material is already in the list.',
+        inline: { open: true, name: 'Silk crêpe', error: 'That material is already in the list.' },
       },
     });
   });

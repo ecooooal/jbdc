@@ -4,23 +4,15 @@ import {
   createInitialAddMaterialUseState,
 } from '../lib/add-material-use-reducer';
 
-function opened() {
-  return addMaterialUseReducer(createInitialAddMaterialUseState(), {
-    type: 'inline-creation-opened',
-  });
-}
-
 describe('add material use reducer', () => {
-  test('starts empty, on the main role, and cannot add yet', () => {
+  test('starts empty, on the main role, with inline creation closed, and cannot add yet', () => {
     const state = createInitialAddMaterialUseState();
 
     expect(state).toEqual({
       materialId: null,
       colour: '',
       role: 'main',
-      inlineCreationOpen: false,
-      inlineName: '',
-      inlineError: null,
+      inline: { open: false, name: '', error: null },
       error: null,
     });
     expect(canAddMaterialUse(state)).toBe(false);
@@ -46,67 +38,21 @@ describe('add material use reducer', () => {
     expect(state.role).toBe('other');
   });
 
-  test('a Material created inline becomes the chosen Material and closes the form', () => {
-    const state = addMaterialUseReducer(opened(), {
-      type: 'material-created',
-      materialId: 'material-silk',
-    });
-
-    expect(state).toMatchObject({
-      materialId: 'material-silk',
-      inlineCreationOpen: false,
-      inlineName: '',
-      inlineError: null,
-    });
-    expect(canAddMaterialUse({ ...state, colour: 'Ivory' })).toBe(true);
-  });
-
-  test('an inline refusal keeps the name draft and shows the message', () => {
-    let state = addMaterialUseReducer(opened(), {
-      type: 'inline-name-changed',
-      name: 'Silk crêpe',
-    });
-    state = addMaterialUseReducer(state, {
-      type: 'inline-creation-refused',
-      message: 'That material is already in the list.',
-    });
-
-    expect(state).toMatchObject({
-      inlineName: 'Silk crêpe',
-      inlineError: 'That material is already in the list.',
-    });
-
-    state = addMaterialUseReducer(state, { type: 'inline-name-changed', name: 'Silk crêpe 2' });
-
-    expect(state.inlineError).toBeNull();
-  });
-
-  test('closing inline creation clears its draft and message', () => {
-    let state = addMaterialUseReducer(opened(), {
-      type: 'inline-name-changed',
-      name: 'Silk crêpe',
-    });
-    state = addMaterialUseReducer(state, {
-      type: 'inline-creation-refused',
-      message: 'A material needs a name.',
-    });
-
-    state = addMaterialUseReducer(state, { type: 'inline-creation-closed' });
-
-    expect(state).toMatchObject({ inlineCreationOpen: false, inlineName: '', inlineError: null });
-  });
-
-  test('creating a Material inline clears a stale use refusal', () => {
+  test('a Material created inline is selected and clears a stale use refusal', () => {
     let state = addMaterialUseReducer(createInitialAddMaterialUseState(), {
       type: 'use-creation-refused',
       message: 'A material use needs a colour.',
     });
     state = addMaterialUseReducer(state, {
-      type: 'material-created',
-      materialId: 'material-silk',
+      type: 'inline-fact',
+      fact: { type: 'created', id: 'material-silk' },
     });
 
-    expect(state.error).toBeNull();
+    expect(state).toMatchObject({
+      materialId: 'material-silk',
+      inline: { open: false, name: '', error: null },
+      error: null,
+    });
   });
 
   test('a use refusal clears when a choice changes', () => {
