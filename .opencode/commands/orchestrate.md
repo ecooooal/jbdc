@@ -45,7 +45,15 @@ is what makes its override true; confirm the comment exists before dispatch, and
 
 ## 2b. Overlap gate
 
-Before you dispatch anything, look at what the tickets already in flight touch:
+Before you dispatch anything, classify every worktree under /home/echo/workspace/wt/ against the tracker, by the
+ticket number in its directory name:
+
+- issue closed and its commits in the slice (`git -C /home/echo/workspace/jbdc log --oneline --grep "(#<n>)"`) —
+  stale: remove it, `git -C /home/echo/workspace/jbdc worktree remove /home/echo/workspace/wt/<n>`;
+- issue open with a Base comment — in flight: it joins the gate below;
+- anything else — report it and leave it alone.
+
+Then look at what the tickets still in flight touch:
 
 ```
 git -C /home/echo/workspace/wt/<m> status --short
