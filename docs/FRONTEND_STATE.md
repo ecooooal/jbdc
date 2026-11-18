@@ -8,7 +8,7 @@ This is the elaboration of **"State lives in reducers"** in `CODING_STANDARDS.md
 
 ## Where a reducer lives
 
-`src/features/<feature>/lib/<surface>-reducer.ts`, with no React import and no database access. Its test is `src/features/<feature>/tests/<surface>-reducer.test.ts`. Both stay private to the feature; a component reaches the reducer through the feature's own tree, not through `index.ts`/`react.ts` unless a screen genuinely needs it.
+`src/features/<feature>/lib/<surface>-reducer.ts`, with no React import and no database access. Its tests live in `src/features/<feature>/tests/`; a surface with several concerns splits them into sibling files that share one fixtures module. Both stay private to the feature; a component reaches the reducer through the feature's own tree, not through `index.ts`/`react.ts` unless a screen genuinely needs it.
 
 One file per **surface**, not per feature: two screens that do not share a state machine get two reducers. A surface may delegate a slice to a private reducer in the same folder — Edit's add-Material-use editor is one — but the surface still exports one state, event, and effect type. The slice is not a second surface.
 
