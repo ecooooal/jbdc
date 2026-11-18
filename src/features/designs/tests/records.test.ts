@@ -37,7 +37,9 @@ function updateDesign(
   input: UpdateDesignInput,
   now?: number
 ): Design | null {
-  return writeDesign(database, designId, { fields: input }, now)?.design ?? null;
+  const result = writeDesign(database, designId, { fields: input }, now);
+
+  return result.kind === 'stored' ? result.design : null;
 }
 
 let database: ReturnType<typeof createTempDatabase>['database'];
@@ -669,9 +671,11 @@ describe('design updates', () => {
   test('refuses a blank name and keeps the previous one', () => {
     const design = createDesign(database, { name: 'Wool coat' }, 10);
 
-    expect(() => updateDesign(database, design.id, { name: '   ' }, 20)).toThrow(
-      InvalidDesignNameError
-    );
+    expect(writeDesign(database, design.id, { fields: { name: '   ' } }, 20)).toEqual({
+      kind: 'refused',
+      field: 'name',
+      message: 'A design needs a name.',
+    });
 
     expect(getDesign(database, design.id)).toMatchObject({
       name: 'Wool coat',
@@ -685,9 +689,18 @@ describe('design updates', () => {
     expect(
       updateDesign(database, design.id, { name: 'a'.repeat(DESIGN_NAME_MAX_LENGTH) }, 20)
     ).toMatchObject({ name: 'a'.repeat(DESIGN_NAME_MAX_LENGTH) });
-    expect(() =>
-      updateDesign(database, design.id, { name: 'a'.repeat(DESIGN_NAME_MAX_LENGTH + 1) }, 30)
-    ).toThrow(InvalidDesignNameError);
+    expect(
+      writeDesign(
+        database,
+        design.id,
+        { fields: { name: 'a'.repeat(DESIGN_NAME_MAX_LENGTH + 1) } },
+        30
+      )
+    ).toEqual({
+      kind: 'refused',
+      field: 'name',
+      message: `A design name can be at most ${DESIGN_NAME_MAX_LENGTH} characters.`,
+    });
   });
 
   test('an update that changes nothing leaves the timestamp alone', () => {

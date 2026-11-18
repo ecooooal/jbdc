@@ -83,21 +83,35 @@ export type DesignChanges = {
   uses?: readonly MaterialUseChange[];
 };
 
-/** What one write stored, including each change's outcome for the caller. */
-export type DesignWriteResult = {
-  /** The row as it now stands, whether or not anything changed. */
-  design: Design;
-  /** Every use the row holds after the write, with names resolved and ordered. */
-  materialUses: MaterialUse[];
-  /** The uses this write added. */
-  added: MaterialUse[];
-  /** The uses this write corrected, after the correction. */
-  corrected: MaterialUse[];
-  /** The uses this write removed, as they were. */
-  removed: MaterialUse[];
-  /** Requests that named a use which is no longer stored. */
-  missingUseIds: string[];
-};
+/**
+ * What one declared change produced: the row the write stored, or the use it
+ * could not find. The list is aligned with the changes the caller declared —
+ * one `fields` entry for the patch, then one per Material use in declared order.
+ */
+export type ChangeOutcome =
+  | { kind: 'fields'; design: Design }
+  | { kind: 'add'; materialUse: MaterialUse }
+  | { kind: 'correct'; materialUse: MaterialUse }
+  | { kind: 'remove'; materialUse: MaterialUse }
+  | { kind: 'use-missing'; useId: string };
+
+/**
+ * The one answer a write gives: what it stored with one outcome per declared
+ * change, the rule that refused the whole write, or nothing because the Design
+ * row is no longer in the catalog. It never throws.
+ */
+export type DesignWriteResult =
+  | {
+      kind: 'stored';
+      /** The row as it now stands, whether or not anything changed. */
+      design: Design;
+      /** Every use the row holds after the write, with names resolved and ordered. */
+      materialUses: MaterialUse[];
+      /** One outcome per declared change, in declared order. */
+      outcomes: ChangeOutcome[];
+    }
+  | { kind: 'refused'; field: 'name' | 'colour'; message: string }
+  | { kind: 'design-missing' };
 
 /**
  * A Design's Material uses as a visit opened and as it will close. The two
@@ -116,23 +130,22 @@ export type DesignDetail = Design & {
   materialUses: MaterialUse[];
 };
 
+/** The one sentence a refused name carries, shared by create and by the write. */
+function nameProblemMessage(problem: 'empty' | 'too_long'): string {
+  return problem === 'empty'
+    ? 'A design needs a name.'
+    : `A design name can be at most ${DESIGN_NAME_MAX_LENGTH} characters.`;
+}
+
 export class InvalidDesignNameError extends Error {
   constructor(readonly reason: 'empty' | 'too_long') {
-    super(
-      reason === 'empty'
-        ? 'A design needs a name.'
-        : `A design name can be at most ${DESIGN_NAME_MAX_LENGTH} characters.`
-    );
+    super(nameProblemMessage(reason));
     this.name = 'InvalidDesignNameError';
   }
 }
 
-export class InvalidMaterialUseError extends Error {
-  constructor(readonly reason: 'empty_colour') {
-    super('A material use needs a colour.');
-    this.name = 'InvalidMaterialUseError';
-  }
-}
+/** The one sentence a refused colour carries. */
+const EMPTY_COLOUR_MESSAGE = 'A material use needs a colour.';
 
 /**
  * The columns a read selects, derived from the table. `searchText` is derived
@@ -295,13 +308,11 @@ function editableValues(design: Design): Partial<Design> {
   ) as Partial<Design>;
 }
 
-/** A colour a use must have; blank is a refusal before anything is written. */
-function requiredColour(raw: string): string {
+/** A use's colour, trimmed; null means blank, which the write refuses. */
+function storedColour(raw: string): string | null {
   const colour = raw.trim();
 
-  if (colour.length === 0) throw new InvalidMaterialUseError('empty_colour');
-
-  return colour;
+  return colour.length === 0 ? null : colour;
 }
 
 /**
@@ -350,42 +361,58 @@ export function createDesign(
  * field and use changes; this function reads the row and its uses once, decides
  * once whether anything changed, and stores the row, its uses, the rebuilt
  * `search_text`, and the moved `updatedAt` in one transaction. An observer sees
- * the row and its search text together or not at all. Returns null for exactly
- * one reason: the Design row is no longer in the catalog.
+ * the row and its search text together or not at all. It answers once: what it
+ * stored with one outcome per declared change, the rule that refused it, or
+ * `design-missing` when the Design row is no longer in the catalog.
  */
 export function writeDesign(
   database: Database,
   designId: string,
   changes: DesignChanges,
   now: number = Date.now()
-): DesignWriteResult | null {
+): DesignWriteResult {
   return database.transaction((tx) => {
     // Validate inside the transaction: a refusal stores nothing, and no row
-    // write can land without the search text that belongs with it.
-    const fields: UpdateDesignInput = changes.fields
-      ? {
-          ...changes.fields,
-          ...(changes.fields.name !== undefined && { name: normalizeName(changes.fields.name) }),
-        }
-      : {};
+    // write can land without the search text that belongs with it. A name is
+    // judged first, then each use's colour, so a refusal names the one field
+    // that stopped the write.
+    const fields: UpdateDesignInput = { ...changes.fields };
+
+    if (fields.name !== undefined) {
+      const problem = designNameProblem(fields.name);
+
+      if (problem) {
+        return { kind: 'refused', field: 'name', message: nameProblemMessage(problem) };
+      }
+
+      fields.name = fields.name.trim();
+    }
+
+    for (const change of changes.uses ?? []) {
+      const colour =
+        change.kind === 'add'
+          ? change.input.colour
+          : change.kind === 'correct'
+            ? change.patch.colour
+            : undefined;
+
+      if (colour !== undefined && storedColour(colour) === null) {
+        return { kind: 'refused', field: 'colour', message: EMPTY_COLOUR_MESSAGE };
+      }
+    }
+
     const uses = (changes.uses ?? []).map((change) => {
       if (change.kind === 'add') {
-        return {
-          ...change,
-          input: { ...change.input, colour: requiredColour(change.input.colour) },
-        };
+        return { ...change, input: { ...change.input, colour: storedColour(change.input.colour)! } };
       }
       if (change.kind === 'correct' && change.patch.colour !== undefined) {
-        return {
-          ...change,
-          patch: { ...change.patch, colour: requiredColour(change.patch.colour) },
-        };
+        return { ...change, patch: { ...change.patch, colour: storedColour(change.patch.colour)! } };
       }
       return change;
     });
 
     const current = designFrom(tx, designId);
-    if (!current) return null;
+    if (!current) return { kind: 'design-missing' };
 
     // One name read and one use read per write. Both the search rebuild and the
     // returned uses work from these, so a write never walks either table twice.
@@ -393,11 +420,8 @@ export function writeDesign(
     const beforeUses = materialUsesFrom(tx, designId, names);
     const next = designAfterPatch(current, fields);
 
-    let working = beforeUses.slice();
-    const added: MaterialUse[] = [];
-    const corrected: MaterialUse[] = [];
-    const removed: MaterialUse[] = [];
-    const missingUseIds: string[] = [];
+    const working = beforeUses.slice();
+    const useOutcomes: ChangeOutcome[] = [];
 
     for (const change of uses) {
       if (change.kind === 'add') {
@@ -411,20 +435,20 @@ export function writeDesign(
           createdAt: now,
         };
         working.push(use);
-        added.push(use);
+        useOutcomes.push({ kind: 'add', materialUse: use });
         continue;
       }
 
       const index = working.findIndex((use) => use.id === change.useId);
 
       if (index < 0) {
-        missingUseIds.push(change.useId);
+        useOutcomes.push({ kind: 'use-missing', useId: change.useId });
         continue;
       }
 
       if (change.kind === 'remove') {
         const [gone] = working.splice(index, 1);
-        removed.push(gone);
+        useOutcomes.push({ kind: 'remove', materialUse: gone });
         continue;
       }
 
@@ -437,15 +461,20 @@ export function writeDesign(
         role: change.patch.role ?? working[index].role,
       };
       working[index] = nextUse;
-      corrected.push(nextUse);
+      useOutcomes.push({ kind: 'correct', materialUse: nextUse });
     }
 
     const materialUses = working.sort(compareMaterialUses);
     const unchanged =
       !diffDesignFields(current, next) && !diffMaterialUses(beforeUses, materialUses);
+    const stored: Design = unchanged ? current : { ...next, updatedAt: now };
+    const outcomes: ChangeOutcome[] = [
+      ...(changes.fields ? [{ kind: 'fields' as const, design: stored }] : []),
+      ...useOutcomes,
+    ];
 
     if (unchanged) {
-      return { design: current, materialUses, added, corrected, removed, missingUseIds };
+      return { kind: 'stored', design: stored, materialUses, outcomes };
     }
 
     const taxonomy = designTaxonomyNamesFrom(tx, next.categoryId, next.collectionId);
@@ -464,36 +493,39 @@ export function writeDesign(
       .where(eq(designs.id, designId))
       .run();
 
-    for (const use of added) {
-      tx.insert(designMaterials)
-        .values({
-          id: use.id,
-          designId,
-          materialId: use.materialId,
-          colour: use.colour,
-          role: use.role,
-          createdAt: use.createdAt,
-        })
-        .run();
-    }
-    for (const use of corrected) {
-      tx.update(designMaterials)
-        .set({ materialId: use.materialId, colour: use.colour, role: use.role })
-        .where(eq(designMaterials.id, use.id))
-        .run();
-    }
-    for (const use of removed) {
-      tx.delete(designMaterials).where(eq(designMaterials.id, use.id)).run();
+    for (const outcome of useOutcomes) {
+      if (outcome.kind === 'add') {
+        const use = outcome.materialUse;
+
+        tx.insert(designMaterials)
+          .values({
+            id: use.id,
+            designId,
+            materialId: use.materialId,
+            colour: use.colour,
+            role: use.role,
+            createdAt: use.createdAt,
+          })
+          .run();
+        continue;
+      }
+
+      if (outcome.kind === 'correct') {
+        const use = outcome.materialUse;
+
+        tx.update(designMaterials)
+          .set({ materialId: use.materialId, colour: use.colour, role: use.role })
+          .where(eq(designMaterials.id, use.id))
+          .run();
+        continue;
+      }
+
+      if (outcome.kind === 'remove') {
+        tx.delete(designMaterials).where(eq(designMaterials.id, outcome.materialUse.id)).run();
+      }
     }
 
-    return {
-      design: { ...next, updatedAt: now },
-      materialUses,
-      added,
-      corrected,
-      removed,
-      missingUseIds,
-    };
+    return { kind: 'stored', design: stored, materialUses, outcomes };
   });
 }
 

@@ -5,15 +5,20 @@ import { createTempDatabase } from '@/features/database/testing';
 import {
   createDesign,
   getDesign,
-  InvalidMaterialUseError,
   listMaterialUses,
   writeDesign,
   type AddMaterialUseInput,
+  type DesignWriteResult,
   type MaterialUse,
   type UpdateDesignInput,
   type UpdateMaterialUseInput,
 } from '@/features/designs';
 import { createMaterial } from '@/features/materials';
+
+/** The outcomes a stored answer holds; a refusal or a missing row holds none. */
+function outcomesOf(result: DesignWriteResult) {
+  return result.kind === 'stored' ? result.outcomes : [];
+}
 
 /** The visit's one write path, driven by a fixture for the tests that only need a use. */
 function addMaterialUse(
@@ -22,7 +27,11 @@ function addMaterialUse(
   input: AddMaterialUseInput,
   now?: number
 ): MaterialUse | null {
-  return writeDesign(database, designId, { uses: [{ kind: 'add', input }] }, now)?.added[0] ?? null;
+  const [outcome] = outcomesOf(
+    writeDesign(database, designId, { uses: [{ kind: 'add', input }] }, now)
+  );
+
+  return outcome?.kind === 'add' ? outcome.materialUse : null;
 }
 
 function updateMaterialUse(
@@ -32,10 +41,11 @@ function updateMaterialUse(
   input: UpdateMaterialUseInput,
   now?: number
 ): MaterialUse | null {
-  return (
+  const [outcome] = outcomesOf(
     writeDesign(database, designId, { uses: [{ kind: 'correct', useId, patch: input }] }, now)
-      ?.corrected[0] ?? null
   );
+
+  return outcome?.kind === 'correct' ? outcome.materialUse : null;
 }
 
 function removeMaterialUse(
@@ -44,9 +54,11 @@ function removeMaterialUse(
   useId: string,
   now?: number
 ): MaterialUse | null {
-  return (
-    writeDesign(database, designId, { uses: [{ kind: 'remove', useId }] }, now)?.removed[0] ?? null
+  const [outcome] = outcomesOf(
+    writeDesign(database, designId, { uses: [{ kind: 'remove', useId }] }, now)
   );
+
+  return outcome?.kind === 'remove' ? outcome.materialUse : null;
 }
 
 function updateDesign(
@@ -55,7 +67,9 @@ function updateDesign(
   input: UpdateDesignInput,
   now?: number
 ) {
-  return writeDesign(database, designId, { fields: input }, now)?.design ?? null;
+  const result = writeDesign(database, designId, { fields: input }, now);
+
+  return result.kind === 'stored' ? result.design : null;
 }
 
 function storedSearchText(database: ReturnType<typeof createTempDatabase>['database']): string {
@@ -205,13 +219,11 @@ describe('material uses', () => {
     const design = createDesign(database, { name: 'Wool coat' });
     const wool = createMaterial(database, { name: 'Wool' });
 
-    expect(() =>
-      addMaterialUse(database, design.id, {
-        materialId: wool.id,
-        colour: '   ',
-        role: 'main',
+    expect(
+      writeDesign(database, design.id, {
+        uses: [{ kind: 'add', input: { materialId: wool.id, colour: '   ', role: 'main' } }],
       })
-    ).toThrow(InvalidMaterialUseError);
+    ).toEqual({ kind: 'refused', field: 'colour', message: 'A material use needs a colour.' });
     expect(database.db.select().from(designMaterials).all()).toEqual([]);
 
     const use = addMaterialUse(database, design.id, {
@@ -223,16 +235,14 @@ describe('material uses', () => {
     expect(use?.colour).toBe('Charcoal');
   });
 
-  test('returns null for an unknown design and writes nothing', () => {
+  test('answers design-missing for an unknown design and writes nothing', () => {
     const wool = createMaterial(database, { name: 'Wool' });
 
     expect(
-      addMaterialUse(database, 'missing-design', {
-        materialId: wool.id,
-        colour: 'Charcoal',
-        role: 'main',
+      writeDesign(database, 'missing-design', {
+        uses: [{ kind: 'add', input: { materialId: wool.id, colour: 'Charcoal', role: 'main' } }],
       })
-    ).toBeNull();
+    ).toEqual({ kind: 'design-missing' });
     expect(database.db.select().from(designMaterials).all()).toEqual([]);
   });
 
@@ -375,9 +385,14 @@ describe('material uses', () => {
       20
     )!;
 
-    expect(() =>
-      updateMaterialUse(database, design.id, use.id, { colour: '   ' }, 30)
-    ).toThrow(InvalidMaterialUseError);
+    expect(
+      writeDesign(
+        database,
+        design.id,
+        { uses: [{ kind: 'correct', useId: use.id, patch: { colour: '   ' } }] },
+        30
+      )
+    ).toEqual({ kind: 'refused', field: 'colour', message: 'A material use needs a colour.' });
 
     expect(listMaterialUses(database, design.id)).toEqual([use]);
     expect(storedSearchText(database)).toBe('wool coat wool charcoal');

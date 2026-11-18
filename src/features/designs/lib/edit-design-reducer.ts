@@ -217,27 +217,16 @@ export type EditDesignResult = {
   effects: EditDesignEffect[];
 };
 
-/** How many changes one write effect declared, and so how many outcomes it owes. */
-export function changeCount(changes: DesignChanges): number {
-  return (changes.fields ? 1 : 0) + (changes.uses?.length ?? 0);
-}
-
 /**
  * What one write answered: the result it stored, the rule that refused it, or
  * nothing because the Design row is no longer in the catalog.
  */
-export type WriteReport<Stored> =
-  | { kind: 'stored'; value: Stored }
-  | { kind: 'refused'; message: string; field: 'name' | 'colour' }
-  | { kind: 'nothing-stored' };
-
-/** One write the visit declared and the answer the one write path gave it. */
 export type WriteAttempt = {
   type: 'write-design';
   designId: string;
   changes: DesignChanges;
   now: number;
-  report: WriteReport<DesignWriteResult>;
+  result: DesignWriteResult;
 };
 
 /**
@@ -248,27 +237,28 @@ export type WriteAttempt = {
  * dispatches whatever comes back.
  */
 export function writeOutcome(attempt: WriteAttempt): EditDesignEvent[] {
-  const { changes, designId, now, report } = attempt;
+  const { changes, designId, now, result } = attempt;
 
   // Every change targets the Design's row: nothing stored means that row is no
   // longer in the catalog, so the visit has nothing to record against.
-  if (report.kind === 'nothing-stored') return [{ type: 'nothing-stored', designId }];
+  if (result.kind === 'design-missing') return [{ type: 'nothing-stored', designId }];
 
-  if (report.kind === 'refused') {
+  if (result.kind === 'refused') {
     const events: EditDesignEvent[] = [];
+    const message = result.message;
 
     for (const field of Object.keys(changes.fields ?? {}) as DesignEditableField[]) {
-      events.push({ type: 'field-refused', field, message: report.message });
+      events.push({ type: 'field-refused', field, message });
     }
     for (const change of changes.uses ?? []) {
       if (change.kind === 'add') {
-        events.push({ type: 'material-use-add-refused', message: report.message });
+        events.push({ type: 'material-use-add-refused', message });
       } else {
         events.push({
           type: 'material-use-panel-fact',
           fact:
             change.kind === 'correct'
-              ? { type: 'refused', useId: change.useId, message: report.message }
+              ? { type: 'refused', useId: change.useId, message }
               : { type: 'use-removed', useId: change.useId },
           now,
         });
@@ -278,50 +268,45 @@ export function writeOutcome(attempt: WriteAttempt): EditDesignEvent[] {
     return events;
   }
 
-  const result = report.value;
-  const events: EditDesignEvent[] = [];
-
-  if (changes.fields) {
-    events.push({ type: 'drafts-written', design: result.design, patch: changes.fields });
-  }
-
   // The result's per-change outcomes come back in the order the changes were
   // declared, so each declared change gets exactly one event.
-  const added = [...result.added];
-  const corrected = [...result.corrected];
-  const removed = [...result.removed];
-
-  for (const change of changes.uses ?? []) {
-    if (change.kind === 'add') {
-      const use = added.shift();
-
-      events.push(
-        use
-          ? { type: 'material-use-added', materialUse: use }
-          : { type: 'nothing-stored', designId }
-      );
-      continue;
+  return result.outcomes.flatMap((outcome): EditDesignEvent[] => {
+    switch (outcome.kind) {
+      case 'fields':
+        return [{ type: 'drafts-written', design: outcome.design, patch: changes.fields ?? {} }];
+      case 'add':
+        return [{ type: 'material-use-added', materialUse: outcome.materialUse }];
+      case 'correct':
+        return [
+          {
+            type: 'material-use-panel-fact',
+            fact: { type: 'saved', materialUse: outcome.materialUse },
+            now,
+          },
+        ];
+      case 'remove':
+        return [
+          {
+            type: 'material-use-panel-fact',
+            fact: { type: 'use-removed', useId: outcome.materialUse.id },
+            now,
+          },
+        ];
+      case 'use-missing':
+        return [
+          {
+            type: 'material-use-panel-fact',
+            fact: { type: 'use-removed', useId: outcome.useId },
+            now,
+          },
+        ];
     }
+  });
+}
 
-    if (change.kind === 'correct') {
-      const use = corrected.shift();
-
-      events.push(
-        use
-          ? { type: 'material-use-panel-fact', fact: { type: 'saved', materialUse: use }, now }
-          : { type: 'material-use-panel-fact', fact: { type: 'use-removed', useId: change.useId }, now }
-      );
-      continue;
-    }
-
-    events.push({
-      type: 'material-use-panel-fact',
-      fact: { type: 'use-removed', useId: removed.shift()?.id ?? change.useId },
-      now,
-    });
-  }
-
-  return events;
+/** How many changes one write effect declared, and so how many outcomes it owes. */
+export function changeCount(changes: DesignChanges): number {
+  return (changes.fields ? 1 : 0) + (changes.uses?.length ?? 0);
 }
 
 export function createInitialEditDesignState(designId: string): EditDesignState {
@@ -495,9 +480,8 @@ function recordEffect(state: EditDesignState, at: number): EditDesignEffect | nu
 }
 
 /**
- * One write the visit declared has reported back. When the last one settles,
- * the close records the visit; until then the Event is not written, so it can
- * never describe a row the write did not store.
+ * One write the visit declared has reported back. When the last one settles, the close records the visit; until then the Event is not
+ * written, so it can never describe a row the write did not store.
  */
 function settled(state: EditDesignState): EditDesignResult {
   const closing = state.closing;
@@ -609,8 +593,8 @@ function flush(
 
   if (!records) return owesWrite ? { state: next, effects } : only(next);
 
-  // A close arms the visit with the changes it just declared, so the Event waits
-  // for the rows the write stores rather than the drafts that asked for it.
+  // A close arms the visit with the writes it just declared, so the Event waits
+  // for the rows they store rather than the drafts that asked for them.
   const closed: EditDesignState = {
     ...next,
     closing: { at: now, outstanding: owesWrite ? changeCount(changes) : 0 },

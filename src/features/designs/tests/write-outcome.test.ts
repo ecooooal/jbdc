@@ -1,6 +1,6 @@
 import { writeOutcome, type WriteAttempt } from '../lib/edit-design-reducer';
 import { EMPTY_DESIGN_FIELDS } from '../lib/fields';
-import type { Design, DesignWriteResult, MaterialUse } from '../lib/records';
+import type { ChangeOutcome, Design, DesignWriteResult, MaterialUse } from '../lib/records';
 
 const DESIGN_ID = 'design-silk-slip';
 const NOW = 1_700_000_000_000;
@@ -25,32 +25,24 @@ const WOOL_USE: MaterialUse = {
   createdAt: NOW,
 };
 
-/** The one write result a visit hands back, for the changes the effect declared. */
-function result(overrides: Partial<DesignWriteResult> = {}): DesignWriteResult {
-  return {
-    design: STORED,
-    materialUses: [WOOL_USE],
-    added: [],
-    corrected: [],
-    removed: [],
-    missingUseIds: [],
-    ...overrides,
-  };
+/** The one stored answer a visit hands back for the changes the effect declared. */
+function stored(outcomes: ChangeOutcome[]): DesignWriteResult {
+  return { kind: 'stored', design: STORED, materialUses: [WOOL_USE], outcomes };
 }
 
 function attempt(
   changes: WriteAttempt['changes'],
-  report: WriteAttempt['report'],
+  result: WriteAttempt['result'],
   now = NOW
 ): WriteAttempt {
-  return { type: 'write-design', designId: DESIGN_ID, changes, now, report };
+  return { type: 'write-design', designId: DESIGN_ID, changes, now, result };
 }
 
 describe('a write outcome', () => {
   test('every stored change becomes its own event, in the order declared', () => {
     expect(
       writeOutcome(
-        attempt({ fields: { name: 'Wool coat' } }, { kind: 'stored', value: result() })
+        attempt({ fields: { name: 'Wool coat' } }, stored([{ kind: 'fields', design: STORED }]))
       )
     ).toEqual([{ type: 'drafts-written', design: STORED, patch: { name: 'Wool coat' } }]);
 
@@ -65,14 +57,15 @@ describe('a write outcome', () => {
               { kind: 'remove', useId: 'use-lining' },
             ],
           },
-          {
-            kind: 'stored',
-            value: result({
-              added: [{ ...WOOL_USE, id: 'use-silk', colour: 'Ivory', role: 'other' }],
-              corrected: [{ ...WOOL_USE, colour: 'Black' }],
-              removed: [WOOL_USE],
-            }),
-          }
+          stored([
+            { kind: 'fields', design: STORED },
+            { kind: 'correct', materialUse: { ...WOOL_USE, colour: 'Black' } },
+            {
+              kind: 'add',
+              materialUse: { ...WOOL_USE, id: 'use-silk', colour: 'Ivory', role: 'other' },
+            },
+            { kind: 'remove', materialUse: WOOL_USE },
+          ])
         )
       )
     ).toEqual([
@@ -93,7 +86,10 @@ describe('a write outcome', () => {
   test('a refused write restores each change it declared', () => {
     expect(
       writeOutcome(
-        attempt({ fields: { name: '   ' } }, { kind: 'refused', field: 'name', message: 'A design needs a name.' })
+        attempt(
+          { fields: { name: '   ' } },
+          { kind: 'refused', field: 'name', message: 'A design needs a name.' }
+        )
       )
     ).toEqual([{ type: 'field-refused', field: 'name', message: 'A design needs a name.' }]);
 
@@ -126,11 +122,13 @@ describe('a write outcome', () => {
 
   test('a write that found no Design row says so, whatever it changed', () => {
     expect(
-      writeOutcome(attempt({ fields: { name: 'Linen shirt' } }, { kind: 'nothing-stored' }))
+      writeOutcome(
+        attempt({ fields: { name: 'Linen shirt' } }, { kind: 'design-missing' })
+      )
     ).toEqual([{ type: 'nothing-stored', designId: DESIGN_ID }]);
     expect(
       writeOutcome(
-        attempt({ uses: [{ kind: 'remove', useId: WOOL_USE.id }] }, { kind: 'nothing-stored' })
+        attempt({ uses: [{ kind: 'remove', useId: WOOL_USE.id }] }, { kind: 'design-missing' })
       )
     ).toEqual([{ type: 'nothing-stored', designId: DESIGN_ID }]);
   });
@@ -138,10 +136,7 @@ describe('a write outcome', () => {
   test('a removal reports the use as removed whether it deleted it or found it gone', () => {
     expect(
       writeOutcome(
-        attempt(
-          { uses: [{ kind: 'remove', useId: WOOL_USE.id }] },
-          { kind: 'stored', value: result({ removed: [WOOL_USE] }) }
-        )
+        attempt({ uses: [{ kind: 'remove', useId: WOOL_USE.id }] }, stored([{ kind: 'remove', materialUse: WOOL_USE }]))
       )
     ).toEqual([
       { type: 'material-use-panel-fact', fact: { type: 'use-removed', useId: WOOL_USE.id }, now: NOW },
@@ -150,7 +145,7 @@ describe('a write outcome', () => {
       writeOutcome(
         attempt(
           { uses: [{ kind: 'remove', useId: 'use-gone' }] },
-          { kind: 'stored', value: result({ missingUseIds: ['use-gone'] }) }
+          stored([{ kind: 'use-missing', useId: 'use-gone' }])
         )
       )
     ).toEqual([

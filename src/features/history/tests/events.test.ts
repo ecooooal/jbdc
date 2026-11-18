@@ -19,7 +19,13 @@ function addMaterialUse(
   input: { materialId: string; colour: string; role: 'main' | 'secondary' | 'other' },
   now?: number
 ): MaterialUse | null {
-  return writeDesign(database, designId, { uses: [{ kind: 'add', input }] }, now)?.added[0] ?? null;
+  const result = writeDesign(database, designId, { uses: [{ kind: 'add', input }] }, now);
+
+  if (result.kind !== 'stored') return null;
+
+  const outcome = result.outcomes[0];
+
+  return outcome?.kind === 'add' ? outcome.materialUse : null;
 }
 
 const BEFORE: DesignFields = {

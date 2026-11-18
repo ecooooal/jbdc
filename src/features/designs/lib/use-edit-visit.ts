@@ -9,32 +9,8 @@ import {
   type EditDesignEvent,
   type EditDesignGesture,
   type EditDesignState,
-  type WriteReport,
 } from './edit-design-reducer';
-import {
-  InvalidDesignNameError,
-  InvalidMaterialUseError,
-  writeDesign,
-  type DesignWriteResult,
-} from './records';
-
-/** Runs one write and reports the result it stored, its refusal, or nothing. */
-function attemptWrite(write: () => DesignWriteResult | null): WriteReport<DesignWriteResult> {
-  try {
-    const value = write();
-
-    return value === null ? { kind: 'nothing-stored' } : { kind: 'stored', value };
-  } catch (caught) {
-    if (caught instanceof InvalidDesignNameError) {
-      return { kind: 'refused', message: caught.message, field: 'name' };
-    }
-    if (caught instanceof InvalidMaterialUseError) {
-      return { kind: 'refused', message: caught.message, field: 'colour' };
-    }
-
-    throw caught;
-  }
-}
+import { writeDesign } from './records';
 
 /**
  * Runs Edit's reducer and the work it asks for. Every catalog call is
@@ -74,13 +50,11 @@ export function useEditVisit(
           continue;
         }
 
-        // One write per effect, whatever the owner changed. Each change gets its
-        // own outcome event, so the visit settles every change it declared.
-        const report = attemptWrite(() =>
-          writeDesign(database, effect.designId, effect.changes, effect.now)
-        );
+        // One write per effect, whatever the owner changed; the write answers
+        // once, and each declared change gets its own outcome event.
+        const written = writeDesign(database, effect.designId, effect.changes, effect.now);
 
-        for (const outcome of writeOutcome({ ...effect, report })) {
+        for (const outcome of writeOutcome({ ...effect, result: written })) {
           dispatch(outcome);
         }
       }

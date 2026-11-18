@@ -20,13 +20,13 @@ export {
   getDesign,
   getDesignDetail,
   InvalidDesignNameError,
-  InvalidMaterialUseError,
   listDesigns,
   listMaterialUses,
   writeDesign,
 } from './lib/records';
 export type {
   AddMaterialUseInput,
+  ChangeOutcome,
   CreateDesignInput,
   Design,
   DesignChanges,
