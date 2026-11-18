@@ -165,6 +165,21 @@ describe('a write outcome', () => {
         attempt({ uses: [{ kind: 'remove', useId: WOOL_USE.id }] }, { kind: 'design-missing' })
       )
     ).toEqual([{ type: 'design-missing', designId: DESIGN_ID }]);
+    // Changes a live row would have refused settle nothing either: the row is
+    // already gone, so there is no visit left to settle.
+    expect(
+      writeOutcome(attempt({ fields: { name: '   ' } }, { kind: 'design-missing' }))
+    ).toEqual([{ type: 'design-missing', designId: DESIGN_ID }]);
+    expect(
+      writeOutcome(
+        attempt(
+          {
+            uses: [{ kind: 'correct', useId: WOOL_USE.id, patch: { colour: '   ' } }],
+          },
+          { kind: 'design-missing' }
+        )
+      )
+    ).toEqual([{ type: 'design-missing', designId: DESIGN_ID }]);
   });
 
   test('a missing use is reported as use-missing and does not end the visit', () => {

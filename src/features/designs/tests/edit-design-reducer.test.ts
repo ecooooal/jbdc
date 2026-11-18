@@ -1136,6 +1136,46 @@ describe('edit visit boundary', () => {
     ]);
   });
 
+  test('a missing use the visit never held closes its panel and leaves the close waiting', () => {
+    const tester = visit();
+
+    // A close declares the one write it still owes.
+    tester.send({ type: 'text-changed', field: 'name', value: 'Wool coat' });
+    tester.send({ type: 'visit-closed', now: LATER });
+
+    expect(tester.getState().closing).toEqual({ at: LATER, writesOwed: 1 });
+
+    // Its outcome updates the drafts without settling the close.
+    tester.send({
+      type: 'drafts-written',
+      design: { ...DESIGN, name: 'Wool coat' },
+      patch: { name: 'Wool coat' },
+    });
+    const declared = tester.getEffects();
+
+    // A panel can be opened on a use this visit never stored.
+    tester.send({ type: 'material-use-editor-opened', materialUse: WOOL_USE, now: LATER });
+    tester.send({
+      type: 'material-use-panel-fact',
+      fact: { type: 'use-missing', useId: WOOL_USE.id },
+      now: LATER,
+    });
+
+    // Only that panel closes: the use was not in the record to drop, and the
+    // close still owes the write it declared.
+    expect(tester.getState().materialUsePanel).toBeNull();
+    expect(tester.getState().storedUses).toEqual([]);
+    expect(tester.getState().closing).toEqual({ at: LATER, writesOwed: 1 });
+    expect(tester.getEffects()).toEqual(declared);
+
+    tester.send({ type: 'write-settled', designId: DESIGN_ID });
+
+    const recording = tester.getEffects().filter((effect) => effect.type === 'record-visit');
+
+    expect(recording).toHaveLength(1);
+    expect(tester.getState().closing).toEqual({ at: LATER, writesOwed: 0 });
+  });
+
   test('a refused remove keeps the use the visit holds on screen', () => {
     const tester = visitWithUse();
 

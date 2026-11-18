@@ -228,10 +228,25 @@ describe('one Design write', () => {
 
   test('answers design-missing when the Design row is no longer in the catalog', () => {
     const design = createDesign(database, { name: 'Wool coat' }, 10);
+    const wool = createMaterial(database, { name: 'Wool' });
     database.db.update(designs).set({ deletedAt: 15 }).where(eq(designs.id, design.id)).run();
 
     expect(writeDesign(database, design.id, { fields: { name: 'Linen shirt' } }, 20)).toEqual({
       kind: 'design-missing',
     });
+
+    // A missing row is named as such even when the changes would have been
+    // refused: a refusal is about a row that exists.
+    expect(writeDesign(database, design.id, { fields: { name: '   ' } }, 20)).toEqual({
+      kind: 'design-missing',
+    });
+    expect(
+      writeDesign(
+        database,
+        design.id,
+        { uses: [{ kind: 'add', input: { materialId: wool.id, colour: '   ', role: 'main' } }] },
+        20
+      )
+    ).toEqual({ kind: 'design-missing' });
   });
 });

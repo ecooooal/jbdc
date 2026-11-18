@@ -372,6 +372,11 @@ export function writeDesign(
   now: number = Date.now()
 ): DesignWriteResult {
   return database.transaction((tx) => {
+    // Read the row first: a refusal is about a row that exists, so a missing
+    // Design answers `design-missing` whatever the changes hold.
+    const current = designFrom(tx, designId);
+    if (!current) return { kind: 'design-missing' };
+
     // Validate inside the transaction: a refusal stores nothing, and no row
     // write can land without the search text that belongs with it. A name is
     // judged first, then each use's colour, so a refusal names the one field
@@ -410,9 +415,6 @@ export function writeDesign(
       }
       return change;
     });
-
-    const current = designFrom(tx, designId);
-    if (!current) return { kind: 'design-missing' };
 
     // One name read and one use read per write. Both the search rebuild and the
     // returned uses work from these, so a write never walks either table twice.
