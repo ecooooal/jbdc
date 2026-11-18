@@ -15,10 +15,11 @@ import {
   MATERIAL_USE_ROLES,
   materials,
 } from '@/features/database';
+import { diffDesignFields, diffMaterialUses } from '@/features/history';
 import { readMaterialNamesFrom } from '@/features/materials';
 import { readTaxonomyNamesFrom, taxonomyLabel } from '@/features/taxonomy';
 import { CREATIVE_DIRECTION_FIELDS } from './creative-direction-fields';
-import { designFieldsChanged, type DesignEditableField } from './fields';
+import { DESIGN_EDITABLE_FIELDS, type DesignEditableField } from './fields';
 import { DESIGN_NAME_MAX_LENGTH, designNameProblem } from './limits';
 import { normalizeOptionalText } from './optional-text';
 import type { DesignSectionField } from './sections';
@@ -86,6 +87,38 @@ export type AddMaterialUseInput = {
 
 /** A partial correction of a recorded use: an absent field is left alone. */
 export type UpdateMaterialUseInput = Partial<AddMaterialUseInput>;
+
+/** One Material use a write stores, as a change rather than a function call. */
+export type MaterialUseChange =
+  | { kind: 'add'; input: AddMaterialUseInput }
+  | { kind: 'correct'; useId: string; patch: UpdateMaterialUseInput }
+  | { kind: 'remove'; useId: string };
+
+/**
+ * Everything one write is asked to store: the fields the owner changed and the
+ * Material use changes that belong with them. A caller declares what changed;
+ * it never picks among several write functions.
+ */
+export type DesignChanges = {
+  fields?: UpdateDesignInput;
+  uses?: readonly MaterialUseChange[];
+};
+
+/** What one write stored, including each change's outcome for the caller. */
+export type DesignWriteResult = {
+  /** The row as it now stands, whether or not anything changed. */
+  design: Design;
+  /** Every use the row holds after the write, with names resolved and ordered. */
+  materialUses: MaterialUse[];
+  /** The uses this write added. */
+  added: MaterialUse[];
+  /** The uses this write corrected, after the correction. */
+  corrected: MaterialUse[];
+  /** The uses this write removed, as they were. */
+  removed: MaterialUse[];
+  /** Requests that named a use which is no longer stored. */
+  missingUseIds: string[];
+};
 
 /**
  * A Design's Material uses as a visit opened and as it will close. The two
@@ -241,10 +274,15 @@ function compareMaterialUses(left: MaterialUse, right: MaterialUse): number {
 
 /**
  * One Design's Material uses, ordered by role (main, secondary, other), then
- * Material name. The names come from the Material name read, deleted entries
- * included, so a use written before the Material was removed keeps its name.
+ * Material name. The names come from one Material name read — deleted entries
+ * included, so a use written before a Material was removed keeps its name.
+ * A write passes the read it already made, so a write reads names once.
  */
-function materialUsesFrom(db: DatabaseHandle, designId: string): MaterialUse[] {
+function materialUsesFrom(
+  db: DatabaseHandle,
+  designId: string,
+  names: ReadonlyMap<string, string> = readMaterialNamesFrom(db)
+): MaterialUse[] {
   const rows = db
     .select({
       id: designMaterials.id,
@@ -257,7 +295,6 @@ function materialUsesFrom(db: DatabaseHandle, designId: string): MaterialUse[] {
     .from(designMaterials)
     .where(eq(designMaterials.designId, designId))
     .all();
-  const names = readMaterialNamesFrom(db);
 
   return rows
     .map((row) => ({
@@ -267,44 +304,44 @@ function materialUsesFrom(db: DatabaseHandle, designId: string): MaterialUse[] {
     .sort(compareMaterialUses);
 }
 
-/** One use of this Design, or null when it is unknown or belongs to another. */
-function materialUseFrom(
-  db: DatabaseHandle,
-  designId: string,
-  useId: string
-): MaterialUse | null {
-  return materialUsesFrom(db, designId).find((use) => use.id === useId) ?? null;
-}
-
 /** Each linked Material's name and colour, ready for `buildSearchText`. */
-function materialUseSearchParts(db: DatabaseHandle, designId: string): string[] {
-  return materialUsesFrom(db, designId).flatMap((use) => [use.materialName, use.colour]);
+function materialUseSearchParts(uses: readonly MaterialUse[]): string[] {
+  return uses.flatMap((use) => [use.materialName, use.colour]);
 }
 
 /**
- * Rebuilds a Design's `search_text` from the uses it now holds and moves
- * `updatedAt`, inside the caller's transaction. Every Material-use write lands
- * with it, so search and Library order never disagree with the stored uses.
+ * The row an optional-text patch would store. An absent field keeps its current
+ * value; an explicit null clears one. Shared by create and by the one write path.
  */
-function rebuildDesignSearchTextAndMoveUpdated(
-  tx: DatabaseHandle,
-  design: Design,
-  now: number
-): void {
-  const taxonomy = designTaxonomyNamesFrom(tx, design.categoryId, design.collectionId);
+function designAfterPatch(current: Design, input: UpdateDesignInput): Design {
+  return {
+    ...current,
+    name: input.name === undefined ? current.name : normalizeName(input.name),
+    description:
+      input.description === undefined
+        ? current.description
+        : normalizeOptionalText(input.description),
+    categoryId: input.categoryId === undefined ? current.categoryId : input.categoryId,
+    collectionId: input.collectionId === undefined ? current.collectionId : input.collectionId,
+    ...optionalTextValues(SPECIFICATION_FIELDS, current, input),
+    ...optionalTextValues(CREATIVE_DIRECTION_FIELDS, current, input),
+  };
+}
 
-  tx.update(designs)
-    .set({
-      updatedAt: now,
-      searchText: buildSearchText(
-        design,
-        taxonomy.category,
-        taxonomy.collection,
-        materialUseSearchParts(tx, design.id)
-      ),
-    })
-    .where(eq(designs.id, design.id))
-    .run();
+/** The editable column values a write stores for a Design. */
+function editableValues(design: Design): Partial<Design> {
+  return Object.fromEntries(
+    DESIGN_EDITABLE_FIELDS.map((field) => [field, design[field]])
+  ) as Partial<Design>;
+}
+
+/** A colour a use must have; blank is a refusal before anything is written. */
+function requiredColour(raw: string): string {
+  const colour = raw.trim();
+
+  if (colour.length === 0) throw new InvalidMaterialUseError('empty_colour');
+
+  return colour;
 }
 
 /**
@@ -349,6 +386,158 @@ export function createDesign(
 }
 
 /**
+ * The one write path for a Design and its Material uses. A caller declares the
+ * field and use changes; this function reads the row and its uses once, decides
+ * once whether anything changed, and stores the row, its uses, the rebuilt
+ * `search_text`, and the moved `updatedAt` in one transaction. An observer sees
+ * the row and its search text together or not at all. Returns null for exactly
+ * one reason: the Design row is no longer in the catalog.
+ */
+export function writeDesign(
+  database: Database,
+  designId: string,
+  changes: DesignChanges,
+  now: number = Date.now()
+): DesignWriteResult | null {
+  return database.transaction((tx) => {
+    // Validate inside the transaction: a refusal stores nothing, and no row
+    // write can land without the search text that belongs with it.
+    const fields: UpdateDesignInput = changes.fields
+      ? {
+          ...changes.fields,
+          ...(changes.fields.name !== undefined && { name: normalizeName(changes.fields.name) }),
+        }
+      : {};
+    const uses = (changes.uses ?? []).map((change) => {
+      if (change.kind === 'add') {
+        return {
+          ...change,
+          input: { ...change.input, colour: requiredColour(change.input.colour) },
+        };
+      }
+      if (change.kind === 'correct' && change.patch.colour !== undefined) {
+        return {
+          ...change,
+          patch: { ...change.patch, colour: requiredColour(change.patch.colour) },
+        };
+      }
+      return change;
+    });
+
+    const current = designFrom(tx, designId);
+    if (!current) return null;
+
+    // One name read and one use read per write. Both the search rebuild and the
+    // returned uses work from these, so a write never walks either table twice.
+    const names = readMaterialNamesFrom(tx);
+    const beforeUses = materialUsesFrom(tx, designId, names);
+    const next = designAfterPatch(current, fields);
+
+    let working = beforeUses.slice();
+    const added: MaterialUse[] = [];
+    const corrected: MaterialUse[] = [];
+    const removed: MaterialUse[] = [];
+    const missingUseIds: string[] = [];
+
+    for (const change of uses) {
+      if (change.kind === 'add') {
+        const use: MaterialUse = {
+          id: database.newId(),
+          designId,
+          materialId: change.input.materialId,
+          materialName: names.get(change.input.materialId) ?? change.input.materialId,
+          colour: change.input.colour,
+          role: change.input.role,
+          createdAt: now,
+        };
+        working.push(use);
+        added.push(use);
+        continue;
+      }
+
+      const index = working.findIndex((use) => use.id === change.useId);
+
+      if (index < 0) {
+        missingUseIds.push(change.useId);
+        continue;
+      }
+
+      if (change.kind === 'remove') {
+        const [gone] = working.splice(index, 1);
+        removed.push(gone);
+        continue;
+      }
+
+      const materialId = change.patch.materialId ?? working[index].materialId;
+      const nextUse: MaterialUse = {
+        ...working[index],
+        materialId,
+        materialName: names.get(materialId) ?? materialId,
+        colour: change.patch.colour ?? working[index].colour,
+        role: change.patch.role ?? working[index].role,
+      };
+      working[index] = nextUse;
+      corrected.push(nextUse);
+    }
+
+    const materialUses = working.sort(compareMaterialUses);
+    const unchanged =
+      !diffDesignFields(current, next) && !diffMaterialUses(beforeUses, materialUses);
+
+    if (unchanged) {
+      return { design: current, materialUses, added, corrected, removed, missingUseIds };
+    }
+
+    const taxonomy = designTaxonomyNamesFrom(tx, next.categoryId, next.collectionId);
+
+    tx.update(designs)
+      .set({
+        ...editableValues(next),
+        updatedAt: now,
+        searchText: buildSearchText(
+          next,
+          taxonomy.category,
+          taxonomy.collection,
+          materialUseSearchParts(materialUses)
+        ),
+      })
+      .where(eq(designs.id, designId))
+      .run();
+
+    for (const use of added) {
+      tx.insert(designMaterials)
+        .values({
+          id: use.id,
+          designId,
+          materialId: use.materialId,
+          colour: use.colour,
+          role: use.role,
+          createdAt: use.createdAt,
+        })
+        .run();
+    }
+    for (const use of corrected) {
+      tx.update(designMaterials)
+        .set({ materialId: use.materialId, colour: use.colour, role: use.role })
+        .where(eq(designMaterials.id, use.id))
+        .run();
+    }
+    for (const use of removed) {
+      tx.delete(designMaterials).where(eq(designMaterials.id, use.id)).run();
+    }
+
+    return {
+      design: { ...next, updatedAt: now },
+      materialUses,
+      added,
+      corrected,
+      removed,
+      missingUseIds,
+    };
+  });
+}
+
+/**
  * Writes the fields the owner changed and returns the stored Design. An
  * absent field is untouched; null clears an optional one. A blank or
  * over-long name throws before anything is written, so the previous name
@@ -361,44 +550,7 @@ export function updateDesign(
   input: UpdateDesignInput,
   now: number = Date.now()
 ): Design | null {
-  return database.transaction((tx) => {
-    const current = designFrom(tx, id);
-    if (!current) return null;
-
-    const specification = optionalTextValues(SPECIFICATION_FIELDS, current, input);
-    const creativeDirection = optionalTextValues(CREATIVE_DIRECTION_FIELDS, current, input);
-    const next: Design = {
-      ...current,
-      name: input.name === undefined ? current.name : normalizeName(input.name),
-      description:
-        input.description === undefined
-          ? current.description
-          : normalizeOptionalText(input.description),
-      categoryId: input.categoryId === undefined ? current.categoryId : input.categoryId,
-      collectionId: input.collectionId === undefined ? current.collectionId : input.collectionId,
-      ...specification,
-      ...creativeDirection,
-    };
-
-    if (!designFieldsChanged(next, current)) return current;
-
-    tx.update(designs)
-      .set({
-        name: next.name,
-        description: next.description,
-        categoryId: next.categoryId,
-        collectionId: next.collectionId,
-        ...specification,
-        ...creativeDirection,
-      })
-      .where(eq(designs.id, id))
-      .run();
-
-    rebuildDesignSearchTextAndMoveUpdated(tx, next, now);
-    next.updatedAt = now;
-
-    return next;
-  });
+  return writeDesign(database, id, { fields: input }, now)?.design ?? null;
 }
 
 /** Reads one live Design; a soft-deleted row is gone as far as readers are concerned. */
@@ -482,51 +634,17 @@ export function listMaterialUses(database: Database, designId: string): Material
   return materialUsesFrom(database.db, designId);
 }
 
-/**
- * Records one Material use on a Design. The insertion and the Design's rebuilt
- * `search_text` (every linked Material's name and colour) land in one
- * transaction, with `updatedAt` moved so the Library re-sorts by recency.
- * Returns null when the Design is unknown or soft-deleted.
- */
+/** Records one Material use through the one write path. */
 export function addMaterialUse(
   database: Database,
   designId: string,
   input: AddMaterialUseInput,
   now: number = Date.now()
 ): MaterialUse | null {
-  const colour = input.colour.trim();
-
-  if (colour.length === 0) throw new InvalidMaterialUseError('empty_colour');
-
-  return database.transaction((tx) => {
-    const design = designFrom(tx, designId);
-
-    if (!design) return null;
-
-    const use = {
-      id: database.newId(),
-      designId,
-      materialId: input.materialId,
-      colour,
-      role: input.role,
-      createdAt: now,
-    };
-
-    tx.insert(designMaterials).values(use).run();
-
-    rebuildDesignSearchTextAndMoveUpdated(tx, design, now);
-
-    return materialUseFrom(tx, designId, use.id);
-  });
+  return writeDesign(database, designId, { uses: [{ kind: 'add', input }] }, now)?.added[0] ?? null;
 }
 
-/**
- * Corrects one recorded Material use. Only the fields present in `input` are
- * written; the same transaction rebuilds the Design's `search_text` from every
- * use it now holds and moves `updatedAt`. A correction that changes nothing
- * writes nothing. Returns null when the Design or the use is unknown, and
- * refuses a blank colour before writing anything.
- */
+/** Corrects one recorded Material use through the one write path. */
 export function updateMaterialUse(
   database: Database,
   designId: string,
@@ -534,78 +652,18 @@ export function updateMaterialUse(
   input: UpdateMaterialUseInput,
   now: number = Date.now()
 ): MaterialUse | null {
-  const colour = input.colour?.trim();
-
-  if (colour !== undefined && colour.length === 0) {
-    throw new InvalidMaterialUseError('empty_colour');
-  }
-
-  return database.transaction((tx) => {
-    const design = designFrom(tx, designId);
-
-    if (!design) return null;
-
-    const current = tx
-      .select({
-        materialId: designMaterials.materialId,
-        colour: designMaterials.colour,
-        role: designMaterials.role,
-      })
-      .from(designMaterials)
-      .where(and(eq(designMaterials.id, useId), eq(designMaterials.designId, designId)))
-      .get();
-
-    if (!current) return null;
-
-    const next = {
-      materialId: input.materialId ?? current.materialId,
-      colour: colour ?? current.colour,
-      role: input.role ?? current.role,
-    };
-
-    if (
-      next.materialId === current.materialId &&
-      next.colour === current.colour &&
-      next.role === current.role
-    ) {
-      return materialUseFrom(tx, designId, useId);
-    }
-
-    tx.update(designMaterials).set(next).where(eq(designMaterials.id, useId)).run();
-
-    rebuildDesignSearchTextAndMoveUpdated(tx, design, now);
-
-    return materialUseFrom(tx, designId, useId);
-  });
+  return (
+    writeDesign(database, designId, { uses: [{ kind: 'correct', useId, patch: input }] }, now)
+      ?.corrected[0] ?? null
+  );
 }
 
-/**
- * Removes one recorded Material use and returns it as it was. The deletion and
- * the Design's rebuilt `search_text` — no longer carrying the removed
- * Material's name or colour — land in one transaction with `updatedAt` moved.
- * Returns null when the Design or the use is unknown.
- */
+/** Removes one recorded Material use through the one write path. */
 export function removeMaterialUse(
   database: Database,
   designId: string,
   useId: string,
   now: number = Date.now()
 ): MaterialUse | null {
-  return database.transaction((tx) => {
-    const design = designFrom(tx, designId);
-
-    if (!design) return null;
-
-    const removed = materialUseFrom(tx, designId, useId);
-
-    if (!removed) return null;
-
-    tx.delete(designMaterials)
-      .where(and(eq(designMaterials.id, useId), eq(designMaterials.designId, designId)))
-      .run();
-
-    rebuildDesignSearchTextAndMoveUpdated(tx, design, now);
-
-    return removed;
-  });
+  return writeDesign(database, designId, { uses: [{ kind: 'remove', useId }] }, now)?.removed[0] ?? null;
 }

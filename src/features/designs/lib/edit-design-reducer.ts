@@ -23,6 +23,7 @@ import { normalizeOptionalText } from './optional-text';
 import type {
   AddMaterialUseInput,
   DesignFields,
+  DesignWriteResult,
   MaterialUse,
   MaterialUsesPair,
   UpdateDesignInput,
@@ -239,25 +240,22 @@ export type WriteReport<Stored> =
   | { kind: 'nothing-stored' };
 
 /**
- * What a write with no refusal rule answered. Its port returns the row it
- * stored or nothing, so it can never report a refusal.
- */
-export type StoredOrNothingReport<Stored> = Exclude<WriteReport<Stored>, { kind: 'refused' }>;
-
-/**
- * One write the visit declared and the answer it got. The effect's own fields
- * say which write this was, so a report cannot be paired with another kind.
+ * One write the visit declared and the answer it got. Every change comes back
+ * from the one write path as the same result, so a report cannot be paired with
+ * a change the visitor did not declare. The effect's own fields say which
+ * change this was.
  */
 export type WriteAttempt =
-  | (AddMaterialUseWrite & { report: WriteReport<MaterialUse> })
-  | (DraftsWrite & { report: WriteReport<DesignFields> })
-  | (MaterialUseWrite & { report: WriteReport<MaterialUse> })
-  | (RemovalWrite & { report: StoredOrNothingReport<MaterialUse> });
+  | (AddMaterialUseWrite & { report: WriteReport<DesignWriteResult> })
+  | (DraftsWrite & { report: WriteReport<DesignWriteResult> })
+  | (MaterialUseWrite & { report: WriteReport<DesignWriteResult> })
+  | (RemovalWrite & { report: WriteReport<DesignWriteResult> });
 
 /**
  * The one place a write's answer becomes the event the visit settles on. The
  * runner calls it once per write and dispatches whatever comes back, so every
- * answer — including one from a row that is gone — settles somewhere.
+ * answer — including one from a row that is gone — settles somewhere. Each
+ * change reads its own outcome out of the one result the write path returned.
  */
 export function writeOutcome(attempt: WriteAttempt): EditDesignEvent {
   const { type, designId, report } = attempt;
@@ -268,12 +266,14 @@ export function writeOutcome(attempt: WriteAttempt): EditDesignEvent {
   // record its Event for the Design that exists. A removal never reports the
   // Design gone, so it never reports nothing stored.
   if (type === 'remove-material-use') {
+    const useId =
+      report.kind === 'stored'
+        ? (report.value.removed[0]?.id ?? report.value.missingUseIds[0] ?? attempt.useId)
+        : attempt.useId;
+
     return {
       type: 'material-use-panel-fact',
-      fact: {
-        type: 'use-removed',
-        useId: report.kind === 'stored' ? report.value.id : attempt.useId,
-      },
+      fact: { type: 'use-removed', useId },
       now: attempt.now,
     };
   }
@@ -283,24 +283,39 @@ export function writeOutcome(attempt: WriteAttempt): EditDesignEvent {
   if (report.kind === 'nothing-stored') return { type: 'nothing-stored', designId };
 
   switch (type) {
-    case 'add-material-use':
-      return report.kind === 'stored'
-        ? { type: 'material-use-added', materialUse: report.value }
-        : { type: 'material-use-add-refused', message: report.message };
+    case 'add-material-use': {
+      if (report.kind === 'refused') {
+        return { type: 'material-use-add-refused', message: report.message };
+      }
+      const added = report.value.added[0];
+
+      return added
+        ? { type: 'material-use-added', materialUse: added }
+        : { type: 'nothing-stored', designId };
+    }
     // Only a name has a rule to refuse: every other field stores what it is given.
     case 'write-drafts':
       return report.kind === 'stored'
-        ? { type: 'drafts-written', design: report.value, patch: attempt.patch }
+        ? { type: 'drafts-written', design: report.value.design, patch: attempt.patch }
         : { type: 'field-refused', field: 'name', message: report.message };
-    case 'write-material-use':
-      return {
-        type: 'material-use-panel-fact',
-        fact:
-          report.kind === 'stored'
-            ? { type: 'saved', materialUse: report.value }
-            : { type: 'refused', useId: attempt.useId, message: report.message },
-        now: attempt.now,
-      };
+    case 'write-material-use': {
+      if (report.kind === 'refused') {
+        return {
+          type: 'material-use-panel-fact',
+          fact: { type: 'refused', useId: attempt.useId, message: report.message },
+          now: attempt.now,
+        };
+      }
+      const saved = report.value.corrected[0];
+
+      return saved
+        ? {
+            type: 'material-use-panel-fact',
+            fact: { type: 'saved', materialUse: saved },
+            now: attempt.now,
+          }
+        : { type: 'nothing-stored', designId };
+    }
   }
 }
 

@@ -1,11 +1,19 @@
 import { writeOutcome, type EditDesignEffect } from '../lib/edit-design-reducer';
 import { EMPTY_DESIGN_FIELDS } from '../lib/fields';
-import type { DesignFields, MaterialUse } from '../lib/records';
+import type { Design, DesignWriteResult, MaterialUse } from '../lib/records';
 
 const DESIGN_ID = 'design-silk-slip';
 const NOW = 1_700_000_000_000;
 
-const STORED: DesignFields = { ...EMPTY_DESIGN_FIELDS, name: 'Wool coat' };
+const STORED: Design = {
+  ...EMPTY_DESIGN_FIELDS,
+  id: DESIGN_ID,
+  name: 'Wool coat',
+  status: 'concept',
+  createdAt: NOW,
+  updatedAt: NOW,
+  deletedAt: null,
+};
 
 const WOOL_USE: MaterialUse = {
   id: 'use-wool',
@@ -16,6 +24,19 @@ const WOOL_USE: MaterialUse = {
   role: 'main',
   createdAt: NOW,
 };
+
+/** The one write result a visit hands back, for the change the effect declared. */
+function result(overrides: Partial<DesignWriteResult> = {}): DesignWriteResult {
+  return {
+    design: STORED,
+    materialUses: [WOOL_USE],
+    added: [],
+    corrected: [],
+    removed: [],
+    missingUseIds: [],
+    ...overrides,
+  };
+}
 
 type AddMaterialUseWrite = Extract<EditDesignEffect, { type: 'add-material-use' }>;
 type DraftsWrite = Extract<EditDesignEffect, { type: 'write-drafts' }>;
@@ -52,19 +73,23 @@ const REMOVAL: RemovalWrite = {
 };
 
 describe('a write outcome', () => {
-  test('a write that stored a row becomes the event carrying what it stored', () => {
-    expect(writeOutcome({ ...DRAFTS, report: { kind: 'stored', value: STORED } })).toEqual({
-      type: 'drafts-written',
-      design: STORED,
-      patch: DRAFTS.patch,
+  test('a write that stored a change becomes the event carrying what it stored', () => {
+    expect(
+      writeOutcome({ ...DRAFTS, report: { kind: 'stored', value: result() } })
+    ).toEqual({ type: 'drafts-written', design: STORED, patch: DRAFTS.patch });
+    expect(
+      writeOutcome({
+        ...MATERIAL_USE,
+        report: { kind: 'stored', value: result({ corrected: [WOOL_USE] }) },
+      })
+    ).toEqual({
+      type: 'material-use-panel-fact',
+      fact: { type: 'saved', materialUse: WOOL_USE },
+      now: NOW,
     });
-    expect(writeOutcome({ ...MATERIAL_USE, report: { kind: 'stored', value: WOOL_USE } })).toEqual(
-      { type: 'material-use-panel-fact', fact: { type: 'saved', materialUse: WOOL_USE }, now: NOW }
-    );
-    expect(writeOutcome({ ...ADD, report: { kind: 'stored', value: WOOL_USE } })).toEqual({
-      type: 'material-use-added',
-      materialUse: WOOL_USE,
-    });
+    expect(
+      writeOutcome({ ...ADD, report: { kind: 'stored', value: result({ added: [WOOL_USE] }) } })
+    ).toEqual({ type: 'material-use-added', materialUse: WOOL_USE });
   });
 
   test('a write that refused becomes the refusal the visit restores', () => {
@@ -99,7 +124,7 @@ describe('a write outcome', () => {
     });
   });
 
-  test('a write that found no row says so, whichever write it was', () => {
+  test('a write that found no Design row says so, whichever change it carried', () => {
     expect(writeOutcome({ ...DRAFTS, report: { kind: 'nothing-stored' } })).toEqual({
       type: 'nothing-stored',
       designId: DESIGN_ID,
@@ -115,15 +140,19 @@ describe('a write outcome', () => {
   });
 
   test('a removal reports the use as removed whether it deleted it or found it gone', () => {
-    // A removal's answer is about the use, not the Design: the Design still
-    // exists, so the visit closes its editor, drops the use from its record,
-    // and can still record the Event that visit owes.
-    expect(writeOutcome({ ...REMOVAL, report: { kind: 'stored', value: WOOL_USE } })).toEqual({
+    expect(
+      writeOutcome({ ...REMOVAL, report: { kind: 'stored', value: result({ removed: [WOOL_USE] }) } })
+    ).toEqual({
       type: 'material-use-panel-fact',
       fact: { type: 'use-removed', useId: WOOL_USE.id },
       now: NOW,
     });
-    expect(writeOutcome({ ...REMOVAL, report: { kind: 'nothing-stored' } })).toEqual({
+    expect(
+      writeOutcome({
+        ...REMOVAL,
+        report: { kind: 'stored', value: result({ missingUseIds: [REMOVAL.useId] }) },
+      })
+    ).toEqual({
       type: 'material-use-panel-fact',
       fact: { type: 'use-removed', useId: REMOVAL.useId },
       now: NOW,

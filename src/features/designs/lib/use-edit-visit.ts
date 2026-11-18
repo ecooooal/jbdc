@@ -6,40 +6,57 @@ import {
   editDesignReducer,
   stampedEvent,
   writeOutcome,
+  type EditDesignEffect,
   type EditDesignEvent,
   type EditDesignGesture,
   type EditDesignState,
-  type StoredOrNothingReport,
   type WriteReport,
 } from './edit-design-reducer';
 import {
-  addMaterialUse,
   InvalidDesignNameError,
   InvalidMaterialUseError,
-  removeMaterialUse,
-  updateDesign,
-  updateMaterialUse,
+  writeDesign,
+  type DesignChanges,
+  type DesignWriteResult,
 } from './records';
 
-/** The error a write's own rule throws; any other error is a bug, not an answer. */
-type Refusal = abstract new (...args: never[]) => Error;
+/** The errors a change can be refused for; any other error is a bug, not an answer. */
+const REFUSALS = [InvalidDesignNameError, InvalidMaterialUseError] as const;
 
 /**
- * Runs one write and reports what came back: the row it stored, its refusal,
- * or nothing because the row it targeted is gone.
+ * Runs one write and reports what came back: the result it stored, its refusal,
+ * or nothing because the Design row it targeted is gone.
  */
-function attemptWrite<Stored>(write: () => Stored | null, refusal: Refusal): WriteReport<Stored>;
-/** A write with no refusal rule can only have stored a row or found none. */
-function attemptWrite<Stored>(write: () => Stored | null): StoredOrNothingReport<Stored>;
-function attemptWrite<Stored>(write: () => Stored | null, refusal?: Refusal): WriteReport<Stored> {
+function attemptWrite(
+  write: () => DesignWriteResult | null
+): WriteReport<DesignWriteResult> {
   try {
     const value = write();
 
     return value === null ? { kind: 'nothing-stored' } : { kind: 'stored', value };
   } catch (caught) {
-    if (refusal && caught instanceof refusal) return { kind: 'refused', message: caught.message };
+    if (REFUSALS.some((refusal) => caught instanceof refusal)) {
+      return { kind: 'refused', message: (caught as Error).message };
+    }
 
     throw caught;
+  }
+}
+
+/** A write effect carries changes, not a choice of which record function to call. */
+type WriteEffect = Exclude<EditDesignEffect, { type: 'record-visit' }>;
+
+/** The change an effect declares, as data the one write path can apply. */
+function changesOf(effect: WriteEffect): DesignChanges {
+  switch (effect.type) {
+    case 'add-material-use':
+      return { uses: [{ kind: 'add', input: effect.input }] };
+    case 'write-drafts':
+      return { fields: effect.patch };
+    case 'write-material-use':
+      return { uses: [{ kind: 'correct', useId: effect.useId, patch: effect.patch }] };
+    case 'remove-material-use':
+      return { uses: [{ kind: 'remove', useId: effect.useId }] };
   }
 }
 
@@ -47,8 +64,8 @@ function attemptWrite<Stored>(write: () => Stored | null, refusal?: Refusal): Wr
  * Runs Edit's reducer and the work it asks for. Every catalog call is
  * synchronous, so an effect is performed inside `dispatch` and its outcome is
  * sent straight back — no pending-effect list and no second render. The reducer
- * decides what to write and when; this bridge only performs the call and
- * dispatches the event `writeOutcome` makes of its answer.
+ * decides what changed and when; this bridge only hands those changes to the
+ * one write path and dispatches the event `writeOutcome` makes of its answer.
  *
  * The visit owns the clock (`FRONTEND_STATE` 5): the screen sends gestures with
  * the time left out, and `send` is the one place that stamps it.
@@ -67,69 +84,31 @@ export function useEditVisit(
       setState(result.state);
 
       for (const effect of result.effects) {
-        switch (effect.type) {
-          case 'add-material-use':
-            dispatch(
-              writeOutcome({
-                ...effect,
-                report: attemptWrite(
-                  () => addMaterialUse(database, effect.designId, effect.input, effect.now),
-                  InvalidMaterialUseError
-                ),
-              })
-            );
-            break;
-          case 'write-drafts':
-            dispatch(
-              writeOutcome({
-                ...effect,
-                report: attemptWrite(
-                  () => updateDesign(database, effect.designId, effect.patch, effect.now),
-                  InvalidDesignNameError
-                ),
-              })
-            );
-            break;
-          case 'write-material-use':
-            dispatch(
-              writeOutcome({
-                ...effect,
-                report: attemptWrite(
-                  () =>
-                    updateMaterialUse(
-                      database,
-                      effect.designId,
-                      effect.useId,
-                      effect.patch,
-                      effect.now
-                    ),
-                  InvalidMaterialUseError
-                ),
-              })
-            );
-            break;
-          case 'remove-material-use':
-            dispatch(
-              writeOutcome({
-                ...effect,
-                report: attemptWrite(() =>
-                  removeMaterialUse(database, effect.designId, effect.useId, effect.now)
-                ),
-              })
-            );
-            break;
-          case 'record-visit':
-            recordEdit(
-              database,
-              effect.designId,
-              {
-                before: effect.before,
-                after: effect.after,
-                materialUses: effect.materialUses,
-              },
-              effect.now
-            );
-            break;
+        if (effect.type === 'record-visit') {
+          recordEdit(
+            database,
+            effect.designId,
+            {
+              before: effect.before,
+              after: effect.after,
+              materialUses: effect.materialUses,
+            },
+            effect.now
+          );
+          continue;
+        }
+
+        const changes = changesOf(effect);
+
+        if (changes) {
+          dispatch(
+            writeOutcome({
+              ...effect,
+              report: attemptWrite(() =>
+                writeDesign(database, effect.designId, changes, effect.now)
+              ),
+            })
+          );
         }
       }
     },
