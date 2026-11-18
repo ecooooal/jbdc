@@ -32,13 +32,17 @@ is Detail's live read.
 can be open, and picks between `add-material-use-form.tsx` and
 `edit-material-use-form.tsx`. Both forms only render the visit's panel and send
 it what happened. The visit holds the open panel's draft and the stored use a
-refusal restores, handles its facts directly, and declares the add, correction,
-and removal writes; `lib/use-edit-visit.ts` performs them through `addMaterialUse` /
-`updateMaterialUse` / `removeMaterialUse` in `lib/records.ts`. A write's outcome
-folds back into the visit's record of what it stored, so a refused write leaves
-the panel's choices on screen and never reaches that record. At close the visit
-hands History the row and its uses as it found them and as the writes left them;
-History decides whether that is worth an Event.
+refusal restores, handles its facts directly, and declares the fields and uses
+it changed in one `write-design` effect — not a choice among record functions.
+`lib/use-edit-visit.ts` hands those changes to `writeDesign` in `lib/records.ts`,
+the one write path: it reads the row and its uses once, decides once whether
+anything changed, and stores the row, its uses, the rebuilt `search_text`, and
+the moved `updatedAt` in one transaction. Each change's outcome folds back into
+the visit's record of what it stored, so a refused write leaves the panel's
+choices on screen and never reaches that record. At close the visit hands
+History the row and its uses as it found them and as the writes left them;
+History's diff — the same rule the write path used — decides whether that is
+worth an Event.
 
 ## Screens and pieces
 

@@ -6,7 +6,6 @@ import {
   editDesignReducer,
   stampedEvent,
   writeOutcome,
-  type EditDesignEffect,
   type EditDesignEvent,
   type EditDesignGesture,
   type EditDesignState,
@@ -16,56 +15,33 @@ import {
   InvalidDesignNameError,
   InvalidMaterialUseError,
   writeDesign,
-  type DesignChanges,
   type DesignWriteResult,
 } from './records';
 
-/** The errors a change can be refused for; any other error is a bug, not an answer. */
-const REFUSALS = [InvalidDesignNameError, InvalidMaterialUseError] as const;
-
-/**
- * Runs one write and reports what came back: the result it stored, its refusal,
- * or nothing because the Design row it targeted is gone.
- */
-function attemptWrite(
-  write: () => DesignWriteResult | null
-): WriteReport<DesignWriteResult> {
+/** Runs one write and reports the result it stored, its refusal, or nothing. */
+function attemptWrite(write: () => DesignWriteResult | null): WriteReport<DesignWriteResult> {
   try {
     const value = write();
 
     return value === null ? { kind: 'nothing-stored' } : { kind: 'stored', value };
   } catch (caught) {
-    if (REFUSALS.some((refusal) => caught instanceof refusal)) {
-      return { kind: 'refused', message: (caught as Error).message };
+    if (caught instanceof InvalidDesignNameError) {
+      return { kind: 'refused', message: caught.message, field: 'name' };
+    }
+    if (caught instanceof InvalidMaterialUseError) {
+      return { kind: 'refused', message: caught.message, field: 'colour' };
     }
 
     throw caught;
   }
 }
 
-/** A write effect carries changes, not a choice of which record function to call. */
-type WriteEffect = Exclude<EditDesignEffect, { type: 'record-visit' }>;
-
-/** The change an effect declares, as data the one write path can apply. */
-function changesOf(effect: WriteEffect): DesignChanges {
-  switch (effect.type) {
-    case 'add-material-use':
-      return { uses: [{ kind: 'add', input: effect.input }] };
-    case 'write-drafts':
-      return { fields: effect.patch };
-    case 'write-material-use':
-      return { uses: [{ kind: 'correct', useId: effect.useId, patch: effect.patch }] };
-    case 'remove-material-use':
-      return { uses: [{ kind: 'remove', useId: effect.useId }] };
-  }
-}
-
 /**
  * Runs Edit's reducer and the work it asks for. Every catalog call is
- * synchronous, so an effect is performed inside `dispatch` and its outcome is
+ * synchronous, so an effect is performed inside `dispatch` and its outcomes are
  * sent straight back — no pending-effect list and no second render. The reducer
  * decides what changed and when; this bridge only hands those changes to the
- * one write path and dispatches the event `writeOutcome` makes of its answer.
+ * one write path and dispatches the events `writeOutcome` makes of its answer.
  *
  * The visit owns the clock (`FRONTEND_STATE` 5): the screen sends gestures with
  * the time left out, and `send` is the one place that stamps it.
@@ -98,17 +74,14 @@ export function useEditVisit(
           continue;
         }
 
-        const changes = changesOf(effect);
+        // One write per effect, whatever the owner changed. Each change gets its
+        // own outcome event, so the visit settles every change it declared.
+        const report = attemptWrite(() =>
+          writeDesign(database, effect.designId, effect.changes, effect.now)
+        );
 
-        if (changes) {
-          dispatch(
-            writeOutcome({
-              ...effect,
-              report: attemptWrite(() =>
-                writeDesign(database, effect.designId, changes, effect.now)
-              ),
-            })
-          );
+        for (const outcome of writeOutcome({ ...effect, report })) {
+          dispatch(outcome);
         }
       }
     },

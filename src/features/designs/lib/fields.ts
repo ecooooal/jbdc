@@ -115,8 +115,3 @@ export const EMPTY_DESIGN_FIELDS: DesignFields = {
   categoryId: null,
   collectionId: null,
 };
-
-/** Whether the editable fields differ between two sets of values. */
-export function designFieldsChanged(before: DesignFields, after: DesignFields): boolean {
-  return DESIGN_EDITABLE_FIELDS.some((field) => before[field] !== after[field]);
-}

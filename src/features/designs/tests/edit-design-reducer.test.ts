@@ -226,9 +226,9 @@ describe('edit design reducer', () => {
 
     expect(tester.getEffects()).toEqual([
       {
-        type: 'write-drafts',
+        type: 'write-design',
         designId: DESIGN_ID,
-        patch: { silhouette: '  Relaxed A-line  ' },
+        changes: { fields: { silhouette: '  Relaxed A-line  ' } },
         now: LATER,
       },
     ]);
@@ -419,13 +419,13 @@ describe('edit design reducer', () => {
 
     expect(tester.getEffects()).toEqual([
       {
-        type: 'write-drafts',
+        type: 'write-design',
         designId: DESIGN_ID,
-        patch: {
+        changes: { fields: {
           name: 'Wool coat',
           description: ' Heavy twill ',
           silhouette: ' Relaxed A-line ',
-        },
+        } },
         now: LATER,
       },
     ]);
@@ -440,9 +440,9 @@ describe('edit design reducer', () => {
 
     expect(tester.getEffects()).toEqual([
       {
-        type: 'write-drafts',
+        type: 'write-design',
         designId: DESIGN_ID,
-        patch: { description: 'Heavy twill' },
+        changes: { fields: { description: 'Heavy twill' } },
         now: NOW,
       },
     ]);
@@ -456,9 +456,9 @@ describe('edit design reducer', () => {
 
     expect(tester.getEffects()).toEqual([
       {
-        type: 'write-drafts',
+        type: 'write-design',
         designId: DESIGN_ID,
-        patch: { description: '' },
+        changes: { fields: { description: '' } },
         now: NOW,
       },
     ]);
@@ -476,9 +476,9 @@ describe('edit design reducer', () => {
 
     expect(tester.getEffects()).toEqual([
       {
-        type: 'write-drafts',
+        type: 'write-design',
         designId: DESIGN_ID,
-        patch: { neckline: '' },
+        changes: { fields: { neckline: '' } },
         now: NOW,
       },
     ]);
@@ -521,9 +521,9 @@ describe('tab changes', () => {
 
     expect(tester.getEffects()).toEqual([
       {
-        type: 'write-drafts',
+        type: 'write-design',
         designId: DESIGN_ID,
-        patch: { silhouette: '  Relaxed A-line  ' },
+        changes: { fields: { silhouette: '  Relaxed A-line  ' } },
         now: LATER,
       },
     ]);
@@ -551,9 +551,9 @@ describe('tab changes', () => {
 
     expect(tester.getEffects()).toEqual([
       {
-        type: 'write-drafts',
+        type: 'write-design',
         designId: DESIGN_ID,
-        patch: { mood: ' Romantic, relaxed ' },
+        changes: { fields: { mood: ' Romantic, relaxed ' } },
         now: LATER,
       },
       {
@@ -650,9 +650,9 @@ describe('edit visit boundary', () => {
     // The close writes first; the Event waits for the write to report back.
     expect(tester.getEffects().slice(-1)).toEqual([
       {
-        type: 'write-drafts',
+        type: 'write-design',
         designId: DESIGN_ID,
-        patch: { name: 'Wool coat' },
+        changes: { fields: { name: 'Wool coat' } },
         now: LATER,
       },
     ]);
@@ -771,9 +771,9 @@ describe('edit visit boundary', () => {
 
     expect(tester.getEffects().slice(-1)).toEqual([
       {
-        type: 'write-drafts',
+        type: 'write-design',
         designId: DESIGN_ID,
-        patch: { name: 'Wool coat' },
+        changes: { fields: { name: 'Wool coat' } },
         now: NOW,
       },
     ]);
@@ -855,9 +855,9 @@ describe('edit visit boundary', () => {
 
     expect(tester.getEffects()).toEqual([
       {
-        type: 'write-drafts',
+        type: 'write-design',
         designId: DESIGN_ID,
-        patch: { name: 'Wool coat' },
+        changes: { fields: { name: 'Wool coat' } },
         now: NOW,
       },
     ]);
@@ -877,9 +877,9 @@ describe('edit visit boundary', () => {
 
     expect(tester.getEffects()).toEqual([
       {
-        type: 'write-drafts',
+        type: 'write-design',
         designId: DESIGN_ID,
-        patch: { name: 'Wool coat' },
+        changes: { fields: { name: 'Wool coat' } },
         now: NOW,
       },
       {
@@ -932,9 +932,9 @@ describe('edit visit boundary', () => {
     // it, so no Event is recorded.
     expect(tester.getEffects()).toEqual([
       {
-        type: 'write-drafts',
+        type: 'write-design',
         designId: DESIGN_ID,
-        patch: { name: 'Silk slip dress' },
+        changes: { fields: { name: 'Silk slip dress' } },
         now: NOW,
       },
     ]);
@@ -969,9 +969,9 @@ describe('edit visit boundary', () => {
 
     expect(tester.getEffects()).toEqual([
       {
-        type: 'write-drafts',
+        type: 'write-design',
         designId: DESIGN_ID,
-        patch: { name: 'Wool coat' },
+        changes: { fields: { name: 'Wool coat' } },
         now: NOW,
       },
     ]);
@@ -1065,9 +1065,9 @@ describe('edit visit boundary', () => {
 
     expect(tester.getEffects()).toEqual([
       {
-        type: 'write-drafts',
+        type: 'write-design',
         designId: DESIGN_ID,
-        patch: { name: 'Wool coat' },
+        changes: { fields: { name: 'Wool coat' } },
         now: NOW,
       },
     ]);
@@ -1079,9 +1079,9 @@ describe('edit visit boundary', () => {
     // waiting and records no Event.
     expect(tester.getEffects()).toEqual([
       {
-        type: 'write-drafts',
+        type: 'write-design',
         designId: DESIGN_ID,
-        patch: { name: 'Wool coat' },
+        changes: { fields: { name: 'Wool coat' } },
         now: NOW,
       },
     ]);
@@ -1100,10 +1100,9 @@ describe('edit visit boundary', () => {
 
     expect(tester.getEffects()).toEqual([
       {
-        type: 'write-material-use',
+        type: 'write-design',
         designId: DESIGN_ID,
-        useId: WOOL_USE.id,
-        patch: { colour: 'Black' },
+        changes: { uses: [{ kind: 'correct', useId: WOOL_USE.id, patch: { colour: 'Black' } }] },
         now: LATER,
       },
     ]);
@@ -1113,10 +1112,9 @@ describe('edit visit boundary', () => {
 
     expect(tester.getEffects()).toEqual([
       {
-        type: 'write-material-use',
+        type: 'write-design',
         designId: DESIGN_ID,
-        useId: WOOL_USE.id,
-        patch: { colour: 'Black' },
+        changes: { uses: [{ kind: 'correct', useId: WOOL_USE.id, patch: { colour: 'Black' } }] },
         now: LATER,
       },
     ]);
@@ -1134,9 +1132,9 @@ describe('edit visit boundary', () => {
 
     expect(tester.getEffects()).toEqual([
       {
-        type: 'write-drafts',
+        type: 'write-design',
         designId: DESIGN_ID,
-        patch: { name: 'Wool coat' },
+        changes: { fields: { name: 'Wool coat' } },
         now: NOW,
       },
     ]);
@@ -1158,9 +1156,9 @@ describe('edit visit boundary', () => {
     expect(tester.getState().closing).toEqual({ at: NOW, outstanding: 1 });
     expect(tester.getEffects()).toEqual([
       {
-        type: 'write-drafts',
+        type: 'write-design',
         designId: DESIGN_ID,
-        patch: { name: 'Wool coat' },
+        changes: { fields: { name: 'Wool coat' } },
         now: NOW,
       },
     ]);
@@ -1240,10 +1238,9 @@ describe('Material use editor', () => {
 
     expect(tester.getEffects()).toEqual([
       {
-        type: 'write-material-use',
+        type: 'write-design',
         designId: DESIGN_ID,
-        useId: WOOL_USE.id,
-        patch: { colour: 'Black' },
+        changes: { uses: [{ kind: 'correct', useId: WOOL_USE.id, patch: { colour: 'Black' } }] },
         now: LATER,
       },
     ]);
@@ -1264,10 +1261,9 @@ describe('Material use editor', () => {
 
     expect(tester.getEffects()).toEqual([
       {
-        type: 'write-material-use',
+        type: 'write-design',
         designId: DESIGN_ID,
-        useId: WOOL_USE.id,
-        patch: { materialId: 'material-silk', colour: 'Black' },
+        changes: { uses: [{ kind: 'correct', useId: WOOL_USE.id, patch: { materialId: 'material-silk', colour: 'Black' } }] },
         now: LATER,
       },
     ]);
@@ -1283,10 +1279,9 @@ describe('Material use editor', () => {
 
     expect(tester.getEffects()).toEqual([
       {
-        type: 'write-material-use',
+        type: 'write-design',
         designId: DESIGN_ID,
-        useId: WOOL_USE.id,
-        patch: { role: 'secondary' },
+        changes: { uses: [{ kind: 'correct', useId: WOOL_USE.id, patch: { role: 'secondary' } }] },
         now: LATER,
       },
     ]);
@@ -1300,10 +1295,9 @@ describe('Material use editor', () => {
 
     expect(tester.getEffects()).toEqual([
       {
-        type: 'write-material-use',
+        type: 'write-design',
         designId: DESIGN_ID,
-        useId: WOOL_USE.id,
-        patch: { colour: 'Black' },
+        changes: { uses: [{ kind: 'correct', useId: WOOL_USE.id, patch: { colour: 'Black' } }] },
         now: LATER,
       },
     ]);
@@ -1318,10 +1312,9 @@ describe('Material use editor', () => {
 
     expect(tester.getEffects()).toEqual([
       {
-        type: 'write-material-use',
+        type: 'write-design',
         designId: DESIGN_ID,
-        useId: WOOL_USE.id,
-        patch: { colour: 'Black' },
+        changes: { uses: [{ kind: 'correct', useId: WOOL_USE.id, patch: { colour: 'Black' } }] },
         now: LATER,
       },
     ]);
@@ -1340,10 +1333,9 @@ describe('Material use editor', () => {
 
     expect(tester.getEffects().slice(-1)).toEqual([
       {
-        type: 'write-material-use',
+        type: 'write-design',
         designId: DESIGN_ID,
-        useId: WOOL_USE.id,
-        patch: { colour: 'Black' },
+        changes: { uses: [{ kind: 'correct', useId: WOOL_USE.id, patch: { colour: 'Black' } }] },
         now: LATER,
       },
     ]);
@@ -1400,9 +1392,9 @@ describe('Material use editor', () => {
 
     expect(tester.getEffects()).toEqual([
       {
-        type: 'remove-material-use',
+        type: 'write-design',
         designId: DESIGN_ID,
-        useId: WOOL_USE.id,
+        changes: { uses: [{ kind: 'remove', useId: WOOL_USE.id }] },
         now: LATER,
       },
     ]);
@@ -1490,10 +1482,9 @@ describe('Material use editor', () => {
 
     expect(tester.getEffects()).toEqual([
       {
-        type: 'write-material-use',
+        type: 'write-design',
         designId: DESIGN_ID,
-        useId: WOOL_USE.id,
-        patch: { colour: 'Black' },
+        changes: { uses: [{ kind: 'correct', useId: WOOL_USE.id, patch: { colour: 'Black' } }] },
         now: LATER,
       },
     ]);
@@ -1617,9 +1608,9 @@ describe('the add Material use panel', () => {
 
     expect(tester.getEffects()).toEqual([
       {
-        type: 'add-material-use',
+        type: 'write-design',
         designId: DESIGN_ID,
-        input: { materialId: 'material-wool', colour: 'Charcoal', role: 'main' },
+        changes: { uses: [{ kind: 'add', input: { materialId: 'material-wool', colour: 'Charcoal', role: 'main' } }] },
         now: LATER,
       },
     ]);
@@ -1647,9 +1638,9 @@ describe('the add Material use panel', () => {
 
     expect(tester.getEffects()).toEqual([
       {
-        type: 'add-material-use',
+        type: 'write-design',
         designId: DESIGN_ID,
-        input: { materialId: 'material-wool', colour: '   ', role: 'main' },
+        changes: { uses: [{ kind: 'add', input: { materialId: 'material-wool', colour: '   ', role: 'main' } }] },
         now: LATER,
       },
     ]);
@@ -1778,9 +1769,9 @@ describe('the visit stamps the time on the gestures the screen sends', () => {
 
     expect(tester.getEffects()).toEqual([
       {
-        type: 'write-drafts',
+        type: 'write-design',
         designId: DESIGN_ID,
-        patch: { name: 'Wool coat' },
+        changes: { fields: { name: 'Wool coat' } },
         now: LATER,
       },
     ]);
