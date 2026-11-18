@@ -420,6 +420,64 @@ describe('design updates', () => {
     expect(storedSearchText()).toBe('wool coat heavy twill knitwear spring 2027');
   });
 
+  test('an identity write rebuilds search text and moves Updated through the write entry point', () => {
+    const category = createCategory(database, { name: 'Dress' });
+    const collection = createCollection(database, { name: 'Spring 2027', year: 2027 });
+    const design = createDesign(
+      database,
+      { name: 'Silk slip', description: 'Bias cut' },
+      10
+    );
+
+    const updated = updateDesign(
+      database,
+      design.id,
+      {
+        name: 'Wool coat',
+        description: ' Heavy twill ',
+        categoryId: category.id,
+        collectionId: collection.id,
+      },
+      20
+    );
+
+    expect(updated).toMatchObject({
+      name: 'Wool coat',
+      description: 'Heavy twill',
+      categoryId: category.id,
+      collectionId: collection.id,
+      updatedAt: 20,
+    });
+    expect(getDesign(database, design.id)).toMatchObject({ updatedAt: 20 });
+    expect(storedSearchText()).toBe('wool coat heavy twill dress spring 2027');
+  });
+
+  test('a soft-deleted Category and Collection still resolve into search text on an identity write', () => {
+    const category = createCategory(database, { name: 'Dress' });
+    const collection = createCollection(database, { name: 'Spring 2027', year: 2027 });
+    const design = createDesign(
+      database,
+      { name: 'Silk slip', categoryId: category.id, collectionId: collection.id },
+      10
+    );
+
+    database.db
+      .update(categories)
+      .set({ deletedAt: 15 })
+      .where(eq(categories.id, category.id))
+      .run();
+    database.db
+      .update(collections)
+      .set({ deletedAt: 15 })
+      .where(eq(collections.id, collection.id))
+      .run();
+
+    const updated = updateDesign(database, design.id, { description: ' Bias cut ' }, 20);
+
+    expect(updated).toMatchObject({ updatedAt: 20 });
+    expect(storedSearchText()).toBe('silk slip bias cut dress spring 2027');
+  });
+
   test('persists every Specification field and rebuilds search text', () => {
     const design = createDesign(database, { name: 'Silk slip' }, 10);
 
