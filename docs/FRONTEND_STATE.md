@@ -10,7 +10,7 @@ This is the elaboration of **"State lives in reducers"** in `CODING_STANDARDS.md
 
 `src/features/<feature>/lib/<surface>-reducer.ts`, with no React import and no database access. Its test is `src/features/<feature>/tests/<surface>-reducer.test.ts`. Both stay private to the feature; a component reaches the reducer through the feature's own tree, not through `index.ts`/`react.ts` unless a screen genuinely needs it.
 
-One file per **surface**, not per feature: two screens that do not share a state machine get two reducers. A surface may delegate a slice to a private reducer in the same folder — Edit's Material use editor is one — but the surface still exports one state, event, and effect type. The slice is not a second surface.
+One file per **surface**, not per feature: two screens that do not share a state machine get two reducers. A surface may delegate a slice to a private reducer in the same folder — Edit's add-Material-use editor is one — but the surface still exports one state, event, and effect type. The slice is not a second surface.
 
 ## The pattern
 
@@ -53,7 +53,7 @@ The reducer owns decisions, not everything that changes on screen.
 - **Route state belongs to expo-router.** Read it at the edge and pass what a rule needs (`{ type: "edit-opened", designId }`).
 - **Live data belongs to `useLiveRead`.** Do not copy catalog rows into reducer state. A selection is an id; derive the selected row and its label from the live list. An entry created inline is selected by id immediately, and its label appears when the live read observes the insert. A read declares every table it watches, joins included (ADR-0005). The reducer holds the surface's decisions — the draft, the step, the error — not the catalog.
 - **A visit keeps the row its own writes stored.** Edit's record is not a catalog copy: it is seeded once, advanced only by the visit's own write outcomes, and answers what a refused write restores, what a blank name falls back to, and what the one Event that visit records has as its after-state.
-- **One panel, one field.** Editors that cannot both be open are one piece of state, even when one half lives in the surface reducer and the other in a component: `panel: { kind: "add" } | { kind: "edit"; editor: EditState } | null`. A component boolean beside a reducer-owned editor is a split; move both into the union.
+- **One panel, one field.** Editors that cannot both be open are one piece of state in the surface reducer: `panel: { kind: "add"; editor: AddState } | { kind: "edit"; stored: StoredRow; ...draft } | null`. A component boolean beside a reducer-owned editor is a split; move both into the union.
 
 ## When plain `useState` is fine
 

@@ -109,15 +109,6 @@ export function EditDesignScreen({ designId }: { designId: string }) {
     send({ type: 'choice-chosen', field: 'collectionId', value: collectionId });
   }
 
-  /**
-   * Removal is one declared write. A use that is already gone still reports the
-   * use as removed, so its editor closes and the use leaves the visit's record;
-   * the visit can still record its Event.
-   */
-  function removeUseEditor(): void {
-    send({ type: 'material-use-panel-fact', fact: { type: 'remove-pressed' } });
-  }
-
   function fieldError(field: DesignEditableField) {
     if (state.error?.field !== field) return null;
 
@@ -293,48 +284,7 @@ export function EditDesignScreen({ designId }: { designId: string }) {
                     <MaterialUsesSection
                       uses={design.materialUses}
                       panel={state.materialUsePanel}
-                      onOpenUse={(materialUse) =>
-                        send({
-                          type: 'material-use-editor-opened',
-                          materialUse,
-                        })
-                      }
-                      onOpenAdd={() => send({ type: 'material-use-add-opened' })}
-                      onClosePanel={() =>
-                        send({ type: 'material-use-panel-fact', fact: { type: 'closed' } })
-                      }
-                      onMaterialChosen={(materialId) =>
-                        send({
-                          type: 'material-use-panel-fact',
-                          fact: { type: 'material-chosen', materialId },
-                        })
-                      }
-                      onColourChanged={(colour) =>
-                        send({ type: 'material-use-panel-fact', fact: { type: 'colour-changed', colour } })
-                      }
-                      onColourCommitted={() =>
-                        send({ type: 'material-use-panel-fact', fact: { type: 'colour-committed' } })
-                      }
-                      onRoleChosen={(role) =>
-                        send({ type: 'material-use-panel-fact', fact: { type: 'role-chosen', role } })
-                      }
-                      onRemoveUse={removeUseEditor}
-                      onInlineCreationOpened={() =>
-                        send({ type: 'material-use-inline-creation-opened' })
-                      }
-                      onInlineCreationClosed={() =>
-                        send({ type: 'material-use-inline-creation-closed' })
-                      }
-                      onInlineNameChanged={(name) =>
-                        send({ type: 'material-use-inline-name-changed', name })
-                      }
-                      onMaterialCreated={(materialId) =>
-                        send({ type: 'material-use-material-created', materialId })
-                      }
-                      onInlineCreationRefused={(message) =>
-                        send({ type: 'material-use-inline-creation-refused', message })
-                      }
-                      onAddConfirmed={() => send({ type: 'material-use-add-confirmed' })}
+                      send={send}
                     />
                   ) : null}
                 </View>

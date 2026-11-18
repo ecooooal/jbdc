@@ -1,13 +1,13 @@
 import { View } from 'react-native';
-import type { MaterialUseRole } from '@/features/database';
 import { useMaterials } from '@/features/materials/react';
 import { Button } from '@/shared/components/ui/button';
 import { Input } from '@/shared/components/ui/input';
 import { Text } from '@/shared/components/ui/text';
 import {
   materialUseChoices,
-  type EditMaterialUseState,
-} from '../lib/edit-material-use-reducer';
+  type EditDesignGesture,
+  type EditingMaterialUse,
+} from '../lib/edit-design-reducer';
 import { FormField } from './form-field';
 import { MaterialUseRoleSelect } from './material-use-role-select';
 import { TaxonomySelect } from './taxonomy-select';
@@ -17,26 +17,15 @@ import { TaxonomySelect } from './taxonomy-select';
  * soon as they change, so there is no Save step; the panel stays open until
  * Done or Remove, and the screen's live read brings the re-sorted row back.
  *
- * Its decisions live in Edit's reducer: this form only renders the editor state
- * and reports what the owner did, so a tab change or a close can write the
- * colour draft it still holds.
+ * The visit holds this panel's draft and its stored use, and decides what each
+ * gesture writes: this form only renders the state and reports what happened.
  */
 export function EditMaterialUseForm({
   state,
-  onMaterialChosen,
-  onColourChanged,
-  onColourCommitted,
-  onRoleChosen,
-  onRemove,
-  onClose,
+  send,
 }: {
-  state: EditMaterialUseState;
-  onMaterialChosen: (materialId: string) => void;
-  onColourChanged: (colour: string) => void;
-  onColourCommitted: () => void;
-  onRoleChosen: (role: MaterialUseRole) => void;
-  onRemove: () => void;
-  onClose: () => void;
+  state: EditingMaterialUse;
+  send: (gesture: EditDesignGesture) => void;
 }) {
   const { materials, error: materialsError, status } = useMaterials();
   const materialItems = materialUseChoices(materials, state);
@@ -55,7 +44,10 @@ export function EditMaterialUseForm({
           onSelect={(material) => {
             if (!material || material.id === state.materialId) return;
 
-            onMaterialChosen(material.id);
+            send({
+              type: 'material-use-panel-fact',
+              fact: { type: 'material-chosen', materialId: material.id },
+            });
           }}
         />
       </FormField>
@@ -63,9 +55,15 @@ export function EditMaterialUseForm({
       <FormField label="Colour">
         <Input
           value={state.colour}
-          onChangeText={onColourChanged}
-          onBlur={onColourCommitted}
-          onSubmitEditing={onColourCommitted}
+          onChangeText={(colour) =>
+            send({ type: 'material-use-panel-fact', fact: { type: 'colour-changed', colour } })
+          }
+          onBlur={() =>
+            send({ type: 'material-use-panel-fact', fact: { type: 'colour-committed' } })
+          }
+          onSubmitEditing={() =>
+            send({ type: 'material-use-panel-fact', fact: { type: 'colour-committed' } })
+          }
           returnKeyType="done"
           placeholder="Ivory"
           autoFocus
@@ -74,7 +72,12 @@ export function EditMaterialUseForm({
       </FormField>
 
       <FormField label="Role">
-        <MaterialUseRoleSelect value={state.role} onChange={onRoleChosen} />
+        <MaterialUseRoleSelect
+          value={state.role}
+          onChange={(role) =>
+            send({ type: 'material-use-panel-fact', fact: { type: 'role-chosen', role } })
+          }
+        />
       </FormField>
 
       {materialsError ? (
@@ -86,12 +89,18 @@ export function EditMaterialUseForm({
         <Button
           size="sm"
           variant="destructive"
-          onPress={onRemove}
+          onPress={() =>
+            send({ type: 'material-use-panel-fact', fact: { type: 'remove-pressed' } })
+          }
           accessibilityLabel="Remove material use"
         >
           <Text>Remove</Text>
         </Button>
-        <Button size="sm" variant="ghost" onPress={onClose}>
+        <Button
+          size="sm"
+          variant="ghost"
+          onPress={() => send({ type: 'material-use-panel-fact', fact: { type: 'closed' } })}
+        >
           <Text>Done</Text>
         </Button>
       </View>

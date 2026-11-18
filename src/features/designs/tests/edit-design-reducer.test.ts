@@ -3,6 +3,7 @@ import { createInitialAddMaterialUseState } from '../lib/add-material-use-reduce
 import {
   createInitialEditDesignState,
   editDesignReducer,
+  materialUseChoices,
   stampedEvent,
 } from '../lib/edit-design-reducer';
 import type { DesignFields, MaterialUse } from '../lib/records';
@@ -1480,7 +1481,11 @@ describe('Material use editor', () => {
   test('opening a text row writes and closes the Material use editor', () => {
     const tester = opened();
 
-    tester.send({ type: 'material-use-panel-fact', fact: { type: 'colour-changed', colour: 'Black' }, now: NOW });
+    tester.send({
+      type: 'material-use-panel-fact',
+      fact: { type: 'colour-changed', colour: 'Black' },
+      now: NOW,
+    });
     tester.send({ type: 'row-opened', row: 'silhouette', now: LATER });
 
     expect(tester.getEffects()).toEqual([
@@ -1493,6 +1498,66 @@ describe('Material use editor', () => {
       },
     ]);
     expect(tester.getState()).toMatchObject({ editing: 'silhouette', materialUsePanel: null });
+  });
+
+  test('a field change after a refusal clears the refusal', () => {
+    const tester = opened();
+
+    tester.send({
+      type: 'material-use-panel-fact',
+      fact: { type: 'refused', useId: WOOL_USE.id, message: 'A material use needs a colour.' },
+      now: NOW,
+    });
+    expect(tester.getState().materialUsePanel).toMatchObject({
+      colour: 'Charcoal',
+      error: 'A material use needs a colour.',
+    });
+
+    tester.send({
+      type: 'material-use-panel-fact',
+      fact: { type: 'colour-changed', colour: 'Black' },
+      now: LATER,
+    });
+    expect(tester.getState().materialUsePanel).toMatchObject({ colour: 'Black', error: null });
+  });
+
+  test('a saved correction becomes the row and clears the refusal', () => {
+    const tester = opened();
+    const corrected: MaterialUse = { ...WOOL_USE, colour: 'Ivory', role: 'secondary' };
+
+    tester.send({
+      type: 'material-use-panel-fact',
+      fact: { type: 'refused', useId: WOOL_USE.id, message: 'A material use needs a colour.' },
+      now: NOW,
+    });
+    tester.send({
+      type: 'material-use-panel-fact',
+      fact: { type: 'saved', materialUse: corrected },
+      now: LATER,
+    });
+
+    expect(tester.getState().materialUsePanel).toMatchObject({
+      colour: 'Ivory',
+      role: 'secondary',
+      stored: corrected,
+      error: null,
+    });
+    expect(tester.getState().storedUses).toEqual([corrected]);
+  });
+
+  test('the picker keeps the stored Material when the live list no longer has it', () => {
+    const tester = opened();
+    const panel = tester.getState().materialUsePanel;
+
+    if (panel?.kind !== 'edit') throw new Error('expected the correction panel');
+
+    expect(materialUseChoices([{ id: 'material-silk', name: 'Silk crêpe' }], panel)).toEqual([
+      { id: 'material-silk', name: 'Silk crêpe' },
+      { id: WOOL_USE.materialId, name: WOOL_USE.materialName },
+    ]);
+    expect(
+      materialUseChoices([{ id: WOOL_USE.materialId, name: 'Merino' }], panel)
+    ).toEqual([{ id: WOOL_USE.materialId, name: 'Merino' }]);
   });
 });
 

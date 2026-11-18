@@ -1,4 +1,5 @@
 import type { MaterialUseRole } from '@/features/database';
+import type { Material } from '@/features/materials';
 import {
   addMaterialUseReducer,
   createInitialAddMaterialUseState,
@@ -384,6 +385,20 @@ function unwrittenMaterialUseFields(
   if (editor.role !== editor.stored.role) patch.role = editor.role;
 
   return Object.keys(patch).length === 0 ? null : patch;
+}
+
+/**
+ * The picker's options: the live list, plus the stored Material when the owner
+ * has removed it from that list, so the editor still opens on the use's current
+ * Material. A pure selector over the panel and the live read.
+ */
+export function materialUseChoices(
+  materials: readonly Material[],
+  editor: EditingMaterialUse
+): Material[] {
+  if (materials.some((material) => material.id === editor.materialId)) return [...materials];
+
+  return [...materials, { id: editor.materialId, name: editor.stored.materialName }];
 }
 
 /** The editor an open correction holds, or null while adding or closed. */
