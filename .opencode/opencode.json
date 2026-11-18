@@ -1,0 +1,15 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "policies": [
+    {
+      "action": "tool.use",
+      "resource": "read:docs/architecture-reviews/*",
+      "effect": "deny"
+    },
+    {
+      "action": "tool.use",
+      "resource": "read:*/docs/architecture-reviews/*",
+      "effect": "deny"
+    }
+  ]
+}
