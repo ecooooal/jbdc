@@ -17,11 +17,7 @@ import {
   type DesignTextEditableField,
 } from './fields';
 import { designNameProblem } from './limits';
-import {
-  createInitialEditMaterialUseState,
-  editMaterialUseReducer,
-  type EditMaterialUseState,
-} from './edit-material-use-reducer';
+import { editMaterialUseReducer } from './edit-material-use-reducer';
 import { normalizeOptionalText } from './optional-text';
 import type {
   AddMaterialUseInput,
@@ -34,12 +30,34 @@ import type {
 import { DESIGN_SECTIONS, type DesignSectionTab } from './sections';
 
 /**
- * The one Materials editor that can be open: adding a use, or correcting one.
- * They cannot both be open, so they are one field (FRONTEND_STATE).
+ * The correction panel's draft and the use its own writes stored. A refusal
+ * restores `stored`; the other fields are what the owner sees on screen. Both
+ * live in the visit's one panel, so there is no second state to forward into.
  */
+export type EditingMaterialUse = {
+  /** The use as stored right now; the fields a refusal restores. */
+  stored: MaterialUse;
+  materialId: string;
+  colour: string;
+  role: MaterialUseRole;
+  error: string | null;
+};
+
+/** The one Materials editor that can be open: adding a use, or correcting one. */
 export type MaterialUsePanel =
   | { kind: 'add'; editor: AddMaterialUseState }
-  | { kind: 'edit'; editor: EditMaterialUseState };
+  | ({ kind: 'edit' } & EditingMaterialUse);
+
+/** Opens a correction on the use as it is stored. */
+function editingMaterialUseFrom(materialUse: MaterialUse): EditingMaterialUse {
+  return {
+    stored: materialUse,
+    materialId: materialUse.materialId,
+    colour: materialUse.colour,
+    role: materialUse.role,
+    error: null,
+  };
+}
 
 /**
  * Edit's decisions: the drafts, the record of what its own writes stored, the
@@ -340,25 +358,25 @@ function unwrittenFields(state: EditDesignState): UnwrittenDesignFields | null {
  * colour is not a change, because a use always needs one. Null means no write.
  */
 function unwrittenMaterialUseFields(
-  editor: EditMaterialUseState | null
+  editor: EditingMaterialUse | null
 ): UpdateMaterialUseInput | null {
   if (!editor) return null;
 
   const patch: UpdateMaterialUseInput = {};
 
-  if (editor.materialId !== editor.saved.materialId) patch.materialId = editor.materialId;
+  if (editor.materialId !== editor.stored.materialId) patch.materialId = editor.materialId;
 
   const colour = editor.colour.trim();
 
-  if (colour.length > 0 && colour !== editor.saved.colour) patch.colour = editor.colour;
-  if (editor.role !== editor.saved.role) patch.role = editor.role;
+  if (colour.length > 0 && colour !== editor.stored.colour) patch.colour = editor.colour;
+  if (editor.role !== editor.stored.role) patch.role = editor.role;
 
   return Object.keys(patch).length === 0 ? null : patch;
 }
 
 /** The editor an open correction holds, or null while adding or closed. */
-function editingMaterialUse(state: EditDesignState): EditMaterialUseState | null {
-  return state.materialUsePanel?.kind === 'edit' ? state.materialUsePanel.editor : null;
+function editingMaterialUse(state: EditDesignState): EditingMaterialUse | null {
+  return state.materialUsePanel?.kind === 'edit' ? state.materialUsePanel : null;
 }
 
 /** The choices an open add panel holds, or null while correcting or closed. */
@@ -397,7 +415,7 @@ function materialUseFlushEffects(state: EditDesignState, now: number): EditDesig
     {
       type: 'write-material-use',
       designId: state.designId,
-      useId: editor.saved.id,
+      useId: editor.stored.id,
       patch,
       now,
     },
@@ -690,12 +708,10 @@ export function editDesignReducer(
         event.now,
         { writesDrafts: true, records: false }
       );
-      const panel: MaterialUsePanel = {
+      return withPanel(flushed, {
         kind: 'edit',
-        editor: createInitialEditMaterialUseState(event.materialUse),
-      };
-
-      return withPanel(flushed, panel);
+        ...editingMaterialUseFrom(event.materialUse),
+      });
     }
     case 'material-use-inline-creation-opened':
       return withAddEditorFact(state, { type: 'inline-creation-opened' });
@@ -723,7 +739,7 @@ export function editDesignReducer(
           ...state,
           materialUsePanel: {
             kind: 'edit',
-            editor: editMaterialUseReducer(editing, {
+            ...editMaterialUseReducer(editing, {
               type: 'colour-changed',
               colour: event.colour,
             }),
@@ -754,7 +770,7 @@ export function editDesignReducer(
           ...state,
           materialUsePanel: {
             kind: 'edit' as const,
-            editor: editMaterialUseReducer(editing, {
+            ...editMaterialUseReducer(editing, {
               type: 'material-chosen',
               materialId: event.materialId,
             }),
@@ -786,7 +802,7 @@ export function editDesignReducer(
           ...state,
           materialUsePanel: {
             kind: 'edit' as const,
-            editor: editMaterialUseReducer(editing, { type: 'role-chosen', role: event.role }),
+            ...editMaterialUseReducer(editing, { type: 'role-chosen', role: event.role }),
           },
         };
 
@@ -806,7 +822,7 @@ export function editDesignReducer(
     }
     case 'material-use-saved': {
       const editor = editingMaterialUse(state);
-      const isTheSameUse = editor !== null && editor.saved.id === event.materialUse.id;
+      const isTheSameUse = editor !== null && editor.stored.id === event.materialUse.id;
 
       return settled({
         ...state,
@@ -815,8 +831,8 @@ export function editDesignReducer(
         materialUsePanel:
           editor && isTheSameUse
             ? {
-                kind: 'edit',
-                editor: editMaterialUseReducer(editor, {
+                kind: 'edit' as const,
+                ...editMaterialUseReducer(editor, {
                   type: 'material-use-saved',
                   materialUse: event.materialUse,
                 }),
@@ -832,13 +848,13 @@ export function editDesignReducer(
     case 'material-use-refused': {
       const editor = editingMaterialUse(state);
 
-      if (!editor || editor.saved.id !== event.useId) return settled(state);
+      if (!editor || editor.stored.id !== event.useId) return settled(state);
 
       return settled({
         ...state,
         materialUsePanel: {
           kind: 'edit',
-          editor: editMaterialUseReducer(editor, {
+          ...editMaterialUseReducer(editor, {
             type: 'material-use-refused',
             message: event.message,
           }),
@@ -856,7 +872,7 @@ export function editDesignReducer(
           {
             type: 'remove-material-use',
             designId: state.designId,
-            useId: editor.saved.id,
+            useId: editor.stored.id,
             now: event.now,
           },
         ],

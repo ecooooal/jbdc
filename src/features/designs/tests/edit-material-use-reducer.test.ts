@@ -21,7 +21,7 @@ describe('edit material use reducer', () => {
       materialId: WOOL_USE.materialId,
       colour: 'Charcoal',
       role: 'main',
-      saved: WOOL_USE,
+      stored: WOOL_USE,
       error: null,
     });
   });
@@ -74,7 +74,7 @@ describe('edit material use reducer', () => {
       materialId: 'material-silk',
       colour: 'Ivory',
       role: 'secondary',
-      saved: silkUse,
+      stored: silkUse,
       error: null,
     });
   });

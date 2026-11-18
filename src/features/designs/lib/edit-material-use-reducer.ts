@@ -1,20 +1,10 @@
 import type { MaterialUseRole } from '@/features/database';
 import type { Material } from '@/features/materials';
+import type { EditingMaterialUse } from './edit-design-reducer';
 import type { MaterialUse } from './records';
 
-/**
- * The Material use editor's decisions: the Material, colour, and role on
- * screen, the stored use a refusal restores, and the one message it shows.
- * Every field writes on its own, so there is no Save step and no effect here.
- */
-export type EditMaterialUseState = {
-  materialId: string;
-  colour: string;
-  role: MaterialUseRole;
-  /** The use as it is stored right now. */
-  saved: MaterialUse;
-  error: string | null;
-};
+/** The correction panel's state now lives in the visit; this is its shape. */
+export type EditMaterialUseState = EditingMaterialUse;
 
 export type EditMaterialUseEvent =
   | { type: 'material-chosen'; materialId: string }
@@ -27,10 +17,10 @@ export function createInitialEditMaterialUseState(
   materialUse: MaterialUse
 ): EditMaterialUseState {
   return {
+    stored: materialUse,
     materialId: materialUse.materialId,
     colour: materialUse.colour,
     role: materialUse.role,
-    saved: materialUse,
     error: null,
   };
 }
@@ -45,7 +35,7 @@ export function materialUseChoices(
 ): Material[] {
   if (materials.some((material) => material.id === state.materialId)) return [...materials];
 
-  return [...materials, { id: state.materialId, name: state.saved.materialName }];
+  return [...materials, { id: state.materialId, name: state.stored.materialName }];
 }
 
 /** A change clears the previous refusal; a save makes the stored use the row. */
@@ -66,15 +56,15 @@ export function editMaterialUseReducer(
         materialId: event.materialUse.materialId,
         colour: event.materialUse.colour,
         role: event.materialUse.role,
-        saved: event.materialUse,
+        stored: event.materialUse,
         error: null,
       };
     case 'material-use-refused':
       return {
         ...state,
-        materialId: state.saved.materialId,
-        colour: state.saved.colour,
-        role: state.saved.role,
+        materialId: state.stored.materialId,
+        colour: state.stored.colour,
+        role: state.stored.role,
         error: event.message,
       };
   }

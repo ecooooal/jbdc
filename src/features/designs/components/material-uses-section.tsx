@@ -5,7 +5,6 @@ import { Icon } from '@/shared/components/ui/icon';
 import { Text } from '@/shared/components/ui/text';
 import type { MaterialUseRole } from '@/features/database';
 import type { MaterialUse } from '@/features/designs';
-import type { EditMaterialUseState } from '../lib/edit-material-use-reducer';
 import type { MaterialUsePanel } from '../lib/edit-design-reducer';
 import { AddMaterialUseForm } from './add-material-use-form';
 import { EditMaterialUseForm } from './edit-material-use-form';
@@ -53,7 +52,7 @@ export function MaterialUsesSection({
   onInlineCreationRefused: (message: string) => void;
   onAddConfirmed: () => void;
 }) {
-  const editor: EditMaterialUseState | null = panel?.kind === 'edit' ? panel.editor : null;
+  const editor = panel?.kind === 'edit' ? panel : null;
 
   return (
     <View className="gap-2">

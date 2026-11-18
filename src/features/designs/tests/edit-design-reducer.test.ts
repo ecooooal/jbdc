@@ -1202,13 +1202,11 @@ describe('Material use editor', () => {
 
     expect(tester.getState().materialUsePanel).toEqual({
       kind: 'edit',
-      editor: {
-        materialId: WOOL_USE.materialId,
-        colour: 'Charcoal',
-        role: 'main',
-        saved: WOOL_USE,
-        error: null,
-      },
+      materialId: WOOL_USE.materialId,
+      colour: 'Charcoal',
+      role: 'main',
+      stored: WOOL_USE,
+      error: null,
     });
   });
 
@@ -1224,7 +1222,7 @@ describe('Material use editor', () => {
     tester.send({ type: 'material-use-editor-opened', materialUse: WOOL_USE, now: LATER });
     expect(tester.getState().materialUsePanel).toMatchObject({
       kind: 'edit',
-      editor: { saved: WOOL_USE },
+      stored: WOOL_USE,
     });
 
     tester.send({ type: 'material-use-panel-closed', now: LATER });
@@ -1249,7 +1247,7 @@ describe('Material use editor', () => {
       },
     ]);
     expect(tester.getState()).toMatchObject({
-      materialUsePanel: { kind: 'edit', editor: { colour: 'Black' } },
+      materialUsePanel: { kind: 'edit', colour: 'Black' },
     });
   });
 
@@ -1273,7 +1271,7 @@ describe('Material use editor', () => {
       },
     ]);
     expect(tester.getState()).toMatchObject({
-      materialUsePanel: { kind: 'edit', editor: { materialId: 'material-silk' } },
+      materialUsePanel: { kind: 'edit', materialId: 'material-silk' },
     });
   });
 
@@ -1427,7 +1425,9 @@ describe('Material use editor', () => {
     expect(tester.getState()).toMatchObject({
       materialUsePanel: {
         kind: 'edit',
-        editor: { colour: 'Black', role: 'secondary', saved: corrected },
+        colour: 'Black',
+        role: 'secondary',
+        stored: corrected,
       },
     });
     expect(tester.getState().storedUses).toEqual([corrected]);
@@ -1450,7 +1450,9 @@ describe('Material use editor', () => {
     expect(tester.getState()).toMatchObject({
       materialUsePanel: {
         kind: 'edit',
-        editor: { materialId: silkUse.materialId, colour: 'Ivory', saved: silkUse },
+        materialId: silkUse.materialId,
+        colour: 'Ivory',
+        stored: silkUse,
       },
     });
     expect(tester.getState().storedUses).toEqual([{ ...WOOL_USE, colour: 'Black' }]);
@@ -1469,7 +1471,8 @@ describe('Material use editor', () => {
     expect(tester.getState()).toMatchObject({
       materialUsePanel: {
         kind: 'edit',
-        editor: { colour: 'Charcoal', error: 'A material use needs a colour.' },
+        colour: 'Charcoal',
+        error: 'A material use needs a colour.',
       },
     });
   });
