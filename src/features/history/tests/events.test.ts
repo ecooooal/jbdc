@@ -1,4 +1,10 @@
-import { categories, collections, designEvents } from '@/features/database';
+import {
+  categories,
+  collections,
+  designEvents,
+  type Database,
+  type LiveReadTable,
+} from '@/features/database';
 import { createTempDatabase } from '@/features/database/testing';
 import { expectLiveReadReruns } from '@/features/database/testing-live';
 import type { DesignFields, MaterialUse } from '@/features/designs';
@@ -99,25 +105,18 @@ describe('the History live read', () => {
   test('re-runs when any table it reads changes', async () => {
     const design = createDesign(database, { name: 'Silk slip dress' }, 10);
     const declaration = designHistoryRead(design.id);
-    let changed = 0;
+    const writes = new Map<LiveReadTable, (db: Database) => void>([
+      [
+        designEvents,
+        (db) =>
+          recordEdit(db, design.id, { before: BEFORE, after: { ...BEFORE, name: 'Wool coat' } }, 20),
+      ],
+      [categories, (db) => createCategory(db, { name: 'Knitwear' })],
+      [collections, (db) => createCollection(db, { name: 'Spring 2027', year: 2027 })],
+    ]);
 
-    for (const table of [designEvents, categories, collections]) {
-      await expectLiveReadReruns(declaration, table, database, (database) => {
-        changed += 1;
-
-        if (table === designEvents) {
-          recordEdit(
-            database,
-            design.id,
-            { before: BEFORE, after: { ...BEFORE, name: `Wool coat ${changed}` } },
-            20
-          );
-        } else if (table === categories) {
-          createCategory(database, { name: `Category ${changed}` });
-        } else {
-          createCollection(database, { name: `Collection ${changed}` });
-        }
-      });
+    for (const [table, write] of writes) {
+      await expectLiveReadReruns(declaration, table, database, write);
     }
   });
 });

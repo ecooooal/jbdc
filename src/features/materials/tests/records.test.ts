@@ -1,5 +1,5 @@
 import { eq } from 'drizzle-orm';
-import { materials } from '@/features/database';
+import { materials, type Database, type LiveReadTable } from '@/features/database';
 import { createTempDatabase } from '@/features/database/testing';
 import { expectLiveReadReruns } from '@/features/database/testing-live';
 import {
@@ -33,10 +33,12 @@ describe('the Materials live read', () => {
   });
 
   test('re-runs when the Material list changes', async () => {
-    for (const table of [materials]) {
-      await expectLiveReadReruns(materialsRead, table, database, (database) => {
-        createMaterial(database, { name: 'Silk crêpe' });
-      });
+    const writes = new Map<LiveReadTable, (db: Database) => void>([
+      [materials, (db) => createMaterial(db, { name: 'Silk crêpe' })],
+    ]);
+
+    for (const [table, write] of writes) {
+      await expectLiveReadReruns(materialsRead, table, database, write);
     }
   });
 });

@@ -5,7 +5,9 @@ import {
   designMaterials,
   designs,
   materials,
+  type Database,
   type DesignStatus,
+  type LiveReadTable,
 } from '@/features/database';
 import { createTempDatabase } from '@/features/database/testing';
 import { expectLiveReadReruns } from '@/features/database/testing-live';
@@ -42,31 +44,27 @@ describe('the Detail live read', () => {
     const design = createDesign(database, { name: 'Wool coat' });
     const declaration = designDetailRead(design.id);
     const material = createMaterial(database, { name: 'Wool' });
-    let changed = 0;
-
-    for (const table of [designs, categories, collections, designMaterials, materials]) {
-      await expectLiveReadReruns(declaration, table, database, (database) => {
-        changed += 1;
-
-        if (table === designs) {
-          writeDesign(database, design.id, { fields: { description: `Changed ${changed}` } });
-        } else if (table === categories) {
-          createCategory(database, { name: `Category ${changed}` });
-        } else if (table === collections) {
-          createCollection(database, { name: `Collection ${changed}` });
-        } else if (table === designMaterials) {
-          writeDesign(database, design.id, {
+    const writes = new Map<LiveReadTable, (db: Database) => void>([
+      [designs, (db) => writeDesign(db, design.id, { fields: { description: 'Bias cut' } })],
+      [categories, (db) => createCategory(db, { name: 'Knitwear' })],
+      [collections, (db) => createCollection(db, { name: 'Spring 2027', year: 2027 })],
+      [
+        designMaterials,
+        (db) =>
+          writeDesign(db, design.id, {
             uses: [
               {
                 kind: 'add',
                 input: { materialId: material.id, colour: 'Charcoal', role: 'main' },
               },
             ],
-          });
-        } else {
-          createMaterial(database, { name: `Material ${changed}` });
-        }
-      });
+          }),
+      ],
+      [materials, (db) => createMaterial(db, { name: 'Silk crêpe' })],
+    ]);
+
+    for (const [table, write] of writes) {
+      await expectLiveReadReruns(declaration, table, database, write);
     }
   });
 });

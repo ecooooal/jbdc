@@ -1,18 +1,15 @@
-import { render } from '@testing-library/react-native';
-import { useEffect } from 'react';
+import { renderHook } from '@testing-library/react-native';
 import {
   categories,
   declareLiveRead,
   type Database,
-  type LiveReadDeclaration,
   type LiveReadTable,
 } from '@/features/database';
-import { DatabaseProvider, useLiveRead, type LiveReadResult } from '@/features/database/react';
+import { DatabaseProvider, useLiveRead } from '@/features/database/react';
 import { createSyncSubscribe, createTempDatabase } from '@/features/database/testing';
 import { expectLiveReadReruns } from '@/features/database/testing-live';
 
 type Names = { names: string[] };
-type Seen<Row> = { current: LiveReadResult<Row> | undefined };
 
 function addCategory(database: Database, name: string): void {
   database.db
@@ -34,23 +31,6 @@ function readsCategoryNames(tables: readonly LiveReadTable[]) {
     }),
     empty: { names: [] },
   });
-}
-
-/** Observes one declared read through the one hook, in the app's provider seam. */
-function Probe<Row extends object>({
-  declaration,
-  seenRef,
-}: {
-  declaration: LiveReadDeclaration<Row>;
-  seenRef: Seen<Row>;
-}) {
-  const result = useLiveRead(declaration);
-
-  useEffect(() => {
-    seenRef.current = result;
-  });
-
-  return null;
 }
 
 let database: Database;
@@ -89,16 +69,17 @@ test('a failing read keeps the declared default shape and reports error status',
     },
     empty: { names: [] },
   });
-  const seenRef: Seen<Names> = { current: undefined };
   const live = createSyncSubscribe();
 
-  await render(
-    <DatabaseProvider database={database} subscribe={live.subscribe}>
-      <Probe declaration={declaration} seenRef={seenRef} />
-    </DatabaseProvider>
-  );
+  const { result } = await renderHook(() => useLiveRead(declaration), {
+    wrapper: ({ children }) => (
+      <DatabaseProvider database={database} subscribe={live.subscribe}>
+        {children}
+      </DatabaseProvider>
+    ),
+  });
 
-  expect(seenRef.current?.data).toEqual({ names: [] });
-  expect(seenRef.current?.status).toBe('error');
-  expect(seenRef.current?.error?.message).toBe('no catalog');
+  expect(result.current.data).toEqual({ names: [] });
+  expect(result.current.status).toBe('error');
+  expect(result.current.error?.message).toBe('no catalog');
 });

@@ -1,4 +1,9 @@
-import { categories, collections } from '@/features/database';
+import {
+  categories,
+  collections,
+  type Database,
+  type LiveReadTable,
+} from '@/features/database';
 import { createTempDatabase } from '@/features/database/testing';
 import { expectLiveReadReruns } from '@/features/database/testing-live';
 import {
@@ -37,14 +42,13 @@ describe('the Taxonomy live read', () => {
   });
 
   test('re-runs when either table it reads changes', async () => {
-    for (const table of [categories, collections]) {
-      await expectLiveReadReruns(taxonomyRead, table, database, (database) => {
-        if (table === categories) {
-          createCategory(database, { name: 'Knitwear' });
-        } else {
-          createCollection(database, { name: 'Spring 2027', year: 2027 });
-        }
-      });
+    const writes = new Map<LiveReadTable, (db: Database) => void>([
+      [categories, (db) => createCategory(db, { name: 'Knitwear' })],
+      [collections, (db) => createCollection(db, { name: 'Spring 2027', year: 2027 })],
+    ]);
+
+    for (const [table, write] of writes) {
+      await expectLiveReadReruns(taxonomyRead, table, database, write);
     }
   });
 });

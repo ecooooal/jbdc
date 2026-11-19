@@ -4,7 +4,9 @@ import {
   collections,
   DESIGN_STATUSES,
   designs,
+  type Database,
   type DesignStatus,
+  type LiveReadTable,
 } from '@/features/database';
 import { createTempDatabase } from '@/features/database/testing';
 import { expectLiveReadReruns } from '@/features/database/testing-live';
@@ -38,20 +40,14 @@ describe('the Library live read', () => {
   });
 
   test('re-runs when any table it reads changes', async () => {
-    let created = 0;
+    const writes = new Map<LiveReadTable, (db: Database) => void>([
+      [designs, (db) => createDesign(db, { name: 'Wool coat' })],
+      [categories, (db) => createCategory(db, { name: 'Knitwear' })],
+      [collections, (db) => createCollection(db, { name: 'Spring 2027', year: 2027 })],
+    ]);
 
-    for (const table of [designs, categories, collections]) {
-      await expectLiveReadReruns(libraryDesignsRead, table, database, (database) => {
-        created += 1;
-
-        if (table === designs) {
-          createDesign(database, { name: `Design ${created}` });
-        } else if (table === categories) {
-          createCategory(database, { name: `Category ${created}` });
-        } else {
-          createCollection(database, { name: `Collection ${created}` });
-        }
-      });
+    for (const [table, write] of writes) {
+      await expectLiveReadReruns(libraryDesignsRead, table, database, write);
     }
   });
 });

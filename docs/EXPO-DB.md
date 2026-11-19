@@ -79,10 +79,11 @@ the read should observe. The app passes neither, so it still opens expo-sqlite
 and uses its change listener filtered to its own file and the declared tables.
 
 A feature test for a declared live read uses `expectLiveReadReruns` from
-`@/features/database/testing-live`: it mounts the declaration in that provider
-seam, performs a real write to the table, sends that table's change event, and
-fails unless the read ran again. The tables it loops over are the test's own
-statement of what the read must declare, so a forgotten table fails.
+`@/features/database/testing-live`: the test performs a real write to the table,
+and the harness mounts the declaration in that provider seam, sends that table's
+change event, and fails unless the read ran again. The tables it loops over are
+the test's own statement of what the read must declare, so a forgotten table
+fails.
 
 `jest.config.js` uses `testEnvironment: 'node'` and loads `jest.setup.js`.
 Expo's preset installs lazy globals (`fetch`, `URL`, `structuredClone`) that
