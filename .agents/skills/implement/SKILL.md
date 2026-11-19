@@ -37,7 +37,7 @@ After the review returns, write the repair brief as a comment on the ticket. If 
 ```
 Repair brief — #<n>, reviewed at <sha>
 
-Fix         — <item>. [Standards: <file:line>] | [Spec: AC n]
+Fix         — <item>. [Standards: <file:line>, the line quoted] | [Spec: AC n]
 Skip        — <item>. Cosmetic; not re-reviewed.
 Reject      — <item>. <why the finding is wrong>.
 Split       — <item>. Real, out of scope → new ticket.

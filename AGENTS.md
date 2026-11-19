@@ -53,8 +53,9 @@ See `docs/EXPO-DB.md` when handling the application database
 - Review: read `CODING_STANDARDS.md` before approving a diff. It covers judgement
   calls only; types, lint, interface design, import boundaries, frontend state,
   and tests are enforced by CI.
-- Frontend state: read `docs/FRONTEND_STATE.md` before adding a screen's state.
-  Reducers own decisions; rendered tests are for wiring only.
+- Frontend state and tests: read `docs/FRONTEND_STATE.md` before adding a
+  screen's state or any rendered test. Reducers own decisions; rendered tests
+  are for wiring only.
 
 ### Deep-module packages
 
