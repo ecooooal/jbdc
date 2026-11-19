@@ -55,6 +55,7 @@ Ask the user:
 - Does the granularity feel right? (too coarse / too fine)
 - Are the blocking edges correct: does each ticket only depend on tickets that genuinely gate it?
 - Should any tickets be merged or split further?
+- Can the user point at each acceptance criterion? If not, it needs rewriting before publishing.
 
 Iterate until the user approves the breakdown.
 
@@ -69,6 +70,25 @@ Work the **frontier**: any ticket whose blockers are all done. For a purely line
 
 Do NOT close or modify any parent issue.
 
+<acceptance-criteria>
+
+## Writing the acceptance criteria
+
+A criterion is one claim the reader can picture. Two rules catch almost every failure:
+
+- **One sentence, 15 words or fewer, no second "and".** A second "and" is a second criterion.
+- **Read it aloud and point at something.** If the reader cannot point at a screen, an action, or a test that goes red, it is not a criterion.
+
+Every claim has one home, and only the first is a criterion:
+
+- **Acceptance criteria** — what is true when the work is done.
+- **Decisions** — the constraint behind it: the ban, the rule, the reason. Written for the implementer.
+- **Done when** — the repo-wide gates every ticket passes, plus any check specific to this one.
+
+A ticket for tests or internal shape has no screen to point at. Name who the work is for, then let the deliverable's own behaviour be the criterion. Do not invent a screen to fill the section.
+
+</acceptance-criteria>
+
 <local-ticket-template>
 
 # <NN>: <Ticket title>
@@ -81,8 +101,14 @@ Do NOT close or modify any parent issue.
 
 **Status:** ready-for-agent
 
+**Acceptance criteria:**
+
 - [ ] Acceptance criterion 1
 - [ ] Acceptance criterion 2
+
+**Done when:**
+
+- [ ] Gate 1
 
 </local-ticket-template>
 
@@ -104,6 +130,10 @@ The commits, inside out, each passing on its own. One line per step: what it cha
 
 - [ ] Criterion 1
 - [ ] Criterion 2
+
+## Done when
+
+- [ ] Gate 1
 
 ## Blocked by
 
