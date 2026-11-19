@@ -12,13 +12,13 @@ Capture the base at the start, before any commit that belongs to the ticket: `gi
 
 Call the Skill tool with "tdd" at the reducer and records seams. If no seams are pre-agreed, name up to three in one line in your first response and proceed unless the user redirects.
 
-State the ticket's `## Steps` and their commit boundaries in that same first response. Work one step at a time: commit a step before touching the next step's files.
+State the ticket's `## Steps` (in the body or its agent brief) and their commit boundaries in that same first response. Work one step at a time: commit a step before touching the next step's files.
 
 Run typechecking regularly, single test files regularly, and the full test suite once at the end.
 
 ## Commits
 
-Commit when a step is green, not when a test is green. The ticket's `## Steps` list is the commit list: up to four, inside out. No `## Steps` section means stop and report — never invent boundaries at commit time. Inside a step the loop is unchanged: red, green, refactor, repeat, no commit.
+Commit when a step is green, not when a test is green. The ticket's `## Steps` list is the commit list: up to four, inside out. No `## Steps` section in the body or its agent brief means stop and report — never invent boundaries at commit time. Inside a step the loop is unchanged: red, green, refactor, repeat, no commit.
 
 A step is green when three things pass: the step's test files, every test file its diff touches, and `pnpm typecheck && pnpm lint`. Then commit once, `<type> (#<n>): <the step's behaviour in one sentence>`, holding that step's tests, its code, and any prose the step describes — the comment, the glossary line, the ADR line.
 
@@ -30,7 +30,7 @@ Never amend a pushed commit, never `rebase -i` to tidy, never commit red, and ne
 
 Once done, call the Skill tool with "code-review" to review the work since `Base`.
 
-After the review returns, write the repair brief as a comment on the ticket, then dispatch one fresh repair subagent on the same branch with that brief and the review report attached as context that adds no scope. It lands one repair commit per ticket, typed `fix (#<n>)`, with every item it repaired listed in the body — prose items in that same commit — and reports back the SHA plus any item it could not complete. Then re-review the delta per `code-review` §6. This step is done when the subagent's SHA range is in hand and the delta re-review has returned, not when the dispatch is announced. A subagent that fails to start follows `code-review`'s retry rule.
+After the review returns, write the repair brief as a comment on the ticket. If the brief has no `Fix` items, post it and stop: no repair dispatch, no `fix` commit, no delta re-review. Otherwise dispatch one fresh repair subagent on the same branch with that brief and the review report attached as context that adds no scope. It lands one repair commit per ticket, typed `fix (#<n>)`, with every item it repaired listed in the body — prose items in that same commit — and reports back the SHA plus any item it could not complete. Then re-review the delta per `code-review` §6. The step is done when the subagent's SHA range is in hand and the delta re-review has returned, not when the dispatch is announced. A subagent that fails to start follows `code-review`'s retry rule.
 
 <repair-brief>
 

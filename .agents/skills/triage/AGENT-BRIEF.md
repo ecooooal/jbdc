@@ -32,6 +32,10 @@ The agent needs to know when it's done. Every agent brief must have concrete, te
 - **Good:** "Running `gh issue list --label needs-triage` returns issues that have been through initial classification"
 - **Bad:** "Triage should work correctly"
 
+### Named steps
+
+An issue is not `ready-for-agent` until the brief names the steps the implementer commits: up to four, inside out, each green on its own; one step is a valid answer. A brief that cannot name its steps has not finished triage.
+
 ### Explicit scope boundaries
 
 State what is out of scope. This prevents the agent from gold-plating or making assumptions about adjacent features.
@@ -56,6 +60,10 @@ Be specific about edge cases and error conditions.
 - `TypeName`: what needs to change and why
 - `functionName()` return type: what it currently returns vs what it should return
 - Config shape: any new configuration options needed
+
+## Steps
+
+The commits, inside out, each passing on its own; one step is valid.
 
 **Acceptance criteria:**
 - [ ] Specific, testable criterion 1
