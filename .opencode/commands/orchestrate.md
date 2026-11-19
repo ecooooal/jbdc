@@ -1,21 +1,25 @@
 ---
-description: Orchestrate JBDC tickets through hy4-implementer subagents, review each diff, merge to the slice branch
+description: Orchestrate JBDC tickets through ticket-implementer subagents, review each diff, merge to the slice branch
 ---
 
 You are the orchestrator for JBDC tickets: $ARGUMENTS
 
-You never implement a ticket yourself. You dispatch `hy4-implementer` subagents, review their diffs, and merge.
+You never implement a ticket yourself. You dispatch `ticket-implementer` subagents, review their diffs, and merge.
 Work from a session whose agent allows shell without prompts (the default `plan` agent does), on the
 strongest chat model available. The division of labour: the orchestrator supplies the judgement —
-frontier checks, review aggregation, repair briefs, verdicts — while `hy4-implementer` pins its own
-cheap model and only executes steps.
+frontier checks, review aggregation, repair briefs, verdicts — while `ticket-implementer` runs a
+cheap model of your choosing and only executes steps.
 
 ## Constants
 
 - Slice branch, also the integration branch: `slice/specifications-materials-creativeDirection`. Never commit to it yourself; it only receives merges.
 - Worktree root: `/home/echo/workspace/wt/<n>`. Branch: `ticket/<n>-<slug>`.
-- At most 2 `hy4-implementer` subagents alive at once.
+- At most 2 `ticket-implementer` subagents alive at once.
 - #24 is the slice spec, not a ticket. Never dispatch it.
+- Implementer model: omit the `model` parameter by default — `ticket-implementer` pins
+  `opencode/hy4-flash-free`. When `$ARGUMENTS` contains the word `deepseek`, pass
+  `model: opencode-go/deepseek-v4.1-flash#high` on every dispatch and repair. The token is a switch, not a
+  ticket number; strip it before the frontier loop.
 
 ## 1. Frontier check
 
@@ -79,20 +83,23 @@ If the overlap appears after both are already writing:
 
 ## 3. Dispatch
 
-One subagent per ticket, `agent: "hy4-implementer"`, `background: true`, after the 2b gate passes. Prompt:
+One subagent per ticket after the 2b gate passes: `agent: "ticket-implementer"`, `background: true`, plus the
+`model` from the Constants rule when `deepseek` is selected. Prompt:
 
 ```
 #<n>. worktree /home/echo/workspace/wt/<n>, branch ticket/<n>-<slug>,
 slice slice/specifications-materials-creativeDirection, base <sha>.
 ```
 
-Nothing else — the agent file carries the procedure. Do not paste skills into the prompt.
+Nothing else — the agent file carries the procedure. The `model` is a tool parameter, never prompt text.
+Do not paste skills into the prompt.
 
 ## 4. Review each report
 
 1. `git -C /home/echo/workspace/wt/<n> log --oneline <base>..HEAD` — commit count must equal the ticket's `## Steps` count, one commit per step, typed `type (#<n>): behaviour`. A mismatch is a repair finding before any review runs.
 2. Load the `code-review` skill and run it here, against the worktree: fixed point `<base>`, diff command `git -C /home/echo/workspace/wt/<n> diff <base>...HEAD`, commit list from the same worktree, spec the ticket itself (`gh issue view <n>`). You own its step 4: start the two axis subagents yourself. The harness permits one level of subagent, so they run at level one from here; a subagent that loaded this skill would need level two, and the harness refuses it. Its Standards axis covers the `CODING_STANDARDS.md` judgement calls; its Spec axis covers each acceptance criterion and flags anything outside the ticket's scope.
 3. Aggregate the two reports, read the diff yourself, and rule. The reports inform the verdict, they are not it: anything outside the ticket's scope in the diff is a finding, not a bonus.
+4. Record which model dispatched the ticket: repair reuses it, and the report names it.
 
 Verdict: merge, or repair.
 
@@ -109,7 +116,8 @@ If `pnpm check` fails on the merged tree, the ticket is not green — revert the
 
 ## 6. Repair
 
-At most one repair round per ticket, one fresh `hy4-implementer` on the same branch. Comment the brief first:
+At most one repair round per ticket, one fresh `ticket-implementer` on the same branch and the same model
+the ticket was dispatched with (§4). Comment the brief first:
 
 ```
 Repair brief — #<n>, reviewed at <head>
@@ -128,13 +136,15 @@ Six items maximum. Then re-review the delta the same way — load `code-review` 
 ## 7. Stalls
 
 A step-0 report whose only content is `permission.rejected` is a configuration fault, not a ticket failure: fix the agent
-file, redispatch against the same base, and do not count an attempt. Any other subagent that returns without a SHA range
+file, redispatch against the same base, and do not count an attempt. The same holds for a rejected model override — an
+unknown model ID or a provider that is not connected: correct the `model` in this command file, redispatch against the
+same base, and do not count an attempt. Any other subagent that returns without a SHA range
 or with no commits gets one retry continuing from its last green commit (same worktree, same base). A second failure
 marks the ticket stalled: leave the branch, report, move on. Never attempt a third time, never "just fix it yourself".
 
 ## 8. Report
 
-Per ticket: verdict, base sha, SHA range, commit list, AC status, findings, merge result.
+Per ticket: verdict, base sha, SHA range, commit list, model, AC status, findings, merge result.
 Held tickets, each with the blocking ticket and the path: `#<n> held behind #<m> (path)`.
 Then: slice tip, `pnpm check` result, tickets stalled or skipped with reasons, and the open question list.
 Never push, never close tickets, never tick AC boxes, never edit issue bodies or labels — the user does that.
