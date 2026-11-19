@@ -7,7 +7,10 @@ import {
   type DesignStatus,
 } from '@/features/database';
 import { createTempDatabase } from '@/features/database/testing';
+import { expectLiveReadReruns } from '@/features/database/testing-live';
+import { createDesign } from '@/features/designs';
 import { libraryDesignsRead, listLibraryDesigns } from '@/features/library';
+import { createCategory, createCollection } from '@/features/taxonomy';
 
 type NewDesign = {
   status?: DesignStatus;
@@ -29,10 +32,27 @@ describe('the Library live read', () => {
     dispose();
   });
 
-  test('declares every table it watches beside the query and one row shape', () => {
-    expect(libraryDesignsRead.tables).toEqual([designs, categories, collections]);
+  test('keeps its declared default and matches the direct read', () => {
     expect(libraryDesignsRead.empty).toEqual({ designs: [] });
     expect(libraryDesignsRead.read(database)).toEqual({ designs: listLibraryDesigns(database) });
+  });
+
+  test('re-runs when any table it reads changes', async () => {
+    let created = 0;
+
+    for (const table of [designs, categories, collections]) {
+      await expectLiveReadReruns(libraryDesignsRead, table, database, (database) => {
+        created += 1;
+
+        if (table === designs) {
+          createDesign(database, { name: `Design ${created}` });
+        } else if (table === categories) {
+          createCategory(database, { name: `Category ${created}` });
+        } else {
+          createCollection(database, { name: `Collection ${created}` });
+        }
+      });
+    }
   });
 });
 

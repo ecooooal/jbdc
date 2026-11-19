@@ -8,7 +8,15 @@ import {
   type DesignStatus,
 } from '@/features/database';
 import { createTempDatabase } from '@/features/database/testing';
-import { createDesign, designDetailRead, getDesignDetail } from '@/features/designs';
+import { expectLiveReadReruns } from '@/features/database/testing-live';
+import {
+  createDesign,
+  designDetailRead,
+  getDesignDetail,
+  writeDesign,
+} from '@/features/designs';
+import { createMaterial } from '@/features/materials';
+import { createCategory, createCollection } from '@/features/taxonomy';
 
 let database: ReturnType<typeof createTempDatabase>['database'];
 let dispose: () => void;
@@ -22,19 +30,44 @@ afterEach(() => {
 });
 
 describe('the Detail live read', () => {
-  test('declares every table it watches beside the query and one row shape', () => {
+  test('keeps its declared default and matches the direct read', () => {
     const design = createDesign(database, { name: 'Wool coat' });
     const declaration = designDetailRead(design.id);
 
-    expect(declaration.tables).toEqual([
-      designs,
-      categories,
-      collections,
-      designMaterials,
-      materials,
-    ]);
     expect(declaration.empty).toEqual({ design: null });
     expect(declaration.read(database)).toEqual({ design: getDesignDetail(database, design.id) });
+  });
+
+  test('re-runs when any table it reads changes', async () => {
+    const design = createDesign(database, { name: 'Wool coat' });
+    const declaration = designDetailRead(design.id);
+    const material = createMaterial(database, { name: 'Wool' });
+    let changed = 0;
+
+    for (const table of [designs, categories, collections, designMaterials, materials]) {
+      await expectLiveReadReruns(declaration, table, database, (database) => {
+        changed += 1;
+
+        if (table === designs) {
+          writeDesign(database, design.id, { fields: { description: `Changed ${changed}` } });
+        } else if (table === categories) {
+          createCategory(database, { name: `Category ${changed}` });
+        } else if (table === collections) {
+          createCollection(database, { name: `Collection ${changed}` });
+        } else if (table === designMaterials) {
+          writeDesign(database, design.id, {
+            uses: [
+              {
+                kind: 'add',
+                input: { materialId: material.id, colour: 'Charcoal', role: 'main' },
+              },
+            ],
+          });
+        } else {
+          createMaterial(database, { name: `Material ${changed}` });
+        }
+      });
+    }
   });
 });
 

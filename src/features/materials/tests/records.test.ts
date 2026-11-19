@@ -1,6 +1,7 @@
 import { eq } from 'drizzle-orm';
 import { materials } from '@/features/database';
 import { createTempDatabase } from '@/features/database/testing';
+import { expectLiveReadReruns } from '@/features/database/testing-live';
 import {
   createMaterial,
   InvalidMaterialNameError,
@@ -13,17 +14,29 @@ import {
 const UUID_V4 = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 
 describe('the Materials live read', () => {
-  test('declares the watched table beside the query and one row shape', () => {
-    const { database, dispose } = createTempDatabase();
+  let database: ReturnType<typeof createTempDatabase>['database'];
+  let dispose: () => void;
 
-    try {
-      createMaterial(database, { name: 'Silk crêpe' });
+  beforeEach(() => {
+    ({ database, dispose } = createTempDatabase());
+  });
 
-      expect(materialsRead.tables).toEqual([materials]);
-      expect(materialsRead.empty).toEqual({ materials: [] });
-      expect(materialsRead.read(database)).toEqual({ materials: listMaterials(database) });
-    } finally {
-      dispose();
+  afterEach(() => {
+    dispose();
+  });
+
+  test('keeps its declared default and matches the direct read', () => {
+    createMaterial(database, { name: 'Silk crêpe' });
+
+    expect(materialsRead.empty).toEqual({ materials: [] });
+    expect(materialsRead.read(database)).toEqual({ materials: listMaterials(database) });
+  });
+
+  test('re-runs when the Material list changes', async () => {
+    for (const table of [materials]) {
+      await expectLiveReadReruns(materialsRead, table, database, (database) => {
+        createMaterial(database, { name: 'Silk crêpe' });
+      });
     }
   });
 });

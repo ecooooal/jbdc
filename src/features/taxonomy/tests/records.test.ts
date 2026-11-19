@@ -1,5 +1,6 @@
 import { categories, collections } from '@/features/database';
 import { createTempDatabase } from '@/features/database/testing';
+import { expectLiveReadReruns } from '@/features/database/testing-live';
 import {
   COLLECTION_YEAR_MAX,
   COLLECTION_YEAR_MIN,
@@ -16,18 +17,34 @@ import {
 const UUID_V4 = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 
 describe('the Taxonomy live read', () => {
-  test('declares both watched tables beside the query and one row shape', () => {
-    const { database, dispose } = createTempDatabase();
+  let database: ReturnType<typeof createTempDatabase>['database'];
+  let dispose: () => void;
 
-    try {
-      expect(taxonomyRead.tables).toEqual([categories, collections]);
-      expect(taxonomyRead.empty).toEqual({ categories: [], collections: [] });
-      expect(taxonomyRead.read(database)).toEqual({
-        categories: listCategories(database),
-        collections: listCollections(database),
+  beforeEach(() => {
+    ({ database, dispose } = createTempDatabase());
+  });
+
+  afterEach(() => {
+    dispose();
+  });
+
+  test('keeps its declared default and reads the lists once', () => {
+    expect(taxonomyRead.empty).toEqual({ categories: [], collections: [] });
+    expect(taxonomyRead.read(database)).toEqual({
+      categories: listCategories(database),
+      collections: listCollections(database),
+    });
+  });
+
+  test('re-runs when either table it reads changes', async () => {
+    for (const table of [categories, collections]) {
+      await expectLiveReadReruns(taxonomyRead, table, database, (database) => {
+        if (table === categories) {
+          createCategory(database, { name: 'Knitwear' });
+        } else {
+          createCollection(database, { name: 'Spring 2027', year: 2027 });
+        }
       });
-    } finally {
-      dispose();
     }
   });
 });

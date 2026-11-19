@@ -1,5 +1,6 @@
 import { categories, collections, designEvents } from '@/features/database';
 import { createTempDatabase } from '@/features/database/testing';
+import { expectLiveReadReruns } from '@/features/database/testing-live';
 import type { DesignFields, MaterialUse } from '@/features/designs';
 import { createDesign, writeDesign } from '@/features/designs';
 import {
@@ -11,6 +12,7 @@ import {
   recordEdit,
 } from '@/features/history';
 import { createMaterial } from '@/features/materials';
+import { createCategory, createCollection } from '@/features/taxonomy';
 
 /** Seeds a recorded use through the visit's one write path. */
 function addMaterialUse(
@@ -82,15 +84,41 @@ describe('the History live read', () => {
     dispose();
   });
 
-  test('declares Events, Categories and Collections beside the query and one row shape', () => {
+  test('keeps its declared default and matches the direct read', () => {
     const declaration = designHistoryRead('design-silk-slip');
 
-    expect(declaration.tables).toEqual([designEvents, categories, collections]);
     expect(declaration.empty).toEqual({
       events: [],
       taxonomy: { categories: new Map(), collections: new Map() },
     });
-    expect(declaration.read(database).events).toEqual(listDesignEvents(database, 'design-silk-slip'));
+    expect(declaration.read(database).events).toEqual(
+      listDesignEvents(database, 'design-silk-slip')
+    );
+  });
+
+  test('re-runs when any table it reads changes', async () => {
+    const design = createDesign(database, { name: 'Silk slip dress' }, 10);
+    const declaration = designHistoryRead(design.id);
+    let changed = 0;
+
+    for (const table of [designEvents, categories, collections]) {
+      await expectLiveReadReruns(declaration, table, database, (database) => {
+        changed += 1;
+
+        if (table === designEvents) {
+          recordEdit(
+            database,
+            design.id,
+            { before: BEFORE, after: { ...BEFORE, name: `Wool coat ${changed}` } },
+            20
+          );
+        } else if (table === categories) {
+          createCategory(database, { name: `Category ${changed}` });
+        } else {
+          createCollection(database, { name: `Collection ${changed}` });
+        }
+      });
+    }
   });
 });
 
