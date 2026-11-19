@@ -15,6 +15,7 @@ tables, and the status vocabulary. They never import `expo-sqlite` or
 | `@/features/database/expo` | the provider (`react.tsx`) | expo-sqlite, synchronously |
 | `@/features/database/react` | the app root and screens | provider, `useDatabase()`, `useLiveRead` |
 | `@/features/database/testing` | Jest suites only | better-sqlite3 on a temp file, synchronous `subscribe` |
+| `@/features/database/testing-live` | Jest suites for declared reads | nothing; mounts a read in the provider seam |
 
 The port opens a connection, applies migrations, applies the seed, and hands
 out the query handle, an identity generator for new rows, and transactions.
@@ -76,6 +77,12 @@ and `subscribe` props: pass a `createTempDatabase()` handle and the synchronous
 adapter from `createSyncSubscribe()`, then call `notify(table)` after a write
 the read should observe. The app passes neither, so it still opens expo-sqlite
 and uses its change listener filtered to its own file and the declared tables.
+
+A feature test for a declared live read uses `expectLiveReadReruns` from
+`@/features/database/testing-live`: it mounts the declaration in that provider
+seam, performs a real write to the table, sends that table's change event, and
+fails unless the read ran again. The tables it loops over are the test's own
+statement of what the read must declare, so a forgotten table fails.
 
 `jest.config.js` uses `testEnvironment: 'node'` and loads `jest.setup.js`.
 Expo's preset installs lazy globals (`fetch`, `URL`, `structuredClone`) that
