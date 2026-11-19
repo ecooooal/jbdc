@@ -104,3 +104,9 @@ Two layers. The rule is which layer gets what.
 The limits are calibrated against this repo. There is no allowlist: a file
 that trips `use-state` or `effect-sets-state` is split into a reducer, and a
 reducer that trips `reducer-purity` drops the dependency.
+
+`scripts/check-test-size.mjs` caps a `*.test.ts(x)` file at **600** lines. A
+test file is the unit an agent opens to work one concern, so a file that
+outgrows the cap is split by concern into siblings sharing one fixtures module.
+The largest test file now is 580 lines, so the cap holds without an allowlist.
+It runs in `pnpm check`, pre-commit, and CI.
