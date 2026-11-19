@@ -8,7 +8,9 @@
  * user's own edits into a ticket commit. Runs first in pre-commit, so it fails
  * in a moment rather than after `pnpm check`.
  *
- * A genuine mixed commit can set `ALLOW_MIXED_STEERING=1`.
+ * A genuine mixed commit can set `ALLOW_MIXED_STEERING=1`. A path staged
+ * before the session started is the user's: commit only your own paths and
+ * leave their index alone.
  */
 import { execFileSync } from 'node:child_process';
 
@@ -29,6 +31,13 @@ if (steering.length > 0 && other.length > 0 && process.env.ALLOW_MIXED_STEERING 
   console.error('Steering and tooling config travels alone. This commit stages:');
   for (const path of steering) console.error(`  steering: ${path}`);
   for (const path of other) console.error(`  other:    ${path}`);
-  console.error('\nUnstage one side, or set ALLOW_MIXED_STEERING=1 for a genuine mixed commit.');
+  console.error(
+    [
+      '\nIf the steering path is yours, commit it alone first.',
+      "If it is the user's staged work, leave their index alone and commit only your paths:",
+      '',
+      '  ALLOW_MIXED_STEERING=1 git commit -m "..." -- <your paths>',
+    ].join('\n'),
+  );
   process.exit(1);
 }
