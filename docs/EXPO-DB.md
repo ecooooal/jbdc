@@ -66,8 +66,13 @@ Domain suites run the real modules against a real temporary SQLite file on a
 Node test environment:
 
 ```ts
-const { database, dispose } = createTempDatabase();
-afterAll(dispose);
+let database: Database;
+let dispose: () => void;
+
+beforeEach(() => {
+  ({ database, dispose } = createTempDatabase());
+});
+afterEach(() => dispose());
 ```
 
 No mocks, no in-memory fakes. Only the two thin driver adapters are untested.
