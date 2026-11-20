@@ -52,9 +52,9 @@ export function createInitialGalleryState(): GalleryState {
 }
 
 /** The current image's stage, position and count, derived from the live list. */
-export type GalleryView = {
-  stage: GalleryStage | null;
-  image: GalleryImage | null;
+export type GalleryView<Stage extends GalleryStage = GalleryStage> = {
+  stage: Stage | null;
+  image: Stage["images"][number] | null;
   /** 1-based position within the active stage; 0 when the stage has no image. */
   position: number;
   count: number;
@@ -101,14 +101,17 @@ function step(
  * What the gallery shows right now: the active stage and the hero's image.
  * A pure derivation, so the component never repeats the selection rule.
  */
-export function galleryView(stages: readonly GalleryStage[], state: GalleryState): GalleryView {
+export function galleryView<Stage extends GalleryStage>(
+  stages: readonly Stage[],
+  state: GalleryState,
+): GalleryView<Stage> {
   const stage = stages.find((candidate) => candidate.kind === state.kind) ?? null;
   const image = stage?.images.find((candidate) => candidate.id === state.imageId) ?? null;
   const index = stage && image ? stage.images.indexOf(image) : -1;
 
   return {
     stage,
-    image,
+    image: image ?? null,
     position: index + 1,
     count: stage?.images.length ?? 0,
   };

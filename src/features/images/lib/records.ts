@@ -1,11 +1,13 @@
 import { and, count, eq, isNull } from "drizzle-orm";
 import {
+  declareLiveRead,
   designs,
   images,
   IMAGE_KINDS,
   type Database,
   type DatabaseHandle,
   type ImageKind,
+  type LiveReadDeclaration,
 } from "@/features/database";
 import { recordImageChange, type DesignEvent, type RecordedImage } from "@/features/history";
 import type { Image } from "./images";
@@ -244,4 +246,23 @@ export function writeImages(
 /** One Design's images, oldest first. */
 export function listDesignImages(database: Database, designId: string): Image[] {
   return imagesFrom(database.db, designId);
+}
+
+/** The one row shape the Design images read produces, before status. */
+export type DesignImagesRows = {
+  images: Image[];
+};
+
+/**
+ * One Design's images as a live read. The gallery and the journey rail derive
+ * from it, so an attach, remove, or reclassify re-runs the screen without a
+ * manual refresh; the tables it watches are declared beside the query
+ * (ADR-0005). Image notes join this declaration when their table arrives.
+ */
+export function designImagesRead(designId: string): LiveReadDeclaration<DesignImagesRows> {
+  return declareLiveRead<DesignImagesRows>({
+    tables: [images],
+    read: (database) => ({ images: listDesignImages(database, designId) }),
+    empty: { images: [] },
+  });
 }

@@ -1,0 +1,74 @@
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { render, screen, userEvent } from "@testing-library/react-native";
+import type { ImageKind } from "@/features/database";
+import { DatabaseProvider } from "@/features/database/react";
+import { createSyncSubscribe, createTempDatabase } from "@/features/database/testing";
+import { createDesign } from "@/features/designs";
+import { writeImages, type ImageStore } from "@/features/images";
+import { DesignGallery, ImageStoreProvider } from "@/features/images/react";
+import { createTempImageStore } from "@/features/images/testing";
+
+const live = createSyncSubscribe();
+
+let database: ReturnType<typeof createTempDatabase>["database"];
+let dispose: () => void;
+let sourceDirectory: string;
+let store: ImageStore;
+let disposeStore: () => void;
+
+beforeEach(() => {
+  ({ database, dispose } = createTempDatabase());
+  sourceDirectory = mkdtempSync(join(tmpdir(), "jbdc-gallery-sources-"));
+  ({ store, dispose: disposeStore } = createTempImageStore());
+});
+
+afterEach(() => {
+  dispose();
+  disposeStore();
+  rmSync(sourceDirectory, { recursive: true, force: true });
+});
+
+function attach(designId: string, kind: ImageKind, bytes: string, now: number) {
+  const sourcePath = join(sourceDirectory, `${kind}-${now}.jpg`);
+
+  writeFileSync(sourcePath, bytes);
+  writeImages(database, store, designId, { kind: "attach", images: [{ sourcePath, kind }] }, now);
+}
+
+async function renderGallery(designId: string) {
+  return render(
+    <DatabaseProvider database={database} subscribe={live.subscribe}>
+      <ImageStoreProvider store={store}>
+        <DesignGallery designId={designId} />
+      </ImageStoreProvider>
+    </DatabaseProvider>,
+  );
+}
+
+test("the journey rail shows one chip per kind, all four always", async () => {
+  const design = createDesign(database, { name: "Early concept" });
+
+  await renderGallery(design.id);
+
+  for (const label of ["Inspiration", "Sketch", "Prototype", "Final"]) {
+    expect(screen.getByRole("button", { name: label })).toBeTruthy();
+  }
+});
+
+test("pressing a stage chip activates that stage", async () => {
+  const design = createDesign(database, { name: "Wool coat" });
+
+  attach(design.id, "sketch", "sketch bytes", 1000);
+  attach(design.id, "final", "final bytes", 2000);
+
+  await renderGallery(design.id);
+
+  await userEvent.press(screen.getByRole("button", { name: "Sketch" }));
+
+  expect(screen.getByLabelText("Sketch image 1 of 1")).toBeTruthy();
+  expect(screen.getByRole("button", { name: "Sketch" }).props.accessibilityState).toMatchObject({
+    selected: true,
+  });
+});

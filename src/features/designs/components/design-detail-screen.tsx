@@ -4,6 +4,7 @@ import { useState } from "react";
 import { ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import type { DesignDetail } from "@/features/designs";
+import { DesignGallery } from "@/features/images/react";
 import { Badge } from "@/shared/components/ui/badge";
 import { Button } from "@/shared/components/ui/button";
 import { Icon } from "@/shared/components/ui/icon";
@@ -16,7 +17,6 @@ import {
   type DesignSectionTab,
 } from "../lib/sections";
 import { useDesignDetail } from "../lib/use-design-detail";
-import { DesignImageStrip } from "./design-image-strip";
 import { DesignStatusBadge } from "./design-status-badge";
 import { MaterialUsesTable } from "./material-uses-table";
 
@@ -54,11 +54,15 @@ function DetailRow({ label, value }: { label: string; value: string }) {
   );
 }
 
-/** The hero: images, name with its dates, Status, Category · Collection, and description. */
+/**
+ * The hero: the gallery, then the name with its dates, Status,
+ * Category · Collection, and description. The designs module owns the text;
+ * the images module owns the hero image and its journey.
+ */
 function DetailHero({ design }: { design: DesignDetail }) {
   return (
     <View className="gap-3">
-      <DesignImageStrip />
+      <DesignGallery designId={design.id} />
       <View className="flex-row flex-wrap items-center gap-2">
         <Text variant="h3">{design.name}</Text>
         <DetailDateBadges design={design} />

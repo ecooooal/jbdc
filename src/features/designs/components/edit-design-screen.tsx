@@ -17,7 +17,6 @@ import type { EditDesignRow } from "../lib/edit-design-reducer";
 import { DESIGN_SECTIONS, isDesignSectionTab, type DesignSectionTab } from "../lib/sections";
 import { useDesignDetail } from "../lib/use-design-detail";
 import { useEditVisit } from "../lib/use-edit-visit";
-import { DesignImageStrip } from "./design-image-strip";
 import { DesignStatusBadge } from "./design-status-badge";
 import { FieldRows } from "./field-rows";
 import { FormField } from "./form-field";
@@ -25,9 +24,10 @@ import { MaterialUsesSection } from "./material-uses-section";
 import { TaxonomySelect } from "./taxonomy-select";
 
 /**
- * Edit for one Design. The hero holds the image strip and identity, which the
- * owner edits least; the Specification and Creative direction tabs hold the
- * long sections. Every row writes itself when it is left, so there is no Save
+ * Edit for one Design. The hero holds the Design's identity, which the owner
+ * edits least; the Specification and Creative direction tabs hold the long
+ * sections. Image work never passes through here (ADR-0004): Detail owns the
+ * gallery. Every row writes itself when it is left, so there is no Save
  * button, toast, or confirmation: the owner changes a field, leaves it, and
  * the row is already stored. A tab change writes the draft it unmounts but
  * records nothing; Status is shown, not editable. Detail and the Library
@@ -142,8 +142,6 @@ export function EditDesignScreen({ designId }: { designId: string }) {
           }}
           keyboardShouldPersistTaps="handled"
         >
-          <DesignImageStrip />
-
           <View className="gap-3">
             {state.editing === "name" ? (
               <View className="gap-2">

@@ -15,6 +15,18 @@ export type ImageStage = {
   images: Image[];
 };
 
+const KIND_LABELS: Record<ImageKind, string> = {
+  inspiration: "Inspiration",
+  sketch: "Sketch",
+  prototype: "Prototype",
+  final: "Final",
+};
+
+/** The owner-facing name of an image kind, as GLOSSARY.md writes it. */
+export function imageKindLabel(kind: ImageKind): string {
+  return KIND_LABELS[kind];
+}
+
 function newestFirst(left: Image, right: Image): number {
   // Equal timestamps fall back to the id, so a Cover never depends on the
   // order a read happened to return.

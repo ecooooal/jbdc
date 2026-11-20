@@ -152,6 +152,15 @@ describe("edit hero", () => {
     expect(screen.getByText("Dress · Spring 2027")).toBeTruthy();
   });
 
+  test("the edit screen holds no image block", async () => {
+    const design = newDesign();
+
+    await renderEdit(design.id);
+
+    expect(screen.queryByLabelText("Design images")).toBeNull();
+    expect(screen.queryByLabelText("Design journey")).toBeNull();
+  });
+
   test("tapping Category · Collection opens both pickers and Done closes them", async () => {
     const category = createCategory(database, { name: "Dress" });
     const design = createDesign(database, {

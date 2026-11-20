@@ -181,8 +181,10 @@ test("Detail hides Creative direction rows the owner has not recorded", async ()
 
   await userEvent.press(screen.getByRole("tab", { name: "Creative direction" }));
 
+  // The journey rail names its own Inspiration stage, so the only one on
+  // screen is that chip: the unrecorded Inspiration row did not render.
+  expect(screen.getAllByText("Inspiration")).toHaveLength(1);
   expect(screen.getByText("Mood")).toBeTruthy();
-  expect(screen.queryByText("Inspiration")).toBeNull();
   expect(screen.queryByText("Palette")).toBeNull();
 });
 
@@ -242,4 +244,12 @@ test("a design with only Material uses opens on Specification", async () => {
   expect(screen.getByText("Wool")).toBeTruthy();
   expect(screen.getByText("Charcoal")).toBeTruthy();
   expect(screen.queryByText("Nothing recorded yet")).toBeNull();
+});
+
+test("Detail composes the gallery from the images module", async () => {
+  const design = createDesign(database, { name: "Early concept" });
+
+  await renderDetail(design.id);
+
+  expect(screen.getByLabelText("Design journey")).toBeTruthy();
 });

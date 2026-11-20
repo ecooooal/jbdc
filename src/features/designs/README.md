@@ -54,4 +54,4 @@ is worth an Event.
 - `components/taxonomy-select.tsx` — Category/Collection picker with None; `material-use-role-select.tsx` — role chips.
 - `components/inline-creation-panel.tsx` — create a Category, Collection, or Material without leaving the form.
 - `components/material-uses-table.tsx` — the read-only rows Detail and Edit share.
-- `components/design-image-strip.tsx`, `components/design-status-badge.tsx` — the hero's image strip and Status badge.
+- `components/design-status-badge.tsx` — a Status badge. The hero image and its journey belong to the `images` module's gallery; Detail composes `DesignGallery` above its text.
