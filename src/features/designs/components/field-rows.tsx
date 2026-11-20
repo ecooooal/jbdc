@@ -1,11 +1,8 @@
-import { Pressable, View } from 'react-native';
-import { Input } from '@/shared/components/ui/input';
-import { Text } from '@/shared/components/ui/text';
-import type { EditDesignState } from '../lib/edit-design-reducer';
-import type {
-  DesignSectionField,
-  DesignSectionFieldDefinition,
-} from '../lib/sections';
+import { Pressable, View } from "react-native";
+import { Input } from "@/shared/components/ui/input";
+import { Text } from "@/shared/components/ui/text";
+import type { EditDesignState } from "../lib/edit-design-reducer";
+import type { DesignSectionField, DesignSectionFieldDefinition } from "../lib/sections";
 
 /**
  * One section's read-first rows: a line of `Label … value` until the owner
@@ -22,9 +19,9 @@ export function FieldRows({
   onCommit,
 }: {
   fields: readonly DesignSectionFieldDefinition[];
-  draft: EditDesignState['draft'];
-  editing: EditDesignState['editing'];
-  error: EditDesignState['error'];
+  draft: EditDesignState["draft"];
+  editing: EditDesignState["editing"];
+  error: EditDesignState["error"];
   onOpen: (field: DesignSectionField) => void;
   onChange: (field: DesignSectionField, value: string) => void;
   onCommit: (field: DesignSectionField) => void;
@@ -43,10 +40,10 @@ export function FieldRows({
                 placeholder={placeholder}
                 multiline={multiline}
                 autoFocus
-                returnKeyType={multiline ? 'default' : 'done'}
+                returnKeyType={multiline ? "default" : "done"}
                 onSubmitEditing={multiline ? undefined : () => onCommit(field)}
-                textAlignVertical={multiline ? 'top' : undefined}
-                className={multiline ? 'h-24 py-2' : undefined}
+                textAlignVertical={multiline ? "top" : undefined}
+                className={multiline ? "h-24 py-2" : undefined}
                 accessibilityLabel={label}
               />
               {error?.field === field ? (

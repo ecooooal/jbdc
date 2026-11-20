@@ -1,9 +1,9 @@
-import { mkdtempSync, rmSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
-import type { LiveReadSubscribe } from './lib/live-read';
-import type { Database } from './lib/port';
-import { openTestDatabase } from './lib/better-sqlite3-driver';
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import type { LiveReadSubscribe } from "./lib/live-read";
+import type { Database } from "./lib/port";
+import { openTestDatabase } from "./lib/better-sqlite3-driver";
 
 export { openTestDatabase };
 
@@ -48,8 +48,8 @@ export function createTempDatabase(): {
   path: string;
   dispose: () => void;
 } {
-  const directory = mkdtempSync(join(tmpdir(), 'jbdc-'));
-  const path = join(directory, 'jbdc.db');
+  const directory = mkdtempSync(join(tmpdir(), "jbdc-"));
+  const path = join(directory, "jbdc.db");
   const database = openTestDatabase(path);
 
   return {

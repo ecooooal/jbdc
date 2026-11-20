@@ -1,10 +1,10 @@
-import { drizzle } from 'drizzle-orm/expo-sqlite';
-import { randomUUID } from 'expo-crypto';
-import { addDatabaseChangeListener, openDatabaseSync } from 'expo-sqlite';
-import type { LiveReadSubscribe } from './lib/live-read';
-import { createDatabase, type Database } from './lib/port';
+import { drizzle } from "drizzle-orm/expo-sqlite";
+import { randomUUID } from "expo-crypto";
+import { addDatabaseChangeListener, openDatabaseSync } from "expo-sqlite";
+import type { LiveReadSubscribe } from "./lib/live-read";
+import { createDatabase, type Database } from "./lib/port";
 
-export const DATABASE_NAME = 'jbdc.db';
+export const DATABASE_NAME = "jbdc.db";
 
 export function openAppDatabase(): Database {
   return openAppDatabaseWithLiveReads().database;
@@ -21,14 +21,10 @@ export function openAppDatabaseWithLiveReads(): {
 } {
   const client = openDatabaseSync(DATABASE_NAME, { enableChangeListener: true });
 
-  client.execSync('PRAGMA journal_mode = WAL;');
-  client.execSync('PRAGMA foreign_keys = ON;');
+  client.execSync("PRAGMA journal_mode = WAL;");
+  client.execSync("PRAGMA foreign_keys = ON;");
 
-  const database = createDatabase(
-    drizzle(client),
-    () => client.closeSync(),
-    randomUUID
-  );
+  const database = createDatabase(drizzle(client), () => client.closeSync(), randomUUID);
 
   const subscribe: LiveReadSubscribe = (tables, onChange) => {
     const names = new Set(tables);

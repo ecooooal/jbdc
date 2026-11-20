@@ -3,13 +3,13 @@
  * `WOOL_USE` are the rows a visit reads; `visit()` returns a tester seeded from
  * `DESIGN`, and each scenario helper adds the panel the test starts from.
  */
-import { createReducerTester } from '@/shared/testing/reducer-tester';
-import { createInitialEditDesignState, editDesignReducer } from '../lib/edit-design-reducer';
-import type { DesignFields, MaterialUse } from '../lib/records';
+import { createReducerTester } from "@/shared/testing/reducer-tester";
+import { createInitialEditDesignState, editDesignReducer } from "../lib/edit-design-reducer";
+import type { DesignFields, MaterialUse } from "../lib/records";
 
-export const DESIGN_ID = 'design-silk-slip';
-export const DRESS = 'category-dress';
-export const KNITWEAR = 'category-knitwear';
+export const DESIGN_ID = "design-silk-slip";
+export const DRESS = "category-dress";
+export const KNITWEAR = "category-knitwear";
 export const NOW = 1_700_000_000_000;
 export const LATER = NOW + 60_000;
 
@@ -34,8 +34,8 @@ export const EMPTY_CREATIVE_DIRECTION = {
 } as const;
 
 export const DESIGN: DesignFields = {
-  name: 'Silk slip dress',
-  description: 'Bias cut',
+  name: "Silk slip dress",
+  description: "Bias cut",
   categoryId: DRESS,
   collectionId: null,
   ...EMPTY_SPECIFICATION,
@@ -43,12 +43,12 @@ export const DESIGN: DesignFields = {
 };
 
 export const WOOL_USE: MaterialUse = {
-  id: 'use-wool',
+  id: "use-wool",
   designId: DESIGN_ID,
-  materialId: 'material-wool',
-  materialName: 'Wool',
-  colour: 'Charcoal',
-  role: 'main',
+  materialId: "material-wool",
+  materialName: "Wool",
+  colour: "Charcoal",
+  role: "main",
   createdAt: NOW,
 };
 
@@ -56,7 +56,7 @@ export const WOOL_USE: MaterialUse = {
 export function visit() {
   const tester = createReducerTester(editDesignReducer, createInitialEditDesignState(DESIGN_ID));
 
-  tester.send({ type: 'design-loaded', design: DESIGN });
+  tester.send({ type: "design-loaded", design: DESIGN });
 
   return tester;
 }
@@ -65,7 +65,7 @@ export function visit() {
 export function visitWithUse() {
   const tester = createReducerTester(editDesignReducer, createInitialEditDesignState(DESIGN_ID));
 
-  tester.send({ type: 'design-loaded', design: DESIGN, materialUses: [WOOL_USE] });
+  tester.send({ type: "design-loaded", design: DESIGN, materialUses: [WOOL_USE] });
 
   return tester;
 }
@@ -74,7 +74,7 @@ export function visitWithUse() {
 export function opened() {
   const tester = visitWithUse();
 
-  tester.send({ type: 'material-use-editor-opened', materialUse: WOOL_USE, now: NOW });
+  tester.send({ type: "material-use-editor-opened", materialUse: WOOL_USE, now: NOW });
 
   return tester;
 }
@@ -83,7 +83,7 @@ export function opened() {
 export function adding() {
   const tester = visit();
 
-  tester.send({ type: 'material-use-add-opened', now: NOW });
+  tester.send({ type: "material-use-add-opened", now: NOW });
 
   return tester;
 }
@@ -93,11 +93,15 @@ export function chosen() {
   const tester = adding();
 
   tester.send({
-    type: 'material-use-panel-fact',
-    fact: { type: 'material-chosen', materialId: 'material-wool' },
+    type: "material-use-panel-fact",
+    fact: { type: "material-chosen", materialId: "material-wool" },
     now: NOW,
   });
-  tester.send({ type: 'material-use-panel-fact', fact: { type: 'colour-changed', colour: 'Charcoal' }, now: NOW });
+  tester.send({
+    type: "material-use-panel-fact",
+    fact: { type: "colour-changed", colour: "Charcoal" },
+    now: NOW,
+  });
 
   return tester;
 }

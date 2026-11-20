@@ -1,18 +1,12 @@
-import { mkdtempSync, readFileSync, readdirSync, rmSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
-import { eq, sql } from 'drizzle-orm';
-import {
-  categories,
-  DESIGN_STATUSES,
-  designs,
-  IMAGE_KINDS,
-  images,
-} from '@/features/database';
-import { createTempDatabase, openTestDatabase } from '@/features/database/testing';
+import { mkdtempSync, readFileSync, readdirSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { eq, sql } from "drizzle-orm";
+import { categories, DESIGN_STATUSES, designs, IMAGE_KINDS, images } from "@/features/database";
+import { createTempDatabase, openTestDatabase } from "@/features/database/testing";
 
-describe('database migrations', () => {
-  let database: ReturnType<typeof createTempDatabase>['database'];
+describe("database migrations", () => {
+  let database: ReturnType<typeof createTempDatabase>["database"];
   let dispose: () => void;
 
   beforeAll(() => {
@@ -23,76 +17,80 @@ describe('database migrations', () => {
     dispose();
   });
 
-  test('creates the catalog tables and indexes', () => {
+  test("creates the catalog tables and indexes", () => {
     const objects = database.db.all<{ type: string; name: string }>(
       sql`select type, name from sqlite_master
           where type in ('table', 'index')
             and name not like 'sqlite_%'
-            and name not like '__drizzle%'`
+            and name not like '__drizzle%'`,
     );
 
-    expect(objects.filter((object) => object.type === 'table').map((object) => object.name)).toEqual(
+    expect(
+      objects.filter((object) => object.type === "table").map((object) => object.name),
+    ).toEqual(
       expect.arrayContaining([
-        'categories',
-        'collections',
-        'design_events',
-        'design_materials',
-        'designs',
-        'images',
-        'materials',
-        'settings',
-      ])
+        "categories",
+        "collections",
+        "design_events",
+        "design_materials",
+        "designs",
+        "images",
+        "materials",
+        "settings",
+      ]),
     );
-    expect(objects.filter((object) => object.type === 'index').map((object) => object.name)).toEqual(
+    expect(
+      objects.filter((object) => object.type === "index").map((object) => object.name),
+    ).toEqual(
       expect.arrayContaining([
-        'design_events_design_id_created_at_idx',
-        'design_materials_design_id_idx',
-        'design_materials_material_id_idx',
-        'designs_collection_id_idx',
-        'designs_status_idx',
-        'images_content_hash_idx',
-        'images_design_id_idx',
-      ])
+        "design_events_design_id_created_at_idx",
+        "design_materials_design_id_idx",
+        "design_materials_material_id_idx",
+        "designs_collection_id_idx",
+        "designs_status_idx",
+        "images_content_hash_idx",
+        "images_design_id_idx",
+      ]),
     );
   });
 
-  test('stores the seven Specification fields on designs', () => {
+  test("stores the seven Specification fields on designs", () => {
     const columns = database.db
       .all<{ name: string }>(sql`pragma table_info(designs)`)
       .map((column) => column.name);
 
     expect(columns).toEqual(
       expect.arrayContaining([
-        'silhouette',
-        'neckline',
-        'sleeve_type',
-        'garment_details',
-        'size_range',
-        'measurements',
-        'construction_notes',
-      ])
+        "silhouette",
+        "neckline",
+        "sleeve_type",
+        "garment_details",
+        "size_range",
+        "measurements",
+        "construction_notes",
+      ]),
     );
   });
 
-  test('stores the seven Creative direction fields on designs', () => {
+  test("stores the seven Creative direction fields on designs", () => {
     const columns = database.db
       .all<{ name: string }>(sql`pragma table_info(designs)`)
       .map((column) => column.name);
 
     expect(columns).toEqual(
       expect.arrayContaining([
-        'concept',
-        'mood',
-        'inspiration',
-        'intended_feeling',
-        'audience',
-        'styling',
-        'palette',
-      ])
+        "concept",
+        "mood",
+        "inspiration",
+        "intended_feeling",
+        "audience",
+        "styling",
+        "palette",
+      ]),
     );
   });
 
-  test('accepts the full status vocabulary and rejects anything else', () => {
+  test("accepts the full status vocabulary and rejects anything else", () => {
     for (const [index, status] of DESIGN_STATUSES.entries()) {
       expect(() =>
         database.db
@@ -105,7 +103,7 @@ describe('database migrations', () => {
             createdAt: index,
             updatedAt: index,
           })
-          .run()
+          .run(),
       ).not.toThrow();
     }
 
@@ -113,26 +111,26 @@ describe('database migrations', () => {
       database.db
         .insert(designs)
         .values({
-          id: 'status-prototype',
-          name: 'A prototype design',
+          id: "status-prototype",
+          name: "A prototype design",
           // `prototype` is an image kind, never a status.
-          status: 'prototype' as never,
-          searchText: 'prototype',
+          status: "prototype" as never,
+          searchText: "prototype",
           createdAt: 0,
           updatedAt: 0,
         })
-        .run()
+        .run(),
     ).toThrow();
   });
 
-  test('accepts every image kind and rejects a kind outside the four', () => {
+  test("accepts every image kind and rejects a kind outside the four", () => {
     database.db
       .insert(designs)
       .values({
-        id: 'images-design',
-        name: 'A design with images',
-        status: 'concept',
-        searchText: 'a design with images',
+        id: "images-design",
+        name: "A design with images",
+        status: "concept",
+        searchText: "a design with images",
         createdAt: 0,
         updatedAt: 0,
       })
@@ -143,7 +141,14 @@ describe('database migrations', () => {
       .map((column) => column.name);
 
     expect(columns).toEqual(
-      expect.arrayContaining(['id', 'design_id', 'content_hash', 'extension', 'kind', 'created_at'])
+      expect.arrayContaining([
+        "id",
+        "design_id",
+        "content_hash",
+        "extension",
+        "kind",
+        "created_at",
+      ]),
     );
 
     for (const [index, kind] of IMAGE_KINDS.entries()) {
@@ -152,13 +157,13 @@ describe('database migrations', () => {
           .insert(images)
           .values({
             id: `image-${kind}`,
-            designId: 'images-design',
+            designId: "images-design",
             contentHash: `hash-${kind}`,
-            extension: 'jpg',
+            extension: "jpg",
             kind,
             createdAt: index,
           })
-          .run()
+          .run(),
       ).not.toThrow();
     }
 
@@ -166,19 +171,19 @@ describe('database migrations', () => {
       database.db
         .insert(images)
         .values({
-          id: 'image-material',
-          designId: 'images-design',
-          contentHash: 'hash-material',
-          extension: 'jpg',
+          id: "image-material",
+          designId: "images-design",
+          contentHash: "hash-material",
+          extension: "jpg",
           // `material` is the Materials table's job, never an image kind.
-          kind: 'material' as never,
+          kind: "material" as never,
           createdAt: 0,
         })
-        .run()
+        .run(),
     ).toThrow();
   });
 
-  test('runs work in transactions and rolls back on failure', () => {
+  test("runs work in transactions and rolls back on failure", () => {
     const countDesigns = () =>
       database.db.get<{ count: number }>(sql`select count(*) as count from designs`)?.count ?? 0;
     const before = countDesigns();
@@ -186,10 +191,10 @@ describe('database migrations', () => {
     database.transaction((tx) => {
       tx.insert(designs)
         .values({
-          id: 'tx-commit',
-          name: 'Committed',
-          status: 'concept',
-          searchText: 'committed',
+          id: "tx-commit",
+          name: "Committed",
+          status: "concept",
+          searchText: "committed",
           createdAt: 0,
           updatedAt: 0,
         })
@@ -202,24 +207,24 @@ describe('database migrations', () => {
       database.transaction((tx) => {
         tx.insert(designs)
           .values({
-            id: 'tx-rollback',
-            name: 'Rolled back',
-            status: 'concept',
-            searchText: 'rolled back',
+            id: "tx-rollback",
+            name: "Rolled back",
+            status: "concept",
+            searchText: "rolled back",
             createdAt: 0,
             updatedAt: 0,
           })
           .run();
-        throw new Error('abandon this edit');
-      })
-    ).toThrow('abandon this edit');
+        throw new Error("abandon this edit");
+      }),
+    ).toThrow("abandon this edit");
 
     expect(countDesigns()).toBe(before + 1);
   });
 
-  test('running the seed twice leaves one copy of each category and keeps a rename', () => {
-    const directory = mkdtempSync(join(tmpdir(), 'jbdc-relaunch-'));
-    const file = join(directory, 'jbdc.db');
+  test("running the seed twice leaves one copy of each category and keeps a rename", () => {
+    const directory = mkdtempSync(join(tmpdir(), "jbdc-relaunch-"));
+    const file = join(directory, "jbdc.db");
 
     try {
       const first = openTestDatabase(file);
@@ -227,8 +232,8 @@ describe('database migrations', () => {
 
       first.db
         .update(categories)
-        .set({ name: 'Dresses' })
-        .where(eq(categories.seedKey, 'dress'))
+        .set({ name: "Dresses" })
+        .where(eq(categories.seedKey, "dress"))
         .run();
       first.close();
 
@@ -238,53 +243,51 @@ describe('database migrations', () => {
       second.close();
 
       expect(seeded).toHaveLength(7);
-      expect(seeded.find((category) => category.seedKey === 'dress')?.name).toBe('Dresses');
+      expect(seeded.find((category) => category.seedKey === "dress")?.name).toBe("Dresses");
     } finally {
       rmSync(directory, { recursive: true, force: true });
     }
   });
 
-  const migrationsDirectory = join(__dirname, '..', 'migrations');
+  const migrationsDirectory = join(__dirname, "..", "migrations");
   const migrationFolders = readdirSync(migrationsDirectory, { withFileTypes: true })
     .filter((entry) => entry.isDirectory())
     .map((entry) => entry.name)
     .sort();
   const migrationsOnDisk = migrationFolders.map(
     (folder) =>
-      [folder, readFileSync(join(migrationsDirectory, folder, 'migration.sql'), 'utf8')] as const
+      [folder, readFileSync(join(migrationsDirectory, folder, "migration.sql"), "utf8")] as const,
   );
 
-  test('the bundled migration list matches the generated folders', () => {
-    const bundle = readFileSync(join(migrationsDirectory, 'migrations.js'), 'utf8');
+  test("the bundled migration list matches the generated folders", () => {
+    const bundle = readFileSync(join(migrationsDirectory, "migrations.js"), "utf8");
     const bundledFolders = Array.from(
       bundle.matchAll(/from\s+'\.\/([^/]+)\/migration\.sql'/g),
-      (match) => match[1]
+      (match) => match[1],
     ).sort();
 
     expect(bundledFolders).toEqual(migrationFolders);
   });
 
-  test('every generated CREATE is idempotent and can be re-applied', () => {
+  test("every generated CREATE is idempotent and can be re-applied", () => {
     // `createTempDatabase()` has already applied the migrations once. Running
     // the generated DDL again proves the invariant `pnpm db:generate` creates:
     // a regeneration that bypasses the post-processor must fail here.
     for (const [name, migrationSql] of migrationsOnDisk) {
-      for (const rawStatement of migrationSql.split('--> statement-breakpoint')) {
+      for (const rawStatement of migrationSql.split("--> statement-breakpoint")) {
         const statement = rawStatement.trim();
         if (!/^create\s+(unique\s+)?(table|index)\s/i.test(statement)) continue;
 
         if (!/^create\s+(unique\s+)?(table|index)\s+if not exists\s/i.test(statement)) {
           throw new Error(
-            `${name} is not idempotent. Generate migrations with \`pnpm db:generate\`: ${statement.slice(0, 120)}`
+            `${name} is not idempotent. Generate migrations with \`pnpm db:generate\`: ${statement.slice(0, 120)}`,
           );
         }
 
         try {
           database.db.run(sql.raw(statement));
         } catch (error) {
-          throw new Error(
-            `${name}: re-applying generated DDL failed: ${(error as Error).message}`
-          );
+          throw new Error(`${name}: re-applying generated DDL failed: ${(error as Error).message}`);
         }
       }
     }

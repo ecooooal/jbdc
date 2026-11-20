@@ -16,13 +16,13 @@
  * The script scans `src/features/**` and `src/app/**`, skips tests, and runs in
  * pre-commit and CI beside `check-feature-boundaries.mjs`.
  */
-import { readdirSync, readFileSync, statSync } from 'node:fs';
-import { dirname, join, relative, resolve, sep } from 'node:path';
-import { fileURLToPath } from 'node:url';
-import ts from 'typescript';
+import { readdirSync, readFileSync, statSync } from "node:fs";
+import { dirname, join, relative, resolve, sep } from "node:path";
+import { fileURLToPath } from "node:url";
+import ts from "typescript";
 
-const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const SRC = join(ROOT, 'src');
+const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+const SRC = join(ROOT, "src");
 const SOURCE_FILE = /\.(?:ts|tsx)$/;
 const TEST_FILE = /\.test\.(?:ts|tsx)$/;
 const REDUCER_FILE = /-reducer\.tsx?$/;
@@ -34,16 +34,16 @@ const MAX_EFFECTS_THAT_SET_STATE = 1;
 /** Packages a reducer may never reach: React renders, drivers own the database. */
 function isForbiddenPackage(specifier) {
   return (
-    specifier === 'react' ||
-    specifier === 'react-dom' ||
-    specifier.startsWith('react-native') ||
-    specifier === 'expo-sqlite' ||
-    specifier === 'better-sqlite3'
+    specifier === "react" ||
+    specifier === "react-dom" ||
+    specifier.startsWith("react-native") ||
+    specifier === "expo-sqlite" ||
+    specifier === "better-sqlite3"
   );
 }
 
 function toPosix(path) {
-  return path.split(sep).join('/');
+  return path.split(sep).join("/");
 }
 
 function scriptPath(path) {
@@ -52,11 +52,11 @@ function scriptPath(path) {
 
 function* sourceFiles(directory) {
   for (const entry of readdirSync(directory, { withFileTypes: true })) {
-    if (entry.name === 'node_modules' || entry.name.startsWith('.')) continue;
+    if (entry.name === "node_modules" || entry.name.startsWith(".")) continue;
 
     const full = join(directory, entry.name);
     if (entry.isDirectory()) {
-      if (entry.name === 'tests') continue;
+      if (entry.name === "tests") continue;
       yield* sourceFiles(full);
     } else if (SOURCE_FILE.test(entry.name) && !TEST_FILE.test(entry.name)) {
       yield full;
@@ -65,14 +65,14 @@ function* sourceFiles(directory) {
 }
 
 function parse(file) {
-  const text = readFileSync(file, 'utf8');
+  const text = readFileSync(file, "utf8");
 
   return ts.createSourceFile(
     file,
     text,
     ts.ScriptTarget.Latest,
     true,
-    file.endsWith('.tsx') ? ts.ScriptKind.TSX : ts.ScriptKind.TS
+    file.endsWith(".tsx") ? ts.ScriptKind.TSX : ts.ScriptKind.TS,
   );
 }
 
@@ -102,7 +102,10 @@ function moduleSpecifiers(sourceFile) {
               bindings.elements.some((element) => !element.isTypeOnly))));
       const isSideEffectImport = clause === undefined;
 
-      if ((hasValueBinding || isSideEffectImport) && ts.isStringLiteral(statement.moduleSpecifier)) {
+      if (
+        (hasValueBinding || isSideEffectImport) &&
+        ts.isStringLiteral(statement.moduleSpecifier)
+      ) {
         specifiers.push(statement.moduleSpecifier.text);
       }
       continue;
@@ -136,22 +139,22 @@ function isSourceFile(path) {
 }
 
 function candidatePaths(base) {
-  return [base, `${base}.ts`, `${base}.tsx`, join(base, 'index.ts'), join(base, 'index.tsx')];
+  return [base, `${base}.ts`, `${base}.tsx`, join(base, "index.ts"), join(base, "index.tsx")];
 }
 
 /** The source file a relative or `@/` specifier names, or null for a package. */
 function resolveSourceFile(importer, specifier) {
   let base;
 
-  if (specifier.startsWith('@/')) base = join(SRC, specifier.slice(2));
-  else if (specifier.startsWith('.')) base = resolve(dirname(importer), specifier);
+  if (specifier.startsWith("@/")) base = join(SRC, specifier.slice(2));
+  else if (specifier.startsWith(".")) base = resolve(dirname(importer), specifier);
   else return null;
 
   return candidatePaths(base).find(isSourceFile) ?? null;
 }
 
 function isDatabaseFile(file) {
-  return toPosix(relative(SRC, file)).startsWith('features/database/');
+  return toPosix(relative(SRC, file)).startsWith("features/database/");
 }
 
 function forbiddenDependency(importer, specifier, seen = new Set()) {
@@ -181,7 +184,7 @@ function scanStateHooks(sourceFile) {
     if (ts.isCallExpression(node)) {
       const name = callName(node.expression);
 
-      if (name === 'useState') {
+      if (name === "useState") {
         useStateCalls += 1;
 
         const declaration = node.parent;
@@ -193,7 +196,7 @@ function scanStateHooks(sourceFile) {
         }
       }
 
-      if (name === 'useEffect' || name === 'useLayoutEffect') {
+      if (name === "useEffect" || name === "useLayoutEffect") {
         effects.push(node);
       }
     }
@@ -231,13 +234,13 @@ function violationsFor(file) {
 
   if (useStateCalls > MAX_USE_STATE_CALLS) {
     violations.push(
-      `use-state: ${useStateCalls} useState calls (max ${MAX_USE_STATE_CALLS}); move the surface's decisions into a reducer`
+      `use-state: ${useStateCalls} useState calls (max ${MAX_USE_STATE_CALLS}); move the surface's decisions into a reducer`,
     );
   }
 
   if (effectsThatSetState > MAX_EFFECTS_THAT_SET_STATE) {
     violations.push(
-      `effect-sets-state: ${effectsThatSetState} effects write the file's own state (max ${MAX_EFFECTS_THAT_SET_STATE}); that transition belongs in a reducer`
+      `effect-sets-state: ${effectsThatSetState} effects write the file's own state (max ${MAX_EFFECTS_THAT_SET_STATE}); that transition belongs in a reducer`,
     );
   }
 
@@ -246,7 +249,7 @@ function violationsFor(file) {
       const target = forbiddenDependency(file, specifier);
       if (target) {
         violations.push(
-          `reducer-purity: imports ${specifier}, which reaches ${target}; reducers hold no React and no database access`
+          `reducer-purity: imports ${specifier}, which reaches ${target}; reducers hold no React and no database access`,
         );
       }
     }
@@ -270,11 +273,10 @@ function main() {
     process.exit(1);
   }
 
-  console.log('Frontend state OK.');
+  console.log("Frontend state OK.");
 }
 
 const invokedDirectly =
-  process.argv[1] !== undefined &&
-  resolve(process.argv[1]) === fileURLToPath(import.meta.url);
+  process.argv[1] !== undefined && resolve(process.argv[1]) === fileURLToPath(import.meta.url);
 
 if (invokedDirectly) main();

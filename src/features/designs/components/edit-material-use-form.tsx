@@ -1,16 +1,16 @@
-import { View } from 'react-native';
-import { useMaterials } from '@/features/materials/react';
-import { Button } from '@/shared/components/ui/button';
-import { Input } from '@/shared/components/ui/input';
-import { Text } from '@/shared/components/ui/text';
+import { View } from "react-native";
+import { useMaterials } from "@/features/materials/react";
+import { Button } from "@/shared/components/ui/button";
+import { Input } from "@/shared/components/ui/input";
+import { Text } from "@/shared/components/ui/text";
 import {
   materialUseChoices,
   type EditDesignGesture,
   type EditingMaterialUse,
-} from '../lib/edit-design-reducer';
-import { FormField } from './form-field';
-import { MaterialUseRoleSelect } from './material-use-role-select';
-import { TaxonomySelect } from './taxonomy-select';
+} from "../lib/edit-design-reducer";
+import { FormField } from "./form-field";
+import { MaterialUseRoleSelect } from "./material-use-role-select";
+import { TaxonomySelect } from "./taxonomy-select";
 
 /**
  * The editor a Materials row opens. Material, colour, and role each write as
@@ -29,7 +29,8 @@ export function EditMaterialUseForm({
 }) {
   const { materials, error: materialsError, status } = useMaterials();
   const materialItems = materialUseChoices(materials, state);
-  const selectedMaterial = materialItems.find((material) => material.id === state.materialId) ?? null;
+  const selectedMaterial =
+    materialItems.find((material) => material.id === state.materialId) ?? null;
 
   return (
     <View className="border-border gap-3 rounded-xl border p-3">
@@ -39,14 +40,14 @@ export function EditMaterialUseForm({
           placeholder="Choose a material"
           value={selectedMaterial}
           items={materialItems}
-          disabled={status !== 'ready'}
+          disabled={status !== "ready"}
           clearable={false}
           onSelect={(material) => {
             if (!material || material.id === state.materialId) return;
 
             send({
-              type: 'material-use-panel-fact',
-              fact: { type: 'material-chosen', materialId: material.id },
+              type: "material-use-panel-fact",
+              fact: { type: "material-chosen", materialId: material.id },
             });
           }}
         />
@@ -56,13 +57,13 @@ export function EditMaterialUseForm({
         <Input
           value={state.colour}
           onChangeText={(colour) =>
-            send({ type: 'material-use-panel-fact', fact: { type: 'colour-changed', colour } })
+            send({ type: "material-use-panel-fact", fact: { type: "colour-changed", colour } })
           }
           onBlur={() =>
-            send({ type: 'material-use-panel-fact', fact: { type: 'colour-committed' } })
+            send({ type: "material-use-panel-fact", fact: { type: "colour-committed" } })
           }
           onSubmitEditing={() =>
-            send({ type: 'material-use-panel-fact', fact: { type: 'colour-committed' } })
+            send({ type: "material-use-panel-fact", fact: { type: "colour-committed" } })
           }
           returnKeyType="done"
           placeholder="Ivory"
@@ -75,7 +76,7 @@ export function EditMaterialUseForm({
         <MaterialUseRoleSelect
           value={state.role}
           onChange={(role) =>
-            send({ type: 'material-use-panel-fact', fact: { type: 'role-chosen', role } })
+            send({ type: "material-use-panel-fact", fact: { type: "role-chosen", role } })
           }
         />
       </FormField>
@@ -90,7 +91,7 @@ export function EditMaterialUseForm({
           size="sm"
           variant="destructive"
           onPress={() =>
-            send({ type: 'material-use-panel-fact', fact: { type: 'remove-pressed' } })
+            send({ type: "material-use-panel-fact", fact: { type: "remove-pressed" } })
           }
           accessibilityLabel="Remove material use"
         >
@@ -99,7 +100,7 @@ export function EditMaterialUseForm({
         <Button
           size="sm"
           variant="ghost"
-          onPress={() => send({ type: 'material-use-panel-fact', fact: { type: 'closed' } })}
+          onPress={() => send({ type: "material-use-panel-fact", fact: { type: "closed" } })}
         >
           <Text>Done</Text>
         </Button>

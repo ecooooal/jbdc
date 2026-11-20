@@ -3,10 +3,10 @@ import {
   DESIGN_SECTIONS,
   type DesignEditableField,
   type DesignSectionTab,
-} from '@/features/designs';
+} from "@/features/designs";
 
 /** What one History card groups its lines under. Materials carries uses, not fields. */
-export type DesignHistorySection = 'identity' | DesignSectionTab | 'materials';
+export type DesignHistorySection = "identity" | DesignSectionTab | "materials";
 
 export type DesignHistorySectionDefinition = {
   section: DesignHistorySection;
@@ -21,11 +21,11 @@ export type DesignHistorySectionDefinition = {
  * holds Material use lines rather than fields: uses live in their own table.
  */
 export const DESIGN_HISTORY_SECTIONS: readonly DesignHistorySectionDefinition[] = [
-  { section: 'identity', label: 'Identity', fields: DESIGN_IDENTITY_FIELDS },
+  { section: "identity", label: "Identity", fields: DESIGN_IDENTITY_FIELDS },
   ...DESIGN_SECTIONS.map(({ tab, label, fields }) => ({
     section: tab,
     label,
     fields: fields.map(({ field }) => field),
   })),
-  { section: 'materials', label: 'Materials', fields: [] },
+  { section: "materials", label: "Materials", fields: [] },
 ];

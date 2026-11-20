@@ -12,5 +12,5 @@ export {
   materialsRead,
   readMaterialNames,
   readMaterialNamesFrom,
-} from './lib/records';
-export type { CreateMaterialInput, Material, MaterialsRows } from './lib/records';
+} from "./lib/records";
+export type { CreateMaterialInput, Material, MaterialsRows } from "./lib/records";

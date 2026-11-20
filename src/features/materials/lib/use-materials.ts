@@ -1,5 +1,5 @@
-import { useLiveRead, type LiveReadFields } from '@/features/database/react';
-import { materialsRead, type MaterialsRows } from './records';
+import { useLiveRead, type LiveReadFields } from "@/features/database/react";
+import { materialsRead, type MaterialsRows } from "./records";
 
 /** The Materials a picker reads: one declared row plus the shared status. */
 export type Materials = MaterialsRows & LiveReadFields;

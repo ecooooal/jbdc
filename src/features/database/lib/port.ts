@@ -1,12 +1,12 @@
-import { migrateSync, type SQLiteAsyncDatabase } from 'drizzle-orm/sqlite-core';
-import migrationBundle from '../migrations/migrations.js';
-import { applySeed } from './seed';
+import { migrateSync, type SQLiteAsyncDatabase } from "drizzle-orm/sqlite-core";
+import migrationBundle from "../migrations/migrations.js";
+import { applySeed } from "./seed";
 
 /**
  * The query handle every feature module talks to. It is drizzle's synchronous
  * SQLite surface, so no feature ever imports a driver.
  */
-export type DatabaseHandle = SQLiteAsyncDatabase<'sync', unknown>;
+export type DatabaseHandle = SQLiteAsyncDatabase<"sync", unknown>;
 
 /**
  * The Database port. It opens (in the adapter), migrates and seeds on open, and
@@ -42,12 +42,12 @@ export const migrations: MigrationMeta[] = Object.entries(migrationBundle.migrat
   .sort(([left], [right]) => left.localeCompare(right))
   .map(([name, sql]) => ({
     name,
-    sql: sql.split('--> statement-breakpoint'),
+    sql: sql.split("--> statement-breakpoint"),
     bps: true,
     folderMillis: timestampFromName(name),
     // The folder name is the identity drizzle's ledger records; the hash is
     // only metadata, matching drizzle's own Expo migrator.
-    hash: '',
+    hash: "",
   }));
 
 /**
@@ -66,13 +66,13 @@ export function prepareDatabase(db: DatabaseHandle): void {
 export function createDatabase(
   db: DatabaseHandle,
   close: () => void,
-  newId: () => string
+  newId: () => string,
 ): Database {
   prepareDatabase(db);
 
   // The driver is synchronous, so a transaction callback can never return a
   // Promise; drizzle's conditional return type is stricter than this port is.
-  const transaction = db.transaction.bind(db) as unknown as Database['transaction'];
+  const transaction = db.transaction.bind(db) as unknown as Database["transaction"];
 
   return {
     db,

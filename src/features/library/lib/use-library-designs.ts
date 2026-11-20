@@ -1,5 +1,5 @@
-import { useLiveRead, type LiveReadFields } from '@/features/database/react';
-import { libraryDesignsRead, type LibraryRows } from './query';
+import { useLiveRead, type LiveReadFields } from "@/features/database/react";
+import { libraryDesignsRead, type LibraryRows } from "./query";
 
 /** The Library's designs plus the shared status. */
 export type LibraryDesigns = LibraryRows & LiveReadFields;

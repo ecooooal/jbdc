@@ -1,6 +1,6 @@
-import { useCallback, useRef, useState } from 'react';
-import { useDatabase } from '@/features/database/react';
-import { recordEdit } from '@/features/history';
+import { useCallback, useRef, useState } from "react";
+import { useDatabase } from "@/features/database/react";
+import { recordEdit } from "@/features/history";
 import {
   createInitialEditDesignState,
   editDesignReducer,
@@ -9,8 +9,8 @@ import {
   type EditDesignEvent,
   type EditDesignGesture,
   type EditDesignState,
-} from './edit-design-reducer';
-import { writeDesign } from './records';
+} from "./edit-design-reducer";
+import { writeDesign } from "./records";
 
 /**
  * Runs Edit's reducer and the work it asks for. Every catalog call is
@@ -23,7 +23,7 @@ import { writeDesign } from './records';
  * the time left out, and `send` is the one place that stamps it.
  */
 export function useEditVisit(
-  designId: string
+  designId: string,
 ): readonly [EditDesignState, (gesture: EditDesignGesture) => void] {
   const database = useDatabase();
   const [state, setState] = useState(() => createInitialEditDesignState(designId));
@@ -36,7 +36,7 @@ export function useEditVisit(
       setState(result.state);
 
       for (const effect of result.effects) {
-        if (effect.type === 'record-visit') {
+        if (effect.type === "record-visit") {
           recordEdit(
             database,
             effect.designId,
@@ -45,7 +45,7 @@ export function useEditVisit(
               after: effect.after,
               materialUses: effect.materialUses,
             },
-            effect.now
+            effect.now,
           );
           continue;
         }
@@ -59,12 +59,12 @@ export function useEditVisit(
         }
       }
     },
-    [database]
+    [database],
   );
 
   const send = useCallback(
     (gesture: EditDesignGesture) => dispatch(stampedEvent(gesture, Date.now())),
-    [dispatch]
+    [dispatch],
   );
 
   return [state, send];

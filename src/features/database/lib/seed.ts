@@ -1,6 +1,6 @@
-import { eq } from 'drizzle-orm';
-import type { DatabaseHandle } from './port';
-import { categories } from '../schema';
+import { eq } from "drizzle-orm";
+import type { DatabaseHandle } from "./port";
+import { categories } from "../schema";
 
 export type SeedCategory = {
   /** Stable id, so the same seeded row is reused on every install. */
@@ -14,13 +14,13 @@ export type SeedCategory = {
  * guards on, so renaming a category in the app does not bring the old name back.
  */
 export const SEED_CATEGORIES: readonly SeedCategory[] = [
-  { id: 'b513ae60-d452-40ad-9e42-12121f5dfc2a', seedKey: 'dress', name: 'Dress' },
-  { id: '2e967224-d1d1-4107-8d8a-b5448d2bb354', seedKey: 'blouse', name: 'Blouse' },
-  { id: 'c5560071-6e17-449d-a9de-0e0217591cdf', seedKey: 'skirt', name: 'Skirt' },
-  { id: 'c8d8825a-6970-4070-a614-3a82116aa475', seedKey: 'pants', name: 'Pants' },
-  { id: '089827c6-a809-4cf9-9432-a4b46cef2276', seedKey: 'outerwear', name: 'Outerwear' },
-  { id: '6ebd24a6-8e14-4ae1-b6a7-237233bce93a', seedKey: 'two-piece-set', name: 'Two-piece set' },
-  { id: '2f338714-ff01-476d-b6ae-331e9bca0593', seedKey: 'other', name: 'Other' },
+  { id: "b513ae60-d452-40ad-9e42-12121f5dfc2a", seedKey: "dress", name: "Dress" },
+  { id: "2e967224-d1d1-4107-8d8a-b5448d2bb354", seedKey: "blouse", name: "Blouse" },
+  { id: "c5560071-6e17-449d-a9de-0e0217591cdf", seedKey: "skirt", name: "Skirt" },
+  { id: "c8d8825a-6970-4070-a614-3a82116aa475", seedKey: "pants", name: "Pants" },
+  { id: "089827c6-a809-4cf9-9432-a4b46cef2276", seedKey: "outerwear", name: "Outerwear" },
+  { id: "6ebd24a6-8e14-4ae1-b6a7-237233bce93a", seedKey: "two-piece-set", name: "Two-piece set" },
+  { id: "2f338714-ff01-476d-b6ae-331e9bca0593", seedKey: "other", name: "Other" },
 ];
 
 /**

@@ -1,5 +1,5 @@
-import { createContext, useContext, type PropsWithChildren } from 'react';
-import type { ImageFile, ImageStore } from './lib/image-store';
+import { createContext, useContext, type PropsWithChildren } from "react";
+import type { ImageFile, ImageStore } from "./lib/image-store";
 
 const ImageStoreContext = createContext<ImageStore | null>(null);
 
@@ -8,10 +8,7 @@ const ImageStoreContext = createContext<ImageStore | null>(null);
  * The app supplies the Expo adapter at its root; a surface rendered without a
  * provider shows the placeholder instead, because nothing can be loaded yet.
  */
-export function ImageStoreProvider({
-  store,
-  children,
-}: PropsWithChildren<{ store: ImageStore }>) {
+export function ImageStoreProvider({ store, children }: PropsWithChildren<{ store: ImageStore }>) {
   return <ImageStoreContext.Provider value={store}>{children}</ImageStoreContext.Provider>;
 }
 

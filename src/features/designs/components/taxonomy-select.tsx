@@ -5,10 +5,10 @@ import {
   SelectSeparator,
   SelectTrigger,
   SelectValue,
-} from '@/shared/components/ui/select';
+} from "@/shared/components/ui/select";
 
 /** A Select option value no Category or Collection id can collide with. */
-const NO_TAXONOMY = '__none__';
+const NO_TAXONOMY = "__none__";
 
 /**
  * A picker over the owner's live Categories or Collections, plus the row that

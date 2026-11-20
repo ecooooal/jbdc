@@ -8,22 +8,22 @@
  *
  * Runs from `pnpm check`, pre-commit, and CI.
  */
-import { readdirSync, readFileSync } from 'node:fs';
-import { dirname, join, relative, resolve, sep } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { readdirSync, readFileSync } from "node:fs";
+import { dirname, join, relative, resolve, sep } from "node:path";
+import { fileURLToPath } from "node:url";
 
-const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const SRC = join(ROOT, 'src');
+const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+const SRC = join(ROOT, "src");
 const TEST_FILE = /\.test\.(?:ts|tsx)$/;
 const MAX_TEST_LINES = 600;
 
 function toPosix(path) {
-  return path.split(sep).join('/');
+  return path.split(sep).join("/");
 }
 
 function* testFiles(directory) {
   for (const entry of readdirSync(directory, { withFileTypes: true })) {
-    if (entry.name === 'node_modules' || entry.name.startsWith('.')) continue;
+    if (entry.name === "node_modules" || entry.name.startsWith(".")) continue;
 
     const full = join(directory, entry.name);
     if (entry.isDirectory()) yield* testFiles(full);
@@ -32,9 +32,9 @@ function* testFiles(directory) {
 }
 
 function lineCount(file) {
-  const text = readFileSync(file, 'utf8');
+  const text = readFileSync(file, "utf8");
 
-  return text.split('\n').length - (text.endsWith('\n') ? 1 : 0);
+  return text.split("\n").length - (text.endsWith("\n") ? 1 : 0);
 }
 
 function main() {
@@ -48,7 +48,7 @@ function main() {
   if (oversized.length > 0) {
     console.error(`Test files over ${MAX_TEST_LINES} lines (${oversized.length}):\n`);
     for (const { file, lines } of oversized) console.error(`  ${file}: ${lines} lines`);
-    console.error('\nSplit the file by concern into siblings that share one fixtures module.');
+    console.error("\nSplit the file by concern into siblings that share one fixtures module.");
     process.exit(1);
   }
 

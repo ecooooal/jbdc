@@ -1,4 +1,4 @@
-import { IMAGE_KINDS, images, type ImageKind } from '@/features/database';
+import { IMAGE_KINDS, images, type ImageKind } from "@/features/database";
 
 /** An image as the catalog stores it: one file, labelled by its kind. */
 export type Image = typeof images.$inferSelect;
@@ -28,9 +28,7 @@ function newestFirst(left: Image, right: Image): number {
  * Design with no images has none (GLOSSARY: Cover).
  */
 export function coverOf(stored: readonly Image[]): Image | null {
-  const highestKind = COVER_KIND_ORDER.find((kind) =>
-    stored.some((image) => image.kind === kind)
-  );
+  const highestKind = COVER_KIND_ORDER.find((kind) => stored.some((image) => image.kind === kind));
 
   if (!highestKind) return null;
 

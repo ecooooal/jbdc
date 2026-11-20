@@ -9,47 +9,47 @@
  */
 export const CREATIVE_DIRECTION_FIELDS = [
   {
-    field: 'concept',
-    label: 'Concept',
-    placeholder: 'What this piece is trying to do',
+    field: "concept",
+    label: "Concept",
+    placeholder: "What this piece is trying to do",
     multiline: true,
   },
   {
-    field: 'mood',
-    label: 'Mood',
-    placeholder: 'Intended atmosphere or emotion',
+    field: "mood",
+    label: "Mood",
+    placeholder: "Intended atmosphere or emotion",
     multiline: false,
   },
   {
-    field: 'inspiration',
-    label: 'Inspiration',
-    placeholder: 'What inspired the design',
+    field: "inspiration",
+    label: "Inspiration",
+    placeholder: "What inspired the design",
     multiline: true,
   },
   {
-    field: 'intendedFeeling',
-    label: 'Intended feeling',
-    placeholder: 'How the clothing should make someone feel',
+    field: "intendedFeeling",
+    label: "Intended feeling",
+    placeholder: "How the clothing should make someone feel",
     multiline: true,
   },
   {
-    field: 'audience',
-    label: 'Audience',
-    placeholder: 'Intended customer or wearer',
+    field: "audience",
+    label: "Audience",
+    placeholder: "Intended customer or wearer",
     multiline: false,
   },
   {
-    field: 'styling',
-    label: 'Styling',
-    placeholder: 'Suggested accessories and styling',
+    field: "styling",
+    label: "Styling",
+    placeholder: "Suggested accessories and styling",
     multiline: true,
   },
   {
-    field: 'palette',
-    label: 'Palette',
-    placeholder: 'Intended color combinations',
+    field: "palette",
+    label: "Palette",
+    placeholder: "Intended color combinations",
     multiline: false,
   },
 ] as const;
 
-export type CreativeDirectionField = (typeof CREATIVE_DIRECTION_FIELDS)[number]['field'];
+export type CreativeDirectionField = (typeof CREATIVE_DIRECTION_FIELDS)[number]["field"];

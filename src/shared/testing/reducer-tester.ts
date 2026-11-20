@@ -11,12 +11,12 @@ export type ReducerResult<State, Effect> = {
 
 export type EffectfulReducer<State, Event, Effect> = (
   state: State,
-  event: Event
+  event: Event,
 ) => ReducerResult<State, Effect>;
 
 export function createReducerTester<State, Event, Effect>(
   reducer: EffectfulReducer<State, Event, Effect>,
-  initial: State
+  initial: State,
 ): {
   send(event: Event): void;
   getState(): State;

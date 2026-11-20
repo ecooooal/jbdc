@@ -10,26 +10,27 @@
  * Run in pre-commit and CI. ESLint still covers the alias and bare specifiers
  * for in-editor feedback.
  */
-import { readdirSync, readFileSync } from 'node:fs';
-import { dirname, join, relative, resolve, sep } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { readdirSync, readFileSync } from "node:fs";
+import { dirname, join, relative, resolve, sep } from "node:path";
+import { fileURLToPath } from "node:url";
 
-const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const SRC = join(ROOT, 'src');
+const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+const SRC = join(ROOT, "src");
 
 const SOURCE_FILE = /\.(?:ts|tsx)$/;
 // `import x from`, `export … from`, side-effect `import '…'`, `import('…')`,
 // and `require('…')` all end in a quoted specifier.
-const IMPORT_SPECIFIER = /(?:\bfrom\s*|\bimport\s*\(\s*|\bimport\s+|\brequire\s*\(\s*)['"]([^'"]+)['"]/g;
+const IMPORT_SPECIFIER =
+  /(?:\bfrom\s*|\bimport\s*\(\s*|\bimport\s+|\brequire\s*\(\s*)['"]([^'"]+)['"]/g;
 
 function toPosix(path) {
-  return path.split(sep).join('/');
+  return path.split(sep).join("/");
 }
 
 /** Absolute path for a relative or `@/` specifier; null for a bare package. */
 function resolveSpecifier(importer, specifier) {
-  if (specifier.startsWith('@/')) return resolve(SRC, specifier.slice(2));
-  if (specifier.startsWith('.')) return resolve(dirname(importer), specifier);
+  if (specifier.startsWith("@/")) return resolve(SRC, specifier.slice(2));
+  if (specifier.startsWith(".")) return resolve(dirname(importer), specifier);
   return null;
 }
 
@@ -38,14 +39,14 @@ function resolveSpecifier(importer, specifier) {
  * posix paths so it can be exercised without touching the filesystem.
  */
 export function boundaryViolation(importerRel, targetRel) {
-  if (!importerRel.startsWith('src/')) return null;
+  if (!importerRel.startsWith("src/")) return null;
 
-  const segments = targetRel.split('/');
+  const segments = targetRel.split("/");
 
   // `src/features/<owner>/(lib|tests)/…` is private to <owner>.
-  if (segments[0] === 'src' && segments[1] === 'features' && segments.length >= 4) {
+  if (segments[0] === "src" && segments[1] === "features" && segments.length >= 4) {
     const owner = segments[2];
-    const isPrivate = segments[3] === 'lib' || segments[3] === 'tests';
+    const isPrivate = segments[3] === "lib" || segments[3] === "tests";
     const isOwnedByImporter = importerRel.startsWith(`src/features/${owner}/`);
 
     if (isPrivate && !isOwnedByImporter) {
@@ -54,13 +55,13 @@ export function boundaryViolation(importerRel, targetRel) {
   }
 
   // `src/app` is routing only: no shared UI, no feature components.
-  if (importerRel.startsWith('src/app/')) {
+  if (importerRel.startsWith("src/app/")) {
     const isFeatureComponent =
-      segments[0] === 'src' &&
-      segments[1] === 'features' &&
+      segments[0] === "src" &&
+      segments[1] === "features" &&
       segments.length >= 4 &&
-      segments[3] === 'components';
-    const isSharedComponent = targetRel.startsWith('src/shared/components/');
+      segments[3] === "components";
+    const isSharedComponent = targetRel.startsWith("src/shared/components/");
 
     if (isFeatureComponent || isSharedComponent) {
       return `imports ${targetRel}; src/app is routing only — render the screen from a feature entry point, and put UI in features/<feature>/components`;
@@ -72,7 +73,7 @@ export function boundaryViolation(importerRel, targetRel) {
 
 function* sourceFiles(directory) {
   for (const entry of readdirSync(directory, { withFileTypes: true })) {
-    if (entry.name === 'node_modules' || entry.name.startsWith('.')) continue;
+    if (entry.name === "node_modules" || entry.name.startsWith(".")) continue;
 
     const full = join(directory, entry.name);
     if (entry.isDirectory()) yield* sourceFiles(full);
@@ -90,7 +91,7 @@ function main() {
   const violations = [];
 
   for (const file of sourceFiles(SRC)) {
-    const text = readFileSync(file, 'utf8');
+    const text = readFileSync(file, "utf8");
     const importerRel = toPosix(relative(ROOT, file));
 
     for (const match of text.matchAll(IMPORT_SPECIFIER)) {
@@ -112,11 +113,10 @@ function main() {
     process.exit(1);
   }
 
-  console.log('Feature boundaries OK.');
+  console.log("Feature boundaries OK.");
 }
 
 const invokedDirectly =
-  process.argv[1] !== undefined &&
-  resolve(process.argv[1]) === fileURLToPath(import.meta.url);
+  process.argv[1] !== undefined && resolve(process.argv[1]) === fileURLToPath(import.meta.url);
 
 if (invokedDirectly) main();

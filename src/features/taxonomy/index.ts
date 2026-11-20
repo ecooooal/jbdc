@@ -16,7 +16,7 @@ export {
   TAXONOMY_NAME_MAX_LENGTH,
   taxonomyLabel,
   taxonomyRead,
-} from './lib/records';
+} from "./lib/records";
 export type {
   Category,
   Collection,
@@ -24,4 +24,4 @@ export type {
   CreateCollectionInput,
   TaxonomyNames,
   TaxonomyRows,
-} from './lib/records';
+} from "./lib/records";

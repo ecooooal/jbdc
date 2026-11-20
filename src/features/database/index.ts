@@ -5,9 +5,9 @@
  * type and the schema here and never see expo-sqlite or better-sqlite3. The
  * adapters live in `./expo` (the app) and `./testing` (Jest).
  */
-export type { DatabaseHandle, Database } from './lib/port';
-export { declareLiveRead } from './lib/live-read';
-export type { LiveReadDeclaration, LiveReadTable } from './lib/live-read';
+export type { DatabaseHandle, Database } from "./lib/port";
+export { declareLiveRead } from "./lib/live-read";
+export type { LiveReadDeclaration, LiveReadTable } from "./lib/live-read";
 export {
   categories,
   collections,
@@ -21,5 +21,5 @@ export {
   DESIGN_STATUSES,
   IMAGE_KINDS,
   MATERIAL_USE_ROLES,
-} from './schema';
-export type { DesignEventKind, DesignStatus, ImageKind, MaterialUseRole } from './schema';
+} from "./schema";
+export type { DesignEventKind, DesignStatus, ImageKind, MaterialUseRole } from "./schema";

@@ -1,13 +1,13 @@
-import { Plus } from 'lucide-react-native';
-import { View } from 'react-native';
-import { Button } from '@/shared/components/ui/button';
-import { Icon } from '@/shared/components/ui/icon';
-import { Text } from '@/shared/components/ui/text';
-import type { MaterialUse } from '@/features/designs';
-import type { EditDesignGesture, MaterialUsePanel } from '../lib/edit-design-reducer';
-import { AddMaterialUseForm } from './add-material-use-form';
-import { EditMaterialUseForm } from './edit-material-use-form';
-import { MaterialUsesTable } from './material-uses-table';
+import { Plus } from "lucide-react-native";
+import { View } from "react-native";
+import { Button } from "@/shared/components/ui/button";
+import { Icon } from "@/shared/components/ui/icon";
+import { Text } from "@/shared/components/ui/text";
+import type { MaterialUse } from "@/features/designs";
+import type { EditDesignGesture, MaterialUsePanel } from "../lib/edit-design-reducer";
+import { AddMaterialUseForm } from "./add-material-use-form";
+import { EditMaterialUseForm } from "./edit-material-use-form";
+import { MaterialUsesTable } from "./material-uses-table";
 
 /**
  * The Specification tab's Materials block: the recorded uses, then
@@ -33,39 +33,39 @@ export function MaterialUsesSection({
       <MaterialUsesTable
         uses={uses}
         onUsePress={
-          panel?.kind === 'add'
+          panel?.kind === "add"
             ? undefined
-            : (materialUse) => send({ type: 'material-use-editor-opened', materialUse })
+            : (materialUse) => send({ type: "material-use-editor-opened", materialUse })
         }
       />
 
-      {panel?.kind === 'edit' ? (
+      {panel?.kind === "edit" ? (
         <EditMaterialUseForm state={panel} send={send} />
-      ) : panel?.kind === 'add' ? (
+      ) : panel?.kind === "add" ? (
         <AddMaterialUseForm
           state={panel.editor}
           onMaterialChosen={(materialId) =>
             send({
-              type: 'material-use-panel-fact',
-              fact: { type: 'material-chosen', materialId },
+              type: "material-use-panel-fact",
+              fact: { type: "material-chosen", materialId },
             })
           }
           onColourChanged={(colour) =>
-            send({ type: 'material-use-panel-fact', fact: { type: 'colour-changed', colour } })
+            send({ type: "material-use-panel-fact", fact: { type: "colour-changed", colour } })
           }
           onRoleChosen={(role) =>
-            send({ type: 'material-use-panel-fact', fact: { type: 'role-chosen', role } })
+            send({ type: "material-use-panel-fact", fact: { type: "role-chosen", role } })
           }
-          onInlineFact={(fact) => send({ type: 'material-use-inline-fact', fact })}
-          onConfirm={() => send({ type: 'material-use-add-confirmed' })}
-          onCancel={() => send({ type: 'material-use-panel-fact', fact: { type: 'closed' } })}
+          onInlineFact={(fact) => send({ type: "material-use-inline-fact", fact })}
+          onConfirm={() => send({ type: "material-use-add-confirmed" })}
+          onCancel={() => send({ type: "material-use-panel-fact", fact: { type: "closed" } })}
         />
       ) : (
         <Button
           size="sm"
           variant="ghost"
           className="self-start"
-          onPress={() => send({ type: 'material-use-add-opened' })}
+          onPress={() => send({ type: "material-use-add-opened" })}
         >
           <Icon as={Plus} />
           <Text>Add material</Text>

@@ -1,29 +1,29 @@
-import { router } from 'expo-router';
-import { ChevronLeft } from 'lucide-react-native';
-import { useState } from 'react';
-import { ScrollView, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import type { DesignDetail } from '@/features/designs';
-import { Badge } from '@/shared/components/ui/badge';
-import { Button } from '@/shared/components/ui/button';
-import { Icon } from '@/shared/components/ui/icon';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/tabs';
-import { Text } from '@/shared/components/ui/text';
+import { router } from "expo-router";
+import { ChevronLeft } from "lucide-react-native";
+import { useState } from "react";
+import { ScrollView, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import type { DesignDetail } from "@/features/designs";
+import { Badge } from "@/shared/components/ui/badge";
+import { Button } from "@/shared/components/ui/button";
+import { Icon } from "@/shared/components/ui/icon";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/components/ui/tabs";
+import { Text } from "@/shared/components/ui/text";
 import {
   DESIGN_SECTIONS,
   isDesignSectionTab,
   type DesignSectionFieldDefinition,
   type DesignSectionTab,
-} from '../lib/sections';
-import { useDesignDetail } from '../lib/use-design-detail';
-import { DesignImageStrip } from './design-image-strip';
-import { DesignStatusBadge } from './design-status-badge';
-import { MaterialUsesTable } from './material-uses-table';
+} from "../lib/sections";
+import { useDesignDetail } from "../lib/use-design-detail";
+import { DesignImageStrip } from "./design-image-strip";
+import { DesignStatusBadge } from "./design-status-badge";
+import { MaterialUsesTable } from "./material-uses-table";
 
 const SHORT_DATE_FORMAT = new Intl.DateTimeFormat(undefined, {
-  year: 'numeric',
-  month: 'short',
-  day: 'numeric',
+  year: "numeric",
+  month: "short",
+  day: "numeric",
 });
 
 function formatShortDate(timestamp: number): string {
@@ -66,7 +66,7 @@ function DetailHero({ design }: { design: DesignDetail }) {
       <View className="flex-row items-center gap-2">
         <DesignStatusBadge status={design.status} />
         <Text variant="muted">
-          {design.category ?? 'No category'} · {design.collection ?? 'No collection'}
+          {design.category ?? "No category"} · {design.collection ?? "No collection"}
         </Text>
       </View>
       {design.description ? (
@@ -80,7 +80,7 @@ function DetailHero({ design }: { design: DesignDetail }) {
 
 function recordedRows(
   design: DesignDetail,
-  fields: readonly DesignSectionFieldDefinition[]
+  fields: readonly DesignSectionFieldDefinition[],
 ): DesignSectionFieldDefinition[] {
   return fields.filter(({ field }) => Boolean(design[field]));
 }
@@ -89,10 +89,10 @@ function recordedRows(
 function sectionContent(
   design: DesignDetail,
   tab: DesignSectionTab,
-  fields: readonly DesignSectionFieldDefinition[]
+  fields: readonly DesignSectionFieldDefinition[],
 ) {
   const filled = recordedRows(design, fields);
-  const materialUses = tab === 'specification' ? design.materialUses : [];
+  const materialUses = tab === "specification" ? design.materialUses : [];
 
   return { filled, materialUses, isEmpty: filled.length === 0 && materialUses.length === 0 };
 }
@@ -118,7 +118,7 @@ function DetailSection({
       {filled.length > 0 ? (
         <View className="border-border rounded-xl border px-4 py-1">
           {filled.map(({ field, label }) => (
-            <DetailRow key={field} label={label} value={design[field] ?? ''} />
+            <DetailRow key={field} label={label} value={design[field] ?? ""} />
           ))}
         </View>
       ) : null}
@@ -136,7 +136,7 @@ function DetailSection({
 function DetailSections({ design }: { design: DesignDetail }) {
   const [chosen, setChosen] = useState<DesignSectionTab | null>(null);
   const recorded = DESIGN_SECTIONS.filter(
-    ({ tab, fields }) => !sectionContent(design, tab, fields).isEmpty
+    ({ tab, fields }) => !sectionContent(design, tab, fields).isEmpty,
   );
 
   if (recorded.length === 0) {
@@ -194,7 +194,7 @@ export function DesignDetailScreen({ designId }: { designId: string }) {
   const { design, error, status } = useDesignDetail(designId);
 
   return (
-    <SafeAreaView style={{ flex: 1 }} className="bg-background" edges={['top', 'left', 'right']}>
+    <SafeAreaView style={{ flex: 1 }} className="bg-background" edges={["top", "left", "right"]}>
       <View className="flex-row items-center justify-between px-4 pt-2">
         <Button
           size="icon"
@@ -211,7 +211,7 @@ export function DesignDetailScreen({ designId }: { designId: string }) {
               variant="ghost"
               accessibilityLabel="History"
               onPress={() =>
-                router.push({ pathname: '/designs/[id]/history', params: { id: designId } })
+                router.push({ pathname: "/designs/[id]/history", params: { id: designId } })
               }
             >
               <Text>History</Text>
@@ -221,7 +221,7 @@ export function DesignDetailScreen({ designId }: { designId: string }) {
               variant="ghost"
               accessibilityLabel="Edit design"
               onPress={() =>
-                router.push({ pathname: '/designs/[id]/edit', params: { id: designId } })
+                router.push({ pathname: "/designs/[id]/edit", params: { id: designId } })
               }
             >
               <Text>Edit</Text>
@@ -232,7 +232,7 @@ export function DesignDetailScreen({ designId }: { designId: string }) {
 
       {error ? (
         <Text className="text-destructive px-6 pt-4">{error.message}</Text>
-      ) : status === 'loading' ? null : design ? (
+      ) : status === "loading" ? null : design ? (
         <DesignDetailContent design={design} />
       ) : (
         <View className="flex-1 items-center justify-center gap-2 px-6 pb-16">

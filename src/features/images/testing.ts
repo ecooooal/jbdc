@@ -1,15 +1,8 @@
-import { createHash } from 'node:crypto';
-import {
-  copyFileSync,
-  existsSync,
-  mkdirSync,
-  mkdtempSync,
-  readFileSync,
-  rmSync,
-} from 'node:fs';
-import { tmpdir } from 'node:os';
-import { extname, join } from 'node:path';
-import type { ImageFile, ImageStore } from './lib/image-store';
+import { createHash } from "node:crypto";
+import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { extname, join } from "node:path";
+import type { ImageFile, ImageStore } from "./lib/image-store";
 
 /**
  * The test adapter for the Image store port: a real temp directory on disk.
@@ -23,7 +16,7 @@ export function createTempImageStore(): {
   directory: string;
   dispose: () => void;
 } {
-  const directory = mkdtempSync(join(tmpdir(), 'jbdc-images-'));
+  const directory = mkdtempSync(join(tmpdir(), "jbdc-images-"));
 
   mkdirSync(directory, { recursive: true });
 
@@ -34,7 +27,7 @@ export function createTempImageStore(): {
     store: {
       copy(sourcePath) {
         const file: ImageFile = {
-          contentHash: createHash('sha256').update(readFileSync(sourcePath)).digest('hex'),
+          contentHash: createHash("sha256").update(readFileSync(sourcePath)).digest("hex"),
           extension: extname(sourcePath).slice(1).toLowerCase(),
         };
 

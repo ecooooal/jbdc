@@ -1,20 +1,20 @@
-import { desc, eq, sql } from 'drizzle-orm';
+import { desc, eq, sql } from "drizzle-orm";
 import type {
   Database,
   DatabaseHandle,
   DesignEventKind,
   ImageKind,
   LiveReadDeclaration,
-} from '@/features/database';
-import { categories, collections, declareLiveRead, designEvents } from '@/features/database';
-import { readTaxonomyNames, type TaxonomyNames } from '@/features/taxonomy';
+} from "@/features/database";
+import { categories, collections, declareLiveRead, designEvents } from "@/features/database";
+import { readTaxonomyNames, type TaxonomyNames } from "@/features/taxonomy";
 import {
   DESIGN_EDITABLE_FIELDS,
   type DesignEditableField,
   type DesignFields,
   type MaterialUse,
   type MaterialUsesPair,
-} from '@/features/designs';
+} from "@/features/designs";
 
 /** What one field was before an edit and what it became. Null means empty. */
 export type DesignFieldChange = {
@@ -23,7 +23,7 @@ export type DesignFieldChange = {
 };
 
 /** One Material use a visit added, removed, or corrected, as History reads it back. */
-export type RecordedMaterialUse = Omit<MaterialUse, 'designId' | 'createdAt'>;
+export type RecordedMaterialUse = Omit<MaterialUse, "designId" | "createdAt">;
 
 /** A corrected Material use: what it was before the visit and what it became. */
 export type MaterialUseCorrection = {
@@ -106,7 +106,7 @@ export type DesignEvent = {
 };
 
 /** A stored Event row, before its JSON diff is parsed. */
-type DesignEventRow = Omit<DesignEvent, 'diff'> & {
+type DesignEventRow = Omit<DesignEvent, "diff"> & {
   diff: string | null;
 };
 
@@ -115,10 +115,7 @@ type DesignEventRow = Omit<DesignEvent, 'diff'> & {
  * its old and new value, or null when the visit changed nothing. Pure, so
  * coalescing is tested without a screen or a database (ADR-0004).
  */
-export function diffDesignFields(
-  before: DesignFields,
-  after: DesignFields
-): DesignEditDiff | null {
+export function diffDesignFields(before: DesignFields, after: DesignFields): DesignEditDiff | null {
   const diff: DesignEditDiff = {};
 
   for (const field of DESIGN_EDITABLE_FIELDS) {
@@ -151,7 +148,7 @@ function materialUseChangeOf(materialUse: MaterialUse): RecordedMaterialUse {
  */
 export function diffMaterialUses(
   before: readonly MaterialUse[],
-  after: readonly MaterialUse[]
+  after: readonly MaterialUse[],
 ): MaterialUsesDiff | null {
   const beforeById = new Map(before.map((materialUse) => [materialUse.id, materialUse]));
   const afterById = new Map(after.map((materialUse) => [materialUse.id, materialUse]));
@@ -302,7 +299,7 @@ export function recordEdit(
   database: Database,
   designId: string,
   visit: Visit,
-  now: number = Date.now()
+  now: number = Date.now(),
 ): DesignEvent | null {
   const diff: DesignEditDiff = diffDesignFields(visit.before, visit.after) ?? {};
   const materials = visit.materialUses
@@ -316,7 +313,7 @@ export function recordEdit(
   const event: DesignEvent = {
     id: database.newId(),
     designId,
-    kind: 'edit',
+    kind: "edit",
     reason: null,
     potentialImprovements: null,
     diff,
@@ -356,14 +353,14 @@ export function recordImageChange(
     designId,
     changes,
     createdAt,
-  }: { id: string; designId: string; changes: ImageChangeDiff; createdAt: number }
+  }: { id: string; designId: string; changes: ImageChangeDiff; createdAt: number },
 ): DesignEvent | null {
   if (isEmptyImageChange(changes)) return null;
 
   const event: DesignEvent = {
     id,
     designId,
-    kind: 'image_change',
+    kind: "image_change",
     reason: null,
     potentialImprovements: null,
     diff: { images: changes },

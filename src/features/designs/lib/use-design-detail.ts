@@ -1,6 +1,6 @@
-import { useMemo } from 'react';
-import { useLiveRead, type LiveReadFields } from '@/features/database/react';
-import { designDetailRead, type DesignDetailRows } from './records';
+import { useMemo } from "react";
+import { useLiveRead, type LiveReadFields } from "@/features/database/react";
+import { designDetailRead, type DesignDetailRows } from "./records";
 
 /** One Design's Detail plus the shared status. */
 export type DesignDetailResult = DesignDetailRows & LiveReadFields;

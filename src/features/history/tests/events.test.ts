@@ -4,11 +4,11 @@ import {
   designEvents,
   type Database,
   type LiveReadTable,
-} from '@/features/database';
-import { createTempDatabase } from '@/features/database/testing';
-import { expectLiveReadReruns } from '@/features/database/testing-live';
-import type { DesignFields, MaterialUse } from '@/features/designs';
-import { createDesign, writeDesign } from '@/features/designs';
+} from "@/features/database";
+import { createTempDatabase } from "@/features/database/testing";
+import { expectLiveReadReruns } from "@/features/database/testing-live";
+import type { DesignFields, MaterialUse } from "@/features/designs";
+import { createDesign, writeDesign } from "@/features/designs";
 import {
   designHistoryRead,
   diffDesignFields,
@@ -16,30 +16,30 @@ import {
   listDesignEvents,
   materialUseLines,
   recordEdit,
-} from '@/features/history';
-import { createMaterial } from '@/features/materials';
-import { createCategory, createCollection } from '@/features/taxonomy';
+} from "@/features/history";
+import { createMaterial } from "@/features/materials";
+import { createCategory, createCollection } from "@/features/taxonomy";
 
 /** Seeds a recorded use through the visit's one write path. */
 function addMaterialUse(
-  database: ReturnType<typeof createTempDatabase>['database'],
+  database: ReturnType<typeof createTempDatabase>["database"],
   designId: string,
-  input: { materialId: string; colour: string; role: 'main' | 'secondary' | 'other' },
-  now?: number
+  input: { materialId: string; colour: string; role: "main" | "secondary" | "other" },
+  now?: number,
 ): MaterialUse | null {
-  const result = writeDesign(database, designId, { uses: [{ kind: 'add', input }] }, now);
+  const result = writeDesign(database, designId, { uses: [{ kind: "add", input }] }, now);
 
-  if (result.kind !== 'stored') return null;
+  if (result.kind !== "stored") return null;
 
   const outcome = result.outcomes[0];
 
-  return outcome?.kind === 'add' ? outcome.materialUse : null;
+  return outcome?.kind === "add" ? outcome.materialUse : null;
 }
 
 const BEFORE: DesignFields = {
-  name: 'Silk slip dress',
-  description: 'Bias cut',
-  categoryId: 'category-dress',
+  name: "Silk slip dress",
+  description: "Bias cut",
+  categoryId: "category-dress",
   collectionId: null,
   silhouette: null,
   neckline: null,
@@ -58,12 +58,12 @@ const BEFORE: DesignFields = {
 };
 
 const WOOL_USE: MaterialUse = {
-  id: 'use-wool',
-  designId: 'design-silk-slip',
-  materialId: 'material-wool',
-  materialName: 'Wool',
-  colour: 'Charcoal',
-  role: 'main',
+  id: "use-wool",
+  designId: "design-silk-slip",
+  materialId: "material-wool",
+  materialName: "Wool",
+  colour: "Charcoal",
+  role: "main",
   createdAt: 10,
 };
 
@@ -78,8 +78,8 @@ function changeOf(materialUse: MaterialUse) {
   };
 }
 
-describe('the History live read', () => {
-  let database: ReturnType<typeof createTempDatabase>['database'];
+describe("the History live read", () => {
+  let database: ReturnType<typeof createTempDatabase>["database"];
   let dispose: () => void;
 
   beforeEach(() => {
@@ -90,29 +90,34 @@ describe('the History live read', () => {
     dispose();
   });
 
-  test('keeps its declared default and matches the direct read', () => {
-    const declaration = designHistoryRead('design-silk-slip');
+  test("keeps its declared default and matches the direct read", () => {
+    const declaration = designHistoryRead("design-silk-slip");
 
     expect(declaration.empty).toEqual({
       events: [],
       taxonomy: { categories: new Map(), collections: new Map() },
     });
     expect(declaration.read(database).events).toEqual(
-      listDesignEvents(database, 'design-silk-slip')
+      listDesignEvents(database, "design-silk-slip"),
     );
   });
 
-  test('re-runs when any table it reads changes', async () => {
-    const design = createDesign(database, { name: 'Silk slip dress' }, 10);
+  test("re-runs when any table it reads changes", async () => {
+    const design = createDesign(database, { name: "Silk slip dress" }, 10);
     const declaration = designHistoryRead(design.id);
     const writes = new Map<LiveReadTable, (db: Database) => void>([
       [
         designEvents,
         (db) =>
-          recordEdit(db, design.id, { before: BEFORE, after: { ...BEFORE, name: 'Wool coat' } }, 20),
+          recordEdit(
+            db,
+            design.id,
+            { before: BEFORE, after: { ...BEFORE, name: "Wool coat" } },
+            20,
+          ),
       ],
-      [categories, (db) => createCategory(db, { name: 'Knitwear' })],
-      [collections, (db) => createCollection(db, { name: 'Spring 2027', year: 2027 })],
+      [categories, (db) => createCategory(db, { name: "Knitwear" })],
+      [collections, (db) => createCollection(db, { name: "Spring 2027", year: 2027 })],
     ]);
 
     for (const [table, write] of writes) {
@@ -121,90 +126,90 @@ describe('the History live read', () => {
   });
 });
 
-describe('diffDesignFields', () => {
-  test('nothing changed is no diff at all', () => {
+describe("diffDesignFields", () => {
+  test("nothing changed is no diff at all", () => {
     expect(diffDesignFields(BEFORE, { ...BEFORE })).toBeNull();
   });
 
-  test('names exactly the changed fields with their old and new values', () => {
+  test("names exactly the changed fields with their old and new values", () => {
     expect(
       diffDesignFields(BEFORE, {
         ...BEFORE,
-        name: 'Wool coat',
-        collectionId: 'collection-spring',
-      })
+        name: "Wool coat",
+        collectionId: "collection-spring",
+      }),
     ).toEqual({
-      name: { from: 'Silk slip dress', to: 'Wool coat' },
-      collectionId: { from: null, to: 'collection-spring' },
+      name: { from: "Silk slip dress", to: "Wool coat" },
+      collectionId: { from: null, to: "collection-spring" },
     });
   });
 
-  test('a field emptied records null as its new value', () => {
+  test("a field emptied records null as its new value", () => {
     expect(diffDesignFields(BEFORE, { ...BEFORE, description: null })).toEqual({
-      description: { from: 'Bias cut', to: null },
+      description: { from: "Bias cut", to: null },
     });
   });
 
-  test('a field filled in for the first time records null as its old value', () => {
-    expect(diffDesignFields(BEFORE, { ...BEFORE, collectionId: 'collection-spring' })).toEqual({
-      collectionId: { from: null, to: 'collection-spring' },
+  test("a field filled in for the first time records null as its old value", () => {
+    expect(diffDesignFields(BEFORE, { ...BEFORE, collectionId: "collection-spring" })).toEqual({
+      collectionId: { from: null, to: "collection-spring" },
     });
   });
 });
 
-describe('diffMaterialUses', () => {
-  test('records a use the visit added', () => {
+describe("diffMaterialUses", () => {
+  test("records a use the visit added", () => {
     expect(diffMaterialUses([], [WOOL_USE])).toEqual({ added: [changeOf(WOOL_USE)] });
   });
 
-  test('records a use the visit removed', () => {
+  test("records a use the visit removed", () => {
     expect(diffMaterialUses([WOOL_USE], [])).toEqual({ removed: [changeOf(WOOL_USE)] });
   });
 
-  test('records a use the visit corrected, with what it was and what it became', () => {
-    const blackWool: MaterialUse = { ...WOOL_USE, colour: 'Black', role: 'secondary' };
+  test("records a use the visit corrected, with what it was and what it became", () => {
+    const blackWool: MaterialUse = { ...WOOL_USE, colour: "Black", role: "secondary" };
 
     expect(diffMaterialUses([WOOL_USE], [blackWool])).toEqual({
       changed: [{ from: changeOf(WOOL_USE), to: changeOf(blackWool) }],
     });
   });
 
-  test('leaves an unchanged visit out', () => {
+  test("leaves an unchanged visit out", () => {
     expect(diffMaterialUses([WOOL_USE], [{ ...WOOL_USE }])).toBeNull();
   });
 });
 
-describe('materialUseLines', () => {
-  test('an added use reads as its name, colour, role, and change', () => {
+describe("materialUseLines", () => {
+  test("an added use reads as its name, colour, role, and change", () => {
     expect(materialUseLines({ added: [changeOf(WOOL_USE)] })).toEqual([
-      { key: `added:${WOOL_USE.id}`, text: 'Wool (Charcoal, main) added' },
+      { key: `added:${WOOL_USE.id}`, text: "Wool (Charcoal, main) added" },
     ]);
   });
 
-  test('a removed use reads as what was taken away', () => {
+  test("a removed use reads as what was taken away", () => {
     expect(materialUseLines({ removed: [changeOf(WOOL_USE)] })).toEqual([
-      { key: `removed:${WOOL_USE.id}`, text: 'Wool (Charcoal, main) removed' },
+      { key: `removed:${WOOL_USE.id}`, text: "Wool (Charcoal, main) removed" },
     ]);
   });
 
-  test('a corrected use reads from what it was to what it became', () => {
-    const blackWool: MaterialUse = { ...WOOL_USE, colour: 'Black', role: 'secondary' };
+  test("a corrected use reads from what it was to what it became", () => {
+    const blackWool: MaterialUse = { ...WOOL_USE, colour: "Black", role: "secondary" };
 
     expect(
       materialUseLines({
         changed: [{ from: changeOf(WOOL_USE), to: changeOf(blackWool) }],
-      })
+      }),
     ).toEqual([
       {
         key: `changed:${WOOL_USE.id}`,
-        text: 'Wool (Charcoal, main) changed to Wool (Black, secondary)',
+        text: "Wool (Charcoal, main) changed to Wool (Black, secondary)",
       },
     ]);
   });
 });
 
-describe('recordEdit', () => {
-  let database: ReturnType<typeof createTempDatabase>['database'];
+describe("recordEdit", () => {
+  let database: ReturnType<typeof createTempDatabase>["database"];
   let dispose: () => void;
 
   beforeEach(() => {
@@ -215,60 +220,60 @@ describe('recordEdit', () => {
     dispose();
   });
 
-  test('an edit visit appends one event whose diff reads as an object', () => {
-    const design = createDesign(database, { name: 'Silk slip dress' }, 10);
+  test("an edit visit appends one event whose diff reads as an object", () => {
+    const design = createDesign(database, { name: "Silk slip dress" }, 10);
 
     const event = recordEdit(
       database,
       design.id,
       {
         before: BEFORE,
-        after: { ...BEFORE, name: 'Wool coat', collectionId: 'collection-spring' },
+        after: { ...BEFORE, name: "Wool coat", collectionId: "collection-spring" },
       },
-      20
+      20,
     );
 
     expect(event).toMatchObject({
       designId: design.id,
-      kind: 'edit',
+      kind: "edit",
       reason: null,
       potentialImprovements: null,
       diff: {
-        name: { from: 'Silk slip dress', to: 'Wool coat' },
-        collectionId: { from: null, to: 'collection-spring' },
+        name: { from: "Silk slip dress", to: "Wool coat" },
+        collectionId: { from: null, to: "collection-spring" },
       },
       createdAt: 20,
     });
     expect(listDesignEvents(database, design.id)).toEqual([event]);
   });
 
-  test('one visit that changes fields and Material uses writes one Event carrying both', () => {
-    const design = createDesign(database, { name: 'Silk slip dress' }, 10);
-    const silk = createMaterial(database, { name: 'Silk crêpe' });
+  test("one visit that changes fields and Material uses writes one Event carrying both", () => {
+    const design = createDesign(database, { name: "Silk slip dress" }, 10);
+    const silk = createMaterial(database, { name: "Silk crêpe" });
     const ivory = addMaterialUse(
       database,
       design.id,
-      { materialId: silk.id, colour: 'Ivory', role: 'main' },
-      15
+      { materialId: silk.id, colour: "Ivory", role: "main" },
+      15,
     );
 
-    if (!ivory) throw new Error('the Material use should have been written');
+    if (!ivory) throw new Error("the Material use should have been written");
 
-    const black = { ...ivory, colour: 'Black' };
+    const black = { ...ivory, colour: "Black" };
 
     const event = recordEdit(
       database,
       design.id,
       {
         before: BEFORE,
-        after: { ...BEFORE, name: 'Wool coat' },
+        after: { ...BEFORE, name: "Wool coat" },
         materialUses: { before: [ivory], after: [black] },
       },
-      20
+      20,
     );
 
     expect(event?.diff).toEqual({
-      name: { from: 'Silk slip dress', to: 'Wool coat' },
+      name: { from: "Silk slip dress", to: "Wool coat" },
       materials: {
         changed: [{ from: changeOf(ivory), to: changeOf(black) }],
       },
@@ -276,23 +281,23 @@ describe('recordEdit', () => {
     expect(listDesignEvents(database, design.id)).toEqual([event]);
   });
 
-  test('a visit that only adds a Material use still writes one event', () => {
-    const design = createDesign(database, { name: 'Silk slip dress' }, 10);
-    const wool = createMaterial(database, { name: 'Wool' });
+  test("a visit that only adds a Material use still writes one event", () => {
+    const design = createDesign(database, { name: "Silk slip dress" }, 10);
+    const wool = createMaterial(database, { name: "Wool" });
     const materialUse = addMaterialUse(
       database,
       design.id,
-      { materialId: wool.id, colour: 'Charcoal', role: 'main' },
-      20
+      { materialId: wool.id, colour: "Charcoal", role: "main" },
+      20,
     );
 
-    if (!materialUse) throw new Error('the Material use should have been written');
+    if (!materialUse) throw new Error("the Material use should have been written");
 
     const event = recordEdit(
       database,
       design.id,
       { before: BEFORE, after: BEFORE, materialUses: { before: [], after: [materialUse] } },
-      30
+      30,
     );
 
     expect(event?.diff).toEqual({
@@ -301,28 +306,28 @@ describe('recordEdit', () => {
           {
             id: materialUse.id,
             materialId: wool.id,
-            materialName: 'Wool',
-            colour: 'Charcoal',
-            role: 'main',
+            materialName: "Wool",
+            colour: "Charcoal",
+            role: "main",
           },
         ],
       },
     });
   });
 
-  test('an Event written before the materials key still reads its Material use', () => {
-    const design = createDesign(database, { name: 'Silk slip dress' }, 10);
+  test("an Event written before the materials key still reads its Material use", () => {
+    const design = createDesign(database, { name: "Silk slip dress" }, 10);
 
     database.db
       .insert(designEvents)
       .values({
-        id: 'event-old',
+        id: "event-old",
         designId: design.id,
-        kind: 'edit',
+        kind: "edit",
         reason: null,
         potentialImprovements: null,
         diff: JSON.stringify({
-          name: { from: 'Silk slip dress', to: 'Wool coat' },
+          name: { from: "Silk slip dress", to: "Wool coat" },
           materialUses: { added: [changeOf(WOOL_USE)] },
         }),
         createdAt: 20,
@@ -330,20 +335,22 @@ describe('recordEdit', () => {
       .run();
 
     expect(listDesignEvents(database, design.id)[0].diff).toEqual({
-      name: { from: 'Silk slip dress', to: 'Wool coat' },
+      name: { from: "Silk slip dress", to: "Wool coat" },
       materials: { added: [changeOf(WOOL_USE)] },
     });
   });
 
-  test('a visit that changed nothing writes no event', () => {
-    const design = createDesign(database, { name: 'Silk slip dress' }, 10);
+  test("a visit that changed nothing writes no event", () => {
+    const design = createDesign(database, { name: "Silk slip dress" }, 10);
 
-    expect(recordEdit(database, design.id, { before: BEFORE, after: { ...BEFORE } }, 20)).toBeNull();
+    expect(
+      recordEdit(database, design.id, { before: BEFORE, after: { ...BEFORE } }, 20),
+    ).toBeNull();
     expect(listDesignEvents(database, design.id)).toEqual([]);
   });
 
-  test('an unchanged Material uses pair writes no event either', () => {
-    const design = createDesign(database, { name: 'Silk slip dress' }, 10);
+  test("an unchanged Material uses pair writes no event either", () => {
+    const design = createDesign(database, { name: "Silk slip dress" }, 10);
 
     expect(
       recordEdit(
@@ -354,55 +361,68 @@ describe('recordEdit', () => {
           after: { ...BEFORE },
           materialUses: { before: [WOOL_USE], after: [WOOL_USE] },
         },
-        20
-      )
+        20,
+      ),
     ).toBeNull();
     expect(listDesignEvents(database, design.id)).toEqual([]);
   });
 
-  test('two visits are two events, both kept as written', () => {
-    const design = createDesign(database, { name: 'Silk slip dress' }, 10);
-    const renamed = { ...BEFORE, name: 'Silk slip' };
+  test("two visits are two events, both kept as written", () => {
+    const design = createDesign(database, { name: "Silk slip dress" }, 10);
+    const renamed = { ...BEFORE, name: "Silk slip" };
 
     recordEdit(database, design.id, { before: BEFORE, after: renamed }, 20);
-    recordEdit(database, design.id, { before: renamed, after: { ...renamed, description: 'Heavy twill' } }, 30);
+    recordEdit(
+      database,
+      design.id,
+      { before: renamed, after: { ...renamed, description: "Heavy twill" } },
+      30,
+    );
 
     expect(listDesignEvents(database, design.id).map((event) => event.diff)).toEqual([
-      { description: { from: 'Bias cut', to: 'Heavy twill' } },
-      { name: { from: 'Silk slip dress', to: 'Silk slip' } },
+      { description: { from: "Bias cut", to: "Heavy twill" } },
+      { name: { from: "Silk slip dress", to: "Silk slip" } },
     ]);
   });
 
-  test('reads newest first', () => {
-    const design = createDesign(database, { name: 'Silk slip dress' }, 10);
-    const renamed = { ...BEFORE, name: 'Silk slip' };
+  test("reads newest first", () => {
+    const design = createDesign(database, { name: "Silk slip dress" }, 10);
+    const renamed = { ...BEFORE, name: "Silk slip" };
 
     recordEdit(database, design.id, { before: BEFORE, after: renamed }, 20);
-    recordEdit(database, design.id, { before: renamed, after: { ...renamed, name: 'Silk slip dress' } }, 30);
+    recordEdit(
+      database,
+      design.id,
+      { before: renamed, after: { ...renamed, name: "Silk slip dress" } },
+      30,
+    );
 
-    expect(listDesignEvents(database, design.id).map((event) => event.createdAt)).toEqual([
-      30, 20,
-    ]);
+    expect(listDesignEvents(database, design.id).map((event) => event.createdAt)).toEqual([30, 20]);
   });
 
-  test('two events in the same millisecond read in the order they were written', () => {
-    const design = createDesign(database, { name: 'Silk slip dress' }, 10);
-    const renamed = { ...BEFORE, name: 'Silk slip' };
+  test("two events in the same millisecond read in the order they were written", () => {
+    const design = createDesign(database, { name: "Silk slip dress" }, 10);
+    const renamed = { ...BEFORE, name: "Silk slip" };
 
     recordEdit(database, design.id, { before: BEFORE, after: renamed }, 20);
-    recordEdit(database, design.id, { before: renamed, after: { ...renamed, name: 'Silk slip dress' } }, 20);
+    recordEdit(
+      database,
+      design.id,
+      { before: renamed, after: { ...renamed, name: "Silk slip dress" } },
+      20,
+    );
 
     expect(listDesignEvents(database, design.id).map((event) => event.diff)).toEqual([
-      { name: { from: 'Silk slip', to: 'Silk slip dress' } },
-      { name: { from: 'Silk slip dress', to: 'Silk slip' } },
+      { name: { from: "Silk slip", to: "Silk slip dress" } },
+      { name: { from: "Silk slip dress", to: "Silk slip" } },
     ]);
   });
 
-  test('events of one design are kept apart from another design', () => {
-    const first = createDesign(database, { name: 'Silk slip dress' }, 10);
-    const second = createDesign(database, { name: 'Wool coat' }, 10);
+  test("events of one design are kept apart from another design", () => {
+    const first = createDesign(database, { name: "Silk slip dress" }, 10);
+    const second = createDesign(database, { name: "Wool coat" }, 10);
 
-    recordEdit(database, first.id, { before: BEFORE, after: { ...BEFORE, name: 'Silk slip' } }, 20);
+    recordEdit(database, first.id, { before: BEFORE, after: { ...BEFORE, name: "Silk slip" } }, 20);
 
     expect(listDesignEvents(database, second.id)).toEqual([]);
   });

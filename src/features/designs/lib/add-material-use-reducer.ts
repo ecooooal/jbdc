@@ -1,10 +1,10 @@
-import type { MaterialUseRole } from '@/features/database';
+import type { MaterialUseRole } from "@/features/database";
 import {
   createInitialInlineCreationState,
   type InlineCreationEvent,
   type InlineCreationState,
   inlineCreationReducer,
-} from './inline-creation-reducer';
+} from "./inline-creation-reducer";
 
 /**
  * The add-Material-use editor's decisions: the Material chosen or created
@@ -22,17 +22,17 @@ export type AddMaterialUseState = {
 };
 
 export type AddMaterialUseEvent =
-  | { type: 'material-chosen'; materialId: string | null }
-  | { type: 'colour-changed'; colour: string }
-  | { type: 'role-chosen'; role: MaterialUseRole }
-  | { type: 'inline-fact'; fact: InlineCreationEvent }
-  | { type: 'use-creation-refused'; message: string };
+  | { type: "material-chosen"; materialId: string | null }
+  | { type: "colour-changed"; colour: string }
+  | { type: "role-chosen"; role: MaterialUseRole }
+  | { type: "inline-fact"; fact: InlineCreationEvent }
+  | { type: "use-creation-refused"; message: string };
 
 export function createInitialAddMaterialUseState(): AddMaterialUseState {
   return {
     materialId: null,
-    colour: '',
-    role: 'main',
+    colour: "",
+    role: "main",
     inline: createInitialInlineCreationState(),
     error: null,
   };
@@ -51,25 +51,25 @@ export function canAddMaterialUse(state: AddMaterialUseState): boolean {
  */
 export function addMaterialUseReducer(
   state: AddMaterialUseState,
-  event: AddMaterialUseEvent
+  event: AddMaterialUseEvent,
 ): AddMaterialUseState {
   switch (event.type) {
-    case 'material-chosen':
+    case "material-chosen":
       return { ...state, materialId: event.materialId, error: null };
-    case 'colour-changed':
+    case "colour-changed":
       return { ...state, colour: event.colour, error: null };
-    case 'role-chosen':
+    case "role-chosen":
       return { ...state, role: event.role };
-    case 'inline-fact': {
+    case "inline-fact": {
       const inline = inlineCreationReducer(state.inline, event.fact);
 
-      if (event.fact.type !== 'created') return { ...state, inline };
+      if (event.fact.type !== "created") return { ...state, inline };
 
       // The slice only reports an id; selecting it and clearing a stale use
       // refusal are this editor's decisions.
       return { ...state, inline, materialId: event.fact.id, error: null };
     }
-    case 'use-creation-refused':
+    case "use-creation-refused":
       return { ...state, error: event.message };
   }
 }

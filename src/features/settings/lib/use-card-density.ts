@@ -1,6 +1,6 @@
-import { useCallback, useState } from 'react';
-import { useDatabase } from '@/features/database/react';
-import { createSettings, type CardDensity } from './settings';
+import { useCallback, useState } from "react";
+import { useDatabase } from "@/features/database/react";
+import { createSettings, type CardDensity } from "./settings";
 
 export type CardDensityState = {
   density: CardDensity;
@@ -23,7 +23,7 @@ export function useCardDensity(): CardDensityState {
       settings.setCardDensity(next);
       setDensity(next);
     },
-    [settings]
+    [settings],
   );
 
   return { density, setDensity: chooseDensity };

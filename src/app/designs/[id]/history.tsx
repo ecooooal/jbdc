@@ -1,5 +1,5 @@
-import { useLocalSearchParams } from 'expo-router';
-import { HistoryScreen } from '@/features/history/react';
+import { useLocalSearchParams } from "expo-router";
+import { HistoryScreen } from "@/features/history/react";
 
 export default function DesignHistoryRoute() {
   const { id } = useLocalSearchParams<{ id: string }>();

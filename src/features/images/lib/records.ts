@@ -1,4 +1,4 @@
-import { and, count, eq, isNull } from 'drizzle-orm';
+import { and, count, eq, isNull } from "drizzle-orm";
 import {
   designs,
   images,
@@ -6,20 +6,16 @@ import {
   type Database,
   type DatabaseHandle,
   type ImageKind,
-} from '@/features/database';
-import {
-  recordImageChange,
-  type DesignEvent,
-  type RecordedImage,
-} from '@/features/history';
-import type { Image } from './images';
-import type { ImageFile, ImageStore } from './image-store';
+} from "@/features/database";
+import { recordImageChange, type DesignEvent, type RecordedImage } from "@/features/history";
+import type { Image } from "./images";
+import type { ImageFile, ImageStore } from "./image-store";
 
 /** The image kinds, for the runtime check a caller outside TypeScript can reach. */
 const KINDS: readonly string[] = IMAGE_KINDS;
 
-const EMPTY_ATTACH_MESSAGE = 'Choose at least one image.';
-const UNKNOWN_KIND_MESSAGE = 'An image needs one of the four kinds.';
+const EMPTY_ATTACH_MESSAGE = "Choose at least one image.";
+const UNKNOWN_KIND_MESSAGE = "An image needs one of the four kinds.";
 
 /** One file to attach, with the kind the owner chose for it. */
 export type ImageAttach = {
@@ -34,9 +30,9 @@ export type ImageAttach = {
  * action and records one Event.
  */
 export type ImageChange =
-  | { kind: 'attach'; images: readonly ImageAttach[] }
-  | { kind: 'reclassify'; imageId: string; to: ImageKind }
-  | { kind: 'remove'; imageId: string };
+  | { kind: "attach"; images: readonly ImageAttach[] }
+  | { kind: "reclassify"; imageId: string; to: ImageKind }
+  | { kind: "remove"; imageId: string };
 
 /**
  * What one image write produced: the Design's images after it, and the one
@@ -44,10 +40,10 @@ export type ImageChange =
  * refused it, or the row it could not find.
  */
 export type ImageWriteResult =
-  | { kind: 'stored'; images: Image[]; event: DesignEvent | null }
-  | { kind: 'refused'; field: 'images' | 'kind'; message: string }
-  | { kind: 'design-missing' }
-  | { kind: 'image-missing'; imageId: string };
+  | { kind: "stored"; images: Image[]; event: DesignEvent | null }
+  | { kind: "refused"; field: "images" | "kind"; message: string }
+  | { kind: "design-missing" }
+  | { kind: "image-missing"; imageId: string };
 
 /** The one image record History keeps in an Event's diff. */
 function recorded(image: Image): RecordedImage {
@@ -100,9 +96,7 @@ function references(db: DatabaseHandle, file: ImageFile): number {
     db
       .select({ count: count() })
       .from(images)
-      .where(
-        and(eq(images.contentHash, file.contentHash), eq(images.extension, file.extension))
-      )
+      .where(and(eq(images.contentHash, file.contentHash), eq(images.extension, file.extension)))
       .get()?.count ?? 0
   );
 }
@@ -125,25 +119,25 @@ export function writeImages(
   store: ImageStore,
   designId: string,
   change: ImageChange,
-  now: number = Date.now()
+  now: number = Date.now(),
 ): ImageWriteResult {
   // A refusal is decided before anything is copied or written, so a refused
   // write leaves the store and the catalog exactly as they were.
-  if (change.kind === 'attach') {
+  if (change.kind === "attach") {
     if (change.images.length === 0) {
-      return { kind: 'refused', field: 'images', message: EMPTY_ATTACH_MESSAGE };
+      return { kind: "refused", field: "images", message: EMPTY_ATTACH_MESSAGE };
     }
 
     if (change.images.some((attach) => !KINDS.includes(attach.kind))) {
-      return { kind: 'refused', field: 'kind', message: UNKNOWN_KIND_MESSAGE };
+      return { kind: "refused", field: "kind", message: UNKNOWN_KIND_MESSAGE };
     }
   }
 
-  if (change.kind === 'reclassify' && !KINDS.includes(change.to)) {
-    return { kind: 'refused', field: 'kind', message: UNKNOWN_KIND_MESSAGE };
+  if (change.kind === "reclassify" && !KINDS.includes(change.to)) {
+    return { kind: "refused", field: "kind", message: UNKNOWN_KIND_MESSAGE };
   }
 
-  if (change.kind === 'attach') {
+  if (change.kind === "attach") {
     // Copy before opening the transaction: a missing source fails here, so no
     // image row can point at a file the store does not have.
     const files: ImageFile[] = [];
@@ -167,7 +161,7 @@ export function writeImages(
         // another Design already uses stays.
         for (const file of files) releaseIfUnreferenced(tx, store, file);
 
-        return { kind: 'design-missing' };
+        return { kind: "design-missing" };
       }
 
       const stored = change.images.map((attach, index): Image => {
@@ -195,22 +189,22 @@ export function writeImages(
         createdAt: now,
       });
 
-      return { kind: 'stored', images: imagesFrom(tx, designId), event };
+      return { kind: "stored", images: imagesFrom(tx, designId), event };
     });
   }
 
   return database.transaction((tx) => {
-    if (!designExists(tx, designId)) return { kind: 'design-missing' };
+    if (!designExists(tx, designId)) return { kind: "design-missing" };
 
     const image = imageFrom(tx, designId, change.imageId);
 
-    if (!image) return { kind: 'image-missing', imageId: change.imageId };
+    if (!image) return { kind: "image-missing", imageId: change.imageId };
 
-    if (change.kind === 'reclassify') {
+    if (change.kind === "reclassify") {
       // The same kind again is not a structural change: no row, no Event, and
       // no moved `updatedAt`.
       if (image.kind === change.to) {
-        return { kind: 'stored', images: imagesFrom(tx, designId), event: null };
+        return { kind: "stored", images: imagesFrom(tx, designId), event: null };
       }
 
       const to: Image = { ...image, kind: change.to };
@@ -225,7 +219,7 @@ export function writeImages(
         createdAt: now,
       });
 
-      return { kind: 'stored', images: imagesFrom(tx, designId), event };
+      return { kind: "stored", images: imagesFrom(tx, designId), event };
     }
 
     tx.delete(images).where(eq(images.id, image.id)).run();
@@ -243,7 +237,7 @@ export function writeImages(
       extension: image.extension,
     });
 
-    return { kind: 'stored', images: imagesFrom(tx, designId), event };
+    return { kind: "stored", images: imagesFrom(tx, designId), event };
   });
 }
 

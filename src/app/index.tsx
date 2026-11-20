@@ -1,3 +1,3 @@
-import { LibraryScreen } from '@/features/library/react';
+import { LibraryScreen } from "@/features/library/react";
 
 export default LibraryScreen;

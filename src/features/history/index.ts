@@ -15,9 +15,9 @@ export {
   materialUseLines,
   recordEdit,
   recordImageChange,
-} from './lib/events';
-export { DESIGN_HISTORY_SECTIONS } from './lib/sections';
-export type { DesignHistorySection, DesignHistorySectionDefinition } from './lib/sections';
+} from "./lib/events";
+export { DESIGN_HISTORY_SECTIONS } from "./lib/sections";
+export type { DesignHistorySection, DesignHistorySectionDefinition } from "./lib/sections";
 export type {
   DesignEditDiff,
   DesignEvent,
@@ -31,4 +31,4 @@ export type {
   RecordedImage,
   RecordedMaterialUse,
   Visit,
-} from './lib/events';
+} from "./lib/events";

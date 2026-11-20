@@ -3,15 +3,11 @@
  * validation, identity and timestamps on create, and the `search_text` every
  * write rebuilds.
  */
-export {
-  DESIGN_EDITABLE_FIELDS,
-  DESIGN_IDENTITY_FIELDS,
-  designFieldLabel,
-} from './lib/fields';
-export type { DesignEditableField } from './lib/fields';
-export { DESIGN_SECTIONS, isDesignSectionTab } from './lib/sections';
-export type { DesignSectionTab } from './lib/sections';
-export { materialUseRoleLabel } from './lib/material-use-role';
+export { DESIGN_EDITABLE_FIELDS, DESIGN_IDENTITY_FIELDS, designFieldLabel } from "./lib/fields";
+export type { DesignEditableField } from "./lib/fields";
+export { DESIGN_SECTIONS, isDesignSectionTab } from "./lib/sections";
+export type { DesignSectionTab } from "./lib/sections";
+export { materialUseRoleLabel } from "./lib/material-use-role";
 export {
   createDesign,
   designDetailRead,
@@ -23,7 +19,7 @@ export {
   listDesigns,
   listMaterialUses,
   writeDesign,
-} from './lib/records';
+} from "./lib/records";
 export type {
   AddMaterialUseInput,
   ChangeOutcome,
@@ -39,5 +35,5 @@ export type {
   MaterialUsesPair,
   UpdateDesignInput,
   UpdateMaterialUseInput,
-} from './lib/records';
-export { designStatusLabel } from './lib/status';
+} from "./lib/records";
+export { designStatusLabel } from "./lib/status";

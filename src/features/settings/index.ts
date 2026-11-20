@@ -6,5 +6,5 @@ export {
   cardDensityFrom,
   createSettings,
   DEFAULT_CARD_DENSITY,
-} from './lib/settings';
-export type { CardDensity, Settings } from './lib/settings';
+} from "./lib/settings";
+export type { CardDensity, Settings } from "./lib/settings";

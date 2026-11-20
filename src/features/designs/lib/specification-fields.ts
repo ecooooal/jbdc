@@ -9,47 +9,47 @@
  */
 export const SPECIFICATION_FIELDS = [
   {
-    field: 'silhouette',
-    label: 'Silhouette',
-    placeholder: 'Overall clothing shape',
+    field: "silhouette",
+    label: "Silhouette",
+    placeholder: "Overall clothing shape",
     multiline: false,
   },
   {
-    field: 'neckline',
-    label: 'Neckline',
-    placeholder: 'Neckline design',
+    field: "neckline",
+    label: "Neckline",
+    placeholder: "Neckline design",
     multiline: false,
   },
   {
-    field: 'sleeveType',
-    label: 'Sleeve type',
-    placeholder: 'Sleeve construction',
+    field: "sleeveType",
+    label: "Sleeve type",
+    placeholder: "Sleeve construction",
     multiline: false,
   },
   {
-    field: 'garmentDetails',
-    label: 'Garment details',
-    placeholder: 'Pockets, buttons, zippers, pleats, etc.',
+    field: "garmentDetails",
+    label: "Garment details",
+    placeholder: "Pockets, buttons, zippers, pleats, etc.",
     multiline: true,
   },
   {
-    field: 'sizeRange',
-    label: 'Size range',
-    placeholder: 'Intended size range',
+    field: "sizeRange",
+    label: "Size range",
+    placeholder: "Intended size range",
     multiline: false,
   },
   {
-    field: 'measurements',
-    label: 'Measurements',
-    placeholder: 'Relevant clothing measurements',
+    field: "measurements",
+    label: "Measurements",
+    placeholder: "Relevant clothing measurements",
     multiline: true,
   },
   {
-    field: 'constructionNotes',
-    label: 'Construction notes',
-    placeholder: 'Additional production or sewing notes',
+    field: "constructionNotes",
+    label: "Construction notes",
+    placeholder: "Additional production or sewing notes",
     multiline: true,
   },
 ] as const;
 
-export type SpecificationField = (typeof SPECIFICATION_FIELDS)[number]['field'];
+export type SpecificationField = (typeof SPECIFICATION_FIELDS)[number]["field"];

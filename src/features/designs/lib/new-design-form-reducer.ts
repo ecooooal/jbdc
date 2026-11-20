@@ -1,14 +1,14 @@
-import { designNameProblem } from './limits';
+import { designNameProblem } from "./limits";
 import {
   clearInlineRefusal,
   createInitialInlineCreationState,
   type InlineCreationEvent,
   type InlineCreationState,
   inlineCreationReducer,
-} from './inline-creation-reducer';
+} from "./inline-creation-reducer";
 
 /** Which picker the one inline creation panel belongs to. */
-export type InlineCreationKind = 'category' | 'collection';
+export type InlineCreationKind = "category" | "collection";
 
 export type NewDesignFormState = {
   name: string;
@@ -25,22 +25,22 @@ export type NewDesignFormState = {
 };
 
 export type NewDesignFormEvent =
-  | { type: 'name-changed'; name: string }
-  | { type: 'category-chosen'; categoryId: string | null }
-  | { type: 'collection-chosen'; collectionId: string | null }
-  | { type: 'inline-opened'; kind: InlineCreationKind }
-  | { type: 'inline-fact'; fact: InlineCreationEvent }
-  | { type: 'inline-year-changed'; year: string }
-  | { type: 'design-creation-refused'; message: string };
+  | { type: "name-changed"; name: string }
+  | { type: "category-chosen"; categoryId: string | null }
+  | { type: "collection-chosen"; collectionId: string | null }
+  | { type: "inline-opened"; kind: InlineCreationKind }
+  | { type: "inline-fact"; fact: InlineCreationEvent }
+  | { type: "inline-year-changed"; year: string }
+  | { type: "design-creation-refused"; message: string };
 
 export function createInitialNewDesignFormState(): NewDesignFormState {
   return {
-    name: '',
+    name: "",
     categoryId: null,
     collectionId: null,
     inline: createInitialInlineCreationState(),
     inlineKind: null,
-    inlineYear: '',
+    inlineYear: "",
     error: null,
   };
 }
@@ -75,23 +75,23 @@ export function collectionYearFromInput(input: string): number | null {
  */
 export function newDesignFormReducer(
   state: NewDesignFormState,
-  event: NewDesignFormEvent
+  event: NewDesignFormEvent,
 ): NewDesignFormState {
   switch (event.type) {
-    case 'name-changed':
+    case "name-changed":
       return { ...state, name: event.name, error: null };
-    case 'category-chosen':
+    case "category-chosen":
       return { ...state, categoryId: event.categoryId };
-    case 'collection-chosen':
+    case "collection-chosen":
       return { ...state, collectionId: event.collectionId };
-    case 'inline-opened':
+    case "inline-opened":
       return {
         ...state,
-        inline: inlineCreationReducer(state.inline, { type: 'opened' }),
+        inline: inlineCreationReducer(state.inline, { type: "opened" }),
         inlineKind: event.kind,
-        inlineYear: '',
+        inlineYear: "",
       };
-    case 'inline-fact': {
+    case "inline-fact": {
       const inline = inlineCreationReducer(state.inline, event.fact);
 
       if (inline.open) return { ...state, inline };
@@ -100,15 +100,15 @@ export function newDesignFormReducer(
       // field. A completed create also selects the id the slice reports; which
       // picker that id belongs to is this caller's, not the slice's.
       const selected =
-        event.fact.type === 'created' && state.inlineKind === 'category'
+        event.fact.type === "created" && state.inlineKind === "category"
           ? { categoryId: event.fact.id }
-          : event.fact.type === 'created' && state.inlineKind === 'collection'
+          : event.fact.type === "created" && state.inlineKind === "collection"
             ? { collectionId: event.fact.id }
             : {};
 
-      return { ...state, ...selected, inline, inlineKind: null, inlineYear: '' };
+      return { ...state, ...selected, inline, inlineKind: null, inlineYear: "" };
     }
-    case 'inline-year-changed':
+    case "inline-year-changed":
       return {
         ...state,
         inlineYear: event.year,
@@ -116,7 +116,7 @@ export function newDesignFormReducer(
         // slice's rule, so no unhappened name-change fact is invented here.
         inline: clearInlineRefusal(state.inline),
       };
-    case 'design-creation-refused':
+    case "design-creation-refused":
       return { ...state, error: event.message };
   }
 }

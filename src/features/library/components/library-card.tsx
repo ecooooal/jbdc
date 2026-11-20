@@ -1,15 +1,15 @@
-import { Image } from 'expo-image';
-import { Shirt } from 'lucide-react-native';
-import { Pressable, View } from 'react-native';
-import { designStatusLabel } from '@/features/designs';
-import { DesignStatusBadge } from '@/features/designs/react';
-import { useImageUri } from '@/features/images/react';
-import type { LibraryDesign } from '@/features/library';
-import type { CardDensity } from '@/features/settings';
-import { Card } from '@/shared/components/ui/card';
-import { Icon } from '@/shared/components/ui/icon';
-import { Text } from '@/shared/components/ui/text';
-import { cn } from '@/shared/lib/utils';
+import { Image } from "expo-image";
+import { Shirt } from "lucide-react-native";
+import { Pressable, View } from "react-native";
+import { designStatusLabel } from "@/features/designs";
+import { DesignStatusBadge } from "@/features/designs/react";
+import { useImageUri } from "@/features/images/react";
+import type { LibraryDesign } from "@/features/library";
+import type { CardDensity } from "@/features/settings";
+import { Card } from "@/shared/components/ui/card";
+import { Icon } from "@/shared/components/ui/icon";
+import { Text } from "@/shared/components/ui/text";
+import { cn } from "@/shared/lib/utils";
 
 function Meta({ value, placeholder }: { value: string | null; placeholder: string }) {
   return value ? (
@@ -52,7 +52,7 @@ function Cover({ design, className }: { design: LibraryDesign; className?: strin
     return (
       <View
         testID="cover-placeholder"
-        className={cn('bg-muted items-center justify-center', className)}
+        className={cn("bg-muted items-center justify-center", className)}
       >
         <Icon as={Shirt} className="text-muted-foreground size-5 opacity-60" />
       </View>
@@ -60,13 +60,13 @@ function Cover({ design, className }: { design: LibraryDesign; className?: strin
   }
 
   return (
-    <View className={cn('bg-muted overflow-hidden', className)}>
+    <View className={cn("bg-muted overflow-hidden", className)}>
       <Image
         testID="library-cover"
         source={{ uri }}
         accessibilityLabel={`Cover of ${design.name}`}
         contentFit="cover"
-        style={{ width: '100%', height: '100%' }}
+        style={{ width: "100%", height: "100%" }}
       />
     </View>
   );
@@ -93,16 +93,13 @@ function Tile({ design, density }: { design: LibraryDesign; density: Exclude<Car
   const compact = density === 4;
 
   return (
-    <Card className={cn('gap-0 overflow-hidden py-0', compact ? 'rounded-lg' : 'rounded-xl')}>
-      <Cover
-        design={design}
-        className={cn('w-full', compact ? 'aspect-square' : 'aspect-[4/5]')}
-      />
-      <View className={cn('gap-2', compact ? 'p-2' : 'p-3')}>
+    <Card className={cn("gap-0 overflow-hidden py-0", compact ? "rounded-lg" : "rounded-xl")}>
+      <Cover design={design} className={cn("w-full", compact ? "aspect-square" : "aspect-[4/5]")} />
+      <View className={cn("gap-2", compact ? "p-2" : "p-3")}>
         <Text
           role="heading"
           aria-level={3}
-          className={cn('font-medium', compact ? 'text-xs leading-4' : 'text-base leading-5')}
+          className={cn("font-medium", compact ? "text-xs leading-4" : "text-base leading-5")}
           numberOfLines={2}
         >
           {design.name}
@@ -141,11 +138,7 @@ export function LibraryCard({
 }) {
   return (
     <Pressable role="button" onPress={onPress} className="active:opacity-70">
-      {density === 1 ? (
-        <ListRow design={design} />
-      ) : (
-        <Tile design={design} density={density} />
-      )}
+      {density === 1 ? <ListRow design={design} /> : <Tile design={design} density={density} />}
     </Pressable>
   );
 }
