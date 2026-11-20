@@ -8,7 +8,9 @@ check can make. Mechanical rules live in code, not here:
 
 A review reads the standards set together: `docs/FRONTEND_STATE.md`,
 `docs/EXPO-FOLDER-STRUCTURE.md`, `docs/EXPO-DB.md`, `GLOSSARY.md`, and the
-ADRs under `docs/adr/`.
+ADRs under `docs/adr/`. For each source the diff can contradict, name the
+decision it settles and say whether it now disagrees; a source opened but not
+checked is not a source.
 
 ## Commits
 
