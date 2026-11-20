@@ -303,6 +303,7 @@ describe('design records', () => {
         collection: null,
         status: 'concept',
         updatedAt: 10,
+        cover: null,
       },
     ]);
   });

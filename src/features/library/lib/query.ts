@@ -5,9 +5,11 @@ import {
   declareLiveRead,
   DESIGN_STATUSES,
   designs,
+  images,
   type Database,
   type DesignStatus,
 } from '@/features/database';
+import { coverOf, type Image } from '@/features/images';
 import { readTaxonomyNames, taxonomyLabel } from '@/features/taxonomy';
 
 /**
@@ -29,6 +31,8 @@ export type LibraryDesign = {
   collection: string | null;
   status: DesignStatus;
   updatedAt: number;
+  /** The image that represents the design in the grid; null when it has none. */
+  cover: Image | null;
 };
 
 type LibraryDesignRow = {
@@ -67,6 +71,7 @@ function libraryDesignsQuery(database: Database) {
 
 function withTaxonomyNames(database: Database, rows: LibraryDesignRow[]): LibraryDesign[] {
   const names = readTaxonomyNames(database);
+  const covers = coversFor(database, rows.map((row) => row.id));
 
   return rows.map((row) => {
     const collection = row.collectionId ? names.collections.get(row.collectionId) : undefined;
@@ -78,8 +83,42 @@ function withTaxonomyNames(database: Database, rows: LibraryDesignRow[]): Librar
       collection: collection ? taxonomyLabel(collection) : null,
       status: row.status,
       updatedAt: row.updatedAt,
+      cover: covers.get(row.id) ?? null,
     };
   });
+}
+
+/**
+ * Each design's Cover, read for the whole page in one query and derived by the
+ * images module's one rule. A design with no images is simply absent, so the
+ * card falls back to the placeholder.
+ */
+function coversFor(database: Database, designIds: readonly string[]): Map<string, Image> {
+  const covers = new Map<string, Image>();
+
+  if (designIds.length === 0) return covers;
+
+  const rows = database.db
+    .select()
+    .from(images)
+    .where(inArray(images.designId, [...designIds]))
+    .all();
+  const byDesign = new Map<string, Image[]>();
+
+  for (const row of rows) {
+    const stored = byDesign.get(row.designId);
+
+    if (stored) stored.push(row);
+    else byDesign.set(row.designId, [row]);
+  }
+
+  for (const [designId, stored] of byDesign) {
+    const cover = coverOf(stored);
+
+    if (cover) covers.set(designId, cover);
+  }
+
+  return covers;
 }
 
 /** Runs the default query once. The screen uses the live hook instead. */
@@ -93,12 +132,13 @@ export type LibraryRows = {
 };
 
 /**
- * The Library read: the default query's rows and the three tables it watches.
- * The names come from the taxonomy name read, but a rename or a delete still
- * has to re-run this read, so those tables are declared here (ADR-0005).
+ * The Library read: the default query's rows and the tables it watches. The
+ * names come from the taxonomy name read, but a rename or a delete still has
+ * to re-run this read, so those tables are declared here; the Cover is derived
+ * from the images table, so it is declared too (ADR-0005).
  */
 export const libraryDesignsRead = declareLiveRead<LibraryRows>({
-  tables: [designs, categories, collections],
+  tables: [designs, categories, collections, images],
   read: (database) => ({ designs: listLibraryDesigns(database) }),
   empty: { designs: [] },
 });

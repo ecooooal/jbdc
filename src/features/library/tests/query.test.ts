@@ -1,16 +1,23 @@
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import {
   categories,
   collections,
   DESIGN_STATUSES,
   designs,
+  images,
   type Database,
   type DesignStatus,
+  type ImageKind,
   type LiveReadTable,
 } from '@/features/database';
 import { createTempDatabase } from '@/features/database/testing';
 import { expectLiveReadReruns } from '@/features/database/testing-live';
 import { createDesign } from '@/features/designs';
+import { writeImages, type ImageStore } from '@/features/images';
+import { createTempImageStore } from '@/features/images/testing';
 import { libraryDesignsRead, listLibraryDesigns } from '@/features/library';
 import { createCategory, createCollection } from '@/features/taxonomy';
 
@@ -25,13 +32,20 @@ type NewDesign = {
 describe('the Library live read', () => {
   let database: ReturnType<typeof createTempDatabase>['database'];
   let dispose: () => void;
+  let sourceDirectory: string;
+  let store: ImageStore;
+  let disposeStore: () => void;
 
   beforeEach(() => {
     ({ database, dispose } = createTempDatabase());
+    sourceDirectory = mkdtempSync(join(tmpdir(), 'jbdc-library-images-'));
+    ({ store, dispose: disposeStore } = createTempImageStore());
   });
 
   afterEach(() => {
     dispose();
+    disposeStore();
+    rmSync(sourceDirectory, { recursive: true, force: true });
   });
 
   test('keeps its declared default and matches the direct read', () => {
@@ -40,10 +54,27 @@ describe('the Library live read', () => {
   });
 
   test('re-runs when any table it reads changes', async () => {
+    const sourcePath = join(sourceDirectory, 'sketch.jpg');
+    writeFileSync(sourcePath, 'sketch bytes');
+
     const writes = new Map<LiveReadTable, (db: Database) => void>([
       [designs, (db) => createDesign(db, { name: 'Wool coat' })],
       [categories, (db) => createCategory(db, { name: 'Knitwear' })],
       [collections, (db) => createCollection(db, { name: 'Spring 2027', year: 2027 })],
+      [
+        images,
+        (db) => {
+          const designId = createDesign(db, { name: 'Wool coat' }, 500).id;
+
+          writeImages(
+            db,
+            store,
+            designId,
+            { kind: 'attach', images: [{ sourcePath, kind: 'sketch' }] },
+            1000
+          );
+        },
+      ],
     ]);
 
     for (const [table, write] of writes) {
@@ -55,14 +86,34 @@ describe('the Library live read', () => {
 describe('library query', () => {
   let database: ReturnType<typeof createTempDatabase>['database'];
   let dispose: () => void;
+  let sourceDirectory: string;
+  let store: ImageStore;
+  let disposeStore: () => void;
 
   beforeEach(() => {
     ({ database, dispose } = createTempDatabase());
+    sourceDirectory = mkdtempSync(join(tmpdir(), 'jbdc-library-images-'));
+    ({ store, dispose: disposeStore } = createTempImageStore());
   });
 
   afterEach(() => {
     dispose();
+    disposeStore();
+    rmSync(sourceDirectory, { recursive: true, force: true });
   });
+
+  function attachImage(
+    designId: string,
+    kind: ImageKind,
+    name: string,
+    bytes: string,
+    now: number
+  ) {
+    const sourcePath = join(sourceDirectory, name);
+
+    writeFileSync(sourcePath, bytes);
+    writeImages(database, store, designId, { kind: 'attach', images: [{ sourcePath, kind }] }, now);
+  }
 
   function insertDesign(name: string, design: NewDesign = {}) {
     const id = randomUUID();
@@ -174,5 +225,29 @@ describe('library query', () => {
     insertDesign('In a collection', { collectionId, updatedAt: 40 });
 
     expect(listLibraryDesigns(database)[0].collection).toBe('Spring');
+  });
+
+  test('returns each design’s derived Cover, and none for an image-less design', () => {
+    const covered = insertDesign('Covered', { updatedAt: 10 });
+
+    insertDesign('Bare', { updatedAt: 20 });
+
+    attachImage(covered, 'sketch', 'sketch.jpg', 'sketch bytes', 100);
+    attachImage(covered, 'final', 'final-old.jpg', 'old final bytes', 200);
+    attachImage(covered, 'final', 'final-new.jpg', 'new final bytes', 300);
+
+    const byName = new Map(
+      listLibraryDesigns(database).map((design) => [design.name, design] as const)
+    );
+    const bare = byName.get('Bare');
+    const coveredDesign = byName.get('Covered');
+    const newestFinal = createHash('sha256').update('new final bytes').digest('hex');
+
+    expect(bare?.cover).toBeNull();
+    expect(coveredDesign?.cover).toMatchObject({
+      designId: covered,
+      kind: 'final',
+      contentHash: newestFinal,
+    });
   });
 });

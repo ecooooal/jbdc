@@ -1,7 +1,9 @@
+import { Image } from 'expo-image';
 import { Shirt } from 'lucide-react-native';
 import { Pressable, View } from 'react-native';
 import { designStatusLabel } from '@/features/designs';
 import { DesignStatusBadge } from '@/features/designs/react';
+import { useImageUri } from '@/features/images/react';
 import type { LibraryDesign } from '@/features/library';
 import type { CardDensity } from '@/features/settings';
 import { Card } from '@/shared/components/ui/card';
@@ -42,11 +44,30 @@ function MetaStack({ design }: { design: LibraryDesign }) {
   );
 }
 
-/** Images are a later slice, so every card carries a quiet cover stand-in. */
-function CoverPlaceholder({ className }: { className?: string }) {
+/** The design's Cover, or the quiet stand-in an image-less design keeps. */
+function Cover({ design, className }: { design: LibraryDesign; className?: string }) {
+  const uri = useImageUri(design.cover);
+
+  if (!uri) {
+    return (
+      <View
+        testID="cover-placeholder"
+        className={cn('bg-muted items-center justify-center', className)}
+      >
+        <Icon as={Shirt} className="text-muted-foreground size-5 opacity-60" />
+      </View>
+    );
+  }
+
   return (
-    <View className={cn('bg-muted items-center justify-center', className)}>
-      <Icon as={Shirt} className="text-muted-foreground size-5 opacity-60" />
+    <View className={cn('bg-muted overflow-hidden', className)}>
+      <Image
+        testID="library-cover"
+        source={{ uri }}
+        accessibilityLabel={`Cover of ${design.name}`}
+        contentFit="cover"
+        style={{ width: '100%', height: '100%' }}
+      />
     </View>
   );
 }
@@ -55,7 +76,7 @@ function CoverPlaceholder({ className }: { className?: string }) {
 function ListRow({ design }: { design: LibraryDesign }) {
   return (
     <Card className="flex-row items-center gap-3 rounded-lg py-3 pl-3 pr-4">
-      <CoverPlaceholder className="size-16 rounded-md" />
+      <Cover design={design} className="size-16 rounded-md" />
       <View className="flex-1 gap-1">
         <Text role="heading" aria-level={3} className="text-base font-medium" numberOfLines={1}>
           {design.name}
@@ -73,7 +94,10 @@ function Tile({ design, density }: { design: LibraryDesign; density: Exclude<Car
 
   return (
     <Card className={cn('gap-0 overflow-hidden py-0', compact ? 'rounded-lg' : 'rounded-xl')}>
-      <CoverPlaceholder className={cn('w-full', compact ? 'aspect-square' : 'aspect-[4/5]')} />
+      <Cover
+        design={design}
+        className={cn('w-full', compact ? 'aspect-square' : 'aspect-[4/5]')}
+      />
       <View className={cn('gap-2', compact ? 'p-2' : 'p-3')}>
         <Text
           role="heading"
