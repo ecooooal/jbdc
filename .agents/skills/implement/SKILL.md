@@ -28,7 +28,7 @@ Four rules override the step boundary: generated files travel alone, a rename tr
 
 Never amend a pushed commit, never `rebase -i` to tidy, never commit red, and never leave the tree dirty across a review. Prose that arrives after its step is pushed waits for the repair commit.
 
-Once done, call the Skill tool with "code-review" to review the work since `Base`.
+Once done, call the Skill tool with "code-review" to review the work since `Base` — unless your agent brief says an orchestrator owns review, in which case stop at the green check and report. The repair brief and repair dispatch below are yours only when that review was: an orchestrator writes them itself.
 
 After the review returns, write the repair brief as a comment on the ticket. If the brief has no `Fix` items, post it and stop: no repair dispatch, no `fix` commit, no delta re-review. Otherwise dispatch one fresh repair subagent on the same branch with that brief and the review report attached as context that adds no scope. It lands one repair commit per ticket, typed `fix (#<n>)`, with every item it repaired listed in the body — prose items in that same commit — and reports back the SHA plus any item it could not complete. Then re-review the delta per `code-review` §6. The step is done when the subagent's SHA range is in hand and the delta re-review has returned, not when the dispatch is announced. A subagent that fails to start follows `code-review`'s retry rule.
 
