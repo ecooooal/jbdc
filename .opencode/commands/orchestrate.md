@@ -42,8 +42,10 @@ For each ticket number in $ARGUMENTS:
 
 ```
 gh issue view <n> --repo ecooooal/jbdc --json number,title,state,body,labels,blockedBy \
-  --jq '{title, state, labels: [.labels[].name], open_blockers: [.blockedBy.nodes[] | select(.state=="OPEN") | .number], steps: (.body | contains("## Steps"))}'
+  --jq '{title, state, labels: [.labels[].name], open_blockers: [.blockedBy.nodes[] | select(.state=="OPEN") | .number], has_steps: (.body | contains("## Steps")), body}'
 ```
+
+The body rides along in the same response: it feeds the step count (§4.1) and the path estimate (§2b), so read it from here instead of fetching the ticket again.
 
 Skip, and report, any ticket that is closed, lacks `ready-for-agent`, has an open blocker, or lacks `## Steps`.
 Wave order: dispatch the 2 you can, merge, then take the next 2. #36 only after #35 merges; #41 only after #40.
@@ -111,8 +113,8 @@ Do not paste skills into the prompt.
 
 ## 4. Review each report
 
-1. `git -C /home/echo/workspace/wt/<n> log --oneline <base>..HEAD` — commit count must equal the ticket's `## Steps` count, one commit per step, typed `type (#<n>): behaviour`. A mismatch is a repair finding before any review runs.
-2. Load the `code-review` skill and run it here, against the worktree: fixed point `<base>`, diff command `git -C /home/echo/workspace/wt/<n> diff <base>...HEAD`, commit list from the same worktree, spec the ticket itself (`gh issue view <n>`). You own its step 4: start the two axis subagents yourself. The harness permits one level of subagent, so they run at level one from here; a subagent that loaded this skill would need level two, and the harness refuses it. Its Standards axis covers the `CODING_STANDARDS.md` judgement calls; its Spec axis covers each acceptance criterion and flags anything outside the ticket's scope.
+1. `git -C /home/echo/workspace/wt/<n> log --oneline <base>..HEAD` — on the first review, before any repair, commit count must equal the ticket's `## Steps` count, one commit per step, typed `type (#<n>): behaviour`. A mismatch is a repair finding before any review runs. After a repair the branch carries steps + one `fix` commit; do not reapply the count to a delta review.
+2. Load the `code-review` skill and run it here, against the worktree: fixed point `<base>`, diff command `git -C /home/echo/workspace/wt/<n> diff <base>...HEAD`, commit list from the same worktree, spec the ticket itself (`gh issue view <n>`). You own its step 4: start the two axis subagents yourself. The harness permits one level of subagent, so they run at level one from here; a subagent that loaded this skill would need level two, and the harness refuses it. Its Standards axis covers the `CODING_STANDARDS.md` judgement calls; its Spec axis covers each acceptance criterion and flags anything outside the ticket's scope. Give the Standards axis the ticket body too, and say that the body is spec: wording it mandates — a doc citation, a commit subject — is not a standards breach.
 3. Aggregate the two reports, read the diff yourself, and rule. The reports inform the verdict, they are not it: anything outside the ticket's scope in the diff is a finding, not a bonus.
 4. Record which model dispatched the ticket: repair reuses it, and the report names it.
 
@@ -133,21 +135,44 @@ If `pnpm check` fails on the merged tree, the ticket is not green — revert the
 ## 6. Repair
 
 At most one repair round per ticket, one fresh `ticket-repairer` on the same branch and the same model
-the ticket was dispatched with (§4). Comment the brief first:
+the ticket was dispatched with (§4). The repairer reads the brief as **raw Markdown** through `gh`, so write it
+to be scanned as text: a heading per section, one row per finding, no run-on paragraph.
 
-```
-Repair brief — #<n>, reviewed at <head>
+Comment this, filled in:
 
-Fix         — <item>. [Standards: <file:line>] | [Spec: AC n]
-Skip        — <item>. Cosmetic; not re-reviewed.
-Reject      — <item>. <why the finding is wrong>.
-Split       — <item>. Real, out of scope → new ticket.
-Constraints — touch only these items; one `fix (#<n>)` commit for the ticket, items in the body.
-Report back — SHA range, and any item you could not complete.
-Scope       — items 1-N only. Report anything else; do not change it.
-```
+````
+## Repair brief — #<n>
 
-Six items maximum. Then re-review the delta the same way — load `code-review` §6 here, start only the axis that reported a hard violation, against `git diff <reviewed-head>..ticket/<n>-<slug>`. Cosmetic findings need no second review; the repairer checks those itself.
+Reviewed at `<head>` · base `<sha>` · model `<model>`
+
+### Fix
+
+| # | Item | Source |
+| --- | --- | --- |
+| 1 | <what to do, and the shape the code should take> | Standards `<file:line>` |
+| 2 | <...> | Spec AC <n> |
+
+### Not fixing
+
+| Item | Disposition | Reason |
+| --- | --- | --- |
+| <item> | Skip | Cosmetic; not re-reviewed. |
+| <item> | Reject | <why the finding is wrong>. |
+| <item> | Split | Real, out of scope → new ticket. |
+
+### Rules
+
+- Fix items only, in order. Anything else: report it, do not change it.
+- One `fix (#<n>)` commit for the ticket; prose rides in it.
+- Report back: the SHA range, and any item you could not complete.
+````
+
+Six fix items maximum; keep table cells to one sentence and no `|` inside them. Each `Fix` row names the **shape**
+the code should take, not only the file it lives in: a row that says "read `view.stage`" comes back as
+`view.stage ?? state.kind`. Name the value whose fallback is dead, so the repairer deletes it instead of
+keeping it as a guard.
+
+Then re-review the delta the same way — load `code-review` §6 here, start only the axis that reported a hard violation, against `git diff <reviewed-head>..ticket/<n>-<slug>`. Cosmetic findings need no second review; the repairer checks those itself.
 
 ## 7. Stalls
 
