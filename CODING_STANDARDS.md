@@ -66,6 +66,9 @@ checked is not a source.
   changes first.
 - **State** lives in reducers. See `docs/FRONTEND_STATE.md`.
 - Client components get only what they use.
+- **An entry point exports only what another package imports.** `index.ts` and
+  `react.ts` are the contract between features; a function or type only the
+  package's own tree uses stays in `lib/`.
 
 ## Tests
 
