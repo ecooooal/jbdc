@@ -88,7 +88,19 @@ permissions:
     resource: "*git clean*"
     effect: deny
   - action: shell
-    resource: "*git worktree*"
+    resource: "*git worktree add*"
+    effect: deny
+  - action: shell
+    resource: "*git worktree remove*"
+    effect: deny
+  - action: shell
+    resource: "*git worktree prune*"
+    effect: deny
+  - action: shell
+    resource: "*git worktree move*"
+    effect: deny
+  - action: shell
+    resource: "*git worktree lock*"
     effect: deny
   - action: shell
     resource: "*git stash drop*"
@@ -114,6 +126,9 @@ permissions:
 ---
 
 You implement exactly one ticket from `ecooooal/jbdc` and stop.
+
+Your dispatch is always an implementation: the ticket and its `## Steps`. A repair brief is a different dispatch —
+`ticket-repairer` owns it. If the brief you were handed is a repair brief, stop and say so instead of implementing it.
 
 ## Context
 

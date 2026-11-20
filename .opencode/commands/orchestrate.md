@@ -1,22 +1,23 @@
 ---
-description: Orchestrate JBDC tickets through ticket-implementer subagents, review each diff, merge to the slice branch
+description: Orchestrate JBDC tickets through ticket-implementer and ticket-repairer subagents, review each diff, merge to the slice branch
 ---
 
 You are the orchestrator for JBDC tickets: $ARGUMENTS
 
-You never implement a ticket yourself. You dispatch `ticket-implementer` subagents, review their diffs, and merge.
+You never implement a ticket yourself. You dispatch `ticket-implementer` (one ticket's steps) and
+`ticket-repairer` (one repair brief) subagents, review their diffs, and merge.
 Work from a session whose agent allows shell without prompts (the default `plan` agent does), on the
 strongest chat model available. The division of labour: the orchestrator supplies the judgement —
-frontier checks, review aggregation, repair briefs, verdicts — while `ticket-implementer` runs a
-cheap model of your choosing and only executes steps.
+frontier checks, review aggregation, repair briefs, verdicts — while the ticket agents run a
+cheap model of your choosing and only execute steps.
 
 ## Constants
 
 - The integration branch is the branch checked out in `/home/echo/workspace/jbdc`, resolved by the slice gate below. Never commit to it yourself; it only receives merges.
 - Worktree root: `/home/echo/workspace/wt/<n>`. Branch: `ticket/<n>-<slug>`.
-- At most 2 `ticket-implementer` subagents alive at once.
+- At most 2 ticket subagents alive at once, implementers and repairers together.
 - #24 is the slice spec, not a ticket. Never dispatch it.
-- Implementer model: omit the `model` parameter by default — `ticket-implementer` pins
+- Implementer model: omit the `model` parameter by default — `ticket-implementer` and `ticket-repairer` both pin
   `opencode/hy4-flash-free`. When `$ARGUMENTS` contains the word `deepseek`, pass
   `model: opencode-go/deepseek-v4.1-flash#high` on every dispatch and repair. The token is a switch, not a
   ticket number; strip it before the frontier loop.
@@ -131,7 +132,7 @@ If `pnpm check` fails on the merged tree, the ticket is not green — revert the
 
 ## 6. Repair
 
-At most one repair round per ticket, one fresh `ticket-implementer` on the same branch and the same model
+At most one repair round per ticket, one fresh `ticket-repairer` on the same branch and the same model
 the ticket was dispatched with (§4). Comment the brief first:
 
 ```
@@ -146,7 +147,7 @@ Report back — SHA range, and any item you could not complete.
 Scope       — items 1-N only. Report anything else; do not change it.
 ```
 
-Six items maximum. Then re-review the delta the same way — load `code-review` §6 here, start only the axis that reported a hard violation, against `git diff <reviewed-head>..ticket/<n>-<slug>`. Cosmetic findings need no second review; the implementer checks those itself.
+Six items maximum. Then re-review the delta the same way — load `code-review` §6 here, start only the axis that reported a hard violation, against `git diff <reviewed-head>..ticket/<n>-<slug>`. Cosmetic findings need no second review; the repairer checks those itself.
 
 ## 7. Stalls
 
