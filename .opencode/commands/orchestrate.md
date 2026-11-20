@@ -12,7 +12,7 @@ cheap model of your choosing and only executes steps.
 
 ## Constants
 
-- Slice branch, also the integration branch: `slice/specifications-materials-creativeDirection`. Never commit to it yourself; it only receives merges.
+- The integration branch is the branch checked out in `/home/echo/workspace/jbdc`, resolved by the slice gate below. Never commit to it yourself; it only receives merges.
 - Worktree root: `/home/echo/workspace/wt/<n>`. Branch: `ticket/<n>-<slug>`.
 - At most 2 `ticket-implementer` subagents alive at once.
 - #24 is the slice spec, not a ticket. Never dispatch it.
@@ -20,6 +20,20 @@ cheap model of your choosing and only executes steps.
   `opencode/hy4-flash-free`. When `$ARGUMENTS` contains the word `deepseek`, pass
   `model: opencode-go/deepseek-v4.1-flash#high` on every dispatch and repair. The token is a switch, not a
   ticket number; strip it before the frontier loop.
+
+## 0. Slice gate
+
+The integration branch is a fact about the checkout, not a name written in this file:
+
+```
+SLICE=$(git -C /home/echo/workspace/jbdc rev-parse --abbrev-ref HEAD)
+if git -C /home/echo/workspace/jbdc merge-base --is-ancestor "$SLICE" origin/main; then
+  echo "slice $SLICE is already merged into main — which branch is live?" >&2
+  exit 1
+fi
+```
+
+A branch that is an ancestor of `origin/main` has shipped: stop, name it, and ask which branch is live. A detached HEAD, or `main` itself, is also a stop. Carry the resolved name as `<slice>` below — §2 derives the Base from it, §3 hands it to the subagent, §5 refuses to merge anywhere else, and §8 reports it. Never substitute a name from memory, a doc, or this file.
 
 ## 1. Frontier check
 
@@ -33,10 +47,10 @@ gh issue view <n> --repo ecooooal/jbdc --json number,title,state,body,labels,blo
 Skip, and report, any ticket that is closed, lacks `ready-for-agent`, has an open blocker, or lacks `## Steps`.
 Wave order: dispatch the 2 you can, merge, then take the next 2. #36 only after #35 merges; #41 only after #40.
 
-## 2. Per ticket, before dispatch
+## 2. Per ticket, before dispatch (run after the 2b gate)
 
 ```
-git -C /home/echo/workspace/jbdc rev-parse slice/specifications-materials-creativeDirection
+git -C /home/echo/workspace/jbdc rev-parse <slice>
 gh issue comment <n> --repo ecooooal/jbdc --body "Base: <that sha>"
 git -C /home/echo/workspace/jbdc worktree add /home/echo/workspace/wt/<n> -b ticket/<n>-<slug> <that sha>
 cd /home/echo/workspace/wt/<n> && pnpm install --frozen-lockfile
@@ -47,7 +61,7 @@ and it is the only record of the base if this session dies. The subagent is deni
 The subagent also reads `.agents/skills/implement/SKILL.md`, which tells it to comment the base itself. Your comment
 is what makes its override true; confirm the comment exists before dispatch, and never let a subagent write to a ticket.
 
-## 2b. Overlap gate
+## 2b. Overlap gate (run this before 2, across the whole wave)
 
 Before you dispatch anything, classify every worktree under /home/echo/workspace/wt/ against the tracker, by the
 ticket number in its directory name:
@@ -88,7 +102,7 @@ One subagent per ticket after the 2b gate passes: `agent: "ticket-implementer"`,
 
 ```
 #<n>. worktree /home/echo/workspace/wt/<n>, branch ticket/<n>-<slug>,
-slice slice/specifications-materials-creativeDirection, base <sha>.
+slice <slice>, base <sha>.
 ```
 
 Nothing else — the agent file carries the procedure. The `model` is a tool parameter, never prompt text.
@@ -106,6 +120,7 @@ Verdict: merge, or repair.
 ## 5. Merge
 
 ```
+test "$(git -C /home/echo/workspace/jbdc rev-parse --abbrev-ref HEAD)" = "<slice>"   # §0's branch, not a constant
 git -C /home/echo/workspace/jbdc merge --ff-only ticket/<n>-<slug>   # else --no-ff, resolve here
 cd /home/echo/workspace/jbdc && pnpm check
 git -C /home/echo/workspace/jbdc worktree remove /home/echo/workspace/wt/<n>
@@ -146,5 +161,5 @@ marks the ticket stalled: leave the branch, report, move on. Never attempt a thi
 
 Per ticket: verdict, base sha, SHA range, commit list, model, AC status, findings, merge result.
 Held tickets, each with the blocking ticket and the path: `#<n> held behind #<m> (path)`.
-Then: slice tip, `pnpm check` result, tickets stalled or skipped with reasons, and the open question list.
+Then: integration branch name and tip, `pnpm check` result, tickets stalled or skipped with reasons, and the open question list.
 Never push, never close tickets, never tick AC boxes, never edit issue bodies or labels — the user does that.
