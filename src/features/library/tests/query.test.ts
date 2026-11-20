@@ -57,16 +57,31 @@ describe("the Library live read", () => {
     const sourcePath = join(sourceDirectory, "sketch.jpg");
     writeFileSync(sourcePath, "sketch bytes");
 
-    const writes = new Map<LiveReadTable, (db: Database) => void>([
-      [designs, (db) => createDesign(db, { name: "Wool coat" })],
-      [categories, (db) => createCategory(db, { name: "Knitwear" })],
-      [collections, (db) => createCollection(db, { name: "Spring 2027", year: 2027 })],
+    const writes = new Map<LiveReadTable, (db: Database) => void | Promise<void>>([
+      [
+        designs,
+        (db) => {
+          createDesign(db, { name: "Wool coat" });
+        },
+      ],
+      [
+        categories,
+        (db) => {
+          createCategory(db, { name: "Knitwear" });
+        },
+      ],
+      [
+        collections,
+        (db) => {
+          createCollection(db, { name: "Spring 2027", year: 2027 });
+        },
+      ],
       [
         images,
-        (db) => {
+        async (db) => {
           const designId = createDesign(db, { name: "Wool coat" }, 500).id;
 
-          writeImages(
+          await writeImages(
             db,
             store,
             designId,
@@ -102,7 +117,7 @@ describe("library query", () => {
     rmSync(sourceDirectory, { recursive: true, force: true });
   });
 
-  function attachImage(
+  async function attachImage(
     designId: string,
     kind: ImageKind,
     name: string,
@@ -112,7 +127,13 @@ describe("library query", () => {
     const sourcePath = join(sourceDirectory, name);
 
     writeFileSync(sourcePath, bytes);
-    writeImages(database, store, designId, { kind: "attach", images: [{ sourcePath, kind }] }, now);
+    await writeImages(
+      database,
+      store,
+      designId,
+      { kind: "attach", images: [{ sourcePath, kind }] },
+      now,
+    );
   }
 
   function insertDesign(name: string, design: NewDesign = {}) {
@@ -227,14 +248,14 @@ describe("library query", () => {
     expect(listLibraryDesigns(database)[0].collection).toBe("Spring");
   });
 
-  test("returns each design’s derived Cover, and none for an image-less design", () => {
+  test("returns each design’s derived Cover, and none for an image-less design", async () => {
     const covered = insertDesign("Covered", { updatedAt: 10 });
 
     insertDesign("Bare", { updatedAt: 20 });
 
-    attachImage(covered, "sketch", "sketch.jpg", "sketch bytes", 100);
-    attachImage(covered, "final", "final-old.jpg", "old final bytes", 200);
-    attachImage(covered, "final", "final-new.jpg", "new final bytes", 300);
+    await attachImage(covered, "sketch", "sketch.jpg", "sketch bytes", 100);
+    await attachImage(covered, "final", "final-old.jpg", "old final bytes", 200);
+    await attachImage(covered, "final", "final-new.jpg", "new final bytes", 300);
 
     const byName = new Map(
       listLibraryDesigns(database).map((design) => [design.name, design] as const),

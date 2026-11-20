@@ -22,7 +22,7 @@ export async function expectLiveReadReruns<Row extends object>(
   declaration: LiveReadDeclaration<Row>,
   table: LiveReadTable,
   database: Database,
-  change: (database: Database) => void,
+  change: (database: Database) => void | Promise<void>,
 ): Promise<void> {
   let reads = 0;
   const counted: LiveReadDeclaration<Row> = {
@@ -43,7 +43,7 @@ export async function expectLiveReadReruns<Row extends object>(
 
   try {
     await act(async () => {
-      change(database);
+      await change(database);
       live.notify(liveReadTableName(table));
     });
 

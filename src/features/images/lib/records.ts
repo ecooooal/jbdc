@@ -116,13 +116,13 @@ function releaseIfUnreferenced(db: DatabaseHandle, store: ImageStore, file: Imag
  * of an image whose last reference goes is deleted. It answers once: what it
  * stored, the rule that refused it, or the row it could not find.
  */
-export function writeImages(
+export async function writeImages(
   database: Database,
   store: ImageStore,
   designId: string,
   change: ImageChange,
   now: number = Date.now(),
-): ImageWriteResult {
+): Promise<ImageWriteResult> {
   // A refusal is decided before anything is copied or written, so a refused
   // write leaves the store and the catalog exactly as they were.
   if (change.kind === "attach") {
@@ -146,7 +146,7 @@ export function writeImages(
 
     try {
       for (const { sourcePath } of change.images) {
-        files.push(store.copy(sourcePath));
+        files.push(await store.copy(sourcePath));
       }
     } catch (error) {
       // A later copy failed after earlier ones landed. Release what this

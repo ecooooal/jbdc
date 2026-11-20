@@ -30,11 +30,17 @@ afterEach(() => {
   rmSync(sourceDirectory, { recursive: true, force: true });
 });
 
-function attach(designId: string, kind: ImageKind, bytes: string, now: number) {
+async function attach(designId: string, kind: ImageKind, bytes: string, now: number) {
   const sourcePath = join(sourceDirectory, `${kind}-${now}.jpg`);
 
   writeFileSync(sourcePath, bytes);
-  writeImages(database, store, designId, { kind: "attach", images: [{ sourcePath, kind }] }, now);
+  await writeImages(
+    database,
+    store,
+    designId,
+    { kind: "attach", images: [{ sourcePath, kind }] },
+    now,
+  );
 }
 
 function libraryDesign(name: string): LibraryDesign {
@@ -56,8 +62,8 @@ async function renderCard(design: LibraryDesign, density: CardDensity) {
 test("the card renders the Cover from the store", async () => {
   const designId = createDesign(database, { name: "Wool coat" }, 500).id;
 
-  attach(designId, "sketch", "sketch bytes", 1000);
-  attach(designId, "final", "final bytes", 2000);
+  await attach(designId, "sketch", "sketch bytes", 1000);
+  await attach(designId, "final", "final bytes", 2000);
 
   const design = libraryDesign("Wool coat");
 
@@ -73,7 +79,7 @@ test("the card renders the Cover from the store", async () => {
 test("the card shows the Cover at every density", async () => {
   const designId = createDesign(database, { name: "Wool coat" }, 500).id;
 
-  attach(designId, "prototype", "prototype bytes", 1000);
+  await attach(designId, "prototype", "prototype bytes", 1000);
 
   const design = libraryDesign("Wool coat");
 

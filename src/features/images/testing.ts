@@ -25,7 +25,7 @@ export function createTempImageStore(): {
   return {
     directory,
     store: {
-      copy(sourcePath) {
+      async copy(sourcePath) {
         const file: ImageFile = {
           contentHash: createHash("sha256").update(readFileSync(sourcePath)).digest("hex"),
           extension: extname(sourcePath).slice(1).toLowerCase(),

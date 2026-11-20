@@ -30,11 +30,17 @@ afterEach(() => {
   rmSync(sourceDirectory, { recursive: true, force: true });
 });
 
-function attach(designId: string, kind: ImageKind, bytes: string, now: number) {
+async function attach(designId: string, kind: ImageKind, bytes: string, now: number) {
   const sourcePath = join(sourceDirectory, `${kind}-${now}.jpg`);
 
   writeFileSync(sourcePath, bytes);
-  writeImages(database, store, designId, { kind: "attach", images: [{ sourcePath, kind }] }, now);
+  await writeImages(
+    database,
+    store,
+    designId,
+    { kind: "attach", images: [{ sourcePath, kind }] },
+    now,
+  );
 }
 
 async function renderGallery(designId: string) {
@@ -60,8 +66,8 @@ test("the journey rail shows one chip per kind, all four always", async () => {
 test("pressing a stage chip activates that stage", async () => {
   const design = createDesign(database, { name: "Wool coat" });
 
-  attach(design.id, "sketch", "sketch bytes", 1000);
-  attach(design.id, "final", "final bytes", 2000);
+  await attach(design.id, "sketch", "sketch bytes", 1000);
+  await attach(design.id, "final", "final bytes", 2000);
 
   await renderGallery(design.id);
 

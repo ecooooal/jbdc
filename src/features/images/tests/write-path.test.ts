@@ -43,10 +43,10 @@ function storedFiles(): string[] {
 }
 
 describe("attaching images", () => {
-  test("several at once is one action and records one image_change event", () => {
+  test("several at once is one action and records one image_change event", async () => {
     const designId = createWoolCoat();
 
-    const result = writeImages(
+    const result = await writeImages(
       database,
       store,
       designId,
@@ -80,18 +80,18 @@ describe("attaching images", () => {
     });
   });
 
-  test("the same file attached twice is stored once", () => {
+  test("the same file attached twice is stored once", async () => {
     const designId = createWoolCoat();
     const sourcePath = sourceFile("sketch.jpg", "the same bytes");
 
-    writeImages(
+    await writeImages(
       database,
       store,
       designId,
       { kind: "attach", images: [{ sourcePath, kind: "sketch" }] },
       1000,
     );
-    writeImages(
+    await writeImages(
       database,
       store,
       designId,
@@ -105,7 +105,7 @@ describe("attaching images", () => {
     expect(storedFiles()).toHaveLength(1);
   });
 
-  test("a design with no images has no Cover", () => {
+  test("a design with no images has no Cover", async () => {
     const designId = createWoolCoat();
 
     expect(coverOf(listDesignImages(database, designId))).toBeNull();
@@ -113,10 +113,10 @@ describe("attaching images", () => {
 });
 
 describe("reclassifying an image", () => {
-  test("changes the Cover with no other act", () => {
+  test("changes the Cover with no other act", async () => {
     const designId = createWoolCoat();
 
-    writeImages(
+    await writeImages(
       database,
       store,
       designId,
@@ -131,7 +131,7 @@ describe("reclassifying an image", () => {
 
     expect(coverOf(listDesignImages(database, designId))).toMatchObject({ kind: "sketch" });
 
-    writeImages(
+    await writeImages(
       database,
       store,
       designId,
@@ -145,10 +145,10 @@ describe("reclassifying an image", () => {
     });
   });
 
-  test("records one image_change event carrying what it was and what it became", () => {
+  test("records one image_change event carrying what it was and what it became", async () => {
     const designId = createWoolCoat();
 
-    writeImages(
+    await writeImages(
       database,
       store,
       designId,
@@ -161,7 +161,7 @@ describe("reclassifying an image", () => {
 
     const [image] = listDesignImages(database, designId);
 
-    writeImages(
+    await writeImages(
       database,
       store,
       designId,
@@ -182,10 +182,10 @@ describe("reclassifying an image", () => {
     });
   });
 
-  test("to the kind it already has stores nothing and records nothing", () => {
+  test("to the kind it already has stores nothing and records nothing", async () => {
     const designId = createWoolCoat();
 
-    writeImages(
+    await writeImages(
       database,
       store,
       designId,
@@ -198,7 +198,7 @@ describe("reclassifying an image", () => {
 
     const [image] = listDesignImages(database, designId);
 
-    const result = writeImages(
+    const result = await writeImages(
       database,
       store,
       designId,
@@ -217,11 +217,11 @@ describe("reclassifying an image", () => {
 });
 
 describe("removing an image", () => {
-  test("garbage-collects the stored file when its last reference goes", () => {
+  test("garbage-collects the stored file when its last reference goes", async () => {
     const designId = createWoolCoat();
     const sourcePath = sourceFile("final.jpg", "the same bytes");
 
-    writeImages(
+    await writeImages(
       database,
       store,
       designId,
@@ -237,11 +237,11 @@ describe("removing an image", () => {
 
     const [first, second] = listDesignImages(database, designId);
 
-    writeImages(database, store, designId, { kind: "remove", imageId: first.id }, 2000);
+    await writeImages(database, store, designId, { kind: "remove", imageId: first.id }, 2000);
 
     expect(storedFiles()).toHaveLength(1);
 
-    writeImages(database, store, designId, { kind: "remove", imageId: second.id }, 3000);
+    await writeImages(database, store, designId, { kind: "remove", imageId: second.id }, 3000);
 
     expect(storedFiles()).toHaveLength(0);
     expect(listDesignImages(database, designId)).toEqual([]);
@@ -252,12 +252,12 @@ describe("removing an image", () => {
     ]);
   });
 
-  test("counts references by bytes and extension, so a sibling extension survives", () => {
+  test("counts references by bytes and extension, so a sibling extension survives", async () => {
     const designId = createWoolCoat();
     const jpeg = sourceFile("a.jpg", "the same bytes");
     const png = sourceFile("a.png", "the same bytes");
 
-    writeImages(
+    await writeImages(
       database,
       store,
       designId,
@@ -281,28 +281,28 @@ describe("removing an image", () => {
       `${pngImage?.contentHash}.png`,
     ]);
 
-    writeImages(database, store, designId, { kind: "remove", imageId: jpegImage!.id }, 2000);
+    await writeImages(database, store, designId, { kind: "remove", imageId: jpegImage!.id }, 2000);
 
     expect(storedFiles()).toEqual([`${pngImage!.contentHash}.png`]);
 
-    writeImages(database, store, designId, { kind: "remove", imageId: pngImage!.id }, 3000);
+    await writeImages(database, store, designId, { kind: "remove", imageId: pngImage!.id }, 3000);
 
     expect(storedFiles()).toEqual([]);
   });
 
-  test("keeps a file another design still references", () => {
+  test("keeps a file another design still references", async () => {
     const firstDesign = createWoolCoat();
     const secondDesign = createDesign(database, { name: "Silk slip" }, 500).id;
     const sourcePath = sourceFile("shared.jpg", "shared bytes");
 
-    writeImages(
+    await writeImages(
       database,
       store,
       firstDesign,
       { kind: "attach", images: [{ sourcePath, kind: "final" }] },
       1000,
     );
-    writeImages(
+    await writeImages(
       database,
       store,
       secondDesign,
@@ -312,7 +312,7 @@ describe("removing an image", () => {
 
     const [image] = listDesignImages(database, firstDesign);
 
-    writeImages(database, store, firstDesign, { kind: "remove", imageId: image.id }, 2000);
+    await writeImages(database, store, firstDesign, { kind: "remove", imageId: image.id }, 2000);
 
     expect(storedFiles()).toHaveLength(1);
     expect(listDesignImages(database, secondDesign)).toHaveLength(1);
@@ -320,10 +320,10 @@ describe("removing an image", () => {
 });
 
 describe("the moved updatedAt", () => {
-  test("every structural write moves it in the same transaction", () => {
+  test("every structural write moves it in the same transaction", async () => {
     const designId = createWoolCoat(500);
 
-    writeImages(
+    await writeImages(
       database,
       store,
       designId,
@@ -337,7 +337,7 @@ describe("the moved updatedAt", () => {
 
     const [image] = listDesignImages(database, designId);
 
-    writeImages(
+    await writeImages(
       database,
       store,
       designId,
@@ -346,16 +346,18 @@ describe("the moved updatedAt", () => {
     );
     expect(getDesign(database, designId)?.updatedAt).toBe(2000);
 
-    writeImages(database, store, designId, { kind: "remove", imageId: image.id }, 3000);
+    await writeImages(database, store, designId, { kind: "remove", imageId: image.id }, 3000);
     expect(getDesign(database, designId)?.updatedAt).toBe(3000);
   });
 });
 
 describe("refused writes", () => {
-  test("an attach with no images is refused and stores nothing", () => {
+  test("an attach with no images is refused and stores nothing", async () => {
     const designId = createWoolCoat(500);
 
-    expect(writeImages(database, store, designId, { kind: "attach", images: [] }, 1000)).toEqual({
+    expect(
+      await writeImages(database, store, designId, { kind: "attach", images: [] }, 1000),
+    ).toEqual({
       kind: "refused",
       field: "images",
       message: "Choose at least one image.",
@@ -367,10 +369,10 @@ describe("refused writes", () => {
     expect(getDesign(database, designId)?.updatedAt).toBe(500);
   });
 
-  test("a kind outside the four is refused", () => {
+  test("a kind outside the four is refused", async () => {
     const designId = createWoolCoat();
 
-    const result = writeImages(
+    const result = await writeImages(
       database,
       store,
       designId,
@@ -389,9 +391,9 @@ describe("refused writes", () => {
     expect(listDesignImages(database, designId)).toEqual([]);
   });
 
-  test("a write against a design that is gone answers design-missing", () => {
+  test("a write against a design that is gone answers design-missing", async () => {
     expect(
-      writeImages(
+      await writeImages(
         database,
         store,
         "no-such-design",
@@ -405,11 +407,11 @@ describe("refused writes", () => {
     expect(storedFiles()).toEqual([]);
   });
 
-  test("a copy that fails releases the files this attempt already stored", () => {
+  test("a copy that fails releases the files this attempt already stored", async () => {
     const designId = createWoolCoat(500);
     const copied = sourceFile("copied.jpg", "copied bytes");
 
-    expect(() =>
+    await expect(
       writeImages(
         database,
         store,
@@ -423,7 +425,7 @@ describe("refused writes", () => {
         },
         1000,
       ),
-    ).toThrow();
+    ).rejects.toThrow();
 
     expect(storedFiles()).toEqual([]);
     expect(listDesignImages(database, designId)).toEqual([]);
@@ -431,11 +433,11 @@ describe("refused writes", () => {
     expect(getDesign(database, designId)?.updatedAt).toBe(500);
   });
 
-  test("a failed copy leaves a file another image still references", () => {
+  test("a failed copy leaves a file another image still references", async () => {
     const designId = createWoolCoat(500);
     const shared = sourceFile("shared.jpg", "shared bytes");
 
-    writeImages(
+    await writeImages(
       database,
       store,
       designId,
@@ -443,7 +445,7 @@ describe("refused writes", () => {
       1000,
     );
 
-    expect(() =>
+    await expect(
       writeImages(
         database,
         store,
@@ -457,17 +459,17 @@ describe("refused writes", () => {
         },
         2000,
       ),
-    ).toThrow();
+    ).rejects.toThrow();
 
     expect(storedFiles()).toHaveLength(1);
     expect(listDesignImages(database, designId)).toHaveLength(1);
   });
 
-  test("reclassifying an image the design does not have answers image-missing", () => {
+  test("reclassifying an image the design does not have answers image-missing", async () => {
     const designId = createWoolCoat();
 
     expect(
-      writeImages(
+      await writeImages(
         database,
         store,
         designId,
@@ -477,19 +479,19 @@ describe("refused writes", () => {
     ).toEqual({ kind: "image-missing", imageId: "ghost" });
   });
 
-  test("removing an image the design does not have answers image-missing", () => {
+  test("removing an image the design does not have answers image-missing", async () => {
     const designId = createWoolCoat();
 
     expect(
-      writeImages(database, store, designId, { kind: "remove", imageId: "ghost" }, 1000),
+      await writeImages(database, store, designId, { kind: "remove", imageId: "ghost" }, 1000),
     ).toEqual({ kind: "image-missing", imageId: "ghost" });
   });
 
-  test("an image is reached only through the design it belongs to", () => {
+  test("an image is reached only through the design it belongs to", async () => {
     const firstDesign = createWoolCoat();
     const secondDesign = createDesign(database, { name: "Silk slip" }, 500).id;
 
-    writeImages(
+    await writeImages(
       database,
       store,
       firstDesign,
@@ -500,7 +502,7 @@ describe("refused writes", () => {
     const [image] = listDesignImages(database, firstDesign);
 
     expect(
-      writeImages(database, store, secondDesign, { kind: "remove", imageId: image.id }, 2000),
+      await writeImages(database, store, secondDesign, { kind: "remove", imageId: image.id }, 2000),
     ).toEqual({ kind: "image-missing", imageId: image.id });
     expect(listDesignImages(database, firstDesign)).toHaveLength(1);
     expect(storedFiles()).toHaveLength(1);

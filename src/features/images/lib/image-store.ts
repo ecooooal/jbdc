@@ -20,9 +20,10 @@ export interface ImageStore {
   /**
    * Copies a source file into the catalog's image directory, keyed by its
    * content hash. Copying the same bytes again stores them once and answers the
-   * same key.
+   * same key. Reading the bytes to hash them is why this is the one async
+   * operation on the port.
    */
-  copy(sourcePath: string): ImageFile;
+  copy(sourcePath: string): Promise<ImageFile>;
   /** Deletes a stored file. A file that is already gone is not an error. */
   remove(file: ImageFile): void;
   /** The URI the app loads a stored file from. */

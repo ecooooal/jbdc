@@ -49,8 +49,8 @@ describe("the Design images live read", () => {
   test("re-runs when the images table changes", async () => {
     const design = createDesign(database, { name: "Wool coat" });
 
-    await expectLiveReadReruns(designImagesRead(design.id), images, database, (db) => {
-      writeImages(
+    await expectLiveReadReruns(designImagesRead(design.id), images, database, async (db) => {
+      await writeImages(
         db,
         store,
         design.id,
