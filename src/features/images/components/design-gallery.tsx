@@ -1,5 +1,6 @@
 import { View } from "react-native";
 import { Text } from "@/shared/components/ui/text";
+import { useAttachImages } from "../lib/use-attach-images";
 import { useGallery } from "../lib/use-gallery";
 import { GalleryHero } from "./gallery-hero";
 import { JourneyRail } from "./journey-rail";
@@ -8,10 +9,13 @@ import { JourneyRail } from "./journey-rail";
  * One Design's visual home: the current image on the hero, then the journey
  * rail with the active stage's images beneath it. The images live read feeds
  * the gallery reducer, so an image written anywhere re-runs this without a
- * manual refresh. The designs module composes it above Detail's hero text.
+ * manual refresh. The plus card attaches to the active stage, so the stage the
+ * owner picked is the kind the picked files get. The designs module composes it
+ * above Detail's hero text.
  */
 export function DesignGallery({ designId }: { designId: string }) {
   const { state, stages, view, send, error, status } = useGallery(designId);
+  const attach = useAttachImages(designId, state.kind);
 
   if (error) {
     return <Text className="text-destructive">{error.message}</Text>;
@@ -35,6 +39,7 @@ export function DesignGallery({ designId }: { designId: string }) {
         selectedId={view.image?.id ?? null}
         onStagePress={(kind) => send({ type: "stage-pressed", kind })}
         onImagePress={(imageId) => send({ type: "image-pressed", imageId })}
+        onAddPress={() => void attach()}
       />
     </View>
   );

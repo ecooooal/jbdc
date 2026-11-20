@@ -4,4 +4,5 @@
  * kinds, the Cover, and the write path stay on the driver-free entry.
  */
 export { DesignGallery } from "./components/design-gallery";
+export { ImagePickerProvider } from "./lib/image-picker-context";
 export { ImageStoreProvider, useImageUri } from "./lib/image-store-context";

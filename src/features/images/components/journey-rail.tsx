@@ -1,6 +1,8 @@
 import { Image } from "expo-image";
+import { Plus } from "lucide-react-native";
 import { Pressable, ScrollView, View } from "react-native";
 import type { ImageKind } from "@/features/database";
+import { Icon } from "@/shared/components/ui/icon";
 import { Text } from "@/shared/components/ui/text";
 import { cn } from "@/shared/lib/utils";
 import { imageKindLabel, type Image as StoredImage, type ImageStage } from "../lib/images";
@@ -26,10 +28,32 @@ function StageImage({ image, className }: { image: StoredImage | null; className
 }
 
 /**
+ * The plus card: the end of the active stage, and the whole of an empty one.
+ * Pressing it attaches to that stage, which is why it names the stage and asks
+ * for no kind.
+ */
+function AddImageCard({ label, onPress }: { label: string; onPress: () => void }) {
+  return (
+    <Pressable
+      role="button"
+      accessibilityLabel={`Add images to ${label}`}
+      onPress={onPress}
+      className="border-border bg-muted aspect-[3/4] w-16 items-center justify-center gap-1 rounded-lg border border-dashed"
+    >
+      <Icon as={Plus} className="text-muted-foreground size-5" />
+      <Text variant="muted" className="text-[10px] leading-3">
+        Add
+      </Text>
+    </Pressable>
+  );
+}
+
+/**
  * The journey rail: one chip per stage, all four always, each naming what it
  * holds. The active stage opens its images oldest to newest on the second row,
  * so the rail stays a stable spine and an empty stage shows where work is
- * missing. A thumb selects the hero's image.
+ * missing. A thumb selects the hero's image; the plus card at the end attaches
+ * to the active stage.
  */
 export function JourneyRail({
   stages,
@@ -37,12 +61,14 @@ export function JourneyRail({
   selectedId,
   onStagePress,
   onImagePress,
+  onAddPress,
 }: {
   stages: readonly ImageStage[];
   active: ImageStage | null;
   selectedId: string | null;
   onStagePress: (kind: ImageKind) => void;
   onImagePress: (imageId: string) => void;
+  onAddPress: () => void;
 }) {
   const activeKind = active?.kind ?? null;
 
@@ -77,7 +103,7 @@ export function JourneyRail({
         })}
       </View>
 
-      {active && active.images.length > 0 ? (
+      {active ? (
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -105,6 +131,8 @@ export function JourneyRail({
               </Pressable>
             );
           })}
+
+          <AddImageCard label={imageKindLabel(active.kind)} onPress={onAddPress} />
         </ScrollView>
       ) : null}
     </View>

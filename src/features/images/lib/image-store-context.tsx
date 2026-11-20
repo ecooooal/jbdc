@@ -12,6 +12,11 @@ export function ImageStoreProvider({ store, children }: PropsWithChildren<{ stor
   return <ImageStoreContext.Provider value={store}>{children}</ImageStoreContext.Provider>;
 }
 
+/** The store a surface writes through, or null when no provider is above it. */
+export function useImageStore(): ImageStore | null {
+  return useContext(ImageStoreContext);
+}
+
 /**
  * The URI a stored image is loaded from, or null when no store is provided.
  * A surface that renders a Cover calls this; a design with no image passes

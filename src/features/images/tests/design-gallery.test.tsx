@@ -1,14 +1,20 @@
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { render, screen, userEvent } from "@testing-library/react-native";
+import { act, render, screen, userEvent } from "@testing-library/react-native";
 import type { ImageKind } from "@/features/database";
 import { DatabaseProvider } from "@/features/database/react";
 import { createSyncSubscribe, createTempDatabase } from "@/features/database/testing";
 import { createDesign } from "@/features/designs";
-import { writeImages, type ImageStore } from "@/features/images";
-import { DesignGallery, ImageStoreProvider } from "@/features/images/react";
+import {
+  listDesignImages,
+  writeImages,
+  type ImagePicker,
+  type ImageStore,
+} from "@/features/images";
+import { DesignGallery, ImagePickerProvider, ImageStoreProvider } from "@/features/images/react";
 import { createTempImageStore } from "@/features/images/testing";
+import { listDesignEvents } from "@/features/history";
 
 const live = createSyncSubscribe();
 
@@ -43,11 +49,13 @@ async function attach(designId: string, kind: ImageKind, bytes: string, now: num
   );
 }
 
-async function renderGallery(designId: string) {
+async function renderGallery(designId: string, picker: ImagePicker = { pick: async () => [] }) {
   return render(
     <DatabaseProvider database={database} subscribe={live.subscribe}>
       <ImageStoreProvider store={store}>
-        <DesignGallery designId={designId} />
+        <ImagePickerProvider picker={picker}>
+          <DesignGallery designId={designId} />
+        </ImagePickerProvider>
       </ImageStoreProvider>
     </DatabaseProvider>,
   );
@@ -76,4 +84,31 @@ test("pressing a stage chip activates that stage", async () => {
   expect(screen.getByRole("button", { name: "Sketch" }).props.accessibilityState).toMatchObject({
     selected: true,
   });
+});
+
+test("the plus card attaches the picked files to the stage the owner chose", async () => {
+  const design = createDesign(database, { name: "Wool coat" });
+  const pickedPath = join(sourceDirectory, "picked.jpg");
+  const picker: ImagePicker = { pick: jest.fn(async () => [pickedPath]) };
+
+  writeFileSync(pickedPath, "picked bytes");
+  await renderGallery(design.id, picker);
+
+  await userEvent.press(screen.getByRole("button", { name: "Sketch" }));
+  await userEvent.press(screen.getByRole("button", { name: "Add images to Sketch" }));
+
+  // Let the picked file land, then report the write the way the app's change
+  // listener does, so the live read re-runs without a manual refresh.
+  await act(async () => {});
+  await act(async () => live.notify("images"));
+
+  expect(picker.pick).toHaveBeenCalledWith();
+  expect(screen.getByRole("button", { name: "Sketch image 1" })).toBeTruthy();
+  expect(listDesignImages(database, design.id)).toHaveLength(1);
+  expect(listDesignEvents(database, design.id)).toEqual([
+    expect.objectContaining({
+      kind: "image_change",
+      diff: { images: { attached: [expect.objectContaining({ kind: "sketch" })] } },
+    }),
+  ]);
 });
