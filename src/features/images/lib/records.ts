@@ -91,20 +91,25 @@ function imageFrom(db: DatabaseHandle, designId: string, imageId: string): Image
   );
 }
 
-/** How many images, in the whole catalog, still reference one stored file. */
-function references(db: DatabaseHandle, contentHash: string): number {
+/**
+ * How many images, in the whole catalog, still reference one stored file. The
+ * store keys a file by its bytes and its extension, so both must match.
+ */
+function references(db: DatabaseHandle, file: ImageFile): number {
   return (
     db
       .select({ count: count() })
       .from(images)
-      .where(eq(images.contentHash, contentHash))
+      .where(
+        and(eq(images.contentHash, file.contentHash), eq(images.extension, file.extension))
+      )
       .get()?.count ?? 0
   );
 }
 
 /** Deletes a stored file only when no image row, on any Design, still holds it. */
 function releaseIfUnreferenced(db: DatabaseHandle, store: ImageStore, file: ImageFile): void {
-  if (references(db, file.contentHash) === 0) store.remove(file);
+  if (references(db, file) === 0) store.remove(file);
 }
 
 /**
@@ -141,7 +146,20 @@ export function writeImages(
   if (change.kind === 'attach') {
     // Copy before opening the transaction: a missing source fails here, so no
     // image row can point at a file the store does not have.
-    const files = change.images.map(({ sourcePath }) => store.copy(sourcePath));
+    const files: ImageFile[] = [];
+
+    try {
+      for (const { sourcePath } of change.images) {
+        files.push(store.copy(sourcePath));
+      }
+    } catch (error) {
+      // A later copy failed after earlier ones landed. Release what this
+      // attempt stored, keeping any file another image still references, so a
+      // failed write leaves the store as it found it, and surface the failure.
+      for (const file of files) releaseIfUnreferenced(database.db, store, file);
+
+      throw error;
+    }
 
     return database.transaction((tx) => {
       if (!designExists(tx, designId)) {

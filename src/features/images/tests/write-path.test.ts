@@ -257,6 +257,44 @@ describe('removing an image', () => {
     ]);
   });
 
+  test('counts references by bytes and extension, so a sibling extension survives', () => {
+    const designId = createWoolCoat();
+    const jpeg = sourceFile('a.jpg', 'the same bytes');
+    const png = sourceFile('a.png', 'the same bytes');
+
+    writeImages(
+      database,
+      store,
+      designId,
+      {
+        kind: 'attach',
+        images: [
+          { sourcePath: jpeg, kind: 'final' },
+          { sourcePath: png, kind: 'sketch' },
+        ],
+      },
+      1000
+    );
+
+    const images = listDesignImages(database, designId);
+    const jpegImage = images.find((image) => image.extension === 'jpg');
+    const pngImage = images.find((image) => image.extension === 'png');
+
+    expect(jpegImage?.contentHash).toBe(pngImage?.contentHash);
+    expect(storedFiles().sort()).toEqual([
+      `${pngImage?.contentHash}.jpg`,
+      `${pngImage?.contentHash}.png`,
+    ]);
+
+    writeImages(database, store, designId, { kind: 'remove', imageId: jpegImage!.id }, 2000);
+
+    expect(storedFiles()).toEqual([`${pngImage!.contentHash}.png`]);
+
+    writeImages(database, store, designId, { kind: 'remove', imageId: pngImage!.id }, 3000);
+
+    expect(storedFiles()).toEqual([]);
+  });
+
   test('keeps a file another design still references', () => {
     const firstDesign = createWoolCoat();
     const secondDesign = createDesign(database, { name: 'Silk slip' }, 500).id;
@@ -368,6 +406,64 @@ describe('refused writes', () => {
       )
     ).toEqual({ kind: 'design-missing' });
     expect(storedFiles()).toEqual([]);
+  });
+
+  test('a copy that fails releases the files this attempt already stored', () => {
+    const designId = createWoolCoat(500);
+    const copied = sourceFile('copied.jpg', 'copied bytes');
+
+    expect(() =>
+      writeImages(
+        database,
+        store,
+        designId,
+        {
+          kind: 'attach',
+          images: [
+            { sourcePath: copied, kind: 'sketch' },
+            { sourcePath: join(sourceDirectory, 'missing.jpg'), kind: 'sketch' },
+          ],
+        },
+        1000
+      )
+    ).toThrow();
+
+    expect(storedFiles()).toEqual([]);
+    expect(listDesignImages(database, designId)).toEqual([]);
+    expect(listDesignEvents(database, designId)).toEqual([]);
+    expect(getDesign(database, designId)?.updatedAt).toBe(500);
+  });
+
+  test('a failed copy leaves a file another image still references', () => {
+    const designId = createWoolCoat(500);
+    const shared = sourceFile('shared.jpg', 'shared bytes');
+
+    writeImages(
+      database,
+      store,
+      designId,
+      { kind: 'attach', images: [{ sourcePath: shared, kind: 'final' }] },
+      1000
+    );
+
+    expect(() =>
+      writeImages(
+        database,
+        store,
+        designId,
+        {
+          kind: 'attach',
+          images: [
+            { sourcePath: shared, kind: 'sketch' },
+            { sourcePath: join(sourceDirectory, 'missing.jpg'), kind: 'sketch' },
+          ],
+        },
+        2000
+      )
+    ).toThrow();
+
+    expect(storedFiles()).toHaveLength(1);
+    expect(listDesignImages(database, designId)).toHaveLength(1);
   });
 
   test('reclassifying an image the design does not have answers image-missing', () => {

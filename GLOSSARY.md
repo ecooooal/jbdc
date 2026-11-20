@@ -59,7 +59,7 @@ _Avoid_: sample, toile, mockup
 ## History
 
 **History**:
-The append-only sequence of Events kept for one design, newest first when read. One visit is one Event, so History reads as work, not keystrokes.
+The append-only sequence of Events kept for one design, newest first when read. A visit records at most one Event, and a structural image action records its own `image_change` Event immediately, so History reads as work, not keystrokes.
 _Avoid_: audit log, activity feed, revision history
 
 **Visit**:
@@ -71,11 +71,11 @@ Where a design stands right now: Concept, In Development, Approved, Produced, Re
 _Avoid_: state, stage, phase
 
 **Event**:
-A recorded happening in a design's history — a status change, a decision, an edit, or a note. Written once and never altered; a correction is a new event.
+A recorded happening in a design's history — a status change, a decision, an edit, a note, or an `image_change`. Written once and never altered; a correction is a new event.
 _Avoid_: revision, change log, audit trail, activity
 
 **Diff**:
-What one visit changed, as its Event stores it: each field with the value it had and the value it became, plus the Material uses the visit added, removed, or corrected. An empty diff is no Event.
+What one Event changed, as it stores it: for a visit, each field with the value it had and the value it became, plus the Material uses it added, removed, or corrected; for an `image_change`, the images that action attached, removed, or reclassified. An empty diff is no Event.
 _Avoid_: patch, delta, changeset — and "diff" for comparing versions, which this app does not do.
 
 **Decision**:

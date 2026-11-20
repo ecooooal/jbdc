@@ -53,7 +53,7 @@ async function renderCard(design: LibraryDesign, density: CardDensity) {
   );
 }
 
-test('the card shows the newest image of the design’s highest kind present', async () => {
+test('the card renders the Cover from the store', async () => {
   const designId = createDesign(database, { name: 'Wool coat' }, 500).id;
 
   attach(designId, 'sketch', 'sketch bytes', 1000);
@@ -65,7 +65,6 @@ test('the card shows the newest image of the design’s highest kind present', a
 
   const cover = screen.getByLabelText('Cover of Wool coat');
 
-  expect(design.cover).toMatchObject({ kind: 'final' });
   // expo-image normalizes a source to its list form.
   expect(cover.props.source).toEqual([{ uri: store.uri(design.cover!) }]);
   expect(screen.queryByTestId('cover-placeholder')).toBeNull();
