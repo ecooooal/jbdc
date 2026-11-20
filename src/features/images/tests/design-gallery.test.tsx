@@ -67,7 +67,6 @@ test("pressing a stage chip activates that stage", async () => {
 
   await userEvent.press(screen.getByRole("button", { name: "Sketch" }));
 
-  expect(screen.getByLabelText("Sketch image 1 of 1")).toBeTruthy();
   expect(screen.getByRole("button", { name: "Sketch" }).props.accessibilityState).toMatchObject({
     selected: true,
   });

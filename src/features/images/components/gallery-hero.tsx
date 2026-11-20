@@ -14,9 +14,8 @@ const SWIPE_DISTANCE = 40;
 
 /**
  * The current image, its stage chip, and its count. Swiping dispatches once,
- * on release; a tap opens the viewer in the surface that owns it. An empty
- * stage keeps the same frame and shows the placeholder, so the hero never
- * changes shape as images arrive.
+ * on release. An empty stage keeps the same frame and shows the placeholder,
+ * so the hero never changes shape as images arrive.
  */
 export function GalleryHero({
   image,

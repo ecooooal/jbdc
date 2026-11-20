@@ -33,18 +33,18 @@ function StageImage({ image, className }: { image: StoredImage | null; className
  */
 export function JourneyRail({
   stages,
-  activeKind,
+  active,
   selectedId,
   onStagePress,
   onImagePress,
 }: {
   stages: readonly ImageStage[];
-  activeKind: ImageKind;
+  active: ImageStage | null;
   selectedId: string | null;
   onStagePress: (kind: ImageKind) => void;
   onImagePress: (imageId: string) => void;
 }) {
-  const active = stages.find((stage) => stage.kind === activeKind) ?? null;
+  const activeKind = active?.kind ?? null;
 
   return (
     <View className="gap-2">

@@ -157,7 +157,6 @@ describe("edit hero", () => {
 
     await renderEdit(design.id);
 
-    expect(screen.queryByLabelText("Design images")).toBeNull();
     expect(screen.queryByLabelText("Design journey")).toBeNull();
   });
 

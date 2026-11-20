@@ -23,7 +23,7 @@ export function DesignGallery({ designId }: { designId: string }) {
     <View className="gap-3" accessibilityLabel="Design journey">
       <GalleryHero
         image={view.image}
-        kind={view.image?.kind ?? state.kind}
+        kind={view.stage?.kind ?? state.kind}
         position={view.position}
         count={view.count}
         onSwipe={(direction) => send({ type: "hero-swiped", direction })}
@@ -31,7 +31,7 @@ export function DesignGallery({ designId }: { designId: string }) {
 
       <JourneyRail
         stages={stages}
-        activeKind={state.kind}
+        active={view.stage}
         selectedId={view.image?.id ?? null}
         onStagePress={(kind) => send({ type: "stage-pressed", kind })}
         onImagePress={(imageId) => send({ type: "image-pressed", imageId })}

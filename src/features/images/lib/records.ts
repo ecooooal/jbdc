@@ -257,7 +257,7 @@ export type DesignImagesRows = {
  * One Design's images as a live read. The gallery and the journey rail derive
  * from it, so an attach, remove, or reclassify re-runs the screen without a
  * manual refresh; the tables it watches are declared beside the query
- * (ADR-0005). Image notes join this declaration when their table arrives.
+ * (ADR-0005).
  */
 export function designImagesRead(designId: string): LiveReadDeclaration<DesignImagesRows> {
   return declareLiveRead<DesignImagesRows>({
