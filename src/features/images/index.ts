@@ -5,3 +5,10 @@
  */
 export { coverOf, imageStages } from './lib/images';
 export type { Image, ImageStage } from './lib/images';
+export { listDesignImages, writeImages } from './lib/records';
+export type {
+  ImageAttach,
+  ImageChange,
+  ImageWriteResult,
+} from './lib/records';
+export type { ImageFile, ImageStore } from './lib/image-store';
