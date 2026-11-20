@@ -28,7 +28,9 @@ ADRs under `docs/adr/`.
   work, and never give a one-line prose change its own commit.
 - **Generated files travel alone.** `snapshot.json`, `migration.sql`, and
   `migrations.js` share a commit with their schema change and nothing else.
-  Their hundreds of lines hide every file beside them.
+  Their hundreds of lines hide every file beside them. When the step's content is
+  the schema change itself, they ride in that step's commit with the schema and
+  the migration test; "alone" means not beside unrelated code.
 - **A rename travels alone.** Moving a file and changing its behaviour in one
   commit hides both from the reviewer.
 - **A fat commit means a coarse ticket.** If the ticket does not name its steps
