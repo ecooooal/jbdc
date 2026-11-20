@@ -2,7 +2,13 @@ import { mkdtempSync, readFileSync, readdirSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { eq, sql } from 'drizzle-orm';
-import { categories, DESIGN_STATUSES, designs } from '@/features/database';
+import {
+  categories,
+  DESIGN_STATUSES,
+  designs,
+  IMAGE_KINDS,
+  images,
+} from '@/features/database';
 import { createTempDatabase, openTestDatabase } from '@/features/database/testing';
 
 describe('database migrations', () => {
@@ -32,6 +38,7 @@ describe('database migrations', () => {
         'design_events',
         'design_materials',
         'designs',
+        'images',
         'materials',
         'settings',
       ])
@@ -43,6 +50,8 @@ describe('database migrations', () => {
         'design_materials_material_id_idx',
         'designs_collection_id_idx',
         'designs_status_idx',
+        'images_content_hash_idx',
+        'images_design_id_idx',
       ])
     );
   });
@@ -111,6 +120,59 @@ describe('database migrations', () => {
           searchText: 'prototype',
           createdAt: 0,
           updatedAt: 0,
+        })
+        .run()
+    ).toThrow();
+  });
+
+  test('accepts every image kind and rejects a kind outside the four', () => {
+    database.db
+      .insert(designs)
+      .values({
+        id: 'images-design',
+        name: 'A design with images',
+        status: 'concept',
+        searchText: 'a design with images',
+        createdAt: 0,
+        updatedAt: 0,
+      })
+      .run();
+
+    const columns = database.db
+      .all<{ name: string }>(sql`pragma table_info(images)`)
+      .map((column) => column.name);
+
+    expect(columns).toEqual(
+      expect.arrayContaining(['id', 'design_id', 'content_hash', 'extension', 'kind', 'created_at'])
+    );
+
+    for (const [index, kind] of IMAGE_KINDS.entries()) {
+      expect(() =>
+        database.db
+          .insert(images)
+          .values({
+            id: `image-${kind}`,
+            designId: 'images-design',
+            contentHash: `hash-${kind}`,
+            extension: 'jpg',
+            kind,
+            createdAt: index,
+          })
+          .run()
+      ).not.toThrow();
+    }
+
+    expect(() =>
+      database.db
+        .insert(images)
+        .values({
+          id: 'image-material',
+          designId: 'images-design',
+          contentHash: 'hash-material',
+          extension: 'jpg',
+          // `material` is the Materials table's job, never an image kind.
+          kind: 'material' as never,
+          createdAt: 0,
         })
         .run()
     ).toThrow();

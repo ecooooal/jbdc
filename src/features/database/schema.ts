@@ -14,9 +14,24 @@ export const DESIGN_STATUSES = [
 export type DesignStatus = (typeof DESIGN_STATUSES)[number];
 
 /** The kinds of thing an append-only History entry can record. */
-export const DESIGN_EVENT_KINDS = ['status_change', 'decision', 'edit', 'note'] as const;
+export const DESIGN_EVENT_KINDS = [
+  'status_change',
+  'decision',
+  'edit',
+  'note',
+  'image_change',
+] as const;
 
 export type DesignEventKind = (typeof DESIGN_EVENT_KINDS)[number];
+
+/**
+ * The kind an Image plays in a Design's journey, in journey order. Required and
+ * mutable: an image is reclassified as the design develops. The Cover ranks the
+ * same list in reverse.
+ */
+export const IMAGE_KINDS = ['inspiration', 'sketch', 'prototype', 'final'] as const;
+
+export type ImageKind = (typeof IMAGE_KINDS)[number];
 
 /** The role a Material use plays on a design. */
 export const MATERIAL_USE_ROLES = ['main', 'secondary', 'other'] as const;
@@ -142,6 +157,34 @@ export const designEvents = sqliteTable(
     createdAt: timestamp('created_at').notNull(),
   },
   (table) => [index('design_events_design_id_created_at_idx').on(table.designId, table.createdAt)]
+);
+
+/**
+ * One visual file attached to a Design, labelled by its kind. Images are their
+ * own table beside the Design aggregate, not columns of it (ADR-0003). The
+ * file itself lives in the catalog's image directory, keyed by the content
+ * hash, so the same bytes attached twice are stored once; nothing here is the
+ * Cover, which is derived from kind and recency.
+ */
+export const images = sqliteTable(
+  'images',
+  {
+    id: text('id').primaryKey(),
+    designId: text('design_id')
+      .notNull()
+      .references(() => designs.id),
+    /** The SHA-256 of the file, and so the store's key. */
+    contentHash: text('content_hash').notNull(),
+    /** The stored file's extension, without the dot. */
+    extension: text('extension').notNull(),
+    kind: text('kind', { enum: IMAGE_KINDS }).notNull(),
+    createdAt: timestamp('created_at').notNull(),
+  },
+  (table) => [
+    index('images_design_id_idx').on(table.designId),
+    index('images_content_hash_idx').on(table.contentHash),
+    check('images_kind_check', sql`${table.kind} in (${sqlList(IMAGE_KINDS)})`),
+  ]
 );
 
 export const settings = sqliteTable('settings', {

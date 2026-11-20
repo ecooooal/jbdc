@@ -14,10 +14,12 @@ export {
   designEvents,
   designMaterials,
   designs,
+  images,
   materials,
   settings,
   DESIGN_EVENT_KINDS,
   DESIGN_STATUSES,
+  IMAGE_KINDS,
   MATERIAL_USE_ROLES,
 } from './schema';
-export type { DesignEventKind, DesignStatus, MaterialUseRole } from './schema';
+export type { DesignEventKind, DesignStatus, ImageKind, MaterialUseRole } from './schema';
