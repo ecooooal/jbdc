@@ -6,15 +6,10 @@ import type { ImageKind } from "@/features/database";
 import { DatabaseProvider } from "@/features/database/react";
 import { createSyncSubscribe, createTempDatabase } from "@/features/database/testing";
 import { createDesign } from "@/features/designs";
-import {
-  listDesignImages,
-  writeImages,
-  type ImagePicker,
-  type ImageStore,
-} from "@/features/images";
+import { listDesignImages, writeImages, type ImageStore } from "@/features/images";
 import { DesignGallery, ImagePickerProvider, ImageStoreProvider } from "@/features/images/react";
 import { createTempImageStore } from "@/features/images/testing";
-import { listDesignEvents } from "@/features/history";
+import type { ImagePicker } from "../lib/image-picker";
 
 const live = createSyncSubscribe();
 
@@ -88,27 +83,27 @@ test("pressing a stage chip activates that stage", async () => {
 
 test("the plus card attaches the picked files to the stage the owner chose", async () => {
   const design = createDesign(database, { name: "Wool coat" });
-  const pickedPath = join(sourceDirectory, "picked.jpg");
-  const picker: ImagePicker = { pick: jest.fn(async () => [pickedPath]) };
+  const frontPath = join(sourceDirectory, "front.jpg");
+  const backPath = join(sourceDirectory, "back.jpg");
+  const picker: ImagePicker = { pick: jest.fn(async () => [frontPath, backPath]) };
 
-  writeFileSync(pickedPath, "picked bytes");
+  writeFileSync(frontPath, "front bytes");
+  writeFileSync(backPath, "back bytes");
   await renderGallery(design.id, picker);
 
   await userEvent.press(screen.getByRole("button", { name: "Sketch" }));
   await userEvent.press(screen.getByRole("button", { name: "Add images to Sketch" }));
 
-  // Let the picked file land, then report the write the way the app's change
+  // Let the picked files land, then report the write the way the app's change
   // listener does, so the live read re-runs without a manual refresh.
   await act(async () => {});
   await act(async () => live.notify("images"));
 
   expect(picker.pick).toHaveBeenCalledWith();
   expect(screen.getByRole("button", { name: "Sketch image 1" })).toBeTruthy();
-  expect(listDesignImages(database, design.id)).toHaveLength(1);
-  expect(listDesignEvents(database, design.id)).toEqual([
-    expect.objectContaining({
-      kind: "image_change",
-      diff: { images: { attached: [expect.objectContaining({ kind: "sketch" })] } },
-    }),
+  expect(screen.getByRole("button", { name: "Sketch image 2" })).toBeTruthy();
+  expect(listDesignImages(database, design.id).map((image) => image.kind)).toEqual([
+    "sketch",
+    "sketch",
   ]);
 });

@@ -26,6 +26,12 @@ export type SwipeDirection = "next" | "previous";
 export type GalleryState = {
   kind: ImageKind;
   imageId: string | null;
+  /**
+   * True once the first read has placed the gallery on the Cover. Before that an
+   * images-read opens on the Cover; afterwards a stage the owner chose while it
+   * was empty is kept until its first image arrives.
+   */
+  opened: boolean;
 };
 
 /** What the owner did to the gallery. */
@@ -48,7 +54,7 @@ export type GalleryEvent =
  * strongest stage. The read replaces this at once with the Cover's stage.
  */
 export function createInitialGalleryState(): GalleryState {
-  return { kind: "final", imageId: null };
+  return { kind: "final", imageId: null, opened: false };
 }
 
 /** The current image's stage, position and count, derived from the live list. */
@@ -129,23 +135,39 @@ export function galleryReducer(state: GalleryState, event: GalleryEvent): Galler
     case "images-read": {
       const kept = locationOf(event.stages, state.imageId);
 
-      if (kept) return kept;
+      if (kept) return { ...kept, opened: true };
+
+      // A stage the owner chose while it was empty stays chosen: take its first
+      // image once one arrives, and keep the stage empty until then. Only before
+      // the first read — when there is no chosen stage — does the Cover win.
+      if (state.opened && state.imageId === null) {
+        const chosen = event.stages.find((candidate) => candidate.kind === state.kind);
+
+        if (chosen)
+          return { kind: state.kind, imageId: chosen.images[0]?.id ?? null, opened: true };
+      }
 
       const cover = locationOf(event.stages, event.cover);
 
-      return { kind: cover?.kind ?? state.kind, imageId: cover?.imageId ?? null };
+      return { kind: cover?.kind ?? state.kind, imageId: cover?.imageId ?? null, opened: true };
     }
 
     case "stage-pressed": {
       const stage = event.stages.find((candidate) => candidate.kind === event.kind);
 
-      return { kind: event.kind, imageId: stage?.images[0]?.id ?? null };
+      return { kind: event.kind, imageId: stage?.images[0]?.id ?? null, opened: state.opened };
     }
 
-    case "image-pressed":
-      return locationOf(event.stages, event.imageId) ?? state;
+    case "image-pressed": {
+      const located = locationOf(event.stages, event.imageId);
 
-    case "hero-swiped":
-      return step(event.stages, state.imageId, event.direction) ?? state;
+      return located ? { ...located, opened: state.opened } : state;
+    }
+
+    case "hero-swiped": {
+      const stepped = step(event.stages, state.imageId, event.direction);
+
+      return stepped ? { ...stepped, opened: state.opened } : state;
+    }
   }
 }
