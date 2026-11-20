@@ -125,7 +125,27 @@ test('Detail renders the hero and the recorded Specification read-only', async (
   expect(screen.getByText('Specification')).toBeTruthy();
   expect(screen.getByText('Relaxed A-line')).toBeTruthy();
   expect(screen.getByText('Bust 96 / waist 104')).toBeTruthy();
-  expect(screen.getByText('Created')).toBeTruthy();
+});
+
+test('Detail shows Created and Updated as date badges instead of the bottom timestamp box', async () => {
+  const design = createDesign(
+    database,
+    { name: 'Silk slip dress' },
+    Date.UTC(2026, 0, 5, 12)
+  );
+  writeDesign(
+    database,
+    design.id,
+    { fields: { description: 'Bias cut, cowl neck.' } },
+    Date.UTC(2026, 1, 12, 12)
+  );
+
+  await renderDetail(design.id);
+
+  expect(screen.getByText('Created Jan 5, 2026')).toBeTruthy();
+  expect(screen.getByText('Updated Feb 12, 2026')).toBeTruthy();
+  expect(screen.queryByText('Created')).toBeNull();
+  expect(screen.queryByText('Updated')).toBeNull();
 });
 
 test('Detail hides Specification rows the owner has not recorded', async () => {
