@@ -21,8 +21,16 @@ The part of a design that names it: its name, description, Category, and Collect
 _Avoid_: header, overview, basics, metadata
 
 **Image**:
-A visual file attached to a design, carrying an optional kind that says what role it plays in the process: `sketch`, `material`, `inspiration`, `prototype`, `final`, or `photoshoot`. The kind is a label, not history — an image can be reclassified as the design changes.
+A visual file attached to a design, carrying the kind that says what role it plays in the process: `inspiration`, `sketch`, `prototype`, or `final`. The kind is required — every image is a step in the journey — and is a label, not history: an image can be reclassified as the design changes.
 _Avoid_: photo, picture, asset, attachment — and "design" for the sketch kind, which collides with Design itself.
+
+**Cover**:
+The image that represents a design: the newest image of the highest kind the design has, in the order `final`, `prototype`, `sketch`, `inspiration`. Derived, never marked or stored — reclassifying an image can change it — and a design with no images has none.
+_Avoid_: primary, thumbnail, "marked image"
+
+**Image note**:
+One item of the commentary list attached to an image: what the owner decided there, and why. Added or removed, never edited in place, and it dies with its image.
+_Avoid_: caption, comment — and "note" alone, which is an Event
 
 **Category**:
 The garment type a design is, chosen from a list the owner maintains. At most one per design, and a design may have none.
@@ -76,6 +84,7 @@ _Avoid_: verdict, outcome
 
 **Note**:
 A free-text event the owner writes to explain something no other event captures.
+_Avoid_: "image note", which is a different record
 
 **Rejected**:
 A status meaning this design will not proceed. It keeps its reason, its images, and its specifications, and stays in the catalog.
