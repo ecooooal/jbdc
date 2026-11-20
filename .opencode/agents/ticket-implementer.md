@@ -146,7 +146,10 @@ Read these; do not ask the orchestrator to repeat them.
 
 ## Work
 
-Call the Skill tool with `implement` and follow it, with the overrides below. Call the Skill tool with `tdd` at the ticket's reducer and records seams, as `implement` instructs.
+Call the Skill tool with `implement` and follow it, with the overrides below. `implement` is user-invoked, so it
+may be missing from your skill list — invoke it by id anyway; the Skill tool resolves it, and "not installed" from
+a list you read is not an answer. Call the Skill tool with `tdd` at the ticket's reducer and records seams, as
+`implement` instructs.
 
 Overrides, which win over the skill text:
 
