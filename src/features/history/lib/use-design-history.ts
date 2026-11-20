@@ -1,50 +1,19 @@
 import { useMemo } from 'react';
-import { categories, collections, designEvents } from '@/features/database';
-import {
-  useDatabase,
-  useLiveRead,
-  type LiveReadStatus,
-} from '@/features/database/react';
-import { readTaxonomyNames, type TaxonomyNames } from '@/features/taxonomy';
-import { designEventsQuery, toDesignEvent, type DesignEvent } from './events';
+import { useLiveRead, type LiveReadFields } from '@/features/database/react';
+import { designHistoryRead, type DesignHistoryRows } from './events';
 
-export type DesignHistory = {
-  events: DesignEvent[];
-  /** Every Category and Collection name, deleted entries included (#7). */
-  taxonomy: TaxonomyNames;
-  error: Error | undefined;
-  /** `loading` until the first read resolves, so "no history" is not shown early. */
-  status: LiveReadStatus;
-};
-
-const EMPTY_TAXONOMY: TaxonomyNames = {
-  categories: new Map(),
-  collections: new Map(),
-};
+/** One Design's History plus the shared status. */
+export type DesignHistory = DesignHistoryRows & LiveReadFields;
 
 /**
- * Subscribes to one Design's History, newest first, with the names its stored
- * taxonomy ids resolve to. Events, Categories, and Collections are one read:
- * an edit or a taxonomy rename refreshes both parts together.
+ * Subscribes to one Design's History through the one live read, newest first,
+ * with the names its stored taxonomy ids resolve to. Events, Categories and
+ * Collections are read together, so an edit or a taxonomy rename refreshes
+ * both parts at once.
  */
 export function useDesignHistory(designId: string): DesignHistory {
-  const database = useDatabase();
-  const run = useMemo(
-    () => () => ({
-      events: designEventsQuery(database, designId).all().map(toDesignEvent),
-      taxonomy: readTaxonomyNames(database),
-    }),
-    [database, designId]
-  );
-  const { data, error, status } = useLiveRead({
-    tables: [designEvents, categories, collections],
-    run,
-  });
+  const declaration = useMemo(() => designHistoryRead(designId), [designId]);
+  const { data, error, status } = useLiveRead(declaration);
 
-  return {
-    events: data?.events ?? [],
-    taxonomy: data?.taxonomy ?? EMPTY_TAXONOMY,
-    error,
-    status,
-  };
+  return { ...data, error, status };
 }

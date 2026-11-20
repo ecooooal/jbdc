@@ -3,11 +3,18 @@ import { ChevronLeft } from 'lucide-react-native';
 import { ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { DesignEditableField } from '@/features/designs';
+import { designFieldLabel } from '@/features/designs';
 import { taxonomyLabel, type TaxonomyNames } from '@/features/taxonomy';
 import { Button } from '@/shared/components/ui/button';
 import { Icon } from '@/shared/components/ui/icon';
 import { Text } from '@/shared/components/ui/text';
-import type { DesignEvent, DesignFieldChange } from '../lib/events';
+import {
+  materialUseLines,
+  type DesignEditDiff,
+  type DesignEvent,
+  type DesignFieldChange,
+} from '../lib/events';
+import { DESIGN_HISTORY_SECTIONS } from '../lib/sections';
 import { useDesignHistory } from '../lib/use-design-history';
 
 const TIMESTAMP_FORMAT = new Intl.DateTimeFormat(undefined, {
@@ -21,13 +28,6 @@ const TIMESTAMP_FORMAT = new Intl.DateTimeFormat(undefined, {
 function formatTimestamp(timestamp: number): string {
   return TIMESTAMP_FORMAT.format(timestamp);
 }
-
-const FIELD_LABELS: Record<DesignEditableField, string> = {
-  name: 'Name',
-  description: 'Description',
-  categoryId: 'Category',
-  collectionId: 'Collection',
-};
 
 /**
  * The value a History entry shows for a field. A Category or Collection is
@@ -54,28 +54,67 @@ function valueLabel(
   }
 }
 
-/** One editing session: when it happened and every field it changed. */
-function EventCard({ event, taxonomy }: { event: DesignEvent; taxonomy: TaxonomyNames }) {
-  const changes = Object.entries(event.diff ?? {}) as [DesignEditableField, DesignFieldChange][];
+/** One card's field changes that belong to one section, in the field order it declares. */
+function sectionChanges(
+  diff: DesignEditDiff,
+  fields: readonly DesignEditableField[]
+): [DesignEditableField, DesignFieldChange][] {
+  const changes: [DesignEditableField, DesignFieldChange][] = [];
 
-  if (changes.length === 0) return null;
+  for (const field of fields) {
+    const change = diff[field];
+
+    if (change) changes.push([field, change]);
+  }
+
+  return changes;
+}
+
+/** One visit: when it happened and every field or use it changed. */
+function EventCard({ event, taxonomy }: { event: DesignEvent; taxonomy: TaxonomyNames }) {
+  const diff = event.diff;
+
+  if (!diff) return null;
+
+  const sections = DESIGN_HISTORY_SECTIONS.map((section) => ({
+    ...section,
+    changes: sectionChanges(diff, section.fields),
+  }));
+  const useLines = materialUseLines(diff.materials);
+
+  const hasChanges = sections.some(({ section, changes }) =>
+    section === 'materials' ? useLines.length > 0 : changes.length > 0
+  );
+
+  if (!hasChanges) return null;
 
   return (
     <View className="border-border gap-2 rounded-xl border px-4 py-3">
       <Text variant="muted">{formatTimestamp(event.createdAt)}</Text>
-      {changes.map(([field, change]) => (
-        <Text key={field}>
-          {FIELD_LABELS[field]}: {valueLabel(field, change.from, taxonomy)} →{' '}
-          {valueLabel(field, change.to, taxonomy)}
-        </Text>
-      ))}
+      {sections.map(({ section, label, changes }) => {
+        if (section === 'materials' ? useLines.length === 0 : changes.length === 0) return null;
+
+        return (
+          <View key={section} testID={`history-section-${section}`} className="gap-1">
+            <Text variant="muted">{label}</Text>
+            {section === 'materials'
+              ? useLines.map((line) => <Text key={line.key}>{line.text}</Text>)
+              : changes.map(([field, change]) => (
+                  <Text key={field}>
+                    {designFieldLabel(field)}: {valueLabel(field, change.from, taxonomy)} →{' '}
+                    {valueLabel(field, change.to, taxonomy)}
+                  </Text>
+                ))}
+          </View>
+        );
+      })}
     </View>
   );
 }
 
 /**
  * The append-only History of one Design, newest first. Each entry is one
- * editing session, named by the fields it changed with their old and new
+ * visit, named by the fields it changed with their old and new
  * values.
  */
 export function HistoryScreen({ designId }: { designId: string }) {
@@ -101,7 +140,7 @@ export function HistoryScreen({ designId }: { designId: string }) {
           <View className="gap-6 px-6 pb-12 pt-2">
             <View className="gap-1">
               <Text variant="h3">History</Text>
-              <Text variant="muted">One entry per editing session, newest first.</Text>
+              <Text variant="muted">One entry per visit, newest first.</Text>
             </View>
 
             {events.length === 0 ? (

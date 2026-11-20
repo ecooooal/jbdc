@@ -1,4 +1,11 @@
+import {
+  categories,
+  collections,
+  type Database,
+  type LiveReadTable,
+} from '@/features/database';
 import { createTempDatabase } from '@/features/database/testing';
+import { expectLiveReadReruns } from '@/features/database/testing-live';
 import {
   COLLECTION_YEAR_MAX,
   COLLECTION_YEAR_MIN,
@@ -9,9 +16,42 @@ import {
   listCategories,
   listCollections,
   TAXONOMY_NAME_MAX_LENGTH,
+  taxonomyRead,
 } from '@/features/taxonomy';
 
 const UUID_V4 = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
+
+describe('the Taxonomy live read', () => {
+  let database: ReturnType<typeof createTempDatabase>['database'];
+  let dispose: () => void;
+
+  beforeEach(() => {
+    ({ database, dispose } = createTempDatabase());
+  });
+
+  afterEach(() => {
+    dispose();
+  });
+
+  test('keeps its declared default and reads the lists once', () => {
+    expect(taxonomyRead.empty).toEqual({ categories: [], collections: [] });
+    expect(taxonomyRead.read(database)).toEqual({
+      categories: listCategories(database),
+      collections: listCollections(database),
+    });
+  });
+
+  test('re-runs when either table it reads changes', async () => {
+    const writes = new Map<LiveReadTable, (db: Database) => void>([
+      [categories, (db) => createCategory(db, { name: 'Knitwear' })],
+      [collections, (db) => createCollection(db, { name: 'Spring 2027', year: 2027 })],
+    ]);
+
+    for (const [table, write] of writes) {
+      await expectLiveReadReruns(taxonomyRead, table, database, write);
+    }
+  });
+});
 
 describe('category records', () => {
   let database: ReturnType<typeof createTempDatabase>['database'];

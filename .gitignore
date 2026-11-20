@@ -197,3 +197,6 @@ example
 .claude/skills/drizzle
 .claude/skills/expo-sqlite
 # @generated expo skills end
+
+# architecture review reports (working artifacts, delete once implemented)
+docs/architecture-reviews/

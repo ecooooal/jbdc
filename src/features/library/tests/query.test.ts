@@ -4,10 +4,15 @@ import {
   collections,
   DESIGN_STATUSES,
   designs,
+  type Database,
   type DesignStatus,
+  type LiveReadTable,
 } from '@/features/database';
 import { createTempDatabase } from '@/features/database/testing';
-import { listLibraryDesigns } from '@/features/library';
+import { expectLiveReadReruns } from '@/features/database/testing-live';
+import { createDesign } from '@/features/designs';
+import { libraryDesignsRead, listLibraryDesigns } from '@/features/library';
+import { createCategory, createCollection } from '@/features/taxonomy';
 
 type NewDesign = {
   status?: DesignStatus;
@@ -16,6 +21,36 @@ type NewDesign = {
   categoryId?: string;
   collectionId?: string;
 };
+
+describe('the Library live read', () => {
+  let database: ReturnType<typeof createTempDatabase>['database'];
+  let dispose: () => void;
+
+  beforeEach(() => {
+    ({ database, dispose } = createTempDatabase());
+  });
+
+  afterEach(() => {
+    dispose();
+  });
+
+  test('keeps its declared default and matches the direct read', () => {
+    expect(libraryDesignsRead.empty).toEqual({ designs: [] });
+    expect(libraryDesignsRead.read(database)).toEqual({ designs: listLibraryDesigns(database) });
+  });
+
+  test('re-runs when any table it reads changes', async () => {
+    const writes = new Map<LiveReadTable, (db: Database) => void>([
+      [designs, (db) => createDesign(db, { name: 'Wool coat' })],
+      [categories, (db) => createCategory(db, { name: 'Knitwear' })],
+      [collections, (db) => createCollection(db, { name: 'Spring 2027', year: 2027 })],
+    ]);
+
+    for (const [table, write] of writes) {
+      await expectLiveReadReruns(libraryDesignsRead, table, database, write);
+    }
+  });
+});
 
 describe('library query', () => {
   let database: ReturnType<typeof createTempDatabase>['database'];
@@ -112,8 +147,32 @@ describe('library query', () => {
     expect(inCollection).toMatchObject({
       name: 'In a collection',
       category: 'Dress',
-      collection: 'Spring 2027',
+      collection: 'Spring 2027 (2027)',
       status: 'concept',
     });
+  });
+
+  test('shows a Collection carrying a year with the year in its label', () => {
+    const collectionId = randomUUID();
+
+    database.db
+      .insert(collections)
+      .values({ id: collectionId, name: 'Spring', year: 2027, createdAt: 0 })
+      .run();
+    insertDesign('In a collection', { collectionId, updatedAt: 40 });
+
+    expect(listLibraryDesigns(database)[0].collection).toBe('Spring (2027)');
+  });
+
+  test('shows a Collection stored without a year by its bare name', () => {
+    const collectionId = randomUUID();
+
+    database.db
+      .insert(collections)
+      .values({ id: collectionId, name: 'Spring', year: null, createdAt: 0 })
+      .run();
+    insertDesign('In a collection', { collectionId, updatedAt: 40 });
+
+    expect(listLibraryDesigns(database)[0].collection).toBe('Spring');
   });
 });

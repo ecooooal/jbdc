@@ -24,6 +24,7 @@ For expo eas, see `docs/EXPO-EAS.md`
 - If `ios/` and `android/` directories do not exist, they are generated (Continuous Native Generation). Never create or edit them by hand — configure native behavior in `app.json` and config plugins.
 - Expo Go only includes its bundled native modules. After adding a library with native code, the app needs a development build: `npx expo run:ios|android` locally, or `eas build --profile development`.
 - Prefer recommended Expo modules over third-party libraries, and check your available skills before adding dependencies. Docs: https://docs.expo.dev/versions/latest/index.md
+- `docs/architecture-reviews/` holds throwaway working artifacts (architecture maps and review reports). They describe old commits and go stale. Never read them — read the code, `docs/adr/`, `GLOSSARY.md` and the other `docs/*.md` instead. Writing there is still fine.
 
 ## Agent skills
 
@@ -52,8 +53,9 @@ See `docs/EXPO-DB.md` when handling the application database
 - Review: read `CODING_STANDARDS.md` before approving a diff. It covers judgement
   calls only; types, lint, interface design, import boundaries, frontend state,
   and tests are enforced by CI.
-- Frontend state: read `docs/FRONTEND_STATE.md` before adding a screen's state.
-  Reducers own decisions; rendered tests are for wiring only.
+- Frontend state and tests: read `docs/FRONTEND_STATE.md` before adding a
+  screen's state or any rendered test. Reducers own decisions; rendered tests
+  are for wiring only.
 
 ### Deep-module packages
 

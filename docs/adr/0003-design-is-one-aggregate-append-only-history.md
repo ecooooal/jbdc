@@ -10,3 +10,7 @@ The PRD proposes nine tables, three of which (`designs`, `specifications`, `crea
 - Soft delete on designs doubles as a sync tombstone, so UUID primary keys plus `updated_at` make a future sync addable without rewriting foreign keys. Tombstones were not built; they fall out of deletion.
 - The event diff is the only protection against overwriting a field: soft delete covers deletion, nothing else covers a destructive edit.
 - **Six statuses, not the PRD's seven.** §4.6's Prototype status is cut: a physical sample can exist while the design is still In Development, so the two facts cannot share one value, and alternating between them writes churn into the History. Samples are recorded as `prototype` images. This is a deliberate deviation from the PRD, not an omission.
+
+## Amendments
+
+- **#27, amended by #29 — Material uses.** A design's Materials repeat, so a use lives in `design_materials`: one design's use of a Material, with the colour and the role (main, secondary, other). It is a sixth separate table beside the ones named above, and it holds no name of its own — the Material does. A use added, removed, or corrected during an editing session is part of that session's one Event: the diff's `materials` key carries the added, removed, and corrected uses alongside the fields it changed, and the visit hands them over as one `materialUses: { before, after }` pair on `recordEdit`. Rows written before the key existed carry their uses under the old `materialUses` key; the read translates them into `materials.added`, so they render as added uses.

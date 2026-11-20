@@ -15,6 +15,7 @@ tables, and the status vocabulary. They never import `expo-sqlite` or
 | `@/features/database/expo` | the provider (`react.tsx`) | expo-sqlite, synchronously |
 | `@/features/database/react` | the app root and screens | provider, `useDatabase()`, `useLiveRead` |
 | `@/features/database/testing` | Jest suites only | better-sqlite3 on a temp file, synchronous `subscribe` |
+| `@/features/database/testing-live` | Jest suites for declared reads | nothing; mounts a read in the provider seam |
 
 The port opens a connection, applies migrations, applies the seed, and hands
 out the query handle, an identity generator for new rows, and transactions.
@@ -28,11 +29,13 @@ const design = createDesign(database, { name: 'Silk slip dress' });
 ```
 
 `openAppDatabase()` enables change listeners so live reads can subscribe to
-table changes. A feature exposes its own hook (`useLibraryDesigns`) that reads
-`useDatabase()` and subscribes through `useLiveRead`, re-exported by
-`@/features/database/react`, never by importing a driver adapter. A live read
-declares the tables it watches, joins included (ADR-0005), because drizzle
-cannot derive them. Opening is synchronous because drizzle's expo-sqlite driver
+table changes. A feature declares each live read beside its query as one value — the query,
+the row shape it produces, and every table it watches — then its hook
+(`useLibraryDesigns`) hands that declaration to `useLiveRead`, re-exported by
+`@/features/database/react`. The one hook owns database access, the
+subscription and the status; a feature never imports a driver adapter. A live
+read declares the tables it watches, joins included (ADR-0005), because
+drizzle cannot derive them. Opening is synchronous because drizzle's expo-sqlite driver
 is synchronous; that driver landed in drizzle-orm 1.0 (currently pinned to an
 RC), which is why the ORM version is exact rather than a range.
 
@@ -63,8 +66,13 @@ Domain suites run the real modules against a real temporary SQLite file on a
 Node test environment:
 
 ```ts
-const { database, dispose } = createTempDatabase();
-afterAll(dispose);
+let database: Database;
+let dispose: () => void;
+
+beforeEach(() => {
+  ({ database, dispose } = createTempDatabase());
+});
+afterEach(() => dispose());
 ```
 
 No mocks, no in-memory fakes. Only the two thin driver adapters are untested.
@@ -74,6 +82,13 @@ and `subscribe` props: pass a `createTempDatabase()` handle and the synchronous
 adapter from `createSyncSubscribe()`, then call `notify(table)` after a write
 the read should observe. The app passes neither, so it still opens expo-sqlite
 and uses its change listener filtered to its own file and the declared tables.
+
+A feature test for a declared live read uses `expectLiveReadReruns` from
+`@/features/database/testing-live`: the test performs a real write to the table,
+and the harness mounts the declaration in that provider seam, sends that table's
+change event, and fails unless the read ran again. The tables it loops over are
+the test's own statement of what the read must declare, so a forgotten table
+fails.
 
 `jest.config.js` uses `testEnvironment: 'node'` and loads `jest.setup.js`.
 Expo's preset installs lazy globals (`fetch`, `URL`, `structuredClone`) that

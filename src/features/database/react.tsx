@@ -1,17 +1,24 @@
 import type { PropsWithChildren } from 'react';
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { openAppDatabaseWithLiveReads } from './expo';
 import {
   liveReadTableName,
+  type LiveReadDeclaration,
   type LiveReadSubscribe,
-  type LiveReadTable,
 } from './lib/live-read';
 import type { Database } from './lib/port';
 
 export type LiveReadStatus = 'loading' | 'ready' | 'error';
 
-export type LiveReadResult<T> = {
-  data: T | undefined;
+/** The status each declared read carries beside its declared row shape. */
+export type LiveReadFields = {
+  error: Error | undefined;
+  status: LiveReadStatus;
+};
+
+export type LiveReadResult<Row> = {
+  /** The declared row shape; before the first read it is the declared default. */
+  data: Row;
   error: Error | undefined;
   status: LiveReadStatus;
 };
@@ -26,26 +33,26 @@ function toError(caught: unknown): Error {
 }
 
 /**
- * Runs one live read and re-runs it whenever any table it declares changes.
- * The watched tables are part of the read's interface (ADR-0005): a joined
- * table that is missing here silently stops refreshing.
+ * The one hook every live read uses. It owns the subscription and the status;
+ * a declaration supplies the query, its row shape and every table it watches
+ * in one value (ADR-0005), so a joined table missing there is a failing check
+ * rather than a stale screen.
  */
-export function useLiveRead<T>({
-  tables,
-  run,
-}: {
-  tables: readonly LiveReadTable[];
-  run: () => T;
-}): LiveReadResult<T> {
+export function useLiveRead<Row extends object>(
+  declaration: LiveReadDeclaration<Row>
+): LiveReadResult<Row> {
+  const database = useDatabase();
   const subscribe = useContext(SubscribeContext);
 
   if (!subscribe) {
     throw new Error('useLiveRead must be used inside <DatabaseProvider>.');
   }
 
+  const { read, empty, tables } = declaration;
+  const run = useMemo(() => () => read(database), [database, read]);
   const tableKey = tables.map(liveReadTableName).join(',');
-  const [result, setResult] = useState<LiveReadResult<T>>({
-    data: undefined,
+  const [result, setResult] = useState<LiveReadResult<Row>>({
+    data: empty,
     error: undefined,
     status: 'loading',
   });
@@ -53,7 +60,7 @@ export function useLiveRead<T>({
   useEffect(() => {
     let active = true;
 
-    const read = () => {
+    const refresh = () => {
       try {
         const data = run();
 
@@ -69,9 +76,9 @@ export function useLiveRead<T>({
       }
     };
 
-    read();
+    refresh();
 
-    const unsubscribe = subscribe(tableKey === '' ? [] : tableKey.split(','), read);
+    const unsubscribe = subscribe(tableKey === '' ? [] : tableKey.split(','), refresh);
 
     return () => {
       active = false;

@@ -51,6 +51,7 @@
     "react-dom": "19.3.0",
     "react-native": "0.88.1",
     "react-native-gesture-handler": "~3.3.0",
+    "react-native-keyboard-controller": "1.22.7",
     "react-native-reanimated": "4.7.1",
     "react-native-safe-area-context": "~5.11.1",
     "react-native-screens": "~4.30.1",
@@ -88,6 +89,7 @@
     "lint": "expo lint",
     "typecheck": "tsc --noEmit",
     "test": "jest",
+    "check": "pnpm typecheck && pnpm lint && node scripts/check-feature-boundaries.mjs && node scripts/check-frontend-state.mjs && node scripts/check-test-size.mjs && pnpm test",
     "db:generate": "drizzle-kit generate && node scripts/make-migrations-idempotent.mjs"
   },
   "private": true

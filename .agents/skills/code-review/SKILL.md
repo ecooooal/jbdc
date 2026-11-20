@@ -22,6 +22,8 @@ Capture the diff command once: `git diff <fixed-point>...HEAD` (three-dot, so th
 
 Before going further, confirm the fixed point resolves (`git rev-parse <fixed-point>`) and the diff is non-empty. A bad ref or empty diff should fail here, not inside two parallel sub-agents.
 
+If the range holds commits that do not carry the ticket ref — a user commit landing mid-ticket, say — name them in the commit list and tell both sub-agents to exclude their paths. The review covers the ticket's commits only.
+
 ### 2. Identify the spec source
 
 Look for the originating spec, in this order:
@@ -57,7 +59,7 @@ Each smell reads *what it is* → *how to fix*; match it against the diff:
 
 ### 4. Spawn both sub-agents in parallel
 
-Issue both sub-agent calls together, in the foreground, and aggregate the reports they return.
+Issue both sub-agent calls together, in the foreground, and aggregate the reports they return. When the two calls cannot be made at all — a subagent depth limit is structural, not transient — run both axes in-session and say so in one line. Any other failure to start gets one retry: a transient provider error does not justify changing mechanism.
 
 **Neither reviewer runs the repo's checks.** The implementation agent already ran typecheck, lint, tests, the boundary check, and the frontend-state guard; CI repeats them on push. A reviewer that reruns them spends the review budget producing output it cannot act on. End both prompts with: "Do not run the repo's checks. Assume they pass; if the diff looks like it cannot compile, say so from reading it."
 
@@ -80,6 +82,10 @@ If the spec is missing, skip the Spec sub-agent and note this in the final repor
 Present the two reports under `## Standards` and `## Spec` headings, verbatim or lightly cleaned. Do **not** merge or rerank findings, because the two axes are deliberately separate (see _Why two axes_).
 
 End with a one-line summary: total findings per axis, and the worst issue _within each axis_ (if any). Don't pick a single winner across axes: that's the reranking the separation exists to prevent.
+
+State the reviewed SHA (`git rev-parse HEAD`) in the aggregate, so step 6 has the reference it compares against.
+
+Open the aggregate with the range the review covered, so a wrong fixed point is visible rather than silent: `Range: <sha>..<HEAD> — <n> commits — #<refs>`. Use short SHAs, the count from `git rev-list --count <fixed-point>..HEAD`, and the distinct ticket refs found in the commit messages.
 
 ### 6. Re-review only the delta
 

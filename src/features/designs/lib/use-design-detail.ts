@@ -1,39 +1,19 @@
 import { useMemo } from 'react';
-import { categories, collections, designs } from '@/features/database';
-import {
-  useDatabase,
-  useLiveRead,
-  type LiveReadStatus,
-} from '@/features/database/react';
-import { getDesignDetail, type DesignDetail } from './records';
+import { useLiveRead, type LiveReadFields } from '@/features/database/react';
+import { designDetailRead, type DesignDetailRows } from './records';
 
-export type DesignDetailResult = {
-  design: DesignDetail | null;
-  error: Error | undefined;
-  /** `loading` until the first read resolves, so "not found" is not shown early. */
-  status: LiveReadStatus;
-};
+/** One Design's Detail plus the shared status. */
+export type DesignDetailResult = DesignDetailRows & LiveReadFields;
 
 /**
- * Subscribes to one Design's Detail read, resolving its Category and Collection
- * through the taxonomy name read. An edit or a taxonomy rename made elsewhere
- * lands in the returned design without a manual refresh. The query builder
- * stays private to the feature; callers never wire the subscription themselves.
+ * Subscribes to one Design's Detail through the one live read, resolving its
+ * Category and Collection through the taxonomy name read and its Material uses
+ * through the Material name read. An edit, a taxonomy rename, a Material
+ * rename, or a use made elsewhere lands without a manual refresh.
  */
 export function useDesignDetail(id: string): DesignDetailResult {
-  const database = useDatabase();
-  const run = useMemo(
-    () => () => {
-      const design = getDesignDetail(database, id);
+  const declaration = useMemo(() => designDetailRead(id), [id]);
+  const { data, error, status } = useLiveRead(declaration);
 
-      return design ? [design] : [];
-    },
-    [database, id]
-  );
-  const { data, error, status } = useLiveRead({
-    tables: [designs, categories, collections],
-    run,
-  });
-
-  return { design: data?.[0] ?? null, error, status };
+  return { ...data, error, status };
 }

@@ -22,6 +22,7 @@ export function TaxonomySelect<T extends { id: string; name: string }>({
   value,
   items,
   disabled,
+  clearable = true,
   itemLabel = (item) => item.name,
   onSelect,
 }: {
@@ -30,6 +31,8 @@ export function TaxonomySelect<T extends { id: string; name: string }>({
   value: T | null;
   items: T[];
   disabled: boolean;
+  /** Whether the picker offers the row that clears the choice. */
+  clearable?: boolean;
   itemLabel?: (item: T) => string;
   onSelect: (item: T | null) => void;
 }) {
@@ -46,8 +49,12 @@ export function TaxonomySelect<T extends { id: string; name: string }>({
         {items.map((item) => (
           <SelectItem key={item.id} value={item.id} label={itemLabel(item)} />
         ))}
-        <SelectSeparator />
-        <SelectItem value={NO_TAXONOMY} label={placeholder} />
+        {clearable ? (
+          <>
+            <SelectSeparator />
+            <SelectItem value={NO_TAXONOMY} label={placeholder} />
+          </>
+        ) : null}
       </SelectContent>
     </Select>
   );

@@ -40,7 +40,7 @@ export function createSyncSubscribe(): {
 /**
  * Test-only entry to the Database port. Opens one fresh temporary database
  * file per call, migrated and seeded like the app's, and removes it on dispose.
- * Jest suites call this in `beforeAll` and `afterAll`.
+ * Jest suites call this in setup and teardown hooks.
  */
 export function createTempDatabase(): {
   database: Database;

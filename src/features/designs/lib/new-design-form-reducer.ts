@@ -1,6 +1,13 @@
 import { designNameProblem } from './limits';
+import {
+  clearInlineRefusal,
+  createInitialInlineCreationState,
+  type InlineCreationEvent,
+  type InlineCreationState,
+  inlineCreationReducer,
+} from './inline-creation-reducer';
 
-/** Which inline creation form the create screen has open, if any. */
+/** Which picker the one inline creation panel belongs to. */
 export type InlineCreationKind = 'category' | 'collection';
 
 export type NewDesignFormState = {
@@ -8,10 +15,12 @@ export type NewDesignFormState = {
   /** The owner's choices. The rows themselves stay in `useTaxonomy`. */
   categoryId: string | null;
   collectionId: string | null;
-  inlineCreation: InlineCreationKind | null;
-  inlineName: string;
+  /** The one inline form, when the owner is adding an entry to either list. */
+  inline: InlineCreationState;
+  /** Which picker opened it; the slice itself knows no entry kinds. */
+  inlineKind: InlineCreationKind | null;
+  /** The collection's optional year while its inline form is open. */
   inlineYear: string;
-  inlineError: string | null;
   error: string | null;
 };
 
@@ -19,34 +28,19 @@ export type NewDesignFormEvent =
   | { type: 'name-changed'; name: string }
   | { type: 'category-chosen'; categoryId: string | null }
   | { type: 'collection-chosen'; collectionId: string | null }
-  | { type: 'inline-creation-opened'; kind: InlineCreationKind }
-  | { type: 'inline-creation-closed' }
-  | { type: 'inline-name-changed'; name: string }
+  | { type: 'inline-opened'; kind: InlineCreationKind }
+  | { type: 'inline-fact'; fact: InlineCreationEvent }
   | { type: 'inline-year-changed'; year: string }
-  | { type: 'category-created'; categoryId: string }
-  | { type: 'collection-created'; collectionId: string }
-  | { type: 'inline-creation-refused'; message: string }
   | { type: 'design-creation-refused'; message: string };
-
-const NO_INLINE_CREATION = {
-  inlineCreation: null,
-  inlineName: '',
-  inlineYear: '',
-  inlineError: null,
-} satisfies Pick<
-  NewDesignFormState,
-  'inlineCreation' | 'inlineName' | 'inlineYear' | 'inlineError'
->;
 
 export function createInitialNewDesignFormState(): NewDesignFormState {
   return {
     name: '',
     categoryId: null,
     collectionId: null,
-    inlineCreation: null,
-    inlineName: '',
+    inline: createInitialInlineCreationState(),
+    inlineKind: null,
     inlineYear: '',
-    inlineError: null,
     error: null,
   };
 }
@@ -74,9 +68,10 @@ export function collectionYearFromInput(input: string): number | null {
 }
 
 /**
- * The create form's decisions: the name draft, the two optional selections,
- * and the inline entry the owner is currently adding. Selections are ids;
- * the rows and their names stay in the live taxonomy list.
+ * The create form's decisions: the name draft, the two optional selections, and
+ * the one inline entry being added. The slice owns the inline panel's facts;
+ * this reducer only remembers which picker opened it and selects the id a
+ * completed create reports.
  */
 export function newDesignFormReducer(
   state: NewDesignFormState,
@@ -89,20 +84,38 @@ export function newDesignFormReducer(
       return { ...state, categoryId: event.categoryId };
     case 'collection-chosen':
       return { ...state, collectionId: event.collectionId };
-    case 'inline-creation-opened':
-      return { ...state, ...NO_INLINE_CREATION, inlineCreation: event.kind };
-    case 'inline-creation-closed':
-      return { ...state, ...NO_INLINE_CREATION };
-    case 'inline-name-changed':
-      return { ...state, inlineName: event.name, inlineError: null };
+    case 'inline-opened':
+      return {
+        ...state,
+        inline: inlineCreationReducer(state.inline, { type: 'opened' }),
+        inlineKind: event.kind,
+        inlineYear: '',
+      };
+    case 'inline-fact': {
+      const inline = inlineCreationReducer(state.inline, event.fact);
+
+      if (inline.open) return { ...state, inline };
+
+      // The panel is closed: forget which picker it belonged to and its extra
+      // field. A completed create also selects the id the slice reports; which
+      // picker that id belongs to is this caller's, not the slice's.
+      const selected =
+        event.fact.type === 'created' && state.inlineKind === 'category'
+          ? { categoryId: event.fact.id }
+          : event.fact.type === 'created' && state.inlineKind === 'collection'
+            ? { collectionId: event.fact.id }
+            : {};
+
+      return { ...state, ...selected, inline, inlineKind: null, inlineYear: '' };
+    }
     case 'inline-year-changed':
-      return { ...state, inlineYear: event.year, inlineError: null };
-    case 'category-created':
-      return { ...state, ...NO_INLINE_CREATION, categoryId: event.categoryId };
-    case 'collection-created':
-      return { ...state, ...NO_INLINE_CREATION, collectionId: event.collectionId };
-    case 'inline-creation-refused':
-      return { ...state, inlineError: event.message };
+      return {
+        ...state,
+        inlineYear: event.year,
+        // The year is this caller's field; clearing the slice's refusal is the
+        // slice's rule, so no unhappened name-change fact is invented here.
+        inline: clearInlineRefusal(state.inline),
+      };
     case 'design-creation-refused':
       return { ...state, error: event.message };
   }

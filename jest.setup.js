@@ -27,3 +27,18 @@ jest.mock('react-native-reanimated', () => {
     ReduceMotion: { System: 'system' },
   };
 });
+
+// The keyboard controller is a native module, and its scroll view is built on
+// the reanimated internals the stand-in above replaces. Its own `jest/` mock is
+// ESM and is not in `transformIgnorePatterns`, so the two components the app
+// uses are mapped instead. A test that needs keyboard behaviour belongs on a
+// device, not here.
+jest.mock('react-native-keyboard-controller', () => {
+  const { ScrollView, View } = require('react-native');
+
+  return {
+    KeyboardProvider: View,
+    KeyboardAwareScrollView: ScrollView,
+    KeyboardToolbar: View,
+  };
+});

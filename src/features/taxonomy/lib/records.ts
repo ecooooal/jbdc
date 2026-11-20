@@ -1,6 +1,6 @@
 import { asc, isNull } from 'drizzle-orm';
-import type { Database } from '@/features/database';
-import { categories, collections } from '@/features/database';
+import type { Database, DatabaseHandle } from '@/features/database';
+import { categories, collections, declareLiveRead } from '@/features/database';
 
 /** A name is trimmed and must survive trimming; this is the only cap. */
 export const TAXONOMY_NAME_MAX_LENGTH = 120;
@@ -79,7 +79,7 @@ function normalizeYear(raw: number | null | undefined): number | null {
  * The owner's Categories, alphabetical, without any she has removed. The live
  * hook uses this same builder, so a picker and a direct read never disagree.
  */
-export function categoriesQuery(database: Database) {
+function categoriesQuery(database: Database) {
   return database.db
     .select({ id: categories.id, name: categories.name })
     .from(categories)
@@ -88,7 +88,7 @@ export function categoriesQuery(database: Database) {
 }
 
 /** The owner's Collections, alphabetical, without any she has removed. */
-export function collectionsQuery(database: Database) {
+function collectionsQuery(database: Database) {
   return database.db
     .select({ id: collections.id, name: collections.name, year: collections.year })
     .from(collections)
@@ -106,6 +106,22 @@ export function listCollections(database: Database): Collection[] {
   return collectionsQuery(database).all();
 }
 
+/** The one row shape this live read produces, before the hook adds status. */
+export type TaxonomyRows = {
+  categories: Category[];
+  collections: Collection[];
+};
+
+/** The Taxonomy read: both lists, their row shape, and every table they watch. */
+export const taxonomyRead = declareLiveRead<TaxonomyRows>({
+  tables: [categories, collections],
+  read: (database) => ({
+    categories: categoriesQuery(database).all(),
+    collections: collectionsQuery(database).all(),
+  }),
+  empty: { categories: [], collections: [] },
+});
+
 /**
  * The names a stored Category or Collection id resolves to, **including
  * soft-deleted rows**. A delete removes an entry from the pickers but not from
@@ -118,12 +134,12 @@ export type TaxonomyNames = {
 };
 
 /** Reads every Category and Collection name once, deleted entries included. */
-export function readTaxonomyNames(database: Database): TaxonomyNames {
-  const categoryRows = database.db
+export function readTaxonomyNamesFrom(db: DatabaseHandle): TaxonomyNames {
+  const categoryRows = db
     .select({ id: categories.id, name: categories.name })
     .from(categories)
     .all();
-  const collectionRows = database.db
+  const collectionRows = db
     .select({ id: collections.id, name: collections.name, year: collections.year })
     .from(collections)
     .all();
@@ -132,6 +148,11 @@ export function readTaxonomyNames(database: Database): TaxonomyNames {
     categories: new Map(categoryRows.map((row) => [row.id, row.name])),
     collections: new Map(collectionRows.map((row) => [row.id, row])),
   };
+}
+
+/** Reads every Category and Collection name once through the port. */
+export function readTaxonomyNames(database: Database): TaxonomyNames {
+  return readTaxonomyNamesFrom(database.db);
 }
 
 /** The one label rule: a name, plus a Collection's optional year in parentheses. */

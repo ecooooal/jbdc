@@ -31,6 +31,8 @@ Break the work into **tracer bullet** tickets.
 - Each slice cuts a narrow but COMPLETE path through every layer (schema, API, UI, tests): vertical, NOT a horizontal slice of one layer
 - A completed slice is demoable or verifiable on its own
 - Each slice is sized to fit in a single fresh context window
+- One screen per ticket: count the screens the "What to build" paragraph names. Two screens is two tickets
+- Name the steps: up to four commits, inside out, each one green on its own. A ticket that cannot name its steps is not a ticket yet — split it. The review repair is one commit per ticket and does not count against the four. A step that only edits prose is not a step: it rides in the step it describes
 - Any prefactoring should be done first
 
 </vertical-slice-rules>
@@ -46,12 +48,14 @@ Present the proposed breakdown as a numbered list. For each ticket, show:
 - **Title**: short descriptive name
 - **Blocked by**: which other tickets (if any) must complete first
 - **What it delivers**: the end-to-end behaviour this ticket makes work
+- **Steps**: the commits it names
 
 Ask the user:
 
 - Does the granularity feel right? (too coarse / too fine)
 - Are the blocking edges correct: does each ticket only depend on tickets that genuinely gate it?
 - Should any tickets be merged or split further?
+- Can the user point at each acceptance criterion? If not, it needs rewriting before publishing.
 
 Iterate until the user approves the breakdown.
 
@@ -66,6 +70,25 @@ Work the **frontier**: any ticket whose blockers are all done. For a purely line
 
 Do NOT close or modify any parent issue.
 
+<acceptance-criteria>
+
+## Writing the acceptance criteria
+
+A criterion is one claim the reader can picture. Two rules catch almost every failure:
+
+- **One sentence, 15 words or fewer, no second "and".** A second "and" is a second criterion.
+- **Read it aloud and point at something.** If the reader cannot point at a screen, an action, or a test that goes red, it is not a criterion.
+
+Every claim has one home, and only the first is a criterion:
+
+- **Acceptance criteria** — what is true when the work is done.
+- **Decisions** — the constraint behind it: the ban, the rule, the reason. Written for the implementer.
+- **Done when** — the repo-wide gates every ticket passes, plus any check specific to this one.
+
+A ticket for tests or internal shape has no screen to point at. Name who the work is for, then let the deliverable's own behaviour be the criterion. Do not invent a screen to fill the section.
+
+</acceptance-criteria>
+
 <local-ticket-template>
 
 # <NN>: <Ticket title>
@@ -74,10 +97,18 @@ Do NOT close or modify any parent issue.
 
 **Blocked by:** the numbers/titles of the tickets that gate this one, or "None (can start immediately)".
 
+**Steps:** the commits, inside out, each passing on its own. One line per step: what it changes, and the seam the test drives — the entry point it calls, not the file it lives in. A test named only by its file leaves the implementer free to prove the wrong layer.
+
 **Status:** ready-for-agent
+
+**Acceptance criteria:**
 
 - [ ] Acceptance criterion 1
 - [ ] Acceptance criterion 2
+
+**Done when:**
+
+- [ ] Gate 1
 
 </local-ticket-template>
 
@@ -91,10 +122,18 @@ A reference to the parent issue on the tracker (if the source was an existing is
 
 The end-to-end behaviour this ticket makes work, from the user's perspective, not layer-by-layer implementation.
 
+## Steps
+
+The commits, inside out, each passing on its own. One line per step: what it changes, and the seam the test drives — the entry point it calls, not the file it lives in. A test named only by its file leaves the implementer free to prove the wrong layer. One step is a valid answer.
+
 ## Acceptance criteria
 
 - [ ] Criterion 1
 - [ ] Criterion 2
+
+## Done when
+
+- [ ] Gate 1
 
 ## Blocked by
 

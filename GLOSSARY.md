@@ -16,6 +16,10 @@ _Avoid_: specs, tech pack
 The artistic intent behind a design: concept, mood, inspiration, intended feeling, audience, styling, palette. The part of a design that specifications cannot express.
 _Avoid_: vision, mood board — a mood board is a set of images, not the intent.
 
+**Identity**:
+The part of a design that names it: its name, description, Category, and Collection. Edited in place on the design's own screen rather than under a tab, because it changes least.
+_Avoid_: header, overview, basics, metadata
+
 **Image**:
 A visual file attached to a design, carrying an optional kind that says what role it plays in the process: `sketch`, `material`, `inspiration`, `prototype`, `final`, or `photoshoot`. The kind is a label, not history — an image can be reclassified as the design changes.
 _Avoid_: photo, picture, asset, attachment — and "design" for the sketch kind, which collides with Design itself.
@@ -33,8 +37,12 @@ The owner-managed lists of Categories and Collections that a design picks from. 
 _Avoid_: classification, tags, lookup tables
 
 **Material**:
-A fabric or trim the owner uses, kept as a named entry in her own list so that the same fabric is spelled the same way everywhere. A design can use several Materials, each with the colour used and a role: main, secondary, or other.
+A fabric or trim the owner uses, kept as a named entry in her own list so that the same fabric is spelled the same way everywhere. A design reaches its Materials through **Material uses**.
 _Avoid_: fabric, textile, cloth, swatch — and "marketing material", a different concept that belongs to a later release.
+
+**Material use**:
+One design's use of a Material: the colour used, and the role it plays — main, secondary, or other. A design has zero or more, and may use the same Material twice in different colours. The colour belongs to the use, not to the Material. A visit changes them only as a before-and-after pair, so History never sees one side alone.
+_Avoid_: link, swatch, colourway, fabric entry
 
 **Prototype**:
 An image kind: a photograph of a physical sample. There is no Prototype status, because a sample can exist while the design is still In Development — the two facts cannot share one field.
@@ -43,8 +51,12 @@ _Avoid_: sample, toile, mockup
 ## History
 
 **History**:
-The append-only sequence of Events kept for one design, newest first when read. One editing session is one Event, so History reads as work, not keystrokes.
+The append-only sequence of Events kept for one design, newest first when read. One visit is one Event, so History reads as work, not keystrokes.
 _Avoid_: audit log, activity feed, revision history
+
+**Visit**:
+One trip through a design's Edit screen: opened, changed, closed. Every change is written as it happens, and the visit records at most one Event when it closes.
+_Avoid_: session, edit session, sitting — "session" is a login or connection word.
 
 **Status**:
 Where a design stands right now: Concept, In Development, Approved, Produced, Rejected, or Archived. Exactly one at a time, changeable in any direction.
@@ -53,6 +65,10 @@ _Avoid_: state, stage, phase
 **Event**:
 A recorded happening in a design's history — a status change, a decision, an edit, or a note. Written once and never altered; a correction is a new event.
 _Avoid_: revision, change log, audit trail, activity
+
+**Diff**:
+What one visit changed, as its Event stores it: each field with the value it had and the value it became, plus the Material uses the visit added, removed, or corrected. An empty diff is no Event.
+_Avoid_: patch, delta, changeset — and "diff" for comparing versions, which this app does not do.
 
 **Decision**:
 An event recording a choice about a design and why it was made, optionally with potential improvements. A rejection reason is a decision.

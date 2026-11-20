@@ -8,9 +8,9 @@ This is the elaboration of **"State lives in reducers"** in `CODING_STANDARDS.md
 
 ## Where a reducer lives
 
-`src/features/<feature>/lib/<surface>-reducer.ts`, with no React import and no database access. Its test is `src/features/<feature>/tests/<surface>-reducer.test.ts`. Both stay private to the feature; a component reaches the reducer through the feature's own tree, not through `index.ts`/`react.ts` unless a screen genuinely needs it.
+`src/features/<feature>/lib/<surface>-reducer.ts`, with no React import and no database access. Its tests live in `src/features/<feature>/tests/`; a surface with several concerns splits them into sibling files that share one fixtures module. The fixtures live in `tests/<surface>-fixtures.ts`; jest's `testMatch` (`*.test.ts(x)`) leaves it out of the suite. Both stay private to the feature; a component reaches the reducer through the feature's own tree, not through `index.ts`/`react.ts` unless a screen genuinely needs it.
 
-One file per **surface**, not per feature: two screens that do not share a state machine get two reducers.
+One file per **surface**, not per feature: two screens that do not share a state machine get two reducers. A surface may delegate a slice to a private reducer in the same folder — Edit's add-Material-use editor is one — but the surface still exports one state, event, and effect type. The slice is not a second surface.
 
 ## The pattern
 
@@ -31,7 +31,7 @@ Do not take a dependency for it. There is no maintained effect-reducer package f
 The rules:
 
 1. **One reducer per surface**, exporting `<Surface>State`, `<Surface>Event`, `<Surface>Effect` and `createInitial<Surface>State()`. No React import.
-2. **Events are facts, not commands.** An event says what happened outside the reducer; it never says what state to set. A gesture is named after the gesture (`press-delete`, `edit-opened`), something the world reports is past tense (`design-saved`, `save-failed`, `app-backgrounded`). Names are kebab-case. A setter event such as `set-saving`, `set-modal-open` or `UPDATE_PROGRESS` is not allowed, because the caller would already have decided what changes.
+2. **Events are facts, not commands.** An event says what happened outside the reducer; it never says what state to set. A gesture is named after the gesture (`press-delete`, `edit-opened`), something the world reports is past tense (`design-saved`, `save-failed`, `app-backgrounded`). Names are kebab-case. A setter event such as `set-saving`, `set-modal-open` or `UPDATE_PROGRESS` is not allowed, because the caller would already have decided what changes. A fact is never forged to borrow a neighbouring rule: when a caller needs a slice's rule for its own field, the slice exports the rule as a pure helper (`clearInlineRefusal` is the shape), not a fact to re-dispatch.
 3. **Effects are commands, and they are data.** Name them with an imperative verb (`commit-edit`, `archive-designs`) and put everything the handler needs on the effect object. A handler never reaches into props or closures for its input. That is what makes the effect worth asserting on.
 4. **The runner is thin.** Each handler makes one call and dispatches the outcome as an event. It contains no `if` about what to do next: that is the reducer's decision, made when it handles the outcome. A handler may return a cleanup function.
 5. **The reducer never reads the clock, randomness, dimensions or device state.** Put the value on the event, e.g. `{ type: "edit-closed", now: Date.now() }`. That is how coalescing and timing become deterministic.
@@ -52,15 +52,19 @@ The reducer owns decisions, not everything that changes on screen.
 - **Mid-gesture state is not reducer state.** `react-native-gesture-handler` decides during the gesture; dispatch at the end.
 - **Route state belongs to expo-router.** Read it at the edge and pass what a rule needs (`{ type: "edit-opened", designId }`).
 - **Live data belongs to `useLiveRead`.** Do not copy catalog rows into reducer state. A selection is an id; derive the selected row and its label from the live list. An entry created inline is selected by id immediately, and its label appears when the live read observes the insert. A read declares every table it watches, joins included (ADR-0005). The reducer holds the surface's decisions — the draft, the step, the error — not the catalog.
-- **One modal, one field.** Two `is…Open` booleans that cannot both be true are one piece of state: `openModal: "rename" | "copy" | null`.
+- **A visit keeps the row its own writes stored.** Edit's record is not a catalog copy: it is seeded once, advanced only by the visit's own write outcomes, and answers what a refused write restores, what a blank name falls back to, and what the one Event that visit records has as its after-state.
+- **One panel, one field.** Editors that cannot both be open are one piece of state in the surface reducer: `panel: { kind: "add"; editor: AddState } | { kind: "edit"; stored: StoredRow; ...draft } | null`. A component boolean beside a reducer-owned editor is a split; move both into the union.
 
 ## When plain `useState` is fine
+
+A **flush exit** is any way a draft can leave the screen: blur, Done/close, a tab change, app backgrounding, or unmount. A draft whose only flush exit is blur can stay local; a draft that must survive any other exit belongs to the surface reducer, because that exit has to declare the write.
 
 A component may keep `useState` when **all** of these are true:
 
 - The state is the component's own presentation: a text draft, a hover, a popover that is open.
 - No other state is updated in step with it, and no rule decides how it changes beyond "set it to what the user just typed or clicked".
 - No effect writes to it.
+- Its only flush exit is blur.
 
 A single text draft and its refusal are fine this way: one field, no effect. `NewDesignForm` crossed that line when its Category and Collection pickers arrived — name, two optional selections, and an inline draft now change together — so its decisions live in `new-design-form-reducer.ts`. A third coupled field turns a `useState` form into a reducer.
 
@@ -82,6 +86,7 @@ Two layers. The rule is which layer gets what.
 - `renderHook` is for bridge hooks (rule 7): assert that a subscription dispatches what it hears and cleans up on unmount.
 - Prefer `getByRole`, then accessible name and placeholder; `getByTestId` is the last resort. Prefer `userEvent` over `fireEvent`. The Jest matchers extend on import; no setup file is needed.
 - Do not mock the port or the driver. `@/features/database/testing` opens a real temporary database and supplies `createSyncSubscribe()`, whose `notify(table)` fires the listeners watching that table. A screen test that needs the catalogue passes a temp `database` and that adapter's `subscribe` to `DatabaseProvider` — the seam is the provider, not a mock of it. `src/features/designs/tests/new-design-form.test.tsx` is the first such test.
+- A native `Select` does not open in Jest. `@rn-primitives/select` positions its portal from the trigger's `measure` callback, which RNTL never fires. Test the picker's rule at the records/reducer seam; to cover trigger wiring, fire the `onValueChange` handler directly.
 - A reducer test replaces the component test for the same rule. Do not check one rule in both layers.
 
 ## The guard
@@ -99,3 +104,9 @@ Two layers. The rule is which layer gets what.
 The limits are calibrated against this repo. There is no allowlist: a file
 that trips `use-state` or `effect-sets-state` is split into a reducer, and a
 reducer that trips `reducer-purity` drops the dependency.
+
+`scripts/check-test-size.mjs` caps a `*.test.ts(x)` file at **600** lines. A
+test file is the unit an agent opens to work one concern, so a file that
+outgrows the cap is split by concern into siblings sharing one fixtures module.
+The largest test file now is 580 lines, so the cap holds without an allowlist.
+It runs in `pnpm check`, pre-commit, and CI.
