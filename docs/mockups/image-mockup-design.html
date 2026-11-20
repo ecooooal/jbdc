@@ -1,0 +1,1046 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <title>Fashion Design Catalog — Mobile Mockup</title>
+    <style>
+      :root {
+        --bg: #f4f0eb;
+        --paper: #fffdfa;
+        --ink: #292621;
+        --muted: #6b645b;
+        --line: #e5ddd4;
+        --accent: #6a5742;
+        --accent-soft: #e9dfd4;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: #ddd7d0;
+        color: var(--ink);
+        font:
+          15px/1.4 -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          Roboto,
+          Arial,
+          sans-serif;
+        -webkit-text-size-adjust: 100%;
+      }
+      button,
+      textarea {
+        font: inherit;
+        color: inherit;
+      }
+      :focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 2px;
+      }
+      .phone {
+        width: min(100%, 430px);
+        min-height: 100vh;
+        margin: 0 auto;
+        background: var(--bg);
+        padding: calc(env(safe-area-inset-top, 0px) + 12px) 16px
+          calc(env(safe-area-inset-bottom, 0px) + 32px);
+        box-shadow: 0 0 40px #0001;
+      }
+
+      /* header */
+      .top {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 0 14px;
+      }
+      .back {
+        border: 0;
+        background: none;
+        font-size: 28px;
+        width: 44px;
+        height: 44px;
+        margin-left: -8px;
+        cursor: pointer;
+        display: grid;
+        place-items: center;
+      }
+      .heading {
+        min-width: 0;
+        flex: 1;
+      }
+      .heading h1 {
+        font-size: 18px;
+        margin: 0;
+        font-weight: 650;
+        letter-spacing: -0.3px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .heading p {
+        margin: 3px 0 0;
+        color: var(--muted);
+        font-size: 13px;
+      }
+      .iconbtn {
+        border: 0;
+        background: #e9e3dc;
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        font-size: 17px;
+        cursor: pointer;
+        display: grid;
+        place-items: center;
+      }
+      .iconbtn[aria-pressed="true"] {
+        background: var(--accent);
+        color: #fff;
+      }
+
+      /* hero */
+      .hero-wrap {
+        position: relative;
+        border-radius: 22px;
+        overflow: hidden;
+        background: #d8d0c6;
+        touch-action: pan-y;
+      }
+      .hero {
+        width: 100%;
+        height: min(52vh, 460px);
+        min-height: 300px;
+        object-fit: cover;
+        display: block;
+        background: #d8d0c6;
+        cursor: zoom-in;
+      }
+      .stage-chip,
+      .count {
+        position: absolute;
+        top: 12px;
+        background: #27231fcc;
+        color: #fff;
+        border-radius: 99px;
+        font-size: 12px;
+        padding: 8px 12px;
+      }
+      .stage-chip {
+        left: 12px;
+        font-weight: 600;
+      }
+      .count {
+        right: 12px;
+      }
+      .hero-nav {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        border: 0;
+        background: #ffffffcc;
+        cursor: pointer;
+        font-size: 24px;
+        display: grid;
+        place-items: center;
+      }
+      .hero-nav.prev {
+        left: 10px;
+      }
+      .hero-nav.next {
+        right: 10px;
+      }
+      .zoom {
+        position: absolute;
+        bottom: 12px;
+        right: 12px;
+        background: #27231fcc;
+        color: #fff;
+        border: 0;
+        border-radius: 50%;
+        width: 44px;
+        height: 44px;
+        font-size: 18px;
+        cursor: pointer;
+        display: grid;
+        place-items: center;
+      }
+
+      /* notes (per image) */
+      .notes {
+        margin-top: 10px;
+        background: var(--paper);
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        padding: 6px 12px 10px;
+      }
+      .notes-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .cap-label {
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--accent);
+      }
+      .link {
+        border: 0;
+        background: none;
+        color: var(--accent);
+        font-weight: 600;
+        font-size: 13px;
+        cursor: pointer;
+        min-height: 44px;
+        padding: 0 2px;
+      }
+      .note-list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+      }
+      .note {
+        display: flex;
+        gap: 8px;
+        align-items: flex-start;
+        justify-content: space-between;
+        padding: 6px 0;
+        border-top: 1px solid var(--line);
+        font-size: 14px;
+      }
+      .note:first-child {
+        border-top: 0;
+      }
+      .note span {
+        flex: 1;
+        min-width: 0;
+        overflow-wrap: anywhere;
+      }
+      .note-del {
+        border: 0;
+        background: none;
+        color: var(--muted);
+        width: 44px;
+        height: 44px;
+        margin: -10px -12px -10px 0;
+        cursor: pointer;
+        font-size: 18px;
+        flex: 0 0 auto;
+      }
+      .empty {
+        margin: 2px 0 6px;
+        font-size: 14px;
+        color: var(--muted);
+      }
+      .composer {
+        margin-top: 6px;
+      }
+      .composer textarea {
+        width: 100%;
+        min-height: 76px;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 10px;
+        background: var(--bg);
+        resize: vertical;
+        font-size: 15px;
+      }
+      .composer-actions {
+        display: flex;
+        gap: 8px;
+        justify-content: flex-end;
+        margin-top: 6px;
+      }
+      .btn {
+        border: 0;
+        border-radius: 99px;
+        padding: 0 16px;
+        min-height: 44px;
+        font-weight: 600;
+        cursor: pointer;
+        background: #e9e3dc;
+      }
+      .btn.primary {
+        background: var(--accent);
+        color: #fff;
+      }
+
+      /* journey trail: stages and their images in one row */
+      .trail-label {
+        margin: 14px 2px 4px;
+        font-size: 12px;
+        color: var(--muted);
+      }
+      .trail {
+        display: flex;
+        align-items: flex-start;
+        gap: 4px;
+        overflow-x: auto;
+        padding: 2px 2px 8px;
+        scrollbar-width: none;
+      }
+      .trail::-webkit-scrollbar {
+        display: none;
+      }
+      .grp {
+        display: flex;
+        align-items: flex-start;
+        flex: 0 0 auto;
+      }
+      .sep {
+        height: 44px;
+        display: flex;
+        align-items: center;
+        color: var(--muted);
+        padding: 0 2px;
+        flex: 0 0 auto;
+      }
+      .chip {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        min-height: 44px;
+        padding: 0 14px 0 6px;
+        border: 1px solid var(--line);
+        background: var(--paper);
+        border-radius: 99px;
+        cursor: pointer;
+        white-space: nowrap;
+        text-align: left;
+      }
+      .chip img {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        object-fit: cover;
+        display: block;
+      }
+      .chip b {
+        display: block;
+        font-size: 13px;
+        font-weight: 650;
+        line-height: 1.2;
+      }
+      .chip small {
+        display: block;
+        font-size: 12px;
+        color: var(--muted);
+        line-height: 1.2;
+      }
+      .grp.active .chip {
+        background: var(--accent-soft);
+        border-color: var(--accent);
+      }
+      .thumbs {
+        display: flex;
+        gap: 8px;
+        overflow: hidden;
+        max-width: 0;
+        opacity: 0;
+        padding: 2px;
+        transition:
+          max-width 0.4s ease,
+          opacity 0.3s ease,
+          margin 0.4s ease;
+      }
+      .grp.active .thumbs {
+        opacity: 1;
+        margin-left: 8px;
+      }
+      .thumb {
+        flex: 0 0 60px;
+        border: 2px solid transparent;
+        border-radius: 10px;
+        overflow: hidden;
+        padding: 0;
+        background: none;
+        cursor: pointer;
+      }
+      .thumb.active {
+        border-color: var(--accent);
+      }
+      .thumb img {
+        display: block;
+        width: 100%;
+        aspect-ratio: 3/4;
+        object-fit: cover;
+      }
+      .thumb.add {
+        display: grid;
+        place-items: center;
+        align-content: center;
+        gap: 2px;
+        border: 1px dashed #a89885;
+        background: #f6f1eb;
+        color: var(--accent);
+        font-size: 12px;
+        font-weight: 600;
+        aspect-ratio: 3/4;
+        padding: 4px;
+      }
+      .thumb.add span {
+        font-size: 20px;
+        line-height: 1;
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .thumbs {
+          transition: none;
+        }
+      }
+
+      /* specs */
+      .specs {
+        margin-top: 26px;
+        padding: 18px 3px;
+        border-top: 1px solid var(--line);
+      }
+      .specs h2 {
+        font-size: 18px;
+        margin: 0 0 12px;
+      }
+      .spec-row {
+        display: flex;
+        justify-content: space-between;
+        border-bottom: 1px solid var(--line);
+        padding: 12px 0;
+        color: var(--muted);
+      }
+      .spec-row b {
+        color: var(--ink);
+        font-weight: 500;
+      }
+
+      /* lightbox */
+      .lightbox {
+        position: fixed;
+        inset: 0;
+        background: #141210;
+        color: #fff;
+        display: none;
+        flex-direction: column;
+        z-index: 30;
+        touch-action: pan-y;
+      }
+      .lightbox.open {
+        display: flex;
+      }
+      .lb-bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: calc(env(safe-area-inset-top, 0px) + 8px) 12px 8px;
+        font-size: 14px;
+      }
+      .lb-close {
+        border: 0;
+        background: #ffffff22;
+        color: #fff;
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        font-size: 20px;
+        cursor: pointer;
+      }
+      .lb-stage {
+        flex: 1;
+        position: relative;
+        display: grid;
+        place-items: center;
+        min-height: 0;
+      }
+      .lb-stage img {
+        max-width: 100%;
+        max-height: 100%;
+        object-fit: contain;
+      }
+      .lb-nav {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        border: 0;
+        background: #ffffff33;
+        color: #fff;
+        font-size: 24px;
+        cursor: pointer;
+      }
+      .lb-nav.prev {
+        left: 8px;
+      }
+      .lb-nav.next {
+        right: 8px;
+      }
+      .lb-cap {
+        padding: 12px 16px calc(env(safe-area-inset-bottom, 0px) + 18px);
+        font-size: 14px;
+        min-height: 64px;
+      }
+      .lb-cap p {
+        margin: 0 0 4px;
+      }
+
+      .toast {
+        position: fixed;
+        bottom: 24px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #292621;
+        color: #fff;
+        padding: 10px 16px;
+        border-radius: 30px;
+        font-size: 13px;
+        display: none;
+        z-index: 40;
+      }
+      .toast.show {
+        display: block;
+      }
+
+      @media (min-width: 700px) {
+        body {
+          padding: 24px 0;
+        }
+        .phone {
+          border-radius: 28px;
+          overflow: hidden;
+          min-height: 0;
+        }
+        .hero {
+          height: 440px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="phone">
+      <header class="top">
+        <button class="back" aria-label="Back">‹</button>
+        <div class="heading">
+          <h1>Oversized Tailored Jacket</h1>
+          <p>FD-024 · Fall 2025</p>
+        </div>
+        <button
+          class="iconbtn"
+          id="saveBtn"
+          aria-label="Save design"
+          aria-pressed="false"
+        >
+          ♡
+        </button>
+        <button
+          class="iconbtn"
+          id="saveBtn"
+          aria-label="Save design"
+          aria-pressed="false"
+        >
+          ⏳
+        </button>
+      </header>
+
+      <div class="hero-wrap" id="heroWrap">
+        <img class="hero" id="hero" alt="" />
+        <div class="stage-chip" id="stageChip"></div>
+        <div class="count" id="imageCount"></div>
+        <button class="hero-nav prev" id="prev" aria-label="Previous image">
+          ‹
+        </button>
+        <button class="hero-nav next" id="next" aria-label="Next image">
+          ›
+        </button>
+        <button class="zoom" id="zoom" aria-label="View larger">⛶</button>
+      </div>
+
+      <div class="notes" id="notes">
+        <div class="notes-head">
+          <span class="cap-label" id="notesLabel">Notes</span
+          ><button 
+            class="iconbtn" id="addNoteBtn">+</button>
+        </div>
+        <ul class="note-list" id="noteList"></ul>
+        <button class="link" id="moreNotes" hidden></button>
+        <div class="composer" id="composer" hidden>
+          <textarea
+            id="noteInput"
+            rows="3"
+            maxlength="280"
+            placeholder="What did you decide here, and why?"
+            aria-label="New note"
+          ></textarea>
+          <div class="composer-actions">
+            <button class="btn" id="cancelNote">Cancel</button
+            ><button class="btn primary" id="saveNote">Save note</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="trail-label">Design journey</div>
+      <div
+        class="trail"
+        id="trail"
+        role="group"
+        aria-label="Design journey: stages and their images"
+      ></div>
+
+      <section class="specs">
+        <div class="spec-row">
+          <h2>Specifications | Creative Direction</h2>
+          <button
+            class="iconbtn"
+            id="saveBtn"
+            aria-label="Save design"
+            aria-pressed="false"
+          >
+            ✎
+          </button>
+        </div>
+        <div class="spec-row"><span>-----</span><b>-----</b></div>
+      </section>
+    </div>
+
+    <div
+      class="lightbox"
+      id="lightbox"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Image viewer"
+    >
+      <div class="lb-bar">
+        <span id="lbCount"></span
+        ><button class="lb-close" id="lbClose" aria-label="Close viewer">
+          ×
+        </button>
+      </div>
+      <div class="lb-stage" id="lbStage">
+        <img id="lbImg" alt="" />
+        <button class="lb-nav prev" id="lbPrev" aria-label="Previous image">
+          ‹
+        </button>
+        <button class="lb-nav next" id="lbNext" aria-label="Next image">
+          ›
+        </button>
+      </div>
+      <div class="lb-cap" id="lbCap"></div>
+    </div>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <input type="file" accept="image/*" multiple id="fileInput" hidden />
+
+    <script>
+      const TONES = {
+        Inspiration: "#d9d2c7",
+        Sketch: "#e6e0d6",
+        Prototype: "#cfc6b8",
+        Final: "#bfb3a1",
+      };
+      const ph = (stage, n) =>
+        "data:image/svg+xml;utf8," +
+        encodeURIComponent(
+          `<svg xmlns="http://www.w3.org/2000/svg" width="600" height="800" viewBox="0 0 600 800"><rect width="600" height="800" fill="${TONES[stage]}"/><text x="300" y="400" fill="#4a443c" font-family="sans-serif" font-size="34" text-anchor="middle">${stage}</text><text x="300" y="448" fill="#6b645b" font-family="sans-serif" font-size="26" text-anchor="middle">Image ${n}</text></svg>`,
+        );
+      const FALLBACK =
+        "data:image/svg+xml;utf8," +
+        encodeURIComponent(
+          '<svg xmlns="http://www.w3.org/2000/svg" width="600" height="800"><rect width="100%" height="100%" fill="#d8d0c6"/><text x="50%" y="50%" fill="#6b645b" font-family="sans-serif" font-size="26" text-anchor="middle">Image unavailable</text></svg>',
+        );
+
+      /* Every image has a notes array (0..n). Notes live with the image they explain. */
+      const stages = {
+        Inspiration: [
+          { notes: ["Oversized wool coats on the runway set the mood."] },
+          { notes: ["Relaxed tailoring through the shoulder."] },
+          { notes: ["Muted earth palette for the fall line."] },
+        ],
+        Sketch: [
+          { notes: ["First pass was fitted, with a narrow shoulder."] },
+          {
+            notes: [
+              "Widened the shoulder. The original looked too fitted.",
+              "Kept the collar high to balance the new width.",
+              "Client asked to see a longer hem next.",
+            ],
+          },
+          { notes: [] },
+        ],
+        Prototype: [
+          { notes: ["First toile in wool blend, ready for fitting."] },
+          { notes: ["Sleeve shortened by 2 cm after the fitting."] },
+          { notes: ["A heavier fabric weight held the drape better."] },
+        ],
+        Final: [
+          {
+            notes: ["Landed on: oversized shoulder with a structured collar."],
+          },
+          { notes: [] },
+          { notes: ["Styled look for the fall lineup."] },
+        ],
+      };
+      Object.entries(stages).forEach(([name, l]) =>
+        l.forEach((i, k) => {
+          i.src = ph(name, k + 1);
+          i.big = i.src;
+        }),
+      );
+
+      const COLLAPSED = 2;
+      let stage = "Final",
+        idx = 0,
+        expanded = false,
+        composing = false;
+      const $ = (id) => document.getElementById(id);
+      const smooth = matchMedia("(prefers-reduced-motion: reduce)").matches
+        ? "auto"
+        : "smooth";
+      const plural = (n) => `${n} image${n === 1 ? "" : "s"}`;
+      const cur = () => stages[stage][idx];
+
+      function makeImg(src, alt) {
+        const i = document.createElement("img");
+        i.alt = alt;
+        i.loading = "lazy";
+        i.onerror = () => {
+          i.onerror = null;
+          i.src = FALLBACK;
+        };
+        i.src = src;
+        return i;
+      }
+
+      function renderNotes() {
+        const notes = cur().notes,
+          list = $("noteList");
+        $("notesLabel").textContent = notes.length
+          ? `Notes (${notes.length})`
+          : "Notes";
+        list.innerHTML = "";
+        if (!notes.length && !composing) {
+          const p = document.createElement("p");
+          p.className = "empty";
+          p.textContent = "No notes yet. Add what you decided here, and why.";
+          list.append(p);
+        }
+        const shown = expanded ? notes : notes.slice(0, COLLAPSED);
+        shown.forEach((text, i) => {
+          const li = document.createElement("li");
+          li.className = "note";
+          const s = document.createElement("span");
+          s.textContent = text;
+          const d = document.createElement("button");
+          d.className = "note-del";
+          d.textContent = "×";
+          d.setAttribute("aria-label", `Delete note ${i + 1}`);
+          d.onclick = () => {
+            notes.splice(i, 1);
+            toast("Note deleted");
+            renderNotes();
+          };
+          li.append(s, d);
+          list.append(li);
+        });
+        const more = $("moreNotes");
+        more.hidden = notes.length <= COLLAPSED;
+        more.textContent = expanded
+          ? "Show fewer"
+          : `Show all ${notes.length} notes`;
+        $("composer").hidden = !composing;
+        $("addNoteBtn").hidden = composing;
+      }
+
+      const groups = {};
+      let sig = "";
+      const trailSig = () =>
+        Object.entries(stages)
+          .map(([k, l]) => k + l.length)
+          .join("|");
+      function buildTrail() {
+        const trail = $("trail");
+        trail.innerHTML = "";
+        Object.keys(stages).forEach((name, i) => {
+          if (i) {
+            const sp = document.createElement("span");
+            sp.className = "sep";
+            sp.setAttribute("aria-hidden", "true");
+            sp.textContent = "›";
+            trail.append(sp);
+          }
+          const grp = document.createElement("div");
+          grp.className = "grp";
+          const chip = document.createElement("button");
+          chip.className = "chip";
+          chip.append(makeImg(stages[name][0].src, ""));
+          const t = document.createElement("span");
+          t.innerHTML = `<b>${name}</b><small></small>`;
+          chip.append(t);
+          chip.onclick = () => selectStage(name);
+          const thumbs = document.createElement("div");
+          thumbs.className = "thumbs";
+          grp.append(chip, thumbs);
+          trail.append(grp);
+          groups[name] = { grp, chip, thumbs, small: t.querySelector("small") };
+          stages[name].forEach((it, k) => {
+            const b = document.createElement("button");
+            b.className = "thumb";
+            b.setAttribute("aria-label", `${name} image ${k + 1}`);
+            b.append(makeImg(it.src, ""));
+            b.onclick = () => {
+              stage = name;
+              go(k);
+            };
+            thumbs.append(b);
+          });
+          const add = document.createElement("button");
+          add.className = "thumb add";
+          add.innerHTML = '<span aria-hidden="true">+</span>Add';
+          add.setAttribute("aria-label", `Add images to ${name}`);
+          add.onclick = () => $("fileInput").click();
+          thumbs.append(add);
+        });
+      }
+      function updateTrail() {
+        if (sig !== trailSig()) {
+          sig = trailSig();
+          buildTrail();
+        }
+        Object.keys(stages).forEach((name) => {
+          const g = groups[name],
+            on = name === stage;
+          g.grp.classList.toggle("active", on);
+          g.chip.setAttribute("aria-pressed", on);
+          g.small.textContent = plural(stages[name].length);
+          g.thumbs.style.maxWidth = on ? g.thumbs.scrollWidth + "px" : "0px";
+          g.thumbs.querySelectorAll(".thumb:not(.add)").forEach((t, i) => {
+            const a = on && i === idx;
+            t.classList.toggle("active", a);
+            t.setAttribute("aria-pressed", a);
+          });
+        });
+      }
+
+      function render() {
+        const list = stages[stage],
+          c = cur();
+        const hero = $("hero");
+        hero.onerror = () => {
+          hero.onerror = null;
+          hero.src = FALLBACK;
+        };
+        hero.src = c.src;
+        hero.alt = `${stage} image ${idx + 1} of ${list.length}`;
+        $("stageChip").textContent = stage;
+        $("imageCount").textContent = `${idx + 1} / ${list.length}`;
+        renderNotes();
+
+        updateTrail();
+
+        if ($("lightbox").classList.contains("open")) renderLightbox();
+      }
+
+      /* changing image or stage resets note UI so a half-written note is never carried over */
+      function resetNoteUI() {
+        expanded = false;
+        composing = false;
+        $("noteInput").value = "";
+      }
+      function go(i) {
+        idx = i;
+        resetNoteUI();
+        render();
+      }
+      function selectStage(name) {
+        stage = name;
+        idx = 0;
+        resetNoteUI();
+        render();
+        groups[stage].chip.scrollIntoView({
+          behavior: smooth,
+          block: "nearest",
+          inline: "start",
+        });
+      }
+      function move(d) {
+        const names = Object.keys(stages);
+        let i = idx + d,
+          st = stage;
+        if (i >= stages[st].length) {
+          st = names[(names.indexOf(st) + 1) % names.length];
+          i = 0;
+        } else if (i < 0) {
+          st = names[(names.indexOf(st) - 1 + names.length) % names.length];
+          i = stages[st].length - 1;
+        }
+        const changed = st !== stage;
+        stage = st;
+        go(i);
+        if (changed)
+          groups[stage].chip.scrollIntoView({
+            behavior: smooth,
+            block: "nearest",
+            inline: "start",
+          });
+      }
+
+      /* note creation */
+      $("addNoteBtn").onclick = () => {
+        composing = true;
+        renderNotes();
+        $("noteInput").focus();
+      };
+      $("cancelNote").onclick = () => {
+        composing = false;
+        $("noteInput").value = "";
+        renderNotes();
+      };
+      $("saveNote").onclick = () => {
+        const v = $("noteInput").value.trim();
+        if (!v) {
+          toast("Write a note first");
+          $("noteInput").focus();
+          return;
+        }
+        cur().notes.push(v);
+        expanded = true;
+        composing = false;
+        $("noteInput").value = "";
+        toast("Note added");
+        renderNotes();
+      };
+
+      /* adding images: appended to the current stage with an empty notes list */
+      $("fileInput").onchange = (e) => {
+        const files = [...e.target.files];
+        if (!files.length) return;
+        files.forEach((f) => {
+          const u = URL.createObjectURL(f);
+          stages[stage].push({ src: u, big: u, notes: [] });
+        });
+        e.target.value = "";
+        go(stages[stage].length - files.length);
+        toast(
+          `${files.length} image${files.length === 1 ? "" : "s"} added to ${stage}`,
+        );
+      };
+
+      /* swipe on hero */
+      let sx = 0,
+        sy = 0,
+        swiped = false;
+      const wrap = $("heroWrap");
+      wrap.addEventListener(
+        "touchstart",
+        (e) => {
+          sx = e.touches[0].clientX;
+          sy = e.touches[0].clientY;
+          swiped = false;
+        },
+        { passive: true },
+      );
+      wrap.addEventListener("touchend", (e) => {
+        const dx = e.changedTouches[0].clientX - sx,
+          dy = e.changedTouches[0].clientY - sy;
+        if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) {
+          swiped = true;
+          move(dx < 0 ? 1 : -1);
+        }
+      });
+      $("prev").onclick = (e) => {
+        e.stopPropagation();
+        move(-1);
+      };
+      $("next").onclick = (e) => {
+        e.stopPropagation();
+        move(1);
+      };
+      let opener = null;
+      $("hero").onclick = () => {
+        if (!swiped) openLightbox($("hero"));
+      };
+      $("zoom").onclick = (e) => {
+        e.stopPropagation();
+        openLightbox($("zoom"));
+      };
+
+      /* lightbox */
+      function renderLightbox() {
+        const list = stages[stage],
+          c = cur(),
+          img = $("lbImg");
+        img.onerror = () => {
+          img.onerror = null;
+          img.src = FALLBACK;
+        };
+        img.src = c.big;
+        img.alt = `${stage} image ${idx + 1} of ${list.length}`;
+        $("lbCount").textContent = `${stage} · ${idx + 1} / ${list.length}`;
+        const cap = $("lbCap");
+        cap.innerHTML = "";
+        c.notes.forEach((n) => {
+          const p = document.createElement("p");
+          p.textContent = n;
+          cap.append(p);
+        });
+      }
+      function openLightbox(from) {
+        opener = from;
+        $("lightbox").classList.add("open");
+        renderLightbox();
+        $("lbClose").focus();
+      }
+      function closeLightbox() {
+        $("lightbox").classList.remove("open");
+        if (opener) opener.focus();
+      }
+      $("lbClose").onclick = closeLightbox;
+      $("lbPrev").onclick = () => move(-1);
+      $("lbNext").onclick = () => move(1);
+      let lx = 0,
+        ly = 0;
+      $("lbStage").addEventListener(
+        "touchstart",
+        (e) => {
+          lx = e.touches[0].clientX;
+          ly = e.touches[0].clientY;
+        },
+        { passive: true },
+      );
+      $("lbStage").addEventListener("touchend", (e) => {
+        const dx = e.changedTouches[0].clientX - lx,
+          dy = e.changedTouches[0].clientY - ly;
+        if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy))
+          move(dx < 0 ? 1 : -1);
+      });
+
+      $("saveBtn").onclick = (e) => {
+        const on = e.currentTarget.getAttribute("aria-pressed") !== "true";
+        e.currentTarget.setAttribute("aria-pressed", on);
+        e.currentTarget.textContent = on ? "♥" : "♡";
+        toast(on ? "Saved" : "Removed from saved");
+      };
+
+      document.addEventListener("keydown", (e) => {
+        const open = $("lightbox").classList.contains("open");
+        if (e.key === "Escape" && open) closeLightbox();
+        if (open && e.key === "ArrowLeft") move(-1);
+        if (open && e.key === "ArrowRight") move(1);
+      });
+
+      function toast(msg) {
+        const t = $("toast");
+        t.textContent = msg;
+        t.classList.add("show");
+        clearTimeout(toast.t);
+        toast.t = setTimeout(() => t.classList.remove("show"), 1800);
+      }
+
+      render();
+    </script>
+  </body>
+</html>
