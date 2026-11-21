@@ -15,6 +15,25 @@ If the target already exists, keep its visual language, anchors, and navigation.
 order below is authoritative: add, merge, or reorder sections to match it. Update the
 content in place; do not start from a blank page unless the file is missing or unusable.
 
+## Workflow
+
+Batch the work: one inventory pass, three source reads, two test reads, one diagram pass,
+and one checker pass per revision.
+
+1. **Inventory once.** Run the inventory commands below in one or two shell calls.
+2. **Read in batches.** Source in three or four grouped calls, tests in two; never one
+   call per file. Read the files behind the boxes you intend to draw.
+3. **Author diagrams together.** Write every Mermaid block to
+   `/tmp/opencode/architecture-map-diagrams/NN.mmd` in one pass, then validate the directory in one
+   call (see Diagram rules). Fix all failures together.
+4. **Write the page in four or five section chunks.** Use the semantic table and code
+   classes described in the output contract.
+5. **Check, then fix in one pass.** Run
+   `node scripts/check-architecture-map.mjs docs/architecture-reviews/architecture-map.html`.
+   Fix every reported violation, then re-run. **Done means exit 0.**
+
+Fold status checks into the checker: one run reports every failure.
+
 ## Read before writing
 
 Do not answer from memory or from an older commit. Inspect the current tree:
@@ -29,7 +48,7 @@ Do not answer from memory or from an older commit. Inspect the current tree:
   `docs/EXPO-FOLDER-STRUCTURE.md`, `CODING_STANDARDS.md`.
 - `package.json`, `jest.config.js`, `app.json`.
 
-Start with an inventory:
+Start with an inventory. Run these in one or two shell calls, not one per command:
 
 ```sh
 find src -type f | sort
@@ -49,11 +68,16 @@ maps to real code.
 One self-contained HTML file:
 
 - Tailwind CDN and Mermaid 11 via ESM CDN, matching
-  `docs/architecture-reviews/architecture-review-*.html`.
+  `docs/architecture-reviews/architecture-review-*.html`. Pin the Mermaid import to the installed
+  `mermaid` devDependency so the checker and the page parse the same version.
 - Sticky top navigation, responsive layout, print styles, accessible headings.
 - Every diagram is a `<pre class="mermaid">` block. Mermaid renders on load.
 - No build step, no local server required. Opening the file in a browser is enough.
 - No screenshots or external images.
+- Keep the file under ~170 KB. Repeated cell, inline-code, table-head, and table-wrapper
+  styles live in the `<style>` block (`main table`, `main code`, `.table-wrap`,
+  `.table-wrap-lg`, `.row-alt`); use Tailwind utilities for one-off layout. Do not repeat
+  `border-t px-3 py-2 align-top` or `rounded bg-slate-100 px-1 text-xs` on every cell.
 
 Required sections, in this order. Section 0 is a preamble; number 1-9 on the page.
 
@@ -229,10 +253,16 @@ Classification rules:
   alone.
 - Do not invent statuses, tables, routes, files, or test categories.
 
-Validate every Mermaid block before finishing. A reliable check is to extract each
-`<pre class="mermaid">` body and POST it to `https://kroki.io/mermaid/svg`; expect a 2xx
-response. If the network is unavailable, use `npx -y @mermaid-js/mermaid-cli` or report that
-validation was skipped. Do not leave a block that has never parsed.
+Validate every Mermaid block before finishing. The page loads Mermaid 11, so parse against
+Mermaid 11, not Kroki (it runs Mermaid 12.x and returns opaque 400s for diagrams Mermaid 11
+renders). The checker parses with the installed `mermaid@11`:
+
+```sh
+node scripts/check-architecture-map.mjs --mermaid-dir /tmp/opencode/architecture-map-diagrams
+```
+
+For the page, run the full checker; it parses every `<pre class="mermaid">` body and the
+page contract together. Do not leave a block that has never parsed.
 
 ## Guardrails
 
@@ -246,6 +276,8 @@ validation was skipped. Do not leave a block that has never parsed.
 - Connections are behavioural. Never "A imports B"; import direction belongs in the module
   section.
 - Never imply coverage. If no suite pins an S1 failure mode, write **unprotected**.
+- Done means `node scripts/check-architecture-map.mjs docs/architecture-reviews/architecture-map.html`
+  exits 0.
 - End by reporting: output path, sections written, diagram count, test counts per layer,
   feature dossiers by weight and headline tier, any unprotected S1 failure mode, validation
   result, and any fact that needs a human decision.
