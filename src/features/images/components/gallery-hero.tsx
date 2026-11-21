@@ -54,14 +54,15 @@ export function GalleryHero({
       {uri ? (
         <Pressable
           role="button"
-          accessibilityLabel="Open image"
+          accessibilityLabel={`Open ${label} image ${position} of ${count}`}
+          accessibilityHint="Opens full screen"
           onPress={onImagePress}
           className="h-full w-full"
         >
           <Image
             testID="gallery-hero"
             source={{ uri }}
-            accessibilityLabel={`${label} image ${position} of ${count}`}
+            accessible={false}
             contentFit="cover"
             style={{ width: "100%", height: "100%" }}
           />

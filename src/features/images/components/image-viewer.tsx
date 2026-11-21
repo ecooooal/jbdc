@@ -1,6 +1,6 @@
 import { Image as ExpoImage } from "expo-image";
 import { ImageIcon, X } from "lucide-react-native";
-import { Modal, Pressable, View } from "react-native";
+import { Modal, Pressable, ScrollView, View } from "react-native";
 import { IMAGE_KINDS } from "@/features/database";
 import { Button } from "@/shared/components/ui/button";
 import { Icon } from "@/shared/components/ui/icon";
@@ -15,7 +15,8 @@ import type { ViewerEvent } from "../lib/viewer-reducer";
  * kind reclassifies it, and Remove hides behind its one question before the
  * image and its notes go. The notes are read-only; the block under the hero is
  * where they are written. The viewer is the whole screen, so the hero's swipe
- * and the rail wait behind it.
+ * and the rail wait behind it. The image keeps a bounded area and everything
+ * beneath it scrolls, so a long note never pushes the controls out of reach.
  */
 export function ImageViewer({
   image,
@@ -46,7 +47,7 @@ export function ImageViewer({
           </Button>
         </View>
 
-        <View className="flex-1 items-center justify-center px-2">
+        <View className="h-1/2 items-center justify-center px-2">
           {uri ? (
             <ExpoImage
               source={{ uri }}
@@ -59,7 +60,11 @@ export function ImageViewer({
           )}
         </View>
 
-        <View className="gap-3 px-4 pb-10">
+        <ScrollView
+          className="flex-1"
+          contentContainerStyle={{ gap: 12, paddingHorizontal: 16, paddingBottom: 40 }}
+          showsVerticalScrollIndicator={false}
+        >
           <View className="flex-row flex-wrap gap-2">
             {IMAGE_KINDS.map((kind) => {
               const selected = kind === image.kind;
@@ -134,7 +139,7 @@ export function ImageViewer({
               <Text>Remove image</Text>
             </Button>
           )}
-        </View>
+        </ScrollView>
       </View>
     </Modal>
   );

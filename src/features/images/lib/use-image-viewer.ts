@@ -41,7 +41,7 @@ export function useImageViewer(designId: string): {
               imageId: effect.imageId,
               to: effect.to,
             });
-          } else if (store) {
+          } else {
             await writeImages(database, store, designId, {
               kind: "remove",
               imageId: effect.imageId,

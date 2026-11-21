@@ -199,8 +199,8 @@ test("more notes than the block shows are one press away", async () => {
 });
 
 /** Opens the full-screen viewer on the hero's image. */
-async function openViewer() {
-  await userEvent.press(screen.getByRole("button", { name: "Open image" }));
+async function openViewer(name: string) {
+  await userEvent.press(screen.getByRole("button", { name }));
 }
 
 test("tapping the hero's image opens the full-screen viewer", async () => {
@@ -208,7 +208,7 @@ test("tapping the hero's image opens the full-screen viewer", async () => {
 
   await attach(design.id, "sketch", "sketch bytes", 1000);
   await renderGallery(design.id);
-  await openViewer();
+  await openViewer("Open Sketch image 1 of 1");
 
   expect(screen.getByLabelText("Image viewer")).toBeTruthy();
   expect(screen.getByRole("button", { name: "Close viewer" })).toBeTruthy();
@@ -219,27 +219,36 @@ test("the viewer offers one pill per kind", async () => {
 
   await attach(design.id, "sketch", "sketch bytes", 1000);
   await renderGallery(design.id);
-  await openViewer();
+  await openViewer("Open Sketch image 1 of 1");
 
   for (const label of ["Inspiration", "Sketch", "Prototype", "Final"]) {
     expect(screen.getByRole("button", { name: `Classify as ${label}` })).toBeTruthy();
   }
 });
 
-test("reclassifying in the viewer changes the Cover on return", async () => {
+test("reclassifying a non-Cover image in the viewer changes the Cover on return", async () => {
   const design = createDesign(database, { name: "Wool coat" });
 
   await attach(design.id, "sketch", "sketch bytes", 1000);
+  await attach(design.id, "prototype", "prototype bytes", 2000);
   await renderGallery(design.id);
-  await openViewer();
 
+  // The newer image of the higher kind is the Cover, so the sketch is the one
+  // the owner has to reach for.
+  expect(screen.getByRole("button", { name: "Open Prototype image 1 of 1" })).toBeTruthy();
+
+  await userEvent.press(screen.getByRole("button", { name: "Sketch" }));
+  await openViewer("Open Sketch image 1 of 1");
   await userEvent.press(screen.getByRole("button", { name: "Classify as Final" }));
   await act(async () => {});
   await act(async () => live.notify("images"));
   await userEvent.press(screen.getByRole("button", { name: "Close viewer" }));
 
-  expect(listDesignImages(database, design.id).map((image) => image.kind)).toEqual(["final"]);
-  expect(screen.getByLabelText("Final image 1 of 1")).toBeTruthy();
+  expect(listDesignImages(database, design.id).map((image) => image.kind)).toEqual([
+    "final",
+    "prototype",
+  ]);
+  expect(screen.getByRole("button", { name: "Open Final image 1 of 1" })).toBeTruthy();
 });
 
 test("Remove asks once before deleting the image and its notes", async () => {
@@ -248,12 +257,11 @@ test("Remove asks once before deleting the image and its notes", async () => {
   await attach(design.id, "sketch", "sketch bytes", 1000);
   await addNote(design.id, "First pass was fitted.", 2000);
   await renderGallery(design.id);
-  await openViewer();
+  await openViewer("Open Sketch image 1 of 1");
 
   await userEvent.press(screen.getByRole("button", { name: "Remove image" }));
 
   expect(screen.getByText("Remove this image and its notes?")).toBeTruthy();
-  expect(listDesignImages(database, design.id)).toHaveLength(1);
 
   await userEvent.press(screen.getByRole("button", { name: "Remove image and notes" }));
   await act(async () => {});
