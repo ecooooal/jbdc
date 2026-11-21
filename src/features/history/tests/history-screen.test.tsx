@@ -1,9 +1,9 @@
-import { render, screen } from "@testing-library/react-native";
+import { render, screen, within } from "@testing-library/react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { DatabaseProvider } from "@/features/database/react";
 import { createSyncSubscribe, createTempDatabase } from "@/features/database/testing";
 import { createDesign, type DesignFields } from "@/features/designs";
-import { recordEdit } from "@/features/history";
+import { recordEdit, recordImageChange } from "@/features/history";
 import { HistoryScreen } from "@/features/history/react";
 
 jest.mock("expo-router", () => ({ router: { back: jest.fn() } }));
@@ -80,6 +80,27 @@ test("renders a field-edit Event as a card with its sections and timestamp", asy
   expect(screen.getByTestId("history-section-identity")).toBeTruthy();
   expect(screen.getByTestId("history-section-specification")).toBeTruthy();
   expect(screen.getByText(/2025/)).toBeTruthy();
+});
+
+test("renders an image Event as a card with its Images section and summary line", async () => {
+  const design = createDesign(database, { name: "Silk slip dress" }, 10);
+
+  // Seed through the module's own writer — the same call the images write path
+  // makes inside its transaction — not through the full image-store stack.
+  recordImageChange(database.db, {
+    id: "event-image",
+    designId: design.id,
+    changes: {
+      attached: [{ id: "img-1", kind: "sketch", contentHash: "hash-1", extension: "jpg" }],
+    },
+    createdAt: Date.UTC(2025, 0, 2, 3, 4),
+  });
+
+  await renderHistory(design.id);
+
+  const images = screen.getByTestId("history-section-images");
+
+  expect(within(images).getByText(/sketch image attached$/)).toBeTruthy();
 });
 
 test("a design with no Events says so plainly", async () => {
