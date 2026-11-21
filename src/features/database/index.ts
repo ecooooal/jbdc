@@ -14,6 +14,7 @@ export {
   designEvents,
   designMaterials,
   designs,
+  imageNotes,
   images,
   materials,
   settings,

@@ -184,6 +184,25 @@ export const images = sqliteTable(
   ],
 );
 
+/**
+ * One item of an Image's commentary list: what the owner decided there, and
+ * why. Added or removed, never edited in place, and it dies with its image —
+ * the foreign key cascades, so no note outlives the image it explains. A note
+ * is not an Event: History records the image's life, not the note's.
+ */
+export const imageNotes = sqliteTable(
+  "image_notes",
+  {
+    id: text("id").primaryKey(),
+    imageId: text("image_id")
+      .notNull()
+      .references(() => images.id, { onDelete: "cascade" }),
+    text: text("text").notNull(),
+    createdAt: timestamp("created_at").notNull(),
+  },
+  (table) => [index("image_notes_image_id_idx").on(table.imageId)],
+);
+
 export const settings = sqliteTable("settings", {
   key: text("key").primaryKey(),
   value: text("value").notNull(),

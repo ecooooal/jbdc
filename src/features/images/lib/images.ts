@@ -1,7 +1,10 @@
-import { IMAGE_KINDS, images, type ImageKind } from "@/features/database";
+import { IMAGE_KINDS, images, imageNotes, type ImageKind } from "@/features/database";
 
 /** An image as the catalog stores it: one file, labelled by its kind. */
 export type Image = typeof images.$inferSelect;
+
+/** One item of an image's commentary list, as the catalog stores it. */
+export type ImageNote = typeof imageNotes.$inferSelect;
 
 /**
  * The Cover's order: the most developed kind first. The journey reads
