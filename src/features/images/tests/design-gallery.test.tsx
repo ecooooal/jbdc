@@ -47,10 +47,11 @@ async function attach(designId: string, kind: ImageKind, bytes: string, now: num
 async function renderGallery(
   designId: string,
   picker: ImagePicker = { pick: async () => ({ kind: "cancelled" }) },
+  imageStore: ImageStore = store,
 ) {
   return render(
     <DatabaseProvider database={database} subscribe={live.subscribe}>
-      <ImageStoreProvider store={store}>
+      <ImageStoreProvider store={imageStore}>
         <ImagePickerProvider picker={picker}>
           <DesignGallery designId={designId} />
         </ImagePickerProvider>
@@ -114,4 +115,28 @@ test("the plus card attaches the picked files to the stage the owner chose", asy
     "sketch",
     "sketch",
   ]);
+});
+
+test("a copy that throws leaves the stage unchanged and says so", async () => {
+  const design = createDesign(database, { name: "Wool coat" });
+  const sourcePath = join(sourceDirectory, "front.jpg");
+  const failing: ImageStore = {
+    ...store,
+    async copy() {
+      throw new Error("unreadable picked file");
+    },
+  };
+  const picker: ImagePicker = {
+    pick: async () => ({ kind: "picked", sourcePaths: [sourcePath] }),
+  };
+
+  writeFileSync(sourcePath, "front bytes");
+  await renderGallery(design.id, picker, failing);
+
+  await userEvent.press(screen.getByRole("button", { name: "Add images to Final" }));
+  await act(async () => {});
+
+  expect(screen.getByText("The images could not be added.")).toBeTruthy();
+  expect(screen.queryByRole("button", { name: "Final image 1" })).toBeNull();
+  expect(listDesignImages(database, design.id)).toEqual([]);
 });

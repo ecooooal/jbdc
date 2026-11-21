@@ -29,5 +29,5 @@ export function useGallery(designId: string) {
 
   const send = useCallback((gesture: GalleryGesture) => dispatch({ ...gesture, stages }), [stages]);
 
-  return { state, stages, view: galleryView(stages, state), send, error, status };
+  return { state, stages, view: galleryView(stages, state), send, dispatch, error, status };
 }

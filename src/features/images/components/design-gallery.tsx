@@ -14,8 +14,8 @@ import { JourneyRail } from "./journey-rail";
  * above Detail's hero text.
  */
 export function DesignGallery({ designId }: { designId: string }) {
-  const { state, stages, view, send, error, status } = useGallery(designId);
-  const attach = useAttachImages(designId, state.kind);
+  const { state, stages, view, send, dispatch, error, status } = useGallery(designId);
+  const attach = useAttachImages(designId, state.kind, dispatch);
 
   if (error) {
     return <Text className="text-destructive">{error.message}</Text>;
@@ -37,6 +37,7 @@ export function DesignGallery({ designId }: { designId: string }) {
         stages={stages}
         active={view.stage}
         selectedId={view.image?.id ?? null}
+        attachFailed={state.attachFailed}
         onStagePress={(kind) => send({ type: "stage-pressed", kind })}
         onImagePress={(imageId) => send({ type: "image-pressed", imageId })}
         onAddPress={() => void attach()}

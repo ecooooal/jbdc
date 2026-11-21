@@ -53,12 +53,14 @@ function AddImageCard({ label, onPress }: { label: string; onPress: () => void }
  * holds. The active stage opens its images oldest to newest on the second row,
  * so the rail stays a stable spine and an empty stage shows where work is
  * missing. A thumb selects the hero's image; the plus card at the end attaches
- * to the active stage.
+ * to the active stage. When the last attach did not land, one line says so and
+ * the rail otherwise stays as it was.
  */
 export function JourneyRail({
   stages,
   active,
   selectedId,
+  attachFailed,
   onStagePress,
   onImagePress,
   onAddPress,
@@ -66,6 +68,7 @@ export function JourneyRail({
   stages: readonly ImageStage[];
   active: ImageStage | null;
   selectedId: string | null;
+  attachFailed: boolean;
   onStagePress: (kind: ImageKind) => void;
   onImagePress: (imageId: string) => void;
   onAddPress: () => void;
@@ -102,6 +105,12 @@ export function JourneyRail({
           );
         })}
       </View>
+
+      {attachFailed ? (
+        <Text className="text-destructive" role="alert">
+          The images could not be added.
+        </Text>
+      ) : null}
 
       {active ? (
         <ScrollView
