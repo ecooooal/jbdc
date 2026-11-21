@@ -197,3 +197,70 @@ test("more notes than the block shows are one press away", async () => {
 
   expect(screen.getByRole("button", { name: "Show fewer notes" })).toBeTruthy();
 });
+
+/** Opens the full-screen viewer on the hero's image. */
+async function openViewer() {
+  await userEvent.press(screen.getByRole("button", { name: "Open image" }));
+}
+
+test("tapping the hero's image opens the full-screen viewer", async () => {
+  const design = createDesign(database, { name: "Wool coat" });
+
+  await attach(design.id, "sketch", "sketch bytes", 1000);
+  await renderGallery(design.id);
+  await openViewer();
+
+  expect(screen.getByLabelText("Image viewer")).toBeTruthy();
+  expect(screen.getByRole("button", { name: "Close viewer" })).toBeTruthy();
+});
+
+test("the viewer offers one pill per kind", async () => {
+  const design = createDesign(database, { name: "Wool coat" });
+
+  await attach(design.id, "sketch", "sketch bytes", 1000);
+  await renderGallery(design.id);
+  await openViewer();
+
+  for (const label of ["Inspiration", "Sketch", "Prototype", "Final"]) {
+    expect(screen.getByRole("button", { name: `Classify as ${label}` })).toBeTruthy();
+  }
+});
+
+test("reclassifying in the viewer changes the Cover on return", async () => {
+  const design = createDesign(database, { name: "Wool coat" });
+
+  await attach(design.id, "sketch", "sketch bytes", 1000);
+  await renderGallery(design.id);
+  await openViewer();
+
+  await userEvent.press(screen.getByRole("button", { name: "Classify as Final" }));
+  await act(async () => {});
+  await act(async () => live.notify("images"));
+  await userEvent.press(screen.getByRole("button", { name: "Close viewer" }));
+
+  expect(listDesignImages(database, design.id).map((image) => image.kind)).toEqual(["final"]);
+  expect(screen.getByLabelText("Final image 1 of 1")).toBeTruthy();
+});
+
+test("Remove asks once before deleting the image and its notes", async () => {
+  const design = createDesign(database, { name: "Wool coat" });
+
+  await attach(design.id, "sketch", "sketch bytes", 1000);
+  await addNote(design.id, "First pass was fitted.", 2000);
+  await renderGallery(design.id);
+  await openViewer();
+
+  await userEvent.press(screen.getByRole("button", { name: "Remove image" }));
+
+  expect(screen.getByText("Remove this image and its notes?")).toBeTruthy();
+  expect(listDesignImages(database, design.id)).toHaveLength(1);
+
+  await userEvent.press(screen.getByRole("button", { name: "Remove image and notes" }));
+  await act(async () => {});
+  await act(async () => live.notify("images"));
+  await act(async () => live.notify("image_notes"));
+
+  expect(listDesignImages(database, design.id)).toEqual([]);
+  expect(listDesignImageNotes(database, design.id)).toEqual([]);
+  expect(screen.queryByText("Remove this image and its notes?")).toBeNull();
+});

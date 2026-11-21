@@ -41,6 +41,8 @@ export function useGallery(designId: string) {
   return {
     state,
     stages,
+    images: data.images,
+    imageNotes: data.imageNotes,
     view: galleryView(stages, state),
     noteView,
     send,

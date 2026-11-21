@@ -1,7 +1,7 @@
 import { Image } from "expo-image";
 import { ImageIcon } from "lucide-react-native";
 import { useMemo } from "react";
-import { PanResponder, View } from "react-native";
+import { PanResponder, Pressable, View } from "react-native";
 import type { ImageKind } from "@/features/database";
 import { Icon } from "@/shared/components/ui/icon";
 import { Text } from "@/shared/components/ui/text";
@@ -13,9 +13,10 @@ import { useImageUri } from "../lib/image-store-context";
 const SWIPE_DISTANCE = 40;
 
 /**
- * The current image, its stage chip, and its count. Swiping dispatches once,
- * on release. An empty stage keeps the same frame and shows the placeholder,
- * so the hero never changes shape as images arrive.
+ * The current image, its stage chip, and its count. A tap opens the image
+ * full-screen; swiping dispatches once, on release. An empty stage keeps the
+ * same frame and shows the placeholder, so the hero never changes shape as
+ * images arrive.
  */
 export function GalleryHero({
   image,
@@ -23,12 +24,14 @@ export function GalleryHero({
   position,
   count,
   onSwipe,
+  onImagePress,
 }: {
   image: StoredImage | null;
   kind: ImageKind;
   position: number;
   count: number;
   onSwipe: (direction: SwipeDirection) => void;
+  onImagePress: () => void;
 }) {
   const uri = useImageUri(image);
   const label = imageKindLabel(kind);
@@ -49,13 +52,20 @@ export function GalleryHero({
   return (
     <View className="bg-muted aspect-[4/5] overflow-hidden rounded-2xl" {...responder.panHandlers}>
       {uri ? (
-        <Image
-          testID="gallery-hero"
-          source={{ uri }}
-          accessibilityLabel={`${label} image ${position} of ${count}`}
-          contentFit="cover"
-          style={{ width: "100%", height: "100%" }}
-        />
+        <Pressable
+          role="button"
+          accessibilityLabel="Open image"
+          onPress={onImagePress}
+          className="h-full w-full"
+        >
+          <Image
+            testID="gallery-hero"
+            source={{ uri }}
+            accessibilityLabel={`${label} image ${position} of ${count}`}
+            contentFit="cover"
+            style={{ width: "100%", height: "100%" }}
+          />
+        </Pressable>
       ) : (
         <View
           testID="gallery-hero-placeholder"
