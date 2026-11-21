@@ -1,5 +1,5 @@
 ---
-description: Executes one orchestrator repair brief on one JBDC ticket branch — items 1-N, one fix commit, reports a SHA range. Never reviews, never merges, never pushes, never edits issues.
+description: Executes one orchestrator repair brief on one JBDC ticket branch — items 1-N, one review commit, reports a SHA range. Never reviews, never merges, never pushes, never edits issues.
 mode: subagent
 model: opencode/hy4-flash-free
 permissions:
@@ -158,7 +158,7 @@ leave it undone and say why; never invent a different fix and never widen the ti
 
 ## Commit
 
-One `fix (#<n>)` commit for the whole ticket, every repaired item in the body, prose items (a glossary line, a
+One `review (#<n>)` commit for the whole ticket, its subject naming what the repair fixed, every repaired item in the body, prose items (a glossary line, a
 comment) inside that same commit. `pnpm check` must pass before it. Never commit red, never amend, never squash the
 ticket's step commits, never push, never merge the slice branch.
 

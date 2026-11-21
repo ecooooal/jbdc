@@ -156,7 +156,7 @@ Overrides, which win over the skill text:
 - Stop after the last step commit and a green `pnpm check`. Your brief is the exception `implement` names: the orchestrator owns review and repair, and runs `code-review` itself. Do not run it, and do not dispatch a repair.
 - The orchestrator already wrote `Base: <sha>` on the ticket and gave you that sha. Do not comment on the ticket. Do not write its body, labels, or state. You have no permission to do any of this, and `implement`'s instruction to comment the base yourself does not apply to you.
 - Do not merge the slice branch. The orchestrator merges after review.
-- One commit per `## Steps` entry: `<type> (#<n>): <the step's behaviour in one sentence>`. Never commit red, never amend, never squash.
+- One commit per `## Steps` entry: `implement (#<n>): <the step's behaviour in one sentence>`. Never commit red, never amend, never squash.
 - Use `jest --maxWorkers=2` for test runs.
 - Touch only files this ticket needs. Adjacent work is reported, not done.
 - If a tool answers `permission.rejected`, do not retry it and do not work around it. Report which action was denied and stop if the ticket cannot continue without it.

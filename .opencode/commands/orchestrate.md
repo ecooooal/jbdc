@@ -113,7 +113,7 @@ Do not paste skills into the prompt.
 
 ## 4. Review each report
 
-1. `git -C /home/echo/workspace/wt/<n> log --oneline <base>..HEAD` — on the first review, before any repair, commit count must equal the ticket's `## Steps` count, one commit per step, typed `type (#<n>): behaviour`. A mismatch is a repair finding before any review runs. After a repair the branch carries steps + one `fix` commit; do not reapply the count to a delta review.
+1. `git -C /home/echo/workspace/wt/<n> log --oneline <base>..HEAD` — on the first review, before any repair, commit count must equal the ticket's `## Steps` count, one commit per step, typed `implement (#<n>): behaviour`. A mismatch is a repair finding before any review runs. After a repair the branch carries steps + one `review` commit; do not reapply the count to a delta review.
 2. Load the `code-review` skill and run it here, against the worktree: fixed point `<base>`, diff command `git -C /home/echo/workspace/wt/<n> diff <base>...HEAD`, commit list from the same worktree, spec the ticket itself (`gh issue view <n>`). You own its step 4: start the two axis subagents yourself. The harness permits one level of subagent, so they run at level one from here; a subagent that loaded this skill would need level two, and the harness refuses it. Its Standards axis covers the `CODING_STANDARDS.md` judgement calls; its Spec axis covers each acceptance criterion and flags anything outside the ticket's scope. Give the Standards axis the ticket body too, and say that the body is spec: wording it mandates — a doc citation, a commit subject — is not a standards breach.
 3. Aggregate the two reports, read the diff yourself, and rule. The reports inform the verdict, they are not it: anything outside the ticket's scope in the diff is a finding, not a bonus.
 4. Record which model dispatched the ticket: repair reuses it, and the report names it.
@@ -163,7 +163,7 @@ Reviewed at `<head>` · base `<sha>` · model `<model>`
 ### Rules
 
 - Fix items only, in order. Anything else: report it, do not change it.
-- One `fix (#<n>)` commit for the ticket; prose rides in it.
+- One `review (#<n>)` commit for the ticket; prose rides in it.
 - Report back: the SHA range, and any item you could not complete.
 ````
 
