@@ -38,8 +38,6 @@ export function useAttachImages(
         return;
       }
 
-      if (picked.sourcePaths.length === 0) return;
-
       const result = await writeImages(database, store, designId, {
         kind: "attach",
         images: picked.sourcePaths.map((sourcePath) => ({ sourcePath, kind })),

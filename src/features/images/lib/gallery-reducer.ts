@@ -148,7 +148,7 @@ export function galleryReducer(state: GalleryState, event: GalleryEvent): Galler
     case "images-read": {
       const kept = locationOf(event.stages, state.imageId);
 
-      if (kept) return { ...kept, awaitingKind: null, attachFailed: state.attachFailed };
+      if (kept) return { ...state, ...kept, awaitingKind: null };
 
       // The chosen empty stage keeps its place when a read arrives: it holds
       // the stage empty until its first image, then selects that image. Without
@@ -158,28 +158,21 @@ export function galleryReducer(state: GalleryState, event: GalleryEvent): Galler
         const chosen = event.stages.find((candidate) => candidate.kind === state.awaitingKind);
         const first = chosen?.images[0];
 
-        return first
-          ? {
-              kind: state.awaitingKind,
-              imageId: first.id,
-              awaitingKind: null,
-              attachFailed: state.attachFailed,
-            }
-          : {
-              kind: state.awaitingKind,
-              imageId: null,
-              awaitingKind: state.awaitingKind,
-              attachFailed: state.attachFailed,
-            };
+        return {
+          ...state,
+          kind: state.awaitingKind,
+          imageId: first?.id ?? null,
+          awaitingKind: first ? null : state.awaitingKind,
+        };
       }
 
       const cover = locationOf(event.stages, event.cover);
 
       return {
+        ...state,
         kind: cover?.kind ?? state.kind,
         imageId: cover?.imageId ?? null,
         awaitingKind: null,
-        attachFailed: state.attachFailed,
       };
     }
 
@@ -188,6 +181,7 @@ export function galleryReducer(state: GalleryState, event: GalleryEvent): Galler
       const first = stage?.images[0] ?? null;
 
       return {
+        ...state,
         kind: event.kind,
         imageId: first?.id ?? null,
         awaitingKind: first ? null : event.kind,
@@ -198,13 +192,13 @@ export function galleryReducer(state: GalleryState, event: GalleryEvent): Galler
     case "image-pressed": {
       const located = locationOf(event.stages, event.imageId);
 
-      return located ? { ...located, awaitingKind: null, attachFailed: state.attachFailed } : state;
+      return located ? { ...state, ...located, awaitingKind: null } : state;
     }
 
     case "hero-swiped": {
       const stepped = step(event.stages, state.imageId, event.direction);
 
-      return stepped ? { ...stepped, awaitingKind: null, attachFailed: state.attachFailed } : state;
+      return stepped ? { ...state, ...stepped, awaitingKind: null } : state;
     }
 
     case "attach-pressed":

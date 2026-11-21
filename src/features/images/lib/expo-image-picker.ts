@@ -20,9 +20,13 @@ function sourceOf(): Promise<Source | null> {
   });
 }
 
-/** The picked files, or the fact the owner backed out of the system picker. */
-function pickedOf(result: ExpoImagePicker.ImagePickerResult): ImagePickResult {
-  return result.canceled
+/**
+ * The picked files, or the fact the owner backed out of the system picker. A
+ * success carrying no files is a cancel: nothing was chosen, so there is
+ * nothing to report as an attach.
+ */
+function pickResultOf(result: ExpoImagePicker.ImagePickerResult): ImagePickResult {
+  return result.canceled || result.assets.length === 0
     ? { kind: "cancelled" }
     : { kind: "picked", sourcePaths: result.assets.map((asset) => asset.uri) };
 }
@@ -49,7 +53,7 @@ export function createExpoImagePicker(): ImagePicker {
           quality: 1,
         });
 
-        return pickedOf(result);
+        return pickResultOf(result);
       }
 
       if (source === "library") {
@@ -62,7 +66,7 @@ export function createExpoImagePicker(): ImagePicker {
           quality: 1,
         });
 
-        return pickedOf(result);
+        return pickResultOf(result);
       }
 
       return { kind: "cancelled" };
