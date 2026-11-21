@@ -20,9 +20,20 @@ export type GalleryStage = {
 export type SwipeDirection = "next" | "previous";
 
 /**
+ * The note composer, bound to the image it was opened on. The draft and its
+ * image travel together, so changing the image drops a half-written note rather
+ * than carrying it to a picture it was not written for.
+ */
+export type NoteComposer = {
+  imageId: string;
+  draft: string;
+};
+
+/**
  * The gallery's decisions: which stage the rail's second row shows, which image
- * the hero shows, and whether the last attach failed. The selections are ids;
- * the live list derives the rows.
+ * the hero shows, whether the last attach failed, and the state of the note
+ * block beneath the hero. The selections are ids; the live list derives the
+ * rows.
  */
 export type GalleryState = {
   kind: ImageKind;
@@ -39,6 +50,13 @@ export type GalleryState = {
    * cancel; a new attach press or a stage press clears it.
    */
   attachFailed: boolean;
+  /** The open note composer for the current image; null when it is closed. */
+  noteComposer: NoteComposer | null;
+  /**
+   * Whether the note block shows every note rather than its first two. It
+   * closes again when the owner moves to another image.
+   */
+  notesExpanded: boolean;
 };
 
 /** What the owner did to the gallery. */
@@ -56,6 +74,11 @@ export type GalleryEvent =
   | { type: "images-read"; stages: readonly GalleryStage[]; cover: string | null }
   | { type: "attach-pressed" }
   | { type: "attach-failed" }
+  | { type: "note-composer-opened" }
+  | { type: "note-composer-closed" }
+  | { type: "note-draft-changed"; draft: string }
+  | { type: "note-added"; imageId: string }
+  | { type: "notes-more-pressed" }
   | (GalleryGesture & { stages: readonly GalleryStage[] });
 
 /**
@@ -64,7 +87,14 @@ export type GalleryEvent =
  * unless the owner has chosen an empty stage in the meantime.
  */
 export function createInitialGalleryState(): GalleryState {
-  return { kind: "final", imageId: null, awaitingKind: null, attachFailed: false };
+  return {
+    kind: "final",
+    imageId: null,
+    awaitingKind: null,
+    attachFailed: false,
+    noteComposer: null,
+    notesExpanded: false,
+  };
 }
 
 /** The current image's stage, position and count, derived from the live list. */
@@ -133,6 +163,48 @@ export function galleryView<Stage extends GalleryStage>(
   };
 }
 
+/** How many notes the block shows before it offers the rest. */
+export const NOTE_COLLAPSED_COUNT = 2;
+
+/** What the note block shows: the first two notes, or all of them expanded. */
+export type NoteBlockView<Note> = {
+  total: number;
+  shown: readonly Note[];
+  /** Whether there are more notes than the collapsed block shows. */
+  collapsible: boolean;
+  expanded: boolean;
+};
+
+/**
+ * The note block's derivation: never more than two notes until the owner asks
+ * for all of them, and the control that asks only when there is more to see.
+ */
+export function noteBlockView<Note>(
+  notes: readonly Note[],
+  state: GalleryState,
+): NoteBlockView<Note> {
+  const collapsible = notes.length > NOTE_COLLAPSED_COUNT;
+  const expanded = collapsible && state.notesExpanded;
+
+  return {
+    total: notes.length,
+    shown: expanded ? notes : notes.slice(0, NOTE_COLLAPSED_COUNT),
+    collapsible,
+    expanded,
+  };
+}
+
+/**
+ * The state after a selection. The note UI belongs to one image, so a half
+ * written note and the expanded list drop as soon as the current image changes;
+ * staying on the same image — a reclassification, say — keeps both.
+ */
+function selected(state: GalleryState, kind: ImageKind, imageId: string | null): GalleryState {
+  if (imageId === state.imageId) return { ...state, kind, imageId };
+
+  return { ...state, kind, imageId, noteComposer: null, notesExpanded: false };
+}
+
 /**
  * The gallery's decisions. It opens on the Cover; a later read keeps the
  * selected image while it exists — moving it to the stage its reclassification
@@ -141,14 +213,16 @@ export function galleryView<Stage extends GalleryStage>(
  * that stage at its oldest image; a swipe walks the journey in order, within a
  * stage and then across the next filled one, stopping at either end. An attach
  * that failed is a flag the rail reads until the owner tries again or presses a
- * stage, and it never moves the selection.
+ * stage, and it never moves the selection. The note composer opens on the
+ * current image, closes when the note lands, and is dropped when the owner
+ * moves on.
  */
 export function galleryReducer(state: GalleryState, event: GalleryEvent): GalleryState {
   switch (event.type) {
     case "images-read": {
       const kept = locationOf(event.stages, state.imageId);
 
-      if (kept) return { ...state, ...kept, awaitingKind: null };
+      if (kept) return { ...selected(state, kept.kind, kept.imageId), awaitingKind: null };
 
       // The chosen empty stage keeps its place when a read arrives: it holds
       // the stage empty until its first image, then selects that image. Without
@@ -159,9 +233,7 @@ export function galleryReducer(state: GalleryState, event: GalleryEvent): Galler
         const first = chosen?.images[0];
 
         return {
-          ...state,
-          kind: state.awaitingKind,
-          imageId: first?.id ?? null,
+          ...selected(state, state.awaitingKind, first?.id ?? null),
           awaitingKind: first ? null : state.awaitingKind,
         };
       }
@@ -169,9 +241,7 @@ export function galleryReducer(state: GalleryState, event: GalleryEvent): Galler
       const cover = locationOf(event.stages, event.cover);
 
       return {
-        ...state,
-        kind: cover?.kind ?? state.kind,
-        imageId: cover?.imageId ?? null,
+        ...selected(state, cover?.kind ?? state.kind, cover?.imageId ?? null),
         awaitingKind: null,
       };
     }
@@ -181,9 +251,7 @@ export function galleryReducer(state: GalleryState, event: GalleryEvent): Galler
       const first = stage?.images[0] ?? null;
 
       return {
-        ...state,
-        kind: event.kind,
-        imageId: first?.id ?? null,
+        ...selected(state, event.kind, first?.id ?? null),
         awaitingKind: first ? null : event.kind,
         attachFailed: false,
       };
@@ -192,13 +260,17 @@ export function galleryReducer(state: GalleryState, event: GalleryEvent): Galler
     case "image-pressed": {
       const located = locationOf(event.stages, event.imageId);
 
-      return located ? { ...state, ...located, awaitingKind: null } : state;
+      return located
+        ? { ...selected(state, located.kind, located.imageId), awaitingKind: null }
+        : state;
     }
 
     case "hero-swiped": {
       const stepped = step(event.stages, state.imageId, event.direction);
 
-      return stepped ? { ...state, ...stepped, awaitingKind: null } : state;
+      return stepped
+        ? { ...selected(state, stepped.kind, stepped.imageId), awaitingKind: null }
+        : state;
     }
 
     case "attach-pressed":
@@ -206,5 +278,33 @@ export function galleryReducer(state: GalleryState, event: GalleryEvent): Galler
 
     case "attach-failed":
       return { ...state, attachFailed: true };
+
+    case "note-composer-opened":
+      // A note needs the image it explains; with none selected there is nothing
+      // to open the composer on.
+      return state.imageId
+        ? { ...state, noteComposer: { imageId: state.imageId, draft: "" } }
+        : state;
+
+    case "note-composer-closed":
+      return { ...state, noteComposer: null };
+
+    case "note-draft-changed":
+      return state.noteComposer
+        ? { ...state, noteComposer: { ...state.noteComposer, draft: event.draft } }
+        : state;
+
+    case "note-added": {
+      // The note landed on the image the composer was opened for. A read that
+      // moved the owner elsewhere has already dropped that composer, so only a
+      // note for the open composer clears it; the list opens so the new note is
+      // not hidden behind the collapsed two.
+      if (state.noteComposer?.imageId !== event.imageId) return state;
+
+      return { ...state, noteComposer: null, notesExpanded: true };
+    }
+
+    case "notes-more-pressed":
+      return { ...state, notesExpanded: !state.notesExpanded };
   }
 }

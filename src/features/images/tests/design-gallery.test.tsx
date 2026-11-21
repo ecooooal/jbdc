@@ -9,6 +9,7 @@ import { createDesign } from "@/features/designs";
 import { listDesignImages, writeImages, type ImageStore } from "@/features/images";
 import { DesignGallery, ImagePickerProvider, ImageStoreProvider } from "@/features/images/react";
 import { createTempImageStore } from "@/features/images/testing";
+import { listDesignImageNotes } from "../lib/records";
 import type { ImagePicker, ImagePickResult } from "../lib/image-picker";
 
 const live = createSyncSubscribe();
@@ -139,4 +140,62 @@ test("a copy that throws leaves the stage unchanged and says so", async () => {
   expect(screen.getByText("The images could not be added.")).toBeTruthy();
   expect(screen.queryByRole("button", { name: "Final image 1" })).toBeNull();
   expect(listDesignImages(database, design.id)).toEqual([]);
+});
+
+async function addNote(designId: string, text: string, now: number) {
+  const [image] = listDesignImages(database, designId);
+
+  await writeImages(database, store, designId, { kind: "add-note", imageId: image.id, text }, now);
+}
+
+test("a note written under the hero is stored beside the current image", async () => {
+  const design = createDesign(database, { name: "Wool coat" });
+
+  await attach(design.id, "sketch", "sketch bytes", 1000);
+  await renderGallery(design.id);
+
+  await userEvent.press(screen.getByRole("button", { name: "Add note" }));
+  await userEvent.type(screen.getByLabelText("New note"), "Widened the shoulder.");
+  await userEvent.press(screen.getByRole("button", { name: "Save note" }));
+
+  await act(async () => {});
+  await act(async () => live.notify("image_notes"));
+
+  expect(listDesignImageNotes(database, design.id)).toEqual([
+    expect.objectContaining({ text: "Widened the shoulder." }),
+  ]);
+  expect(screen.getByText("Widened the shoulder.")).toBeTruthy();
+  expect(screen.queryByLabelText("New note")).toBeNull();
+});
+
+test("a note is removed in one press, with no confirmation", async () => {
+  const design = createDesign(database, { name: "Wool coat" });
+
+  await attach(design.id, "sketch", "sketch bytes", 1000);
+  await addNote(design.id, "First pass was fitted.", 2000);
+  await renderGallery(design.id);
+
+  await userEvent.press(screen.getByRole("button", { name: "Delete note 1" }));
+
+  await act(async () => {});
+  await act(async () => live.notify("image_notes"));
+
+  expect(listDesignImageNotes(database, design.id)).toEqual([]);
+  expect(screen.queryByText("First pass was fitted.")).toBeNull();
+});
+
+test("more notes than the block shows are one press away", async () => {
+  const design = createDesign(database, { name: "Wool coat" });
+
+  await attach(design.id, "sketch", "sketch bytes", 1000);
+  await addNote(design.id, "First pass was fitted.", 2000);
+  await addNote(design.id, "Widened the shoulder.", 2100);
+  await addNote(design.id, "Kept the collar high.", 2200);
+  await renderGallery(design.id);
+
+  expect(screen.queryByText("Kept the collar high.")).toBeNull();
+
+  await userEvent.press(screen.getByRole("button", { name: "Show all 3 notes" }));
+
+  expect(screen.getByText("Kept the collar high.")).toBeTruthy();
 });

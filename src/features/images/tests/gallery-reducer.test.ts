@@ -2,6 +2,7 @@ import type { ImageKind } from "@/features/database";
 import {
   createInitialGalleryState,
   galleryReducer,
+  noteBlockView,
   type GalleryEvent,
   type GalleryStage,
   type GalleryState,
@@ -27,6 +28,14 @@ function send(state: GalleryState, ...events: GalleryEvent[]): GalleryState {
   return events.reduce(galleryReducer, state);
 }
 
+/** A gallery state's note UI before the owner opens anything. */
+const noNoteUI = { noteComposer: null, notesExpanded: false };
+
+/** A gallery looking at one image, with nothing else settled yet. */
+function onImage(imageId: string, kind: ImageKind = "sketch"): GalleryState {
+  return { ...createInitialGalleryState(), kind, imageId };
+}
+
 describe("opening the gallery", () => {
   test("opens on the Cover", () => {
     const opened = send(createInitialGalleryState(), {
@@ -40,6 +49,7 @@ describe("opening the gallery", () => {
       imageId: "f2",
       awaitingKind: null,
       attachFailed: false,
+      ...noNoteUI,
     });
   });
 
@@ -47,7 +57,7 @@ describe("opening the gallery", () => {
     const stages = [stage("inspiration"), stage("sketch"), stage("prototype"), stage("final")];
 
     expect(send(createInitialGalleryState(), { type: "images-read", stages, cover: null })).toEqual(
-      { kind: "final", imageId: null, awaitingKind: null, attachFailed: false },
+      { kind: "final", imageId: null, awaitingKind: null, attachFailed: false, ...noNoteUI },
     );
   });
 });
@@ -75,6 +85,7 @@ describe("an images change", () => {
       imageId: "f2",
       awaitingKind: null,
       attachFailed: false,
+      ...noNoteUI,
     });
   });
 
@@ -102,6 +113,7 @@ describe("an images change", () => {
       imageId: "f2",
       awaitingKind: null,
       attachFailed: false,
+      ...noNoteUI,
     });
   });
 
@@ -137,6 +149,7 @@ describe("an images change", () => {
       imageId: "s1",
       awaitingKind: null,
       attachFailed: false,
+      ...noNoteUI,
     });
   });
 
@@ -154,6 +167,7 @@ describe("an images change", () => {
       imageId: "f2",
       awaitingKind: null,
       attachFailed: false,
+      ...noNoteUI,
     });
   });
 
@@ -181,6 +195,7 @@ describe("an images change", () => {
       imageId: "s1",
       awaitingKind: null,
       attachFailed: false,
+      ...noNoteUI,
     });
   });
 });
@@ -193,7 +208,13 @@ describe("the journey rail", () => {
         kind: "sketch",
         stages: journey(),
       }),
-    ).toEqual({ kind: "sketch", imageId: "s1", awaitingKind: null, attachFailed: false });
+    ).toEqual({
+      kind: "sketch",
+      imageId: "s1",
+      awaitingKind: null,
+      attachFailed: false,
+      ...noNoteUI,
+    });
   });
 
   test("pressing an empty stage activates it with no image", () => {
@@ -208,6 +229,7 @@ describe("the journey rail", () => {
       imageId: null,
       awaitingKind: "prototype",
       attachFailed: false,
+      ...noNoteUI,
     });
   });
 
@@ -223,6 +245,7 @@ describe("the journey rail", () => {
       imageId: "i2",
       awaitingKind: null,
       attachFailed: false,
+      ...noNoteUI,
     });
   });
 });
@@ -241,6 +264,7 @@ describe("a failed attach", () => {
       imageId: "f2",
       awaitingKind: null,
       attachFailed: true,
+      ...noNoteUI,
     });
     expect(send(failed, { type: "attach-pressed" }).attachFailed).toBe(false);
   });
@@ -253,66 +277,285 @@ describe("a failed attach", () => {
       imageId: "s1",
       awaitingKind: null,
       attachFailed: false,
+      ...noNoteUI,
     });
   });
 });
 
 describe("swiping the hero", () => {
   function selected(imageId: string): GalleryState {
-    return { kind: "sketch", imageId, awaitingKind: null, attachFailed: false };
+    return { kind: "sketch", imageId, awaitingKind: null, attachFailed: false, ...noNoteUI };
   }
 
   test("moves within the stage first", () => {
     expect(
       send(selected("s1"), { type: "hero-swiped", direction: "next", stages: journey() }),
-    ).toEqual({ kind: "sketch", imageId: "s2", awaitingKind: null, attachFailed: false });
+    ).toEqual({
+      kind: "sketch",
+      imageId: "s2",
+      awaitingKind: null,
+      attachFailed: false,
+      ...noNoteUI,
+    });
     expect(
       send(selected("s2"), { type: "hero-swiped", direction: "previous", stages: journey() }),
-    ).toEqual({ kind: "sketch", imageId: "s1", awaitingKind: null, attachFailed: false });
+    ).toEqual({
+      kind: "sketch",
+      imageId: "s1",
+      awaitingKind: null,
+      attachFailed: false,
+      ...noNoteUI,
+    });
   });
 
   test("moves on into the next stage, skipping an empty one", () => {
     expect(
       send(selected("s2"), { type: "hero-swiped", direction: "next", stages: journey() }),
-    ).toEqual({ kind: "final", imageId: "f1", awaitingKind: null, attachFailed: false });
+    ).toEqual({
+      kind: "final",
+      imageId: "f1",
+      awaitingKind: null,
+      attachFailed: false,
+      ...noNoteUI,
+    });
     expect(
       send(selected("s1"), { type: "hero-swiped", direction: "previous", stages: journey() }),
-    ).toEqual({ kind: "inspiration", imageId: "i2", awaitingKind: null, attachFailed: false });
+    ).toEqual({
+      kind: "inspiration",
+      imageId: "i2",
+      awaitingKind: null,
+      attachFailed: false,
+      ...noNoteUI,
+    });
   });
 
   test("stays put at either end of the journey", () => {
     expect(
       send(
-        { kind: "final", imageId: "f2", awaitingKind: null, attachFailed: false },
+        { kind: "final", imageId: "f2", awaitingKind: null, attachFailed: false, ...noNoteUI },
         {
           type: "hero-swiped",
           direction: "next",
           stages: journey(),
         },
       ),
-    ).toEqual({ kind: "final", imageId: "f2", awaitingKind: null, attachFailed: false });
+    ).toEqual({
+      kind: "final",
+      imageId: "f2",
+      awaitingKind: null,
+      attachFailed: false,
+      ...noNoteUI,
+    });
     expect(
       send(
-        { kind: "inspiration", imageId: "i1", awaitingKind: null, attachFailed: false },
+        {
+          kind: "inspiration",
+          imageId: "i1",
+          awaitingKind: null,
+          attachFailed: false,
+          ...noNoteUI,
+        },
         {
           type: "hero-swiped",
           direction: "previous",
           stages: journey(),
         },
       ),
-    ).toEqual({ kind: "inspiration", imageId: "i1", awaitingKind: null, attachFailed: false });
+    ).toEqual({
+      kind: "inspiration",
+      imageId: "i1",
+      awaitingKind: null,
+      attachFailed: false,
+      ...noNoteUI,
+    });
   });
 
   test("a hero with no image has nowhere to move", () => {
     expect(
       send(
-        { kind: "prototype", imageId: null, awaitingKind: null, attachFailed: false },
+        { kind: "prototype", imageId: null, awaitingKind: null, attachFailed: false, ...noNoteUI },
         {
           type: "hero-swiped",
           direction: "next",
           stages: journey(),
         },
       ),
-    ).toEqual({ kind: "prototype", imageId: null, awaitingKind: null, attachFailed: false });
+    ).toEqual({
+      kind: "prototype",
+      imageId: null,
+      awaitingKind: null,
+      attachFailed: false,
+      ...noNoteUI,
+    });
+  });
+});
+
+describe("the note composer", () => {
+  test("opens on the current image with nothing written yet", () => {
+    expect(send(onImage("s1"), { type: "note-composer-opened" })).toEqual({
+      ...onImage("s1"),
+      noteComposer: { imageId: "s1", draft: "" },
+    });
+  });
+
+  test("does not open when there is no image to explain", () => {
+    const gallery = createInitialGalleryState();
+
+    expect(send(gallery, { type: "note-composer-opened" })).toEqual(gallery);
+  });
+
+  test("keeps what the owner types", () => {
+    const typed = send(
+      onImage("s1"),
+      { type: "note-composer-opened" },
+      { type: "note-draft-changed", draft: "Widened the shoulder." },
+    );
+
+    expect(typed.noteComposer).toEqual({ imageId: "s1", draft: "Widened the shoulder." });
+  });
+
+  test("drops a half-written note when the current image changes", () => {
+    const typed = send(
+      onImage("s1"),
+      { type: "note-composer-opened" },
+      { type: "note-draft-changed", draft: "Widened the shoulder." },
+    );
+
+    const swiped = send(typed, { type: "hero-swiped", direction: "next", stages: journey() });
+
+    expect(swiped).toEqual({ ...onImage("s2"), ...noNoteUI });
+  });
+
+  test("keeps the draft through a stage press that lands on the same image", () => {
+    const typed = send(
+      onImage("s1"),
+      { type: "note-composer-opened" },
+      { type: "note-draft-changed", draft: "Widened the shoulder." },
+    );
+
+    const pressed = send(typed, { type: "stage-pressed", kind: "sketch", stages: journey() });
+
+    expect(pressed.noteComposer).toEqual({ imageId: "s1", draft: "Widened the shoulder." });
+  });
+
+  test("a read that keeps the image keeps the draft; one that moves it drops it", () => {
+    const typed = send(
+      onImage("s1"),
+      { type: "note-composer-opened" },
+      { type: "note-draft-changed", draft: "Widened the shoulder." },
+    );
+
+    const sameImage = send(typed, {
+      type: "images-read",
+      stages: [
+        stage("inspiration"),
+        stage("sketch", "s1", "s2"),
+        stage("prototype"),
+        stage("final"),
+      ],
+      cover: "s2",
+    });
+
+    expect(sameImage.noteComposer).toEqual({ imageId: "s1", draft: "Widened the shoulder." });
+
+    const otherImage = send(sameImage, {
+      type: "images-read",
+      stages: [stage("inspiration"), stage("sketch", "s2"), stage("prototype"), stage("final")],
+      cover: "s2",
+    });
+
+    expect(otherImage).toEqual({ ...onImage("s2"), ...noNoteUI });
+  });
+
+  test("closes once the note lands, and opens the list so the new note shows", () => {
+    const typed = send(
+      onImage("s1"),
+      { type: "note-composer-opened" },
+      { type: "note-draft-changed", draft: "Widened the shoulder." },
+    );
+
+    expect(send(typed, { type: "note-added", imageId: "s1" })).toEqual({
+      ...onImage("s1"),
+      noteComposer: null,
+      notesExpanded: true,
+    });
+  });
+
+  test("a note landing for another image leaves the draft alone", () => {
+    const typed = send(
+      onImage("s1"),
+      { type: "note-composer-opened" },
+      { type: "note-draft-changed", draft: "Widened the shoulder." },
+    );
+
+    expect(send(typed, { type: "note-added", imageId: "s2" })).toEqual(typed);
+  });
+
+  test("cancelling closes it and keeps the image as it was", () => {
+    const typed = send(
+      onImage("s1"),
+      { type: "note-composer-opened" },
+      { type: "note-draft-changed", draft: "Widened the shoulder." },
+    );
+
+    expect(send(typed, { type: "note-composer-closed" })).toEqual({
+      ...onImage("s1"),
+      ...noNoteUI,
+    });
+  });
+});
+
+describe("the note block", () => {
+  const notes = ["first", "second", "third", "fourth"];
+
+  test("shows its first two notes while there is more to see", () => {
+    expect(noteBlockView(notes, createInitialGalleryState())).toEqual({
+      total: 4,
+      shown: ["first", "second"],
+      collapsible: true,
+      expanded: false,
+    });
+  });
+
+  test("shows every note once the owner asks", () => {
+    const expanded = { ...createInitialGalleryState(), notesExpanded: true };
+
+    expect(noteBlockView(notes, expanded)).toEqual({
+      total: 4,
+      shown: notes,
+      collapsible: true,
+      expanded: true,
+    });
+  });
+
+  test("a list of two has nothing hidden and no control to offer", () => {
+    const expanded = { ...createInitialGalleryState(), notesExpanded: true };
+
+    expect(noteBlockView(["first", "second"], expanded)).toEqual({
+      total: 2,
+      shown: ["first", "second"],
+      collapsible: false,
+      expanded: false,
+    });
+  });
+
+  test("collapses again when the owner moves to another image", () => {
+    const expanded = send(
+      { ...onImage("s1"), notesExpanded: true },
+      { type: "hero-swiped", direction: "next", stages: journey() },
+    );
+
+    expect(noteBlockView(notes, expanded)).toMatchObject({
+      shown: notes.slice(0, 2),
+      expanded: false,
+    });
+  });
+
+  test("pressing the more control toggles the list and back", () => {
+    const collapsed = createInitialGalleryState();
+    const opened = send(collapsed, { type: "notes-more-pressed" });
+
+    expect(noteBlockView(notes, opened).expanded).toBe(true);
+    expect(noteBlockView(notes, send(opened, { type: "notes-more-pressed" })).expanded).toBe(false);
   });
 });
