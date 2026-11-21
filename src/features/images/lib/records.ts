@@ -48,12 +48,12 @@ export type ImageChange =
  */
 export type ImageWriteResult =
   | { kind: "stored"; images: Image[]; event: DesignEvent | null }
-  | { kind: "note-stored"; note: ImageNote }
-  | { kind: "note-removed"; note: ImageNote }
-  | { kind: "refused"; field: "images" | "kind" | "note"; message: string }
+  | { kind: "image-note-stored"; note: ImageNote }
+  | { kind: "image-note-removed"; note: ImageNote }
+  | { kind: "refused"; field: "images" | "kind" | "image-note"; message: string }
   | { kind: "design-missing" }
   | { kind: "image-missing"; imageId: string }
-  | { kind: "note-missing"; noteId: string };
+  | { kind: "image-note-missing"; noteId: string };
 
 /** The one image record History keeps in an Event's diff. */
 function recorded(image: Image): RecordedImage {
@@ -151,17 +151,29 @@ function releaseIfUnreferenced(db: DatabaseHandle, store: ImageStore, file: Imag
 }
 
 /**
+ * The store a structural write needs. A note write copies and releases no file,
+ * so its caller may pass none; reaching this guard means this module handed a
+ * structural change no store, which no app caller can do.
+ */
+function requireStore(store: ImageStore | null): ImageStore {
+  if (!store) throw new Error("A structural image write needs an Image store.");
+
+  return store;
+}
+
+/**
  * The one write path for a Design's images. A caller declares one change; this
  * function copies the files it needs into the catalog's image directory, stores
  * the image rows or the note row, moves the Design's `updatedAt`, and — for a
  * structural action only — hands History the facts for one `image_change`
  * Event, in one transaction. The file of an image whose last reference goes is
  * deleted, and a removed image takes its notes with it. It answers once: what
- * it stored, the rule that refused it, or the row it could not find.
+ * it stored, the rule that refused it, or the row it could not find. A note
+ * write needs no Image store, because it neither copies nor releases a file.
  */
 export async function writeImages(
   database: Database,
-  store: ImageStore,
+  store: ImageStore | null,
   designId: string,
   change: ImageChange,
   now: number = Date.now(),
@@ -186,24 +198,25 @@ export async function writeImages(
     const problem = imageNoteProblem(change.text);
 
     if (problem) {
-      return { kind: "refused", field: "note", message: imageNoteProblemMessage(problem) };
+      return { kind: "refused", field: "image-note", message: imageNoteProblemMessage(problem) };
     }
   }
 
   if (change.kind === "attach") {
     // Copy before opening the transaction: a missing source fails here, so no
     // image row can point at a file the store does not have.
+    const imageStore = requireStore(store);
     const files: ImageFile[] = [];
 
     try {
       for (const { sourcePath } of change.images) {
-        files.push(await store.copy(sourcePath));
+        files.push(await imageStore.copy(sourcePath));
       }
     } catch (error) {
       // A later copy failed after earlier ones landed. Release what this
       // attempt stored, keeping any file another image still references, so a
       // failed write leaves the store as it found it, and surface the failure.
-      for (const file of files) releaseIfUnreferenced(database.db, store, file);
+      for (const file of files) releaseIfUnreferenced(database.db, imageStore, file);
 
       throw error;
     }
@@ -212,7 +225,7 @@ export async function writeImages(
       if (!designExists(tx, designId)) {
         // Nothing was written, so release whatever was just copied. A hash
         // another Design already uses stays.
-        for (const file of files) releaseIfUnreferenced(tx, store, file);
+        for (const file of files) releaseIfUnreferenced(tx, imageStore, file);
 
         return { kind: "design-missing" };
       }
@@ -267,7 +280,7 @@ export async function writeImages(
       // records the image's life, not the note's.
       tx.update(designs).set({ updatedAt: now }).where(eq(designs.id, designId)).run();
 
-      return { kind: "note-stored", note };
+      return { kind: "image-note-stored", note };
     });
   }
 
@@ -277,12 +290,12 @@ export async function writeImages(
 
       const note = noteFrom(tx, designId, change.noteId);
 
-      if (!note) return { kind: "note-missing", noteId: change.noteId };
+      if (!note) return { kind: "image-note-missing", noteId: change.noteId };
 
       tx.delete(imageNotes).where(eq(imageNotes.id, note.id)).run();
       tx.update(designs).set({ updatedAt: now }).where(eq(designs.id, designId)).run();
 
-      return { kind: "note-removed", note };
+      return { kind: "image-note-removed", note };
     });
   }
 
@@ -315,6 +328,9 @@ export async function writeImages(
       return { kind: "stored", images: imagesFrom(tx, designId), event };
     }
 
+    // A reclassification touches no stored file; only a removal releases one.
+    const imageStore = requireStore(store);
+
     // The image's notes go with it: the foreign key cascades inside this same
     // delete, silently, so no note outlives the picture it explains.
     tx.delete(images).where(eq(images.id, image.id)).run();
@@ -327,7 +343,7 @@ export async function writeImages(
       createdAt: now,
     });
 
-    releaseIfUnreferenced(tx, store, {
+    releaseIfUnreferenced(tx, imageStore, {
       contentHash: image.contentHash,
       extension: image.extension,
     });
@@ -349,7 +365,7 @@ export function listDesignImageNotes(database: Database, designId: string): Imag
 /** The one row shape the Design images read produces, before status. */
 export type DesignImagesRows = {
   images: Image[];
-  notes: ImageNote[];
+  imageNotes: ImageNote[];
 };
 
 /**
@@ -363,8 +379,8 @@ export function designImagesRead(designId: string): LiveReadDeclaration<DesignIm
     tables: [images, imageNotes],
     read: (database) => ({
       images: listDesignImages(database, designId),
-      notes: listDesignImageNotes(database, designId),
+      imageNotes: listDesignImageNotes(database, designId),
     }),
-    empty: { images: [], notes: [] },
+    empty: { images: [], imageNotes: [] },
   });
 }

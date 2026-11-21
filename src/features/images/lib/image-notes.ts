@@ -8,8 +8,8 @@ import type { ImageNote } from "./images";
 export const IMAGE_NOTE_MAX_LENGTH = 280;
 
 /**
- * The one note rule, shared by the composer and the write path. A note is
- * trimmed before it is judged, so whitespace alone is empty.
+ * The one Image note rule, judged by the write path. A note is trimmed before
+ * it is judged, so whitespace alone is empty.
  */
 export function imageNoteProblem(body: string): "empty" | "too_long" | null {
   const trimmed = body.trim();
@@ -35,7 +35,7 @@ export function imageNoteProblemMessage(problem: "empty" | "too_long"): string {
  * list reads as commentary on the picture rather than a feed. A surface with no
  * image selected has no notes.
  */
-export function notesOf(notes: readonly ImageNote[], imageId: string | null): ImageNote[] {
+export function imageNotesOf(notes: readonly ImageNote[], imageId: string | null): ImageNote[] {
   if (!imageId) return [];
 
   return notes.filter((note) => note.imageId === imageId);

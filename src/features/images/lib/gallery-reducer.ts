@@ -24,7 +24,7 @@ export type SwipeDirection = "next" | "previous";
  * image travel together, so changing the image drops a half-written note rather
  * than carrying it to a picture it was not written for.
  */
-export type NoteComposer = {
+export type ImageNoteComposer = {
   imageId: string;
   draft: string;
 };
@@ -51,12 +51,12 @@ export type GalleryState = {
    */
   attachFailed: boolean;
   /** The open note composer for the current image; null when it is closed. */
-  noteComposer: NoteComposer | null;
+  imageNoteComposer: ImageNoteComposer | null;
   /**
    * Whether the note block shows every note rather than its first two. It
    * closes again when the owner moves to another image.
    */
-  notesExpanded: boolean;
+  imageNotesExpanded: boolean;
 };
 
 /** What the owner did to the gallery. */
@@ -74,11 +74,11 @@ export type GalleryEvent =
   | { type: "images-read"; stages: readonly GalleryStage[]; cover: string | null }
   | { type: "attach-pressed" }
   | { type: "attach-failed" }
-  | { type: "note-composer-opened" }
-  | { type: "note-composer-closed" }
-  | { type: "note-draft-changed"; draft: string }
-  | { type: "note-added"; imageId: string }
-  | { type: "notes-more-pressed" }
+  | { type: "image-note-composer-opened" }
+  | { type: "image-note-composer-closed" }
+  | { type: "image-note-draft-changed"; draft: string }
+  | { type: "image-note-added"; imageId: string }
+  | { type: "image-notes-more-pressed" }
   | (GalleryGesture & { stages: readonly GalleryStage[] });
 
 /**
@@ -92,8 +92,8 @@ export function createInitialGalleryState(): GalleryState {
     imageId: null,
     awaitingKind: null,
     attachFailed: false,
-    noteComposer: null,
-    notesExpanded: false,
+    imageNoteComposer: null,
+    imageNotesExpanded: false,
   };
 }
 
@@ -164,10 +164,10 @@ export function galleryView<Stage extends GalleryStage>(
 }
 
 /** How many notes the block shows before it offers the rest. */
-export const NOTE_COLLAPSED_COUNT = 2;
+export const IMAGE_NOTE_COLLAPSED_COUNT = 2;
 
 /** What the note block shows: the first two notes, or all of them expanded. */
-export type NoteBlockView<Note> = {
+export type ImageNoteBlockView<Note> = {
   total: number;
   shown: readonly Note[];
   /** Whether there are more notes than the collapsed block shows. */
@@ -179,16 +179,16 @@ export type NoteBlockView<Note> = {
  * The note block's derivation: never more than two notes until the owner asks
  * for all of them, and the control that asks only when there is more to see.
  */
-export function noteBlockView<Note>(
+export function imageNoteBlockView<Note>(
   notes: readonly Note[],
   state: GalleryState,
-): NoteBlockView<Note> {
-  const collapsible = notes.length > NOTE_COLLAPSED_COUNT;
-  const expanded = collapsible && state.notesExpanded;
+): ImageNoteBlockView<Note> {
+  const collapsible = notes.length > IMAGE_NOTE_COLLAPSED_COUNT;
+  const expanded = collapsible && state.imageNotesExpanded;
 
   return {
     total: notes.length,
-    shown: expanded ? notes : notes.slice(0, NOTE_COLLAPSED_COUNT),
+    shown: expanded ? notes : notes.slice(0, IMAGE_NOTE_COLLAPSED_COUNT),
     collapsible,
     expanded,
   };
@@ -202,7 +202,7 @@ export function noteBlockView<Note>(
 function selected(state: GalleryState, kind: ImageKind, imageId: string | null): GalleryState {
   if (imageId === state.imageId) return { ...state, kind, imageId };
 
-  return { ...state, kind, imageId, noteComposer: null, notesExpanded: false };
+  return { ...state, kind, imageId, imageNoteComposer: null, imageNotesExpanded: false };
 }
 
 /**
@@ -279,32 +279,32 @@ export function galleryReducer(state: GalleryState, event: GalleryEvent): Galler
     case "attach-failed":
       return { ...state, attachFailed: true };
 
-    case "note-composer-opened":
+    case "image-note-composer-opened":
       // A note needs the image it explains; with none selected there is nothing
       // to open the composer on.
       return state.imageId
-        ? { ...state, noteComposer: { imageId: state.imageId, draft: "" } }
+        ? { ...state, imageNoteComposer: { imageId: state.imageId, draft: "" } }
         : state;
 
-    case "note-composer-closed":
-      return { ...state, noteComposer: null };
+    case "image-note-composer-closed":
+      return { ...state, imageNoteComposer: null };
 
-    case "note-draft-changed":
-      return state.noteComposer
-        ? { ...state, noteComposer: { ...state.noteComposer, draft: event.draft } }
+    case "image-note-draft-changed":
+      return state.imageNoteComposer
+        ? { ...state, imageNoteComposer: { ...state.imageNoteComposer, draft: event.draft } }
         : state;
 
-    case "note-added": {
+    case "image-note-added": {
       // The note landed on the image the composer was opened for. A read that
       // moved the owner elsewhere has already dropped that composer, so only a
-      // note for the open composer clears it; the list opens so the new note is
-      // not hidden behind the collapsed two.
-      if (state.noteComposer?.imageId !== event.imageId) return state;
+      // note for the open composer clears it. The list keeps its state: a
+      // collapsed block stays collapsed, so a third note stays behind the two.
+      if (state.imageNoteComposer?.imageId !== event.imageId) return state;
 
-      return { ...state, noteComposer: null, notesExpanded: true };
+      return { ...state, imageNoteComposer: null };
     }
 
-    case "notes-more-pressed":
-      return { ...state, notesExpanded: !state.notesExpanded };
+    case "image-notes-more-pressed":
+      return { ...state, imageNotesExpanded: !state.imageNotesExpanded };
   }
 }

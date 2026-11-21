@@ -5,7 +5,7 @@ import { Button } from "@/shared/components/ui/button";
 import { Icon } from "@/shared/components/ui/icon";
 import { Text } from "@/shared/components/ui/text";
 import { Textarea } from "@/shared/components/ui/textarea";
-import type { NoteBlockView, GalleryEvent, NoteComposer } from "../lib/gallery-reducer";
+import type { ImageNoteBlockView, GalleryEvent, ImageNoteComposer } from "../lib/gallery-reducer";
 import type { ImageNote } from "../lib/images";
 import { useImageNoteWrites } from "../lib/use-image-notes";
 
@@ -25,8 +25,8 @@ export function ImageNoteBlock({
   dispatch,
 }: {
   designId: string;
-  view: NoteBlockView<ImageNote>;
-  composer: NoteComposer | null;
+  view: ImageNoteBlockView<ImageNote>;
+  composer: ImageNoteComposer | null;
   dispatch: Dispatch<GalleryEvent>;
 }) {
   const { addNote, removeNote } = useImageNoteWrites(designId, dispatch);
@@ -50,7 +50,7 @@ export function ImageNoteBlock({
             size="icon"
             variant="ghost"
             accessibilityLabel="Add note"
-            onPress={() => dispatch({ type: "note-composer-opened" })}
+            onPress={() => dispatch({ type: "image-note-composer-opened" })}
           >
             <Icon as={Plus} className="text-muted-foreground size-4" />
           </Button>
@@ -84,7 +84,7 @@ export function ImageNoteBlock({
           variant="ghost"
           className="self-start"
           accessibilityLabel={view.expanded ? "Show fewer notes" : `Show all ${view.total} notes`}
-          onPress={() => dispatch({ type: "notes-more-pressed" })}
+          onPress={() => dispatch({ type: "image-notes-more-pressed" })}
         >
           <Text variant="muted">
             {view.expanded ? "Show fewer" : `Show all ${view.total} notes`}
@@ -99,7 +99,7 @@ export function ImageNoteBlock({
             placeholder="What did you decide here, and why?"
             numberOfLines={3}
             value={composer.draft}
-            onChangeText={(draft) => dispatch({ type: "note-draft-changed", draft })}
+            onChangeText={(draft) => dispatch({ type: "image-note-draft-changed", draft })}
             autoFocus
           />
           <View className="flex-row justify-end gap-2">
@@ -107,7 +107,7 @@ export function ImageNoteBlock({
               size="sm"
               variant="ghost"
               accessibilityLabel="Cancel note"
-              onPress={() => dispatch({ type: "note-composer-closed" })}
+              onPress={() => dispatch({ type: "image-note-composer-closed" })}
             >
               <Text>Cancel</Text>
             </Button>

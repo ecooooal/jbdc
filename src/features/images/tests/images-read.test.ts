@@ -40,10 +40,10 @@ describe("the Design images live read", () => {
     const design = createDesign(database, { name: "Wool coat" });
     const declaration = designImagesRead(design.id);
 
-    expect(declaration.empty).toEqual({ images: [], notes: [] });
+    expect(declaration.empty).toEqual({ images: [], imageNotes: [] });
     expect(declaration.read(database)).toEqual({
       images: listDesignImages(database, design.id),
-      notes: listDesignImageNotes(database, design.id),
+      imageNotes: listDesignImageNotes(database, design.id),
     });
   });
 

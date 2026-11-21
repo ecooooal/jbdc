@@ -4,10 +4,10 @@ import {
   createInitialGalleryState,
   galleryReducer,
   galleryView,
-  noteBlockView,
+  imageNoteBlockView,
   type GalleryGesture,
 } from "./gallery-reducer";
-import { notesOf } from "./image-notes";
+import { imageNotesOf } from "./image-notes";
 import { coverOf, imageStages } from "./images";
 import { designImagesRead } from "./records";
 
@@ -32,8 +32,8 @@ export function useGallery(designId: string) {
   // The note block shows the current image's commentary; the rows stay in the
   // live read, so a write re-runs this without copying them into the reducer.
   const noteView = useMemo(
-    () => noteBlockView(notesOf(data.notes, state.imageId), state),
-    [data.notes, state],
+    () => imageNoteBlockView(imageNotesOf(data.imageNotes, state.imageId), state),
+    [data.imageNotes, state],
   );
 
   const send = useCallback((gesture: GalleryGesture) => dispatch({ ...gesture, stages }), [stages]);

@@ -38,7 +38,7 @@ export function DesignGallery({ designId }: { designId: string }) {
         <ImageNoteBlock
           designId={designId}
           view={noteView}
-          composer={state.noteComposer}
+          composer={state.imageNoteComposer}
           dispatch={dispatch}
         />
       ) : null}

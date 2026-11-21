@@ -72,7 +72,7 @@ describe("adding a note", () => {
     );
 
     expect(result).toEqual({
-      kind: "note-stored",
+      kind: "image-note-stored",
       note: {
         id: expect.any(String),
         imageId,
@@ -99,7 +99,7 @@ describe("adding a note", () => {
       2000,
     );
 
-    expect(result.kind === "note-stored" && result.note.text).toBe("Kept the collar high.");
+    expect(result.kind === "image-note-stored" && result.note.text).toBe("Kept the collar high.");
   });
 
   test(`a ${IMAGE_NOTE_MAX_LENGTH}-character note is the most that is stored`, async () => {
@@ -114,7 +114,9 @@ describe("adding a note", () => {
       2000,
     );
 
-    expect(result.kind === "note-stored" && result.note.text).toHaveLength(IMAGE_NOTE_MAX_LENGTH);
+    expect(result.kind === "image-note-stored" && result.note.text).toHaveLength(
+      IMAGE_NOTE_MAX_LENGTH,
+    );
   });
 
   test("a note over the cap is refused quietly and nothing moves", async () => {
@@ -131,12 +133,32 @@ describe("adding a note", () => {
 
     expect(result).toEqual({
       kind: "refused",
-      field: "note",
+      field: "image-note",
       message: `A note can be at most ${IMAGE_NOTE_MAX_LENGTH} characters.`,
     });
     expect(listDesignImageNotes(database, designId)).toEqual([]);
     expect(getDesign(database, designId)?.updatedAt).toBe(1000);
     expect(listDesignEvents(database, designId)).toHaveLength(events);
+  });
+
+  test("a note write needs no Image store, because it copies and releases nothing", async () => {
+    const { designId, imageId } = await designWithImage(1000);
+
+    const stored = await writeImages(
+      database,
+      null,
+      designId,
+      { kind: "add-note", imageId, text: "Kept the collar high." },
+      2000,
+    );
+
+    expect(stored).toMatchObject({ kind: "image-note-stored", note: { imageId } });
+
+    const noteId = stored.kind === "image-note-stored" ? stored.note.id : "";
+
+    expect(
+      await writeImages(database, null, designId, { kind: "remove-note", noteId }, 3000),
+    ).toMatchObject({ kind: "image-note-removed", note: { id: noteId } });
   });
 
   test("a note with no words is refused, so an empty line is never stored", async () => {
@@ -150,7 +172,7 @@ describe("adding a note", () => {
         { kind: "add-note", imageId, text: "   " },
         2000,
       ),
-    ).toEqual({ kind: "refused", field: "note", message: "A note needs words." });
+    ).toEqual({ kind: "refused", field: "image-note", message: "A note needs words." });
     expect(listDesignImageNotes(database, designId)).toEqual([]);
     expect(getDesign(database, designId)?.updatedAt).toBe(1000);
   });
@@ -167,7 +189,7 @@ describe("removing a note", () => {
       { kind: "add-note", imageId, text: "First pass was fitted." },
       2000,
     );
-    const noteId = stored.kind === "note-stored" ? stored.note.id : "";
+    const noteId = stored.kind === "image-note-stored" ? stored.note.id : "";
     const events = listDesignEvents(database, designId).length;
 
     const result = await writeImages(
@@ -178,18 +200,18 @@ describe("removing a note", () => {
       3000,
     );
 
-    expect(result).toMatchObject({ kind: "note-removed", note: { id: noteId } });
+    expect(result).toMatchObject({ kind: "image-note-removed", note: { id: noteId } });
     expect(listDesignImageNotes(database, designId)).toEqual([]);
     expect(getDesign(database, designId)?.updatedAt).toBe(3000);
     expect(listDesignEvents(database, designId)).toHaveLength(events);
   });
 
-  test("a note that is not there answers note-missing", async () => {
+  test("a note that is not there answers image-note-missing", async () => {
     const { designId } = await designWithImage(1000);
 
     expect(
       await writeImages(database, store, designId, { kind: "remove-note", noteId: "ghost" }, 2000),
-    ).toEqual({ kind: "note-missing", noteId: "ghost" });
+    ).toEqual({ kind: "image-note-missing", noteId: "ghost" });
     expect(getDesign(database, designId)?.updatedAt).toBe(1000);
   });
 });
@@ -284,11 +306,11 @@ describe("notes reached only through their Design", () => {
       { kind: "add-note", imageId, text: "Widened the shoulder." },
       2000,
     );
-    const noteId = stored.kind === "note-stored" ? stored.note.id : "";
+    const noteId = stored.kind === "image-note-stored" ? stored.note.id : "";
 
     expect(
       await writeImages(database, store, otherDesign, { kind: "remove-note", noteId }, 3000),
-    ).toEqual({ kind: "note-missing", noteId });
+    ).toEqual({ kind: "image-note-missing", noteId });
     expect(listDesignImageNotes(database, designId)).toHaveLength(1);
   });
 
