@@ -74,7 +74,9 @@ checked is not a source.
 - Client components get only what they use.
 - **An entry point exports only what another package imports.** `index.ts` and
   `react.ts` are the contract between features; a function or type only the
-  package's own tree uses stays in `lib/`.
+  package's own tree uses stays in `lib/`. `scripts/check-entry-exports.mjs`
+  enforces it; its baseline lists the exports that predate the rule, so any
+  name the check reports is one the diff added.
 
 ## Tests
 
