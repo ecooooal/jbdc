@@ -38,13 +38,19 @@ checked is not a source.
 - **A fat commit means a coarse ticket.** If the ticket does not name its steps
   up front, the steps get invented at commit time — once, at the end. Split the
   ticket, not the commit.
-- **Subject names the ticket.** `<type> (#<ticket>): <reason>`, e.g.
-  `feat (#14): edit a design's fields without a Save button`. Types in use:
-  `feat`, `fix`, `refactor`, `test`, `docs`, `chore`. A change with no ticket
-  names the files it touches instead of inventing a number, comma-separated
-  when there are several: `chore (CODING_STANDARDS, AGENTS): …`.
+- **Subject names the ticket and the skill.** `<type> (#<ticket>): <reason>`,
+  e.g. `implement (#14): edit a design's fields without a Save button`. A
+  ticket commit is typed by the skill that produced it: `implement` for a step
+  commit, `review` for a repair commit. `git log --oneline` then says whether a
+  commit is feature work or review work without reading the diff. A person
+  fixing a ticket by hand keeps `fix (#<ticket>)`.
+  A change with no ticket names the files it touches instead of inventing a
+  number, comma-separated when there are several, and keeps the content types —
+  `feat`, `fix`, `refactor`, `test`, `docs`, `chore`:
+  `chore (CODING_STANDARDS, AGENTS): …`.
   The Spec review reads the ticket from the subject, so a commit without one is
-  unreviewable.
+  unreviewable, and `.githooks/commit-msg` rejects a subject that names no
+  change.
 
 ## Architecture
 
