@@ -185,3 +185,192 @@ describe("designEventCard covers every Event kind", () => {
     expect(designEventCard(event("note"), names())).toBeNull();
   });
 });
+
+describe("designEventCard field rules", () => {
+  test("resolves a Category's id to the name the owner chose", () => {
+    const dress = "category-dress";
+    const knitwear = "category-knitwear";
+
+    expect(
+      designEventCard(
+        event("edit", { diff: { categoryId: { from: dress, to: knitwear } } }),
+        names({
+          categories: new Map([
+            [dress, "Dress"],
+            [knitwear, "Knitwear"],
+          ]),
+        }),
+      ),
+    ).toEqual({
+      sections: [
+        {
+          section: "identity",
+          label: "Identity",
+          lines: [{ key: "categoryId", text: "Category: Dress → Knitwear" }],
+        },
+      ],
+    });
+  });
+
+  test("keeps the name of a Category and Collection deleted after the edit", () => {
+    const category = "category-dress";
+    const collection = "collection-spring";
+
+    expect(
+      designEventCard(
+        event("edit", {
+          diff: {
+            categoryId: { from: null, to: category },
+            collectionId: { from: null, to: collection },
+          },
+        }),
+        names({
+          categories: new Map([[category, "Dress"]]),
+          collections: new Map([[collection, { id: collection, name: "Spring", year: 2027 }]]),
+        }),
+      ),
+    ).toEqual({
+      sections: [
+        {
+          section: "identity",
+          label: "Identity",
+          lines: [
+            { key: "categoryId", text: "Category: None → Dress" },
+            { key: "collectionId", text: "Collection: None → Spring (2027)" },
+          ],
+        },
+      ],
+    });
+  });
+
+  test("reads a Collection with no year by its bare name", () => {
+    const collection = "collection-spring";
+
+    expect(
+      designEventCard(
+        event("edit", { diff: { collectionId: { from: null, to: collection } } }),
+        names({
+          collections: new Map([[collection, { id: collection, name: "Spring", year: null }]]),
+        }),
+      ),
+    ).toEqual({
+      sections: [
+        {
+          section: "identity",
+          label: "Identity",
+          lines: [{ key: "collectionId", text: "Collection: None → Spring" }],
+        },
+      ],
+    });
+  });
+
+  test("a cleared Category reads as empty", () => {
+    const dress = "category-dress";
+
+    expect(
+      designEventCard(
+        event("edit", { diff: { categoryId: { from: dress, to: null } } }),
+        names({ categories: new Map([[dress, "Dress"]]) }),
+      ),
+    ).toEqual({
+      sections: [
+        {
+          section: "identity",
+          label: "Identity",
+          lines: [{ key: "categoryId", text: "Category: Dress → None" }],
+        },
+      ],
+    });
+  });
+
+  test("uses the owner-facing label for each Specification field", () => {
+    expect(
+      designEventCard(
+        event("edit", {
+          diff: {
+            silhouette: { from: null, to: "Relaxed A-line" },
+            measurements: { from: null, to: "Bust 96" },
+          },
+        }),
+        names(),
+      ),
+    ).toEqual({
+      sections: [
+        {
+          section: "specification",
+          label: "Specification",
+          lines: [
+            { key: "silhouette", text: "Silhouette: None → Relaxed A-line" },
+            { key: "measurements", text: "Measurements: None → Bust 96" },
+          ],
+        },
+      ],
+    });
+  });
+
+  test("groups one card under Identity, Specification, Creative direction, and Materials", () => {
+    expect(
+      designEventCard(
+        event("edit", {
+          diff: {
+            description: { from: null, to: "Heavy twill" },
+            silhouette: { from: null, to: "Relaxed A-line" },
+            mood: { from: null, to: "Romantic, relaxed" },
+            materials: {
+              added: [
+                {
+                  id: "use-wool",
+                  materialId: "material-wool",
+                  materialName: "Wool",
+                  colour: "Charcoal",
+                  role: "main",
+                },
+              ],
+            },
+          },
+        }),
+        names(),
+      ),
+    ).toEqual({
+      sections: [
+        {
+          section: "identity",
+          label: "Identity",
+          lines: [{ key: "description", text: "Description: None → Heavy twill" }],
+        },
+        {
+          section: "specification",
+          label: "Specification",
+          lines: [{ key: "silhouette", text: "Silhouette: None → Relaxed A-line" }],
+        },
+        {
+          section: "creativeDirection",
+          label: "Creative direction",
+          lines: [{ key: "mood", text: "Mood: None → Romantic, relaxed" }],
+        },
+        {
+          section: "materials",
+          label: "Materials",
+          lines: [{ key: "added:use-wool", text: "Wool (Charcoal, main) added" }],
+        },
+      ],
+    });
+  });
+
+  test("drops every section with nothing changed", () => {
+    expect(
+      designEventCard(
+        event("edit", { diff: { silhouette: { from: null, to: "Relaxed A-line" } } }),
+        names(),
+      ),
+    ).toEqual({
+      sections: [
+        {
+          section: "specification",
+          label: "Specification",
+          lines: [{ key: "silhouette", text: "Silhouette: None → Relaxed A-line" }],
+        },
+      ],
+    });
+  });
+});
