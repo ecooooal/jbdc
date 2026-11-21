@@ -20,8 +20,9 @@ export type GalleryStage = {
 export type SwipeDirection = "next" | "previous";
 
 /**
- * The gallery's decisions: which stage the rail's second row shows, and which
- * image the hero shows. Both are ids; the live list derives the rows.
+ * The gallery's decisions: which stage the rail's second row shows, which image
+ * the hero shows, and whether the last attach failed. The selections are ids;
+ * the live list derives the rows.
  */
 export type GalleryState = {
   kind: ImageKind;
@@ -32,6 +33,12 @@ export type GalleryState = {
    * selection, or a read that fills it, clears it.
    */
   awaitingKind: ImageKind | null;
+  /**
+   * The last attach did not land. The stage is exactly as it was, so the rail
+   * says the images could not be added rather than a failed write reading as a
+   * cancel; a new attach press or a stage press clears it.
+   */
+  attachFailed: boolean;
 };
 
 /** What the owner did to the gallery. */
@@ -47,6 +54,8 @@ export type GalleryGesture =
  */
 export type GalleryEvent =
   | { type: "images-read"; stages: readonly GalleryStage[]; cover: string | null }
+  | { type: "attach-pressed" }
+  | { type: "attach-failed" }
   | (GalleryGesture & { stages: readonly GalleryStage[] });
 
 /**
@@ -55,7 +64,7 @@ export type GalleryEvent =
  * unless the owner has chosen an empty stage in the meantime.
  */
 export function createInitialGalleryState(): GalleryState {
-  return { kind: "final", imageId: null, awaitingKind: null };
+  return { kind: "final", imageId: null, awaitingKind: null, attachFailed: false };
 }
 
 /** The current image's stage, position and count, derived from the live list. */
@@ -130,14 +139,16 @@ export function galleryView<Stage extends GalleryStage>(
  * gave it — and falls back to the Cover when it is gone. An empty stage the
  * owner chose stays chosen until its first image arrives. A stage press starts
  * that stage at its oldest image; a swipe walks the journey in order, within a
- * stage and then across the next filled one, stopping at either end.
+ * stage and then across the next filled one, stopping at either end. An attach
+ * that failed is a flag the rail reads until the owner tries again or presses a
+ * stage, and it never moves the selection.
  */
 export function galleryReducer(state: GalleryState, event: GalleryEvent): GalleryState {
   switch (event.type) {
     case "images-read": {
       const kept = locationOf(event.stages, state.imageId);
 
-      if (kept) return { ...kept, awaitingKind: null };
+      if (kept) return { ...kept, awaitingKind: null, attachFailed: state.attachFailed };
 
       // The chosen empty stage keeps its place when a read arrives: it holds
       // the stage empty until its first image, then selects that image. Without
@@ -148,8 +159,18 @@ export function galleryReducer(state: GalleryState, event: GalleryEvent): Galler
         const first = chosen?.images[0];
 
         return first
-          ? { kind: state.awaitingKind, imageId: first.id, awaitingKind: null }
-          : { kind: state.awaitingKind, imageId: null, awaitingKind: state.awaitingKind };
+          ? {
+              kind: state.awaitingKind,
+              imageId: first.id,
+              awaitingKind: null,
+              attachFailed: state.attachFailed,
+            }
+          : {
+              kind: state.awaitingKind,
+              imageId: null,
+              awaitingKind: state.awaitingKind,
+              attachFailed: state.attachFailed,
+            };
       }
 
       const cover = locationOf(event.stages, event.cover);
@@ -158,6 +179,7 @@ export function galleryReducer(state: GalleryState, event: GalleryEvent): Galler
         kind: cover?.kind ?? state.kind,
         imageId: cover?.imageId ?? null,
         awaitingKind: null,
+        attachFailed: state.attachFailed,
       };
     }
 
@@ -169,19 +191,26 @@ export function galleryReducer(state: GalleryState, event: GalleryEvent): Galler
         kind: event.kind,
         imageId: first?.id ?? null,
         awaitingKind: first ? null : event.kind,
+        attachFailed: false,
       };
     }
 
     case "image-pressed": {
       const located = locationOf(event.stages, event.imageId);
 
-      return located ? { ...located, awaitingKind: null } : state;
+      return located ? { ...located, awaitingKind: null, attachFailed: state.attachFailed } : state;
     }
 
     case "hero-swiped": {
       const stepped = step(event.stages, state.imageId, event.direction);
 
-      return stepped ? { ...stepped, awaitingKind: null } : state;
+      return stepped ? { ...stepped, awaitingKind: null, attachFailed: state.attachFailed } : state;
     }
+
+    case "attach-pressed":
+      return { ...state, attachFailed: false };
+
+    case "attach-failed":
+      return { ...state, attachFailed: true };
   }
 }

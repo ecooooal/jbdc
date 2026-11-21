@@ -1,6 +1,6 @@
 import * as ExpoImagePicker from "expo-image-picker";
 import { Alert } from "react-native";
-import type { ImagePicker } from "./image-picker";
+import type { ImagePicker, ImagePickResult } from "./image-picker";
 
 type Source = "camera" | "library";
 
@@ -20,15 +20,18 @@ function sourceOf(): Promise<Source | null> {
   });
 }
 
-/** The picked files' source paths, or nothing when the owner backed out. */
-function sourcesOf(result: ExpoImagePicker.ImagePickerResult): readonly string[] {
-  return result.canceled ? [] : result.assets.map((asset) => asset.uri);
+/** The picked files, or the fact the owner backed out of the system picker. */
+function pickedOf(result: ExpoImagePicker.ImagePickerResult): ImagePickResult {
+  return result.canceled
+    ? { kind: "cancelled" }
+    : { kind: "picked", sourcePaths: result.assets.map((asset) => asset.uri) };
 }
 
 /**
  * The app adapter for the Image picker port: the system picker, offering the
  * camera and the multi-select library. Mechanical — it asks which source, asks
- * for the camera's permission, and returns what was picked. The kind is the
+ * for the camera's permission, and answers what happened. A refused permission
+ * is a denial, not a cancel, so the caller can tell the owner. The kind is the
  * caller's stage, so the picker never asks for one.
  */
 export function createExpoImagePicker(): ImagePicker {
@@ -39,14 +42,14 @@ export function createExpoImagePicker(): ImagePicker {
       if (source === "camera") {
         const permission = await ExpoImagePicker.requestCameraPermissionsAsync();
 
-        if (!permission.granted) return [];
+        if (!permission.granted) return { kind: "denied" };
 
         const result = await ExpoImagePicker.launchCameraAsync({
           mediaTypes: ["images"],
           quality: 1,
         });
 
-        return sourcesOf(result);
+        return pickedOf(result);
       }
 
       if (source === "library") {
@@ -59,10 +62,10 @@ export function createExpoImagePicker(): ImagePicker {
           quality: 1,
         });
 
-        return sourcesOf(result);
+        return pickedOf(result);
       }
 
-      return [];
+      return { kind: "cancelled" };
     },
   };
 }

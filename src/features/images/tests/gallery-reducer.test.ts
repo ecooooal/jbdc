@@ -35,14 +35,19 @@ describe("opening the gallery", () => {
       cover: "f2",
     });
 
-    expect(opened).toEqual({ kind: "final", imageId: "f2", awaitingKind: null });
+    expect(opened).toEqual({
+      kind: "final",
+      imageId: "f2",
+      awaitingKind: null,
+      attachFailed: false,
+    });
   });
 
   test("a Design with no images opens on the rail with no image", () => {
     const stages = [stage("inspiration"), stage("sketch"), stage("prototype"), stage("final")];
 
     expect(send(createInitialGalleryState(), { type: "images-read", stages, cover: null })).toEqual(
-      { kind: "final", imageId: null, awaitingKind: null },
+      { kind: "final", imageId: null, awaitingKind: null, attachFailed: false },
     );
   });
 });
@@ -65,7 +70,12 @@ describe("an images change", () => {
       cover: "f3",
     });
 
-    expect(changed).toEqual({ kind: "final", imageId: "f2", awaitingKind: null });
+    expect(changed).toEqual({
+      kind: "final",
+      imageId: "f2",
+      awaitingKind: null,
+      attachFailed: false,
+    });
   });
 
   test("falls back to the Cover when the selected image is gone", () => {
@@ -87,7 +97,12 @@ describe("an images change", () => {
       cover: "f2",
     });
 
-    expect(changed).toEqual({ kind: "final", imageId: "f2", awaitingKind: null });
+    expect(changed).toEqual({
+      kind: "final",
+      imageId: "f2",
+      awaitingKind: null,
+      attachFailed: false,
+    });
   });
 
   test("keeps a chosen empty stage until its first image arrives", () => {
@@ -117,7 +132,12 @@ describe("an images change", () => {
       cover: "f2",
     });
 
-    expect(arrived).toEqual({ kind: "sketch", imageId: "s1", awaitingKind: null });
+    expect(arrived).toEqual({
+      kind: "sketch",
+      imageId: "s1",
+      awaitingKind: null,
+      attachFailed: false,
+    });
   });
 
   test("follows the first Cover to arrive after opening on no images", () => {
@@ -129,7 +149,12 @@ describe("an images change", () => {
     });
     const arrived = send(opened, { type: "images-read", stages: journey(), cover: "f2" });
 
-    expect(arrived).toEqual({ kind: "final", imageId: "f2", awaitingKind: null });
+    expect(arrived).toEqual({
+      kind: "final",
+      imageId: "f2",
+      awaitingKind: null,
+      attachFailed: false,
+    });
   });
 
   test("follows a reclassified image into its new stage", () => {
@@ -151,7 +176,12 @@ describe("an images change", () => {
       cover: "f2",
     });
 
-    expect(changed).toEqual({ kind: "prototype", imageId: "s1", awaitingKind: null });
+    expect(changed).toEqual({
+      kind: "prototype",
+      imageId: "s1",
+      awaitingKind: null,
+      attachFailed: false,
+    });
   });
 });
 
@@ -163,7 +193,7 @@ describe("the journey rail", () => {
         kind: "sketch",
         stages: journey(),
       }),
-    ).toEqual({ kind: "sketch", imageId: "s1", awaitingKind: null });
+    ).toEqual({ kind: "sketch", imageId: "s1", awaitingKind: null, attachFailed: false });
   });
 
   test("pressing an empty stage activates it with no image", () => {
@@ -173,7 +203,12 @@ describe("the journey rail", () => {
         kind: "prototype",
         stages: journey(),
       }),
-    ).toEqual({ kind: "prototype", imageId: null, awaitingKind: "prototype" });
+    ).toEqual({
+      kind: "prototype",
+      imageId: null,
+      awaitingKind: "prototype",
+      attachFailed: false,
+    });
   });
 
   test("pressing a thumbnail selects that image", () => {
@@ -187,66 +222,97 @@ describe("the journey rail", () => {
       kind: "inspiration",
       imageId: "i2",
       awaitingKind: null,
+      attachFailed: false,
+    });
+  });
+});
+
+describe("a failed attach", () => {
+  test("is reported until the owner tries again", () => {
+    const opened = send(createInitialGalleryState(), {
+      type: "images-read",
+      stages: journey(),
+      cover: "f2",
+    });
+    const failed = send(opened, { type: "attach-failed" });
+
+    expect(failed).toEqual({
+      kind: "final",
+      imageId: "f2",
+      awaitingKind: null,
+      attachFailed: true,
+    });
+    expect(send(failed, { type: "attach-pressed" }).attachFailed).toBe(false);
+  });
+
+  test("clears when the owner presses a stage", () => {
+    const failed = send(createInitialGalleryState(), { type: "attach-failed" });
+
+    expect(send(failed, { type: "stage-pressed", kind: "sketch", stages: journey() })).toEqual({
+      kind: "sketch",
+      imageId: "s1",
+      awaitingKind: null,
+      attachFailed: false,
     });
   });
 });
 
 describe("swiping the hero", () => {
   function selected(imageId: string): GalleryState {
-    return { kind: "sketch", imageId, awaitingKind: null };
+    return { kind: "sketch", imageId, awaitingKind: null, attachFailed: false };
   }
 
   test("moves within the stage first", () => {
     expect(
       send(selected("s1"), { type: "hero-swiped", direction: "next", stages: journey() }),
-    ).toEqual({ kind: "sketch", imageId: "s2", awaitingKind: null });
+    ).toEqual({ kind: "sketch", imageId: "s2", awaitingKind: null, attachFailed: false });
     expect(
       send(selected("s2"), { type: "hero-swiped", direction: "previous", stages: journey() }),
-    ).toEqual({ kind: "sketch", imageId: "s1", awaitingKind: null });
+    ).toEqual({ kind: "sketch", imageId: "s1", awaitingKind: null, attachFailed: false });
   });
 
   test("moves on into the next stage, skipping an empty one", () => {
     expect(
       send(selected("s2"), { type: "hero-swiped", direction: "next", stages: journey() }),
-    ).toEqual({ kind: "final", imageId: "f1", awaitingKind: null });
+    ).toEqual({ kind: "final", imageId: "f1", awaitingKind: null, attachFailed: false });
     expect(
       send(selected("s1"), { type: "hero-swiped", direction: "previous", stages: journey() }),
-    ).toEqual({ kind: "inspiration", imageId: "i2", awaitingKind: null });
+    ).toEqual({ kind: "inspiration", imageId: "i2", awaitingKind: null, attachFailed: false });
   });
 
   test("stays put at either end of the journey", () => {
     expect(
       send(
-        { kind: "final", imageId: "f2", awaitingKind: null },
+        { kind: "final", imageId: "f2", awaitingKind: null, attachFailed: false },
         {
           type: "hero-swiped",
           direction: "next",
           stages: journey(),
         },
       ),
-    ).toEqual({ kind: "final", imageId: "f2", awaitingKind: null });
+    ).toEqual({ kind: "final", imageId: "f2", awaitingKind: null, attachFailed: false });
     expect(
       send(
-        { kind: "inspiration", imageId: "i1", awaitingKind: null },
+        { kind: "inspiration", imageId: "i1", awaitingKind: null, attachFailed: false },
         {
           type: "hero-swiped",
           direction: "previous",
           stages: journey(),
         },
       ),
-    ).toEqual({ kind: "inspiration", imageId: "i1", awaitingKind: null });
+    ).toEqual({ kind: "inspiration", imageId: "i1", awaitingKind: null, attachFailed: false });
   });
 
   test("a hero with no image has nowhere to move", () => {
     expect(
       send(
-        { kind: "prototype", imageId: null, awaitingKind: null },
+        { kind: "prototype", imageId: null, awaitingKind: null, attachFailed: false },
         {
           type: "hero-swiped",
           direction: "next",
           stages: journey(),
         },
       ),
-    ).toEqual({ kind: "prototype", imageId: null, awaitingKind: null });
+    ).toEqual({ kind: "prototype", imageId: null, awaitingKind: null, attachFailed: false });
   });
 });

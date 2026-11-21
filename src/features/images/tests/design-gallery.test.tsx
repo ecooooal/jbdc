@@ -9,7 +9,7 @@ import { createDesign } from "@/features/designs";
 import { listDesignImages, writeImages, type ImageStore } from "@/features/images";
 import { DesignGallery, ImagePickerProvider, ImageStoreProvider } from "@/features/images/react";
 import { createTempImageStore } from "@/features/images/testing";
-import type { ImagePicker } from "../lib/image-picker";
+import type { ImagePicker, ImagePickResult } from "../lib/image-picker";
 
 const live = createSyncSubscribe();
 
@@ -44,7 +44,10 @@ async function attach(designId: string, kind: ImageKind, bytes: string, now: num
   );
 }
 
-async function renderGallery(designId: string, picker: ImagePicker = { pick: async () => [] }) {
+async function renderGallery(
+  designId: string,
+  picker: ImagePicker = { pick: async () => ({ kind: "cancelled" }) },
+) {
   return render(
     <DatabaseProvider database={database} subscribe={live.subscribe}>
       <ImageStoreProvider store={store}>
@@ -85,7 +88,12 @@ test("the plus card attaches the picked files to the stage the owner chose", asy
   const design = createDesign(database, { name: "Wool coat" });
   const frontPath = join(sourceDirectory, "front.jpg");
   const backPath = join(sourceDirectory, "back.jpg");
-  const picker: ImagePicker = { pick: jest.fn(async () => [frontPath, backPath]) };
+  const picker: ImagePicker = {
+    pick: jest.fn(async (): Promise<ImagePickResult> => ({
+      kind: "picked",
+      sourcePaths: [frontPath, backPath],
+    })),
+  };
 
   writeFileSync(frontPath, "front bytes");
   writeFileSync(backPath, "back bytes");
