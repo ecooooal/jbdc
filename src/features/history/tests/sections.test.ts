@@ -31,6 +31,13 @@ describe("DESIGN_HISTORY_SECTIONS", () => {
     expect(sectionFields("materials")).toEqual([]);
   });
 
+  test("Images holds image-change lines, not fields", () => {
+    expect(sectionFields("images")).toEqual([]);
+    expect(DESIGN_HISTORY_SECTIONS.find((entry) => entry.section === "images")?.label).toBe(
+      "Images",
+    );
+  });
+
   test("every editable field lands in exactly one section", () => {
     const grouped = DESIGN_HISTORY_SECTIONS.flatMap(({ fields }) => fields);
 
