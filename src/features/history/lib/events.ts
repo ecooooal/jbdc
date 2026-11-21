@@ -15,6 +15,7 @@ import {
   type MaterialUse,
   type MaterialUsesPair,
 } from "@/features/designs";
+import type { HistoryLine } from "./lines";
 
 /** What one field was before an edit and what it became. Null means empty. */
 export type DesignFieldChange = {
@@ -64,10 +65,7 @@ export type ImageChangeDiff = {
 };
 
 /** One line History prints for a Material use, keyed for rendering. */
-export type MaterialUseLine = {
-  key: string;
-  text: string;
-};
+export type MaterialUseLine = HistoryLine;
 
 /**
  * What one visit changed: the fields whose values differ, each with

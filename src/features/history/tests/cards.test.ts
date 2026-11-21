@@ -212,7 +212,7 @@ describe("designEventCard field rules", () => {
     });
   });
 
-  test("keeps the name of a Category and Collection deleted after the edit", () => {
+  test("resolves a Category and a Collection to the names the read supplies", () => {
     const category = "category-dress";
     const collection = "collection-spring";
 

@@ -17,6 +17,13 @@ export type DesignHistorySectionDefinition = {
   fields: readonly DesignEditableField[];
 };
 
+/** The Images section: it carries image-change lines rather than fields. */
+export const HISTORY_IMAGES_SECTION: DesignHistorySectionDefinition = {
+  section: "images",
+  label: "Images",
+  fields: [],
+};
+
 /**
  * The four sections a History card groups its lines under, in reading order.
  * Identity has no tab on the Design; the other two take their fields from the
@@ -33,5 +40,5 @@ export const DESIGN_HISTORY_SECTIONS: readonly DesignHistorySectionDefinition[] 
     fields: fields.map(({ field }) => field),
   })),
   { section: "materials", label: "Materials", fields: [] },
-  { section: "images", label: "Images", fields: [] },
+  HISTORY_IMAGES_SECTION,
 ];

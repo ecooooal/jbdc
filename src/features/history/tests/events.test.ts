@@ -1,3 +1,4 @@
+import { eq } from "drizzle-orm";
 import {
   categories,
   collections,
@@ -123,6 +124,28 @@ describe("the History live read", () => {
     for (const [table, write] of writes) {
       await expectLiveReadReruns(declaration, table, database, write);
     }
+  });
+
+  test("keeps the names of a Category and a Collection soft-deleted after an edit", () => {
+    const design = createDesign(database, { name: "Silk slip dress" }, 10);
+    const dress = createCategory(database, { name: "Dress" }, 15);
+    const spring = createCollection(database, { name: "Spring", year: 2027 }, 15);
+
+    database.db.update(categories).set({ deletedAt: 20 }).where(eq(categories.id, dress.id)).run();
+    database.db
+      .update(collections)
+      .set({ deletedAt: 20 })
+      .where(eq(collections.id, spring.id))
+      .run();
+
+    const { taxonomy } = designHistoryRead(design.id).read(database);
+
+    expect(taxonomy.categories.get(dress.id)).toBe("Dress");
+    expect(taxonomy.collections.get(spring.id)).toEqual({
+      id: spring.id,
+      name: "Spring",
+      year: 2027,
+    });
   });
 });
 

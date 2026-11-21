@@ -7,19 +7,21 @@ import {
   type DesignEvent,
   type RecordedImage,
 } from "./events";
-import { DESIGN_HISTORY_SECTIONS } from "./sections";
+import type { HistoryLine } from "./lines";
+import {
+  DESIGN_HISTORY_SECTIONS,
+  HISTORY_IMAGES_SECTION,
+  type DesignHistorySection,
+} from "./sections";
 
-/** One line on a History card, keyed for rendering. */
-export type DesignHistoryCardLine = {
-  key: string;
-  text: string;
-};
+/** The Event kinds whose cards are honest placeholders, keyed by the kind itself. */
+type PlaceholderKind = Extract<DesignEventKind, "status_change" | "decision" | "note">;
 
 /** One labelled group of lines on a card, in reading order. */
 export type DesignHistoryCardSection = {
-  section: string;
+  section: DesignHistorySection | PlaceholderKind;
   label: string;
-  lines: DesignHistoryCardLine[];
+  lines: HistoryLine[];
 };
 
 /** The full content of one History card: its sections in reading order. */
@@ -60,8 +62,8 @@ function fieldLines(
   diff: DesignEditDiff,
   fields: readonly DesignEditableField[],
   taxonomy: TaxonomyNames,
-): DesignHistoryCardLine[] {
-  const lines: DesignHistoryCardLine[] = [];
+): HistoryLine[] {
+  const lines: HistoryLine[] = [];
 
   for (const field of fields) {
     const change = diff[field];
@@ -94,12 +96,8 @@ const editRule: Rule = (event, taxonomy) => {
   }));
 };
 
-/** The images section's owner-facing label, declared once on the section list. */
-const imagesLabel =
-  DESIGN_HISTORY_SECTIONS.find(({ section }) => section === "images")?.label ?? "Images";
-
 /** One attach line: one count per kind in first-appearance order, joined as work. */
-function attachLine(attached: RecordedImage[]): DesignHistoryCardLine {
+function attachLine(attached: RecordedImage[]): HistoryLine {
   const counts = new Map<string, number>();
 
   for (const image of attached) counts.set(image.kind, (counts.get(image.kind) ?? 0) + 1);
@@ -118,7 +116,7 @@ function attachLine(attached: RecordedImage[]): DesignHistoryCardLine {
  */
 const imageRule: Rule = (event) => {
   const changes = event.diff?.images;
-  const lines: DesignHistoryCardLine[] = [];
+  const lines: HistoryLine[] = [];
 
   if (changes) {
     if ((changes.attached?.length ?? 0) > 0) lines.push(attachLine(changes.attached ?? []));
@@ -135,17 +133,23 @@ const imageRule: Rule = (event) => {
     }
   }
 
-  return [{ section: "images", label: imagesLabel, lines }];
+  return [
+    {
+      section: HISTORY_IMAGES_SECTION.section,
+      label: HISTORY_IMAGES_SECTION.label,
+      lines,
+    },
+  ];
 };
 
 /**
  * An honest rule for a kind with no writer yet: it renders the Event's own
  * reason under a section named for the kind. A blank reason invents no line.
  */
-function reasonRule(section: string, label: string): Rule {
+function reasonRule(kind: PlaceholderKind, label: string): Rule {
   return (event) => [
     {
-      section,
+      section: kind,
       label,
       lines: event.reason ? [{ key: "reason", text: event.reason }] : [],
     },
