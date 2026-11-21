@@ -25,7 +25,7 @@ export const HISTORY_IMAGES_SECTION: DesignHistorySectionDefinition = {
 };
 
 /**
- * The four sections a History card groups its lines under, in reading order.
+ * The five sections a History card groups its lines under, in reading order.
  * Identity has no tab on the Design; the other two take their fields from the
  * Design's `DESIGN_SECTIONS`, so a field cannot land in two sections. Materials
  * holds Material use lines rather than fields: uses live in their own table.
