@@ -3,7 +3,7 @@ import { router } from "expo-router";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { DatabaseProvider } from "@/features/database/react";
 import { createSyncSubscribe, createTempDatabase } from "@/features/database/testing";
-import { listDesigns } from "@/features/designs";
+import { listDesigns } from "../lib/records";
 import { NewDesignForm } from "@/features/designs/react";
 import { listCategories } from "@/features/taxonomy";
 

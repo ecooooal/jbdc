@@ -11,14 +11,13 @@ import { expectLiveReadReruns } from "@/features/database/testing-live";
 import type { DesignFields, MaterialUse } from "@/features/designs";
 import { createDesign, writeDesign } from "@/features/designs";
 import {
-  designHistoryRead,
   diffDesignFields,
   diffMaterialUses,
   listDesignEvents,
-  materialUseLines,
   recordEdit,
   recordImageChange,
 } from "@/features/history";
+import { designHistoryRead, materialUseLines } from "../lib/events";
 import { createMaterial } from "@/features/materials";
 import { createCategory, createCollection } from "@/features/taxonomy";
 

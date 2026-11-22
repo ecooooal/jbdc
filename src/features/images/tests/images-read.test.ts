@@ -5,9 +5,10 @@ import { imageNotes, images } from "@/features/database";
 import { createTempDatabase } from "@/features/database/testing";
 import { expectLiveReadReruns } from "@/features/database/testing-live";
 import { createDesign } from "@/features/designs";
-import { listDesignImages, writeImages, type ImageStore } from "@/features/images";
+import { writeImages } from "@/features/images";
+import type { ImageStore } from "../lib/image-store";
 import { createTempImageStore } from "@/features/images/testing";
-import { designImagesRead, listDesignImageNotes } from "../lib/records";
+import { designImagesRead, listDesignImageNotes, listDesignImages } from "../lib/records";
 
 let database: ReturnType<typeof createTempDatabase>["database"];
 let dispose: () => void;

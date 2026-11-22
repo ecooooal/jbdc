@@ -3,7 +3,9 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createTempDatabase } from "@/features/database/testing";
 import { createDesign, getDesign } from "@/features/designs";
-import { coverOf, listDesignImages, writeImages, type ImageStore } from "@/features/images";
+import { coverOf, writeImages } from "@/features/images";
+import type { ImageStore } from "../lib/image-store";
+import { listDesignImages } from "../lib/records";
 import { createTempImageStore } from "@/features/images/testing";
 import { listDesignEvents } from "@/features/history";
 

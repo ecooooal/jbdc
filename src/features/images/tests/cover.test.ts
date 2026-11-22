@@ -1,5 +1,6 @@
 import { IMAGE_KINDS, type ImageKind } from "@/features/database";
-import { coverOf, imageStages, type Image } from "@/features/images";
+import { coverOf, type Image } from "@/features/images";
+import { imageStages } from "../lib/images";
 
 function image(id: string, kind: ImageKind, createdAt: number): Image {
   return {

@@ -5,7 +5,8 @@ import { View } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useDatabase } from "@/features/database/react";
-import { createDesign, DESIGN_NAME_MAX_LENGTH, InvalidDesignNameError } from "@/features/designs";
+import { createDesign } from "@/features/designs";
+import { DESIGN_NAME_MAX_LENGTH, InvalidDesignNameError } from "../lib/records";
 import {
   createCategory,
   createCollection,
