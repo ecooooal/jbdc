@@ -18,7 +18,8 @@ import { expectLiveReadReruns } from "@/features/database/testing-live";
 import { createDesign } from "@/features/designs";
 import { writeImages, type ImageStore } from "@/features/images";
 import { createTempImageStore } from "@/features/images/testing";
-import { libraryDesignsRead, listLibraryDesigns } from "@/features/library";
+import { listLibraryDesigns } from "@/features/library";
+import { libraryDesignsRead } from "../lib/query";
 import { createCategory, createCollection } from "@/features/taxonomy";
 
 type NewDesign = {

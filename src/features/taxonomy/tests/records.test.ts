@@ -2,17 +2,19 @@ import { categories, collections, type Database, type LiveReadTable } from "@/fe
 import { createTempDatabase } from "@/features/database/testing";
 import { expectLiveReadReruns } from "@/features/database/testing-live";
 import {
-  COLLECTION_YEAR_MAX,
-  COLLECTION_YEAR_MIN,
   createCategory,
   createCollection,
   InvalidCollectionYearError,
   InvalidTaxonomyNameError,
   listCategories,
-  listCollections,
   TAXONOMY_NAME_MAX_LENGTH,
-  taxonomyRead,
 } from "@/features/taxonomy";
+import {
+  COLLECTION_YEAR_MAX,
+  COLLECTION_YEAR_MIN,
+  listCollections,
+  taxonomyRead,
+} from "../lib/records";
 
 const UUID_V4 = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 

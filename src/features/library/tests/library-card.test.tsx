@@ -8,8 +8,9 @@ import { createDesign } from "@/features/designs";
 import { writeImages, type ImageStore } from "@/features/images";
 import { ImageStoreProvider } from "@/features/images/react";
 import { createTempImageStore } from "@/features/images/testing";
-import { listLibraryDesigns, type LibraryDesign } from "@/features/library";
-import { LibraryCard } from "@/features/library/react";
+import { listLibraryDesigns } from "@/features/library";
+import type { LibraryDesign } from "../lib/query";
+import { LibraryCard } from "../components/library-card";
 import type { CardDensity } from "@/features/settings";
 
 let database: ReturnType<typeof createTempDatabase>["database"];

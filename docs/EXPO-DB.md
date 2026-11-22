@@ -12,7 +12,7 @@ tables, and the status vocabulary. They never import `expo-sqlite` or
 | Entry | Who imports it | What it opens |
 |---|---|---|
 | `@/features/database` | every feature module | nothing; types and schema only |
-| `@/features/database/expo` | the provider (`react.tsx`) | expo-sqlite, synchronously |
+| `lib/expo-database.ts` | the provider (`react.tsx`) | expo-sqlite, synchronously |
 | `@/features/database/react` | the app root and screens | provider, `useDatabase()`, `useLiveRead` |
 | `@/features/database/testing` | Jest suites only | better-sqlite3 on a temp file, synchronous `subscribe` |
 | `@/features/database/testing-live` | Jest suites for declared reads | nothing; mounts a read in the provider seam |
@@ -23,13 +23,12 @@ Feature reads and writes take the `Database` port and run their drizzle queries
 through `database.db`; only the adapters know which driver is underneath:
 
 ```ts
-const database = openAppDatabase();
 const rows = listLibraryDesigns(database);
 const design = createDesign(database, { name: 'Silk slip dress' });
 ```
 
-`openAppDatabase()` enables change listeners so live reads can subscribe to
-table changes. A feature declares each live read beside its query as one value — the query,
+The provider opens the connection with change listeners so live reads can
+subscribe to table changes. A feature declares each live read beside its query as one value — the query,
 the row shape it produces, and every table it watches — then its hook
 (`useLibraryDesigns`) hands that declaration to `useLiveRead`, re-exported by
 `@/features/database/react`. The one hook owns database access, the

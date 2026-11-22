@@ -1,4 +1,4 @@
-import { LIBRARY_GRID_GAP, libraryGrid } from "@/features/library";
+import { LIBRARY_GRID_GAP, libraryGrid } from "../lib/grid";
 
 describe("library grid", () => {
   test("density 1 gives one Design the full content width", () => {

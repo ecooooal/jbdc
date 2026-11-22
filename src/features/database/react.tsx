@@ -1,6 +1,6 @@
 import type { PropsWithChildren } from "react";
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
-import { openAppDatabaseWithLiveReads } from "./expo";
+import { openAppDatabaseWithLiveReads } from "./lib/expo-database";
 import {
   liveReadTableName,
   type LiveReadDeclaration,
@@ -8,7 +8,7 @@ import {
 } from "./lib/live-read";
 import type { Database } from "./lib/port";
 
-export type LiveReadStatus = "loading" | "ready" | "error";
+type LiveReadStatus = "loading" | "ready" | "error";
 
 /** The status each declared read carries beside its declared row shape. */
 export type LiveReadFields = {
@@ -16,7 +16,7 @@ export type LiveReadFields = {
   status: LiveReadStatus;
 };
 
-export type LiveReadResult<Row> = {
+type LiveReadResult<Row> = {
   /** The declared row shape; before the first read it is the declared default. */
   data: Row;
   error: Error | undefined;

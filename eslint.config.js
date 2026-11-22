@@ -78,7 +78,7 @@ module.exports = defineConfig([
     },
   },
   {
-    files: ["src/features/database/expo.ts"],
+    files: ["src/features/database/lib/expo-database.ts"],
     rules: {
       "no-restricted-imports": restrictedImports(["expoSqlite"]),
     },

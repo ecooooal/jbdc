@@ -4,7 +4,7 @@ import { Pressable, View } from "react-native";
 import { designStatusLabel } from "@/features/designs";
 import { DesignStatusBadge } from "@/features/designs/react";
 import { useImageUri } from "@/features/images/react";
-import type { LibraryDesign } from "@/features/library";
+import type { LibraryDesign } from "../lib/query";
 import type { CardDensity } from "@/features/settings";
 import { Card } from "@/shared/components/ui/card";
 import { Icon } from "@/shared/components/ui/icon";
