@@ -4,10 +4,13 @@ import type { ImageRemoveResult } from "./records";
 /**
  * The full-screen viewer's decisions: which image it is open on — null when it
  * is closed — whether Remove has asked its one question, and whether the last
- * removal answered that it did not land. The image's kind is not copied here;
+ * removal answered that it did not land. The Design rides here so the effects
+ * name it, exactly as the gallery's do; the image's kind is not copied, because
  * the live read supplies it and the pills derive from it.
  */
 export type ViewerState = {
+  /** The Design whose image the viewer shows; every effect names it. */
+  designId: string;
   imageId: string | null;
   confirmingRemoval: boolean;
   /** The last removal did not store, so the image stays open with its reason. */
@@ -27,8 +30,8 @@ export type ViewerEvent =
 
 /** The writes the viewer asks for, as data for its thin runner. */
 export type ViewerEffect =
-  | { type: "reclassify-image"; imageId: string; to: ImageKind }
-  | { type: "remove-image"; imageId: string };
+  | { type: "reclassify-image"; designId: string; imageId: string; to: ImageKind }
+  | { type: "remove-image"; designId: string; imageId: string };
 
 /** What one viewer event settled and the writes it asked for. */
 export type ViewerResult = {
@@ -37,8 +40,8 @@ export type ViewerResult = {
 };
 
 /** Before the owner taps an image there is nothing to show. */
-export function createInitialViewerState(): ViewerState {
-  return { imageId: null, confirmingRemoval: false, removeFailed: false };
+export function createInitialViewerState(designId: string): ViewerState {
+  return { designId, imageId: null, confirmingRemoval: false, removeFailed: false };
 }
 
 /**
@@ -54,30 +57,43 @@ export function removeImageOutcome(imageId: string, ending: ImageRemoveResult): 
 
 /**
  * The viewer's decisions. It opens on the tapped image and closes back to
- * nothing. A kind pill declares one reclassification of the open image; the
- * write path treats the same kind again as no change. Remove asks once: the
- * press raises the question and only a confirm that answers it deletes, so a
- * stray confirm with no question showing writes nothing, and a second answer
- * cannot repeat the delete. A confirm keeps the image open until the write
- * answers: only a stored removal closes it, while a failure keeps it and says
- * so, so a failed removal never looks like a successful one.
+ * nothing while keeping the Design its effects name. A kind pill declares one
+ * reclassification of the open image; the write path treats the same kind again
+ * as no change. Remove asks once: the press raises the question and only a
+ * confirm that answers it deletes, so a stray confirm with no question showing
+ * writes nothing, and a second answer cannot repeat the delete. A confirm keeps
+ * the image open until the write answers: only a stored removal closes it,
+ * while a failure keeps it and says so, so a failed removal never looks like a
+ * successful one.
  */
 export function viewerReducer(state: ViewerState, event: ViewerEvent): ViewerResult {
   switch (event.type) {
     case "image-opened":
       return {
-        state: { imageId: event.imageId, confirmingRemoval: false, removeFailed: false },
+        state: {
+          designId: state.designId,
+          imageId: event.imageId,
+          confirmingRemoval: false,
+          removeFailed: false,
+        },
         effects: [],
       };
 
     case "viewer-closed":
-      return { state: createInitialViewerState(), effects: [] };
+      return { state: createInitialViewerState(state.designId), effects: [] };
 
     case "kind-pressed":
       return state.imageId
         ? {
             state,
-            effects: [{ type: "reclassify-image", imageId: state.imageId, to: event.kind }],
+            effects: [
+              {
+                type: "reclassify-image",
+                designId: state.designId,
+                imageId: state.imageId,
+                to: event.kind,
+              },
+            ],
           }
         : { state, effects: [] };
 
@@ -95,13 +111,13 @@ export function viewerReducer(state: ViewerState, event: ViewerEvent): ViewerRes
       return state.imageId && state.confirmingRemoval
         ? {
             state: { ...state, confirmingRemoval: false },
-            effects: [{ type: "remove-image", imageId: state.imageId }],
+            effects: [{ type: "remove-image", designId: state.designId, imageId: state.imageId }],
           }
         : { state, effects: [] };
 
     case "remove-stored":
       return state.imageId === event.imageId
-        ? { state: createInitialViewerState(), effects: [] }
+        ? { state: createInitialViewerState(state.designId), effects: [] }
         : { state, effects: [] };
 
     case "remove-failed":

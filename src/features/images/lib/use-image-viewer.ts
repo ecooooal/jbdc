@@ -1,5 +1,6 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback } from "react";
 import { useDatabase } from "@/features/database/react";
+import { useReducerRunner } from "@/shared/hooks/use-reducer-runner";
 import { useImageStore } from "./image-store-context";
 import { writeImages } from "./records";
 import {
@@ -18,6 +19,10 @@ import {
  * stored removal closes the viewer, and every other answer keeps the image open
  * and says it did not land. A reclassification's answer needs no surface: the
  * live read moves the image to the stage the write stored.
+ *
+ * The Design is the viewer's own state, like the gallery's, so the perform body
+ * names the Design each effect carries instead of closing over the hook's
+ * argument.
  */
 export function useImageViewer(designId: string): {
   state: ViewerState;
@@ -25,37 +30,33 @@ export function useImageViewer(designId: string): {
 } {
   const database = useDatabase();
   const store = useImageStore();
-  const [state, setState] = useState(createInitialViewerState);
-  const latest = useRef(state);
 
-  const send = useCallback(
-    function send(event: ViewerEvent) {
-      const result = viewerReducer(latest.current, event);
-      latest.current = result.state;
-      setState(result.state);
-
-      const perform = async (effect: ViewerEffect) => {
-        if (effect.type === "reclassify-image") {
-          await writeImages(database, null, designId, {
-            kind: "reclassify",
-            imageId: effect.imageId,
-            to: effect.to,
-          });
-          return;
-        }
-
-        const ending = await writeImages(database, store, designId, {
-          kind: "remove",
+  const perform = useCallback(
+    async (effect: ViewerEffect, dispatch: (event: ViewerEvent) => void) => {
+      if (effect.type === "reclassify-image") {
+        await writeImages(database, null, effect.designId, {
+          kind: "reclassify",
           imageId: effect.imageId,
+          to: effect.to,
         });
+        return;
+      }
 
-        for (const outcome of removeImageOutcome(effect.imageId, ending)) send(outcome);
-      };
+      const ending = await writeImages(database, store, effect.designId, {
+        kind: "remove",
+        imageId: effect.imageId,
+      });
 
-      for (const effect of result.effects) void perform(effect);
+      for (const outcome of removeImageOutcome(effect.imageId, ending)) dispatch(outcome);
     },
-    [database, designId, store],
+    [database, store],
   );
 
-  return { state, send };
+  const [state, dispatch] = useReducerRunner(
+    viewerReducer,
+    () => createInitialViewerState(designId),
+    perform,
+  );
+
+  return { state, send: dispatch };
 }
