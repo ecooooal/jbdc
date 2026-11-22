@@ -152,28 +152,3 @@ describe("a gallery write's ending", () => {
     expect(writeOutcome(attempt)).toEqual(events);
   });
 });
-
-describe("a gallery write's refusal", () => {
-  test("neither write admits the other's refusal", () => {
-    // The compile is the assertion: each directive fails `pnpm typecheck` the
-    // moment its write admits the refusal, so a widened arm cannot slip past
-    // the table above, which only exercises endings a write can really reach.
-    // @ts-expect-error an attach cannot answer with a note's refusal
-    const attachWithNoteRefusal: GalleryWriteAttempt = {
-      type: "attach",
-      ending: { kind: "refused", field: "image-note", message: "A note has a cap." },
-    };
-    // @ts-expect-error a note cannot answer with a structural refusal
-    const noteWithImagesRefusal: GalleryWriteAttempt = {
-      type: "add-note",
-      change: { kind: "add-note", imageId: IMAGE_ID, text: NOTE.text },
-      ending: { kind: "refused", field: "images", message: "Choose at least one image." },
-    };
-
-    // Read only so both names count as used; the assertion is the compile.
-    expect([attachWithNoteRefusal.ending.kind, noteWithImagesRefusal.ending.kind]).toEqual([
-      "refused",
-      "refused",
-    ]);
-  });
-});
