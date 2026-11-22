@@ -94,6 +94,8 @@ export type GalleryEvent =
   | { type: "image-note-composer-opened" }
   | { type: "image-note-composer-closed" }
   | { type: "image-note-draft-changed"; draft: string }
+  | { type: "image-note-save-pressed" }
+  | { type: "image-note-delete-pressed"; noteId: string }
   | { type: "image-note-added"; imageId: string }
   | { type: "image-notes-more-pressed" }
   | (GalleryGesture & { stages: readonly GalleryStage[] });
@@ -454,6 +456,26 @@ export function galleryReducer(state: GalleryState, event: GalleryEvent): Galler
           ? { ...state, imageNoteComposer: { ...state.imageNoteComposer, draft: event.draft } }
           : state,
       );
+
+    case "image-note-save-pressed":
+      // The composer stays open until the stored note's own event closes it, so
+      // a refusal or a thrown write keeps the owner's words.
+      return state.imageNoteComposer
+        ? {
+            state,
+            effects: [
+              {
+                type: "add-image-note",
+                imageId: state.imageNoteComposer.imageId,
+                text: state.imageNoteComposer.draft,
+              },
+            ],
+          }
+        : only(state);
+
+    case "image-note-delete-pressed":
+      // The row's id is the whole request; the live read is the only answer.
+      return { state, effects: [{ type: "remove-image-note", noteId: event.noteId }] };
 
     case "image-note-added": {
       // The note landed on the image the composer was opened for. A read that
