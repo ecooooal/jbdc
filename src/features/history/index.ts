@@ -29,7 +29,6 @@ export type {
   MaterialUsesDiff,
   MaterialUseCorrection,
   MaterialUseLine,
-  RecordedImage,
   RecordedMaterialUse,
   Visit,
 } from "./lib/events";

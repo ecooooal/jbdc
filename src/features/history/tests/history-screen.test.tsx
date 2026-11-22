@@ -91,7 +91,16 @@ test("renders an image Event as a card with its Images section and summary line"
     id: "event-image",
     designId: design.id,
     changes: {
-      attached: [{ id: "img-1", kind: "sketch", contentHash: "hash-1", extension: "jpg" }],
+      attached: [
+        {
+          id: "img-1",
+          designId: design.id,
+          kind: "sketch",
+          contentHash: "hash-1",
+          extension: "jpg",
+          createdAt: Date.UTC(2025, 0, 2, 3, 4),
+        },
+      ],
     },
     createdAt: Date.UTC(2025, 0, 2, 3, 4),
   });

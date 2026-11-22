@@ -17,6 +17,7 @@ import {
   listDesignEvents,
   materialUseLines,
   recordEdit,
+  recordImageChange,
 } from "@/features/history";
 import { createMaterial } from "@/features/materials";
 import { createCategory, createCollection } from "@/features/taxonomy";
@@ -448,5 +449,57 @@ describe("recordEdit", () => {
     recordEdit(database, first.id, { before: BEFORE, after: { ...BEFORE, name: "Silk slip" } }, 20);
 
     expect(listDesignEvents(database, second.id)).toEqual([]);
+  });
+});
+
+describe("recordImageChange", () => {
+  let database: ReturnType<typeof createTempDatabase>["database"];
+  let dispose: () => void;
+
+  beforeEach(() => {
+    ({ database, dispose } = createTempDatabase());
+  });
+
+  afterEach(() => {
+    dispose();
+  });
+
+  test("keeps its own record of each whole image row it is handed", () => {
+    const design = createDesign(database, { name: "Silk slip dress" }, 10);
+    const image = {
+      id: "image-1",
+      designId: design.id,
+      contentHash: "hash-1",
+      extension: "jpg",
+      kind: "sketch" as const,
+      createdAt: 1000,
+    };
+
+    recordImageChange(database.db, {
+      id: "event-image",
+      designId: design.id,
+      changes: {
+        attached: [image],
+        reclassified: [{ from: image, to: { ...image, kind: "final" } }],
+      },
+      createdAt: 2000,
+    });
+
+    expect(listDesignEvents(database, design.id)).toEqual([
+      expect.objectContaining({
+        kind: "image_change",
+        diff: {
+          images: {
+            attached: [{ id: "image-1", contentHash: "hash-1", extension: "jpg", kind: "sketch" }],
+            reclassified: [
+              {
+                from: { id: "image-1", contentHash: "hash-1", extension: "jpg", kind: "sketch" },
+                to: { id: "image-1", contentHash: "hash-1", extension: "jpg", kind: "final" },
+              },
+            ],
+          },
+        },
+      }),
+    ]);
   });
 });
