@@ -1,7 +1,7 @@
 import { createReducerTester } from "@/shared/testing/reducer-tester";
 import {
   createInitialViewerState,
-  removalOutcome,
+  removeImageOutcome,
   viewerReducer,
   type ViewerEvent,
 } from "../lib/viewer-reducer";
@@ -190,7 +190,7 @@ describe("removing an image", () => {
 
 describe("a removal's ending", () => {
   test("a stored removal closes the viewer", () => {
-    expect(removalOutcome("image-1", { kind: "stored", images: [], event: null })).toEqual([
+    expect(removeImageOutcome("image-1", { kind: "stored", images: [], event: null })).toEqual([
       { type: "remove-stored", imageId: "image-1" },
     ]);
   });
@@ -200,7 +200,7 @@ describe("a removal's ending", () => {
     { ending: { kind: "design-missing" }, name: "design-missing" },
     { ending: { kind: "image-missing", imageId: "image-1" }, name: "image-missing" },
   ] as const)("a $name removal keeps the image and says so", ({ ending }) => {
-    expect(removalOutcome("image-1", ending)).toEqual([
+    expect(removeImageOutcome("image-1", ending)).toEqual([
       { type: "remove-failed", imageId: "image-1" },
     ]);
   });

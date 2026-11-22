@@ -68,8 +68,11 @@ export type ImageStoredResult = {
 
 /**
  * A structural write the Image store could not complete: there was no store to
- * copy into, or copying one picked file failed. Both leave the catalog and the
- * store exactly as they were, so both answer this one ending.
+ * copy into or to release from, or copying one picked file failed. Attach and
+ * remove both need a store — one to copy the files in, one to release the last
+ * reference out — so a missing store answers this ending for either, and both
+ * leave the catalog exactly as it was. A release the store refuses happens
+ * after the row write, so it is the store's failure alone, not this ending.
  */
 type ImageStoreFailure = { kind: "store-failed" };
 
@@ -199,9 +202,19 @@ function references(db: DatabaseHandle, file: ImageFile): number {
   );
 }
 
-/** Deletes a stored file only when no image row, on any Design, still holds it. */
+/**
+ * Deletes a stored file only when no image row, on any Design, still holds it.
+ * The row write is the truth: a store that cannot delete the file leaves it
+ * behind, which is the store's problem, so no release can make the write fail.
+ */
 function releaseIfUnreferenced(db: DatabaseHandle, store: ImageStore, file: ImageFile): void {
-  if (references(db, file) === 0) store.remove(file);
+  if (references(db, file) !== 0) return;
+
+  try {
+    store.remove(file);
+  } catch {
+    // An unreleased file leaks; it never turns a stored write into a failure.
+  }
 }
 
 /**
@@ -213,8 +226,9 @@ function releaseIfUnreferenced(db: DatabaseHandle, store: ImageStore, file: Imag
  * deleted, and a removed image takes its notes with it. It answers once with
  * only the endings the declared change can produce: what it stored, the rule
  * that refused it, the store that could not take a file, or the row it could
- * not find. It never throws for a failed copy or a missing store. A note write
- * needs no Image store, because it neither copies nor releases a file.
+ * not find. It never throws for a failed copy, a missing store, or a store that
+ * cannot release a file. A note write needs no Image store, because it neither
+ * copies nor releases a file.
  */
 export function writeImages(
   database: Database,

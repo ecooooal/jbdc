@@ -46,7 +46,7 @@ export function createInitialViewerState(): ViewerState {
  * every other ending keeps the image open and says the removal did not land.
  * The fold is total over the write path's own answers, which never throw.
  */
-export function removalOutcome(imageId: string, ending: ImageRemoveResult): ViewerEvent[] {
+export function removeImageOutcome(imageId: string, ending: ImageRemoveResult): ViewerEvent[] {
   return ending.kind === "stored"
     ? [{ type: "remove-stored", imageId }]
     : [{ type: "remove-failed", imageId }];

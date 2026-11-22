@@ -62,7 +62,7 @@ The system image-file chooser, as a port. It answers picked files, a backed-out 
 The reactive database read that re-runs whenever the tables it watches change. A write lands through it; the rail and the note block never copy rows.
 
 **the write path**:
-The images module's one function for every image write — attach, reclassify, remove, add-note, remove-note. It answers each change kind with only the endings that change can produce — an attach cannot answer with a note's refusal — and answers a failed copy or a missing store as one ending, never a throw.
+The images module's one function for every image write — attach, reclassify, remove, add-note, remove-note. It answers each change kind with only the endings that change can produce — an attach cannot answer with a note's refusal — and answers a failed copy or a missing store as one ending. A failed copy, a missing store, and a store that cannot release a file never throw.
 
 **the missing-adapters guard**:
-The runner's wiring check: with no image store or picker available, the write cannot be attempted.
+The runner's wiring check: with no image store or picker available, an attach cannot be attempted and says nothing on the rail; a removal without a store reaches the write path and answers `store-failed`.

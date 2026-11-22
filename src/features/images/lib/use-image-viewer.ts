@@ -4,7 +4,7 @@ import { useImageStore } from "./image-store-context";
 import { writeImages } from "./records";
 import {
   createInitialViewerState,
-  removalOutcome,
+  removeImageOutcome,
   viewerReducer,
   type ViewerEffect,
   type ViewerEvent,
@@ -49,7 +49,7 @@ export function useImageViewer(designId: string): {
           imageId: effect.imageId,
         });
 
-        for (const outcome of removalOutcome(effect.imageId, ending)) send(outcome);
+        for (const outcome of removeImageOutcome(effect.imageId, ending)) send(outcome);
       };
 
       for (const effect of result.effects) void perform(effect);
