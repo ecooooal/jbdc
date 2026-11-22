@@ -42,7 +42,7 @@ Three situations come up often enough to have a fixed answer:
 
 - **One I/O must finish before the next starts.** Either chain them with an outcome event, or declare one effect and put the order on it as data.
 - **A late outcome.** Name what it was for (`designId`) and have the reducer ignore one for a surface that has since moved on.
-- **A caller that awaits.** There is no request id and no promise to settle: `dispatch` returns nothing and the runner discards a performer's return without awaiting it, so `await send(…)` awaits nothing at all. Work finishes by the outcome event its perform body dispatches, and a caller reads the state that event produced — the gallery awaits the picker and the write path inside one perform body and folds each answer back as an event. The reducer still decides what the outcome means.
+- **A caller that awaits.** There is no request id and no promise to settle: `dispatch` returns nothing and the runner discards a performer's return without awaiting it, so `await send(…)` awaits nothing at all. Work finishes by the outcome events its perform body dispatches when its answer is a decision — the gallery awaits the picker and the write path inside one perform body and folds each answer back as an event — and the surface reads the state those events produced on a later render. Not every answer is a decision: the viewer's reclassify and the visit's record dispatch nothing. The reducer still decides what the outcome means.
 
 ## React Native exceptions
 
