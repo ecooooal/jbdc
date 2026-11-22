@@ -166,7 +166,8 @@ export type GalleryWriteAttempt =
 /**
  * What an attach owes: a cancel and a stored write say nothing — the live read
  * carries the landing, and a change of mind is not a failure — while a denial,
- * a refusal, a vanished Design row, and a throw all say the images did not land.
+ * a refusal, a vanished Design row, a store that could not take the file, and a
+ * throw all say the images did not land.
  */
 function attachOutcome({ ending }: GalleryAttachAttempt): GalleryEvent[] {
   switch (ending.kind) {
@@ -176,6 +177,7 @@ function attachOutcome({ ending }: GalleryAttachAttempt): GalleryEvent[] {
     case "denied":
     case "refused":
     case "design-missing":
+    case "store-failed":
     case "thrown":
       return [{ type: "attach-failed" }];
   }

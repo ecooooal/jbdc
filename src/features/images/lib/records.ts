@@ -66,11 +66,19 @@ export type ImageStoredResult = {
   event: DesignEvent | null;
 };
 
-/** What one attach answered: what it stored, the rule that refused it, or a missing Design row. */
+/**
+ * A structural write the Image store could not complete: there was no store to
+ * copy into, or copying one picked file failed. Both leave the catalog and the
+ * store exactly as they were, so both answer this one ending.
+ */
+type ImageStoreFailure = { kind: "store-failed" };
+
+/** What one attach answered: what it stored, the rule that refused it, a store that could not take it, or a missing Design row. */
 export type ImageAttachResult =
   | ImageStoredResult
   | { kind: "refused"; field: "images" | "kind"; message: string }
-  | { kind: "design-missing" };
+  | { kind: "design-missing" }
+  | ImageStoreFailure;
 
 /** What one reclassification answered: what it stored, a refused kind, or a row it could not find. */
 export type ImageReclassifyResult =
@@ -79,9 +87,12 @@ export type ImageReclassifyResult =
   | { kind: "design-missing" }
   | { kind: "image-missing"; imageId: string };
 
-/** What one removal answered: what it stored, or a row it could not find. */
+/** What one removal answered: what it stored, a store that could not take it, or a row it could not find. */
 export type ImageRemoveResult =
-  ImageStoredResult | { kind: "design-missing" } | { kind: "image-missing"; imageId: string };
+  | ImageStoredResult
+  | { kind: "design-missing" }
+  | { kind: "image-missing"; imageId: string }
+  | ImageStoreFailure;
 
 /** What one add-note answered: the note it stored, the rule that refused it, or a row it could not find. */
 export type ImageAddNoteResult =
@@ -194,17 +205,6 @@ function releaseIfUnreferenced(db: DatabaseHandle, store: ImageStore, file: Imag
 }
 
 /**
- * The store a structural write needs. A note write copies and releases no file,
- * so its caller may pass none; reaching this guard means this module handed a
- * structural change no store, which no app caller can do.
- */
-function requireStore(store: ImageStore | null): ImageStore {
-  if (!store) throw new Error("A structural image write needs an Image store.");
-
-  return store;
-}
-
-/**
  * The one write path for a Design's images. A caller declares one change; this
  * function copies the files it needs into the catalog's image directory, stores
  * the image rows or the note row, moves the Design's `updatedAt`, and — for a
@@ -212,8 +212,9 @@ function requireStore(store: ImageStore | null): ImageStore {
  * Event, in one transaction. The file of an image whose last reference goes is
  * deleted, and a removed image takes its notes with it. It answers once with
  * only the endings the declared change can produce: what it stored, the rule
- * that refused it, or the row it could not find. A note write needs no Image
- * store, because it neither copies nor releases a file.
+ * that refused it, the store that could not take a file, or the row it could
+ * not find. It never throws for a failed copy or a missing store. A note write
+ * needs no Image store, because it neither copies nor releases a file.
  */
 export function writeImages(
   database: Database,
@@ -283,21 +284,26 @@ export async function writeImages(
 
   if (change.kind === "attach") {
     // Copy before opening the transaction: a missing source fails here, so no
-    // image row can point at a file the store does not have.
-    const imageStore = requireStore(store);
+    // image row can point at a file the store does not have. A missing store
+    // answers the same ending as a failed copy, so the caller never has to tell
+    // the two apart.
+    if (!store) return { kind: "store-failed" };
+
+    const imageStore = store;
     const files: ImageFile[] = [];
 
     try {
       for (const { sourcePath } of change.images) {
         files.push(await imageStore.copy(sourcePath));
       }
-    } catch (error) {
+    } catch {
       // A later copy failed after earlier ones landed. Release what this
       // attempt stored, keeping any file another image still references, so a
-      // failed write leaves the store as it found it, and surface the failure.
+      // failed write leaves the store as it found it, and answer the failure as
+      // one ending instead of a throw.
       for (const file of files) releaseIfUnreferenced(database.db, imageStore, file);
 
-      throw error;
+      return { kind: "store-failed" };
     }
 
     return database.transaction((tx) => {
@@ -408,7 +414,11 @@ export async function writeImages(
     }
 
     // A reclassification touches no stored file; only a removal releases one.
-    const imageStore = requireStore(store);
+    // Without a store, the file could not be released, so the write answers
+    // that one ending and leaves the catalog as it found it.
+    if (!store) return { kind: "store-failed" };
+
+    const imageStore = store;
 
     // The image's notes go with it: the foreign key cascades inside this same
     // delete, silently, so no note outlives the picture it explains.

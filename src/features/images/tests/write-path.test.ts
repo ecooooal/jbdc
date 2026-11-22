@@ -9,6 +9,7 @@ import {
   listDesignImages,
   type ImageAttachResult,
   type ImageReclassifyResult,
+  type ImageRemoveResult,
 } from "../lib/records";
 import { createTempImageStore } from "@/features/images/testing";
 import { listDesignEvents } from "@/features/history";
@@ -413,26 +414,25 @@ describe("refused writes", () => {
     expect(storedFiles()).toEqual([]);
   });
 
-  test("a copy that fails releases the files this attempt already stored", async () => {
+  test("a copy that fails answers store-failed and releases what this attempt stored", async () => {
     const designId = createWoolCoat(500);
     const copied = sourceFile("copied.jpg", "copied bytes");
 
-    await expect(
-      writeImages(
-        database,
-        store,
-        designId,
-        {
-          kind: "attach",
-          images: [
-            { sourcePath: copied, kind: "sketch" },
-            { sourcePath: join(sourceDirectory, "missing.jpg"), kind: "sketch" },
-          ],
-        },
-        1000,
-      ),
-    ).rejects.toThrow();
+    const result: ImageAttachResult = await writeImages(
+      database,
+      store,
+      designId,
+      {
+        kind: "attach",
+        images: [
+          { sourcePath: copied, kind: "sketch" },
+          { sourcePath: join(sourceDirectory, "missing.jpg"), kind: "sketch" },
+        ],
+      },
+      1000,
+    );
 
+    expect(result).toEqual({ kind: "store-failed" });
     expect(storedFiles()).toEqual([]);
     expect(listDesignImages(database, designId)).toEqual([]);
     expect(listDesignEvents(database, designId)).toEqual([]);
@@ -451,8 +451,8 @@ describe("refused writes", () => {
       1000,
     );
 
-    await expect(
-      writeImages(
+    expect(
+      await writeImages(
         database,
         store,
         designId,
@@ -465,10 +465,62 @@ describe("refused writes", () => {
         },
         2000,
       ),
-    ).rejects.toThrow();
+    ).toEqual({ kind: "store-failed" });
 
     expect(storedFiles()).toHaveLength(1);
     expect(listDesignImages(database, designId)).toHaveLength(1);
+  });
+
+  test("a structural write with no store answers store-failed and stores nothing", async () => {
+    const designId = createWoolCoat(500);
+
+    expect(
+      await writeImages(
+        database,
+        null,
+        designId,
+        {
+          kind: "attach",
+          images: [{ sourcePath: sourceFile("sketch.jpg", "sketch"), kind: "sketch" }],
+        },
+        1000,
+      ),
+    ).toEqual({ kind: "store-failed" });
+
+    expect(listDesignImages(database, designId)).toEqual([]);
+    expect(listDesignEvents(database, designId)).toEqual([]);
+    expect(storedFiles()).toEqual([]);
+    expect(getDesign(database, designId)?.updatedAt).toBe(500);
+  });
+
+  test("a removal with no store answers store-failed and keeps the image", async () => {
+    const designId = createWoolCoat(500);
+
+    await writeImages(
+      database,
+      store,
+      designId,
+      {
+        kind: "attach",
+        images: [{ sourcePath: sourceFile("sketch.jpg", "sketch"), kind: "sketch" }],
+      },
+      1000,
+    );
+
+    const [image] = listDesignImages(database, designId);
+
+    const result: ImageRemoveResult = await writeImages(
+      database,
+      null,
+      designId,
+      { kind: "remove", imageId: image.id },
+      2000,
+    );
+
+    expect(result).toEqual({ kind: "store-failed" });
+    expect(listDesignImages(database, designId)).toEqual([image]);
+    expect(listDesignEvents(database, designId)).toHaveLength(1);
+    expect(storedFiles()).toHaveLength(1);
   });
 
   test("reclassifying an image the design does not have answers image-missing", async () => {
