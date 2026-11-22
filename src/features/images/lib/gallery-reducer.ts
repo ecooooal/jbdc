@@ -90,21 +90,18 @@ export type GalleryGesture =
   | { type: "hero-swiped"; direction: SwipeDirection };
 
 /**
- * A fact the gallery handles. A gesture carries the live journey beside it,
- * because the reducer is pure and cannot read the catalog: the stages are the
- * value the rule needs, the way `now` rides on an event that must time itself.
+ * Every fact the gallery handles, in three parts: the facts a component sends,
+ * stated once in `GalleryFact`; the facts only the runner reports; and a
+ * gesture carrying the live journey. The bare gesture arm is excluded from the
+ * facts because the reducer's gesture cases read the stages the rule needs —
+ * the reducer is pure and cannot read the catalog — the way `now` rides on an
+ * event that must time itself.
  */
 export type GalleryEvent =
+  | Exclude<GalleryFact, GalleryGesture>
   | { type: "images-read"; stages: readonly GalleryStage[]; cover: string | null }
-  | { type: "attach-pressed"; kind: ImageKind }
   | { type: "attach-failed" }
-  | { type: "image-note-composer-opened" }
-  | { type: "image-note-composer-closed" }
-  | { type: "image-note-draft-changed"; draft: string }
-  | { type: "image-note-save-pressed" }
-  | { type: "image-note-delete-pressed"; noteId: string }
   | { type: "image-note-added"; imageId: string }
-  | { type: "image-notes-more-pressed" }
   | (GalleryGesture & { stages: readonly GalleryStage[] });
 
 /**

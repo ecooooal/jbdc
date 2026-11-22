@@ -12,7 +12,6 @@ tables, and the status vocabulary. They never import `expo-sqlite` or
 | Entry | Who imports it | What it opens |
 |---|---|---|
 | `@/features/database` | every feature module | nothing; types and schema only |
-| `lib/expo-database.ts` | the provider (`react.tsx`) | expo-sqlite, synchronously |
 | `@/features/database/react` | the app root and screens | provider, `useDatabase()`, `useLiveRead` |
 | `@/features/database/testing` | Jest suites only | better-sqlite3 on a temp file, synchronous `subscribe` |
 | `@/features/database/testing-live` | Jest suites for declared reads | nothing; mounts a read in the provider seam |
@@ -23,20 +22,28 @@ Feature reads and writes take the `Database` port and run their drizzle queries
 through `database.db`; only the adapters know which driver is underneath:
 
 ```ts
-const rows = listLibraryDesigns(database);
-const design = createDesign(database, { name: 'Silk slip dress' });
+function addSilkSlip(database: Database) {
+  const design = createDesign(database, { name: 'Silk slip dress' });
+  const rows = listLibraryDesigns(database);
+
+  return { design, rows };
+}
 ```
 
-The provider opens the connection with change listeners so live reads can
-subscribe to table changes. A feature declares each live read beside its query as one value — the query,
-the row shape it produces, and every table it watches — then its hook
+The provider opens the connection through `lib/expo-database.ts`, the app's
+own adapter and the one module allowed to import `expo-sqlite`. That adapter
+is private: it is not an entry, so nothing outside `database` imports it, and
+it opens with change listeners so live reads can subscribe to table changes. A
+feature declares each live read beside its query as one value — the query, the
+row shape it produces, and every table it watches — then its hook
 (`useLibraryDesigns`) hands that declaration to `useLiveRead`, re-exported by
 `@/features/database/react`. The one hook owns database access, the
 subscription and the status; a feature never imports a driver adapter. A live
 read declares the tables it watches, joins included (ADR-0005), because
-drizzle cannot derive them. Opening is synchronous because drizzle's expo-sqlite driver
-is synchronous; that driver landed in drizzle-orm 1.0 (currently pinned to an
-RC), which is why the ORM version is exact rather than a range.
+drizzle cannot derive them. Opening is synchronous because drizzle's
+expo-sqlite driver is synchronous; that driver landed in drizzle-orm 1.0
+(currently pinned to an RC), which is why the ORM version is exact rather than
+a range.
 
 ## Migrations
 

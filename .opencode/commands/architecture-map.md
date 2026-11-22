@@ -42,7 +42,7 @@ Do not answer from memory or from an older commit. Inspect the current tree:
 - `src/features/README.md` and every `src/features/**/README.md`.
 - `src/features/*/index.ts`, `react.ts`, `components/`, `lib/`.
 - `src/features/database/schema.ts`, `lib/port.ts`, `lib/live-read.ts`, `react.tsx`,
-  `expo.ts`, `testing.ts`.
+  `lib/expo-database.ts`, `testing.ts`.
 - `src/features/**/tests/**` — every test file.
 - `docs/adr/*.md`, `GLOSSARY.md`, `docs/FRONTEND_STATE.md`, `docs/EXPO-DB.md`,
   `docs/EXPO-FOLDER-STRUCTURE.md`, `CODING_STANDARDS.md`.
