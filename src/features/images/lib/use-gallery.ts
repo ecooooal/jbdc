@@ -45,6 +45,10 @@ export function useGallery(designId: string) {
       setState(result.state);
 
       const perform = async (effect: GalleryEffect) => {
+        // The plus press's pick joins the runner in the next step; this step
+        // only declares it.
+        if (effect.type === "attach-images") return;
+
         let ending: GalleryWriteEnding;
         try {
           ending = await writeImages(database, null, effect.designId, effect.change);

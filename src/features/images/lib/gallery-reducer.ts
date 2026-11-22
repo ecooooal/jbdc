@@ -68,8 +68,12 @@ export type GalleryState = {
  * declared where the state that names it lives: the composer holds its image
  * and words, and a note row holds its id. The Design and the change ride the
  * effect, so the runner calls the write path without building anything itself.
+ * The plus press declares a pick-and-attach instead of a change: the files are
+ * unknown until the picker answers, so the effect names the Design and the
+ * stage, and the runner builds the attach from what the picker returned.
  */
 export type GalleryEffect =
+  | { type: "attach-images"; designId: string; kind: ImageKind }
   | { type: "add-image-note"; designId: string; change: AddNoteChange }
   | { type: "remove-image-note"; designId: string; change: RemoveNoteChange };
 
@@ -426,8 +430,9 @@ function only(state: GalleryState): GalleryResult {
  * that failed is a flag the rail reads until the owner tries again or presses a
  * stage, and it never moves the selection. The note composer opens on the
  * current image, closes when the note lands, and is dropped when the owner
- * moves on. The result carries the writes the event declares; every event but
- * the notes' own press declares none.
+ * moves on. The result carries the writes the event declares: the plus press
+ * declares its pick, the notes' own presses declare their writes, and every
+ * other event declares none.
  */
 export function galleryReducer(state: GalleryState, event: GalleryEvent): GalleryResult {
   switch (event.type) {
@@ -486,7 +491,13 @@ export function galleryReducer(state: GalleryState, event: GalleryEvent): Galler
     }
 
     case "attach-pressed":
-      return only({ ...state, attachFailed: false });
+      // Choosing the stage was the kind decision, so the press declares one
+      // pick-and-attach to the stage the rail shows. Reading the stage from
+      // state here is what keeps the write and the rail from drifting apart.
+      return {
+        state: { ...state, attachFailed: false },
+        effects: [{ type: "attach-images", designId: state.designId, kind: state.kind }],
+      };
 
     case "attach-failed":
       return only({ ...state, attachFailed: true });

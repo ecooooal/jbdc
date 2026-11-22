@@ -274,6 +274,28 @@ describe("a failed attach", () => {
   });
 });
 
+describe("the plus press", () => {
+  test("clears a stale failure and declares the pick to the stage on the rail", () => {
+    const failed = settle(
+      createInitialGalleryState(DESIGN_ID),
+      { type: "stage-pressed", kind: "sketch", stages: journey() },
+      { type: "attach-failed" },
+    );
+
+    expect(send(failed, { type: "attach-pressed" })).toEqual({
+      state: {
+        designId: DESIGN_ID,
+        kind: "sketch",
+        imageId: "s1",
+        awaitingKind: null,
+        attachFailed: false,
+        ...noNoteUI,
+      },
+      effects: [{ type: "attach-images", designId: DESIGN_ID, kind: "sketch" }],
+    });
+  });
+});
+
 describe("swiping the hero", () => {
   function selected(imageId: string): GalleryState {
     return {
