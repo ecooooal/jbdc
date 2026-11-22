@@ -96,7 +96,7 @@ export type GalleryGesture =
  */
 export type GalleryEvent =
   | { type: "images-read"; stages: readonly GalleryStage[]; cover: string | null }
-  | { type: "attach-pressed" }
+  | { type: "attach-pressed"; kind: ImageKind }
   | { type: "attach-failed" }
   | { type: "image-note-composer-opened" }
   | { type: "image-note-composer-closed" }
@@ -106,6 +106,22 @@ export type GalleryEvent =
   | { type: "image-note-added"; imageId: string }
   | { type: "image-notes-more-pressed" }
   | (GalleryGesture & { stages: readonly GalleryStage[] });
+
+/**
+ * Every fact a component can send the gallery. A gesture names what the owner
+ * did; the door attaches the live journey the reducer needs. The facts only the
+ * runner reports — a read, a failed attach, a stored note — are absent, so a
+ * component cannot forge one.
+ */
+export type GalleryFact =
+  | GalleryGesture
+  | { type: "attach-pressed"; kind: ImageKind }
+  | { type: "image-note-composer-opened" }
+  | { type: "image-note-composer-closed" }
+  | { type: "image-note-draft-changed"; draft: string }
+  | { type: "image-note-save-pressed" }
+  | { type: "image-note-delete-pressed"; noteId: string }
+  | { type: "image-notes-more-pressed" };
 
 /** The change one attempt declares, narrowed from the write path's one union. */
 type AddNoteChange = Extract<ImageChange, { kind: "add-note" }>;
@@ -519,12 +535,11 @@ export function galleryReducer(state: GalleryState, event: GalleryEvent): Galler
     }
 
     case "attach-pressed":
-      // Choosing the stage was the kind decision, so the press declares one
-      // pick-and-attach to the stage the rail shows. Reading the stage from
-      // state here is what keeps the write and the rail from drifting apart.
+      // The plus card names the stage it sits on, so the write and the rail
+      // cannot drift apart and the stage is derived once.
       return {
         state: { ...state, attachFailed: false },
-        effects: [{ type: "attach-images", designId: state.designId, kind: state.kind }],
+        effects: [{ type: "attach-images", designId: state.designId, kind: event.kind }],
       };
 
     case "attach-failed":

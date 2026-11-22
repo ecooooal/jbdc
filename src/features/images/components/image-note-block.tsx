@@ -1,11 +1,10 @@
 import { Plus, X } from "lucide-react-native";
-import type { Dispatch } from "react";
 import { View } from "react-native";
 import { Button } from "@/shared/components/ui/button";
 import { Icon } from "@/shared/components/ui/icon";
 import { Text } from "@/shared/components/ui/text";
 import { Textarea } from "@/shared/components/ui/textarea";
-import type { ImageNoteBlockView, GalleryEvent, ImageNoteComposer } from "../lib/gallery-reducer";
+import type { GalleryFact, ImageNoteBlockView, ImageNoteComposer } from "../lib/gallery-reducer";
 import type { ImageNote } from "../lib/images";
 
 /**
@@ -22,11 +21,11 @@ import type { ImageNote } from "../lib/images";
 export function ImageNoteBlock({
   view,
   composer,
-  dispatch,
+  send,
 }: {
   view: ImageNoteBlockView<ImageNote>;
   composer: ImageNoteComposer | null;
-  dispatch: Dispatch<GalleryEvent>;
+  send: (fact: GalleryFact) => void;
 }) {
   return (
     <View className="border-border rounded-2xl border px-3 pb-2 pt-1">
@@ -39,7 +38,7 @@ export function ImageNoteBlock({
             size="icon"
             variant="ghost"
             accessibilityLabel="Add note"
-            onPress={() => dispatch({ type: "image-note-composer-opened" })}
+            onPress={() => send({ type: "image-note-composer-opened" })}
           >
             <Icon as={Plus} className="text-muted-foreground size-4" />
           </Button>
@@ -60,7 +59,7 @@ export function ImageNoteBlock({
             size="icon"
             variant="ghost"
             accessibilityLabel={`Delete note ${index + 1}`}
-            onPress={() => dispatch({ type: "image-note-delete-pressed", noteId: note.id })}
+            onPress={() => send({ type: "image-note-delete-pressed", noteId: note.id })}
           >
             <Icon as={X} className="text-muted-foreground size-4" />
           </Button>
@@ -73,7 +72,7 @@ export function ImageNoteBlock({
           variant="ghost"
           className="self-start"
           accessibilityLabel={view.expanded ? "Show fewer notes" : `Show all ${view.total} notes`}
-          onPress={() => dispatch({ type: "image-notes-more-pressed" })}
+          onPress={() => send({ type: "image-notes-more-pressed" })}
         >
           <Text variant="muted">
             {view.expanded ? "Show fewer" : `Show all ${view.total} notes`}
@@ -88,7 +87,7 @@ export function ImageNoteBlock({
             placeholder="What did you decide here, and why?"
             numberOfLines={3}
             value={composer.draft}
-            onChangeText={(draft) => dispatch({ type: "image-note-draft-changed", draft })}
+            onChangeText={(draft) => send({ type: "image-note-draft-changed", draft })}
             autoFocus
           />
           <View className="flex-row justify-end gap-2">
@@ -96,14 +95,14 @@ export function ImageNoteBlock({
               size="sm"
               variant="ghost"
               accessibilityLabel="Cancel note"
-              onPress={() => dispatch({ type: "image-note-composer-closed" })}
+              onPress={() => send({ type: "image-note-composer-closed" })}
             >
               <Text>Cancel</Text>
             </Button>
             <Button
               size="sm"
               accessibilityLabel="Save note"
-              onPress={() => dispatch({ type: "image-note-save-pressed" })}
+              onPress={() => send({ type: "image-note-save-pressed" })}
             >
               <Text>Save note</Text>
             </Button>
