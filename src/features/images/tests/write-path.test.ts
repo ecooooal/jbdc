@@ -5,7 +5,11 @@ import { createTempDatabase } from "@/features/database/testing";
 import { createDesign, getDesign } from "@/features/designs";
 import { coverOf, writeImages } from "@/features/images";
 import type { ImageStore } from "../lib/image-store";
-import { listDesignImages } from "../lib/records";
+import {
+  listDesignImages,
+  type ImageAttachResult,
+  type ImageReclassifyResult,
+} from "../lib/records";
 import { createTempImageStore } from "@/features/images/testing";
 import { listDesignEvents } from "@/features/history";
 
@@ -48,7 +52,7 @@ describe("attaching images", () => {
   test("several at once is one action and records one image_change event", async () => {
     const designId = createWoolCoat();
 
-    const result = await writeImages(
+    const result: ImageAttachResult = await writeImages(
       database,
       store,
       designId,
@@ -200,7 +204,7 @@ describe("reclassifying an image", () => {
 
     const [image] = listDesignImages(database, designId);
 
-    const result = await writeImages(
+    const result: ImageReclassifyResult = await writeImages(
       database,
       store,
       designId,

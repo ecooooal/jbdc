@@ -8,7 +8,13 @@ import type { ImageStore } from "../lib/image-store";
 import { createTempImageStore } from "@/features/images/testing";
 import { listDesignEvents } from "@/features/history";
 import { IMAGE_NOTE_MAX_LENGTH } from "../lib/image-notes";
-import { listDesignImageNotes, listDesignImages } from "../lib/records";
+import {
+  listDesignImageNotes,
+  listDesignImages,
+  type ImageAddNoteResult,
+  type ImageRemoveNoteResult,
+  type ImageRemoveResult,
+} from "../lib/records";
 
 let database: ReturnType<typeof createTempDatabase>["database"];
 let dispose: () => void;
@@ -64,7 +70,7 @@ describe("adding a note", () => {
     const { designId, imageId } = await designWithImage(1000);
     const events = listDesignEvents(database, designId).length;
 
-    const result = await writeImages(
+    const result: ImageAddNoteResult = await writeImages(
       database,
       store,
       designId,
@@ -193,7 +199,7 @@ describe("removing a note", () => {
     const noteId = stored.kind === "image-note-stored" ? stored.note.id : "";
     const events = listDesignEvents(database, designId).length;
 
-    const result = await writeImages(
+    const result: ImageRemoveNoteResult = await writeImages(
       database,
       store,
       designId,
@@ -231,7 +237,13 @@ describe("notes dying with their image", () => {
     expect(listDesignImageNotes(database, designId)).toHaveLength(1);
 
     const events = listDesignEvents(database, designId).length;
-    const result = await writeImages(database, store, designId, { kind: "remove", imageId }, 3000);
+    const result: ImageRemoveResult = await writeImages(
+      database,
+      store,
+      designId,
+      { kind: "remove", imageId },
+      3000,
+    );
 
     // One Event for the image's removal, none for its notes.
     expect(events + 1).toBe(listDesignEvents(database, designId).length);

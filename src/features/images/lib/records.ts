@@ -28,6 +28,21 @@ export type ImageAttach = {
   kind: ImageKind;
 };
 
+/** One attach: the files chosen, each with the kind the owner gave it. */
+export type ImageAttachChange = { kind: "attach"; images: readonly ImageAttach[] };
+
+/** One image moved to another kind. */
+export type ImageReclassifyChange = { kind: "reclassify"; imageId: string; to: ImageKind };
+
+/** One image removed, and with it the notes it explains. */
+export type ImageRemoveChange = { kind: "remove"; imageId: string };
+
+/** One note added to one image. */
+export type ImageAddNoteChange = { kind: "add-note"; imageId: string; text: string };
+
+/** One note removed from one image. */
+export type ImageRemoveNoteChange = { kind: "remove-note"; noteId: string };
+
 /**
  * One change to a Design's images: attach one or more files, change one image's
  * kind, remove one image, or add or remove one Image note. Attaching several
@@ -35,25 +50,63 @@ export type ImageAttach = {
  * because History records the image's life, not the note's.
  */
 export type ImageChange =
-  | { kind: "attach"; images: readonly ImageAttach[] }
-  | { kind: "reclassify"; imageId: string; to: ImageKind }
-  | { kind: "remove"; imageId: string }
-  | { kind: "add-note"; imageId: string; text: string }
-  | { kind: "remove-note"; noteId: string };
+  | ImageAttachChange
+  | ImageReclassifyChange
+  | ImageRemoveChange
+  | ImageAddNoteChange
+  | ImageRemoveNoteChange;
 
 /**
- * What one image write produced: the Design's images after a structural change
- * and the one Event it recorded (null when the write changed nothing), the note
- * it stored or removed, the rule that refused it, or the row it could not find.
+ * What a structural change stored: the Design's images after it, and the one
+ * Event it recorded (null when the write changed nothing).
+ */
+export type ImageStoredResult = {
+  kind: "stored";
+  images: Image[];
+  event: DesignEvent | null;
+};
+
+/** What one attach answered: what it stored, the rule that refused it, or a missing Design row. */
+export type ImageAttachResult =
+  | ImageStoredResult
+  | { kind: "refused"; field: "images" | "kind"; message: string }
+  | { kind: "design-missing" };
+
+/** What one reclassification answered: what it stored, a refused kind, or a row it could not find. */
+export type ImageReclassifyResult =
+  | ImageStoredResult
+  | { kind: "refused"; field: "kind"; message: string }
+  | { kind: "design-missing" }
+  | { kind: "image-missing"; imageId: string };
+
+/** What one removal answered: what it stored, or a row it could not find. */
+export type ImageRemoveResult =
+  ImageStoredResult | { kind: "design-missing" } | { kind: "image-missing"; imageId: string };
+
+/** What one add-note answered: the note it stored, the rule that refused it, or a row it could not find. */
+export type ImageAddNoteResult =
+  | { kind: "image-note-stored"; note: ImageNote }
+  | { kind: "refused"; field: "image-note"; message: string }
+  | { kind: "design-missing" }
+  | { kind: "image-missing"; imageId: string };
+
+/** What one remove-note answered: the note it removed, or a row it could not find. */
+export type ImageRemoveNoteResult =
+  | { kind: "image-note-removed"; note: ImageNote }
+  | { kind: "design-missing" }
+  | { kind: "image-note-missing"; noteId: string };
+
+/**
+ * Every answer the write path gives, across all change kinds. The overloads
+ * below narrow it to the endings one change can produce, so a caller never
+ * inspects an answer its own change cannot reach.
  */
 export type ImageWriteResult =
-  | { kind: "stored"; images: Image[]; event: DesignEvent | null }
-  | { kind: "image-note-stored"; note: ImageNote }
-  | { kind: "image-note-removed"; note: ImageNote }
-  | { kind: "refused"; field: "images" | "kind" | "image-note"; message: string }
-  | { kind: "design-missing" }
-  | { kind: "image-missing"; imageId: string }
-  | { kind: "image-note-missing"; noteId: string };
+  | ImageAttachResult
+  | ImageReclassifyResult
+  | ImageRemoveResult
+  | ImageAddNoteResult
+  | ImageRemoveNoteResult;
 
 /** One Design's images, oldest first, so a stage reads as a chronicle. */
 function imagesFrom(db: DatabaseHandle, designId: string): Image[] {
@@ -157,10 +210,54 @@ function requireStore(store: ImageStore | null): ImageStore {
  * the image rows or the note row, moves the Design's `updatedAt`, and — for a
  * structural action only — hands History the facts for one `image_change`
  * Event, in one transaction. The file of an image whose last reference goes is
- * deleted, and a removed image takes its notes with it. It answers once: what
- * it stored, the rule that refused it, or the row it could not find. A note
- * write needs no Image store, because it neither copies nor releases a file.
+ * deleted, and a removed image takes its notes with it. It answers once with
+ * only the endings the declared change can produce: what it stored, the rule
+ * that refused it, or the row it could not find. A note write needs no Image
+ * store, because it neither copies nor releases a file.
  */
+export function writeImages(
+  database: Database,
+  store: ImageStore | null,
+  designId: string,
+  change: ImageAttachChange,
+  now?: number,
+): Promise<ImageAttachResult>;
+export function writeImages(
+  database: Database,
+  store: ImageStore | null,
+  designId: string,
+  change: ImageReclassifyChange,
+  now?: number,
+): Promise<ImageReclassifyResult>;
+export function writeImages(
+  database: Database,
+  store: ImageStore | null,
+  designId: string,
+  change: ImageRemoveChange,
+  now?: number,
+): Promise<ImageRemoveResult>;
+export function writeImages(
+  database: Database,
+  store: ImageStore | null,
+  designId: string,
+  change: ImageAddNoteChange,
+  now?: number,
+): Promise<ImageAddNoteResult>;
+export function writeImages(
+  database: Database,
+  store: ImageStore | null,
+  designId: string,
+  change: ImageRemoveNoteChange,
+  now?: number,
+): Promise<ImageRemoveNoteResult>;
+/** A change whose kind is only known as the union answers with every ending. */
+export function writeImages(
+  database: Database,
+  store: ImageStore | null,
+  designId: string,
+  change: ImageChange,
+  now?: number,
+): Promise<ImageWriteResult>;
 export async function writeImages(
   database: Database,
   store: ImageStore | null,
