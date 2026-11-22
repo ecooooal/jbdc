@@ -95,6 +95,13 @@ type PickEnding = Extract<ImagePickResult, { kind: "cancelled" } | { kind: "deni
 type ThrownEnding = { kind: "thrown" };
 
 /**
+ * The rule that refused a write, naming one of the fields that write itself
+ * decides. Each write's ending narrows it, so an attach cannot answer with a
+ * note's rule, nor a note with a structural one.
+ */
+type RefusedOn<Field> = Extract<ImageWriteResult, { kind: "refused" }> & { field: Field };
+
+/**
  * What one attach gesture answered: the picker's answer when it picked no file,
  * the write's answer when it did, or the fact the pick or the write threw. A
  * throw is one ending either way — the images did not land — so the fold never
@@ -102,15 +109,14 @@ type ThrownEnding = { kind: "thrown" };
  */
 type AttachEnding =
   | PickEnding
-  | Extract<ImageWriteResult, { kind: "stored" | "refused" | "design-missing" }>
+  | Extract<ImageWriteResult, { kind: "stored" | "design-missing" }>
+  | RefusedOn<"images" | "kind">
   | ThrownEnding;
 
 /** What one add-note answered: the note it stored, the rule that refused it, a row it missed, or a throw. */
 type AddNoteEnding =
-  | Extract<
-      ImageWriteResult,
-      { kind: "image-note-stored" | "refused" | "design-missing" | "image-missing" }
-    >
+  | Extract<ImageWriteResult, { kind: "image-note-stored" | "design-missing" | "image-missing" }>
+  | RefusedOn<"image-note">
   | ThrownEnding;
 
 /** What one remove-note answered: the note it removed, a row it missed, or a throw. */
