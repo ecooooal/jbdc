@@ -1,6 +1,12 @@
 import type { ImageKind } from "@/features/database";
 import type { ImagePickResult } from "./image-picker";
-import type { ImageChange, ImageWriteResult } from "./records";
+import type {
+  ImageAddNoteChange,
+  ImageAddNoteResult,
+  ImageAttachResult,
+  ImageRemoveNoteChange,
+  ImageRemoveNoteResult,
+} from "./records";
 
 /**
  * One image as the journey reads it: what it is and the stage it belongs to.
@@ -74,8 +80,8 @@ export type GalleryState = {
  */
 export type GalleryEffect =
   | { type: "attach-images"; designId: string; kind: ImageKind }
-  | { type: "add-image-note"; designId: string; change: AddNoteChange }
-  | { type: "remove-image-note"; designId: string; change: RemoveNoteChange };
+  | { type: "add-image-note"; designId: string; change: ImageAddNoteChange }
+  | { type: "remove-image-note"; designId: string; change: ImageRemoveNoteChange };
 
 /** What one gallery event settled and the writes it asked for. */
 export type GalleryResult = {
@@ -120,155 +126,49 @@ export type GalleryFact =
   | { type: "image-note-delete-pressed"; noteId: string }
   | { type: "image-notes-more-pressed" };
 
-/** The change one attempt declares, narrowed from the write path's one union. */
-type AddNoteChange = Extract<ImageChange, { kind: "add-note" }>;
-type RemoveNoteChange = Extract<ImageChange, { kind: "remove-note" }>;
-
 /** The picker's answer that picked no file: a change of mind, or a refused permission. */
 type PickEnding = Extract<ImagePickResult, { kind: "cancelled" } | { kind: "denied" }>;
 
 /** The ending a write gives instead of a result: it threw. */
 type ThrownEnding = { kind: "thrown" };
 
-/**
- * The rule that refused a write, naming one of the fields that write itself
- * decides. Each write's ending narrows it, so an attach cannot answer with a
- * note's rule, nor a note with a structural one.
- */
-type RefusedOn<Field> = Extract<ImageWriteResult, { kind: "refused" }> & { field: Field };
-
-/**
- * What one attach gesture answered: the picker's answer when it picked no file,
- * the write's answer when it did, or the fact the pick or the write threw. A
- * throw is one ending either way — the images did not land — so the fold never
- * has to know which call failed.
- */
-type AttachEnding =
-  | PickEnding
-  | Extract<ImageWriteResult, { kind: "stored" | "design-missing" }>
-  | RefusedOn<"images" | "kind">
-  | ThrownEnding;
-
-/** What one add-note answered: the note it stored, the rule that refused it, a row it missed, or a throw. */
-type AddNoteEnding =
-  | Extract<ImageWriteResult, { kind: "image-note-stored" | "design-missing" | "image-missing" }>
-  | RefusedOn<"image-note">
-  | ThrownEnding;
-
-/** What one remove-note answered: the note it removed, a row it missed, or a throw. */
-type RemoveNoteEnding =
-  | Extract<
-      ImageWriteResult,
-      { kind: "image-note-removed" | "design-missing" | "image-note-missing" }
-    >
-  | ThrownEnding;
-
-/** One attempt to attach: every ending the pick or the write can give. */
-type GalleryAttachAttempt = { type: "attach"; ending: AttachEnding };
+/** One attempt to attach: the picker's answer, the write's own answer for an attach, or a throw. */
+type GalleryAttachAttempt = {
+  type: "attach";
+  ending: PickEnding | ImageAttachResult | ThrownEnding;
+};
 
 /** One declared note, bound to the image it belongs to. */
-type GalleryAddNoteAttempt = { type: "add-note"; change: AddNoteChange; ending: AddNoteEnding };
+type GalleryAddNoteAttempt = {
+  type: "add-note";
+  change: ImageAddNoteChange;
+  ending: ImageAddNoteResult | ThrownEnding;
+};
 
 /** One declared note removal. */
 type GalleryRemoveNoteAttempt = {
   type: "remove-note";
-  change: RemoveNoteChange;
-  ending: RemoveNoteEnding;
+  change: ImageRemoveNoteChange;
+  ending: ImageRemoveNoteResult | ThrownEnding;
 };
 
 /**
  * One gallery write attempt: the change the gallery declared where its fold
- * reads it, and the ending it observed. Each write carries only the endings it
- * can reach plus the throw, so the fold is total over these unions and has no
- * branch for an ending its write cannot produce.
+ * reads it, and the ending it observed. Each write's ending is the write path's
+ * own answer for that change kind, plus the throw (and, for an attach, the
+ * picker's answer), because the write path narrows the rest at its interface.
+ * The fold is therefore total and has no branch for an ending its write cannot
+ * produce, and needs no guard to tell the writes apart.
  */
 export type GalleryWriteAttempt =
   GalleryAttachAttempt | GalleryAddNoteAttempt | GalleryRemoveNoteAttempt;
-
-/** What one write answered: the write path's result, or the fact it threw. */
-export type GalleryWriteEnding = ImageWriteResult | ThrownEnding;
-
-/** Whether an ending is one an attach's own attempt union lists. */
-function isAttachEnding(ending: ImagePickResult | GalleryWriteEnding): ending is AttachEnding {
-  switch (ending.kind) {
-    case "cancelled":
-    case "denied":
-    case "stored":
-    case "design-missing":
-    case "thrown":
-      return true;
-    case "refused":
-      return ending.field === "images" || ending.field === "kind";
-    default:
-      return false;
-  }
-}
-
-/** Whether an ending is one an add-note's own attempt union lists. */
-function isAddNoteEnding(ending: GalleryWriteEnding): ending is AddNoteEnding {
-  switch (ending.kind) {
-    case "image-note-stored":
-    case "design-missing":
-    case "image-missing":
-    case "thrown":
-      return true;
-    case "refused":
-      return ending.field === "image-note";
-    default:
-      return false;
-  }
-}
-
-/** Whether an ending is one a remove-note's own attempt union lists. */
-function isRemoveNoteEnding(ending: GalleryWriteEnding): ending is RemoveNoteEnding {
-  switch (ending.kind) {
-    case "image-note-removed":
-    case "image-note-missing":
-    case "design-missing":
-    case "thrown":
-      return true;
-    default:
-      return false;
-  }
-}
-
-/**
- * The attempt one attach gesture made: the answer the pick or the write gave.
- * The picker's answer and the write path's one return union are both inputs to
- * one gesture, and neither can say that an attach reaches a structural ending
- * and a note does not, so the answer is checked against the attach's own union:
- * a matched one folds, and an ending the gesture cannot produce folds nothing.
- */
-export function attachAttempt(
-  answer: ImagePickResult | GalleryWriteEnding,
-): GalleryWriteAttempt | null {
-  return isAttachEnding(answer) ? { type: "attach", ending: answer } : null;
-}
-
-/**
- * The attempt one note write made: the change the gallery declared, and the
- * answer the write path gave. The write path's one return union cannot say that
- * an add-note reaches a note's endings and a removal a removal's, so each write
- * checks the ending against its own union: a matched one folds, and an ending
- * its write cannot produce folds nothing.
- */
-export function noteAttempt(
-  change: AddNoteChange | RemoveNoteChange,
-  ending: GalleryWriteEnding,
-): GalleryWriteAttempt | null {
-  if (change.kind === "add-note") {
-    return isAddNoteEnding(ending) ? { type: "add-note", change, ending } : null;
-  }
-
-  return isRemoveNoteEnding(ending) ? { type: "remove-note", change, ending } : null;
-}
 
 /**
  * What an attach owes: a cancel and a stored write say nothing — the live read
  * carries the landing, and a change of mind is not a failure — while a denial,
  * a refusal, a vanished Design row, and a throw all say the images did not land.
  */
-function attachOutcome(ending: AttachEnding): GalleryEvent[] {
+function attachOutcome({ ending }: GalleryAttachAttempt): GalleryEvent[] {
   switch (ending.kind) {
     case "cancelled":
     case "stored":
@@ -286,7 +186,7 @@ function attachOutcome(ending: AttachEnding): GalleryEvent[] {
  * the composer it was written in. A refusal, a missed row, and a throw owe
  * nothing, so the composer keeps the owner's words.
  */
-function addNoteOutcome(change: AddNoteChange, ending: AddNoteEnding): GalleryEvent[] {
+function addNoteOutcome({ change, ending }: GalleryAddNoteAttempt): GalleryEvent[] {
   switch (ending.kind) {
     case "image-note-stored":
       return [{ type: "image-note-added", imageId: change.imageId }];
@@ -303,7 +203,7 @@ function addNoteOutcome(change: AddNoteChange, ending: AddNoteEnding): GalleryEv
  * the row when the write lands, and a note still on screen simply stays, so the
  * owner is never shown an invented error.
  */
-function removeNoteOutcome(ending: RemoveNoteEnding): GalleryEvent[] {
+function removeNoteOutcome({ ending }: GalleryRemoveNoteAttempt): GalleryEvent[] {
   switch (ending.kind) {
     case "image-note-removed":
     case "image-note-missing":
@@ -323,11 +223,11 @@ function removeNoteOutcome(ending: RemoveNoteEnding): GalleryEvent[] {
 export function writeOutcome(attempt: GalleryWriteAttempt): GalleryEvent[] {
   switch (attempt.type) {
     case "attach":
-      return attachOutcome(attempt.ending);
+      return attachOutcome(attempt);
     case "add-note":
-      return addNoteOutcome(attempt.change, attempt.ending);
+      return addNoteOutcome(attempt);
     case "remove-note":
-      return removeNoteOutcome(attempt.ending);
+      return removeNoteOutcome(attempt);
   }
 }
 

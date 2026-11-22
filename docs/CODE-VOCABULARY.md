@@ -14,7 +14,7 @@ _Note_: the glossary's _Avoid_ on "outcome" is scoped to the Decision Event; the
 One write try as data: the declared write beside its observed ending.
 
 **ending**:
-How an attempt concluded. An attach ends in the picker's answer, the write's answer, or a thrown write; a note write ends in the write's answer or a thrown write. The union is narrowed per write, so the fold is total.
+How an attempt concluded. An attach ends in the picker's answer, the write path's own answer for an attach, or a thrown write; a note write ends in the write path's answer for its kind or a thrown write. The write path narrows its answer per change kind, so the fold adds only the throw (and, for an attach, the picker's answer) and is total.
 
 **effects**:
 What a reducer's result asks a runner to perform, carried beside the state it returns. The reducer declares; the runner performs.

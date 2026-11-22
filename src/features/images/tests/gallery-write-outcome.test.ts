@@ -1,10 +1,4 @@
-import {
-  attachAttempt,
-  noteAttempt,
-  writeOutcome,
-  type GalleryEvent,
-  type GalleryWriteAttempt,
-} from "../lib/gallery-reducer";
+import { writeOutcome, type GalleryEvent, type GalleryWriteAttempt } from "../lib/gallery-reducer";
 import type { Image, ImageNote } from "../lib/images";
 
 const DESIGN_ID = "design-silk-slip";
@@ -28,7 +22,12 @@ const NOTE: ImageNote = {
   createdAt: NOW,
 };
 
-/** The endings each write can reach, read off the attempt union itself. */
+/**
+ * The endings each write can reach, read off the attempt union: the write
+ * path's own answer for that change kind, plus the throw, plus the picker's
+ * answer for an attach. The write path narrows the rest at its interface, so
+ * the fold takes these endings directly and has no guard.
+ */
 type AttachEnding = Extract<GalleryWriteAttempt, { type: "attach" }>["ending"];
 type AddNoteEnding = Extract<GalleryWriteAttempt, { type: "add-note" }>["ending"];
 type RemoveNoteEnding = Extract<GalleryWriteAttempt, { type: "remove-note" }>["ending"];
@@ -151,74 +150,6 @@ const ROWS: readonly { name: string; attempt: GalleryWriteAttempt; events: Galle
 describe("a gallery write's ending", () => {
   test.each(ROWS)("$name", ({ attempt, events }) => {
     expect(writeOutcome(attempt)).toEqual(events);
-  });
-});
-
-describe("a note attempt's ending", () => {
-  const ADD_CHANGE = { kind: "add-note", imageId: IMAGE_ID, text: NOTE.text } as const;
-  const REMOVE_CHANGE = { kind: "remove-note", noteId: NOTE_ID } as const;
-
-  test("an ending its write cannot reach folds to nothing", () => {
-    expect(noteAttempt(ADD_CHANGE, { kind: "image-note-removed", note: NOTE })).toBeNull();
-    expect(noteAttempt(ADD_CHANGE, { kind: "image-note-missing", noteId: NOTE_ID })).toBeNull();
-    expect(noteAttempt(REMOVE_CHANGE, { kind: "image-note-stored", note: NOTE })).toBeNull();
-    expect(noteAttempt(REMOVE_CHANGE, { kind: "image-missing", imageId: IMAGE_ID })).toBeNull();
-  });
-
-  test("a refusal folds only when it names a field that write decides", () => {
-    expect(
-      noteAttempt(ADD_CHANGE, {
-        kind: "refused",
-        field: "images",
-        message: "Choose at least one image.",
-      }),
-    ).toBeNull();
-    expect(
-      noteAttempt(REMOVE_CHANGE, {
-        kind: "refused",
-        field: "image-note",
-        message: "A note has a cap.",
-      }),
-    ).toBeNull();
-  });
-
-  test("an ending its union lists gives the attempt to fold", () => {
-    expect(noteAttempt(ADD_CHANGE, { kind: "image-note-stored", note: NOTE })).toEqual({
-      type: "add-note",
-      change: ADD_CHANGE,
-      ending: { kind: "image-note-stored", note: NOTE },
-    });
-    expect(noteAttempt(REMOVE_CHANGE, { kind: "thrown" })).toEqual({
-      type: "remove-note",
-      change: REMOVE_CHANGE,
-      ending: { kind: "thrown" },
-    });
-  });
-});
-
-describe("an attach attempt's ending", () => {
-  test("an ending its gesture cannot reach folds to nothing", () => {
-    expect(attachAttempt({ kind: "image-note-stored", note: NOTE })).toBeNull();
-    expect(attachAttempt({ kind: "image-note-removed", note: NOTE })).toBeNull();
-    expect(attachAttempt({ kind: "image-missing", imageId: IMAGE_ID })).toBeNull();
-    expect(attachAttempt({ kind: "image-note-missing", noteId: NOTE_ID })).toBeNull();
-  });
-
-  test("a refusal folds only when it names a field the attach decides", () => {
-    expect(
-      attachAttempt({ kind: "refused", field: "image-note", message: "A note has a cap." }),
-    ).toBeNull();
-  });
-
-  test("an ending its union lists gives the attempt to fold", () => {
-    expect(attachAttempt({ kind: "cancelled" })).toEqual({
-      type: "attach",
-      ending: { kind: "cancelled" },
-    });
-    expect(attachAttempt({ kind: "thrown" })).toEqual({
-      type: "attach",
-      ending: { kind: "thrown" },
-    });
   });
 });
 

@@ -1,22 +1,19 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useDatabase, useLiveRead } from "@/features/database/react";
 import {
-  attachAttempt,
   createInitialGalleryState,
   galleryReducer,
   galleryView,
   imageNoteBlockView,
-  noteAttempt,
   writeOutcome,
   type GalleryEffect,
   type GalleryEvent,
   type GalleryFact,
   type GalleryStage,
-  type GalleryWriteEnding,
+  type GalleryWriteAttempt,
 } from "./gallery-reducer";
 import { imageNotesOf } from "./image-notes";
 import { useImagePicker } from "./image-picker-context";
-import type { ImagePickResult } from "./image-picker";
 import { coverOf, imageStages } from "./images";
 import { useImageStore } from "./image-store-context";
 import { designImagesRead, writeImages } from "./records";
@@ -44,9 +41,10 @@ function eventOf(fact: GalleryFact, stages: readonly GalleryStage[]): GalleryEve
  * The runner runs the reducer, performs each write it declares, and dispatches
  * the events that answer owes. The plus press declares one pick-and-attach, so
  * the runner opens the picker and attaches what it picked to the declared
- * stage. A pick or a write that throws is one ending like any other: the fold
- * says what it means, so this bridge carries no policy of its own. The notes'
- * writes need no Image store; they copy and release nothing.
+ * stage. Each attempt carries the write path's own answer for that change kind;
+ * a pick or a write that throws is one ending like any other, folded by the same
+ * rule, so this bridge carries no policy of its own. The notes' writes need no
+ * Image store; they copy and release nothing.
  */
 export function useGallery(designId: string) {
   const database = useDatabase();
@@ -66,53 +64,79 @@ export function useGallery(designId: string) {
       latest.current = result.state;
       setState(result.state);
 
+      const fold = (attempt: GalleryWriteAttempt) => {
+        for (const outcome of writeOutcome(attempt)) dispatch(outcome);
+      };
+
       const perform = async (effect: GalleryEffect) => {
-        if (effect.type === "attach-images") {
-          // No store or no picker means nothing can be picked or copied. That
-          // is an invariant about the providers above this surface, not an
-          // ending the owner sees, so it says nothing on the rail.
-          if (!store || !picker) return;
+        switch (effect.type) {
+          case "attach-images": {
+            // No store or no picker means nothing can be picked or copied. That
+            // is an invariant about the providers above this surface, not an
+            // ending the owner sees, so it says nothing on the rail.
+            if (!store || !picker) return;
 
-          let ending: ImagePickResult | GalleryWriteEnding;
+            try {
+              const picked = await picker.pick();
 
-          try {
-            const picked = await picker.pick();
+              if (picked.kind === "picked") {
+                const ending = await writeImages(database, store, effect.designId, {
+                  kind: "attach",
+                  images: picked.sourcePaths.map((sourcePath) => ({
+                    sourcePath,
+                    kind: effect.kind,
+                  })),
+                });
 
-            if (picked.kind === "picked") {
-              ending = await writeImages(database, store, effect.designId, {
-                kind: "attach",
-                images: picked.sourcePaths.map((sourcePath) => ({ sourcePath, kind: effect.kind })),
-              });
-            } else {
-              ending = picked;
+                fold({ type: "attach", ending });
+              } else {
+                fold({ type: "attach", ending: picked });
+              }
+            } catch {
+              // A pick or a copy that throws is the gesture's ending too, never
+              // an unhandled rejection behind the plus card.
+              fold({ type: "attach", ending: { kind: "thrown" } });
             }
-          } catch {
-            // A pick or a copy that throws is the gesture's ending too, never
-            // an unhandled rejection behind the plus card.
-            ending = { kind: "thrown" };
+
+            return;
           }
 
-          const attempt = attachAttempt(ending);
+          case "add-image-note": {
+            let attempt: GalleryWriteAttempt;
 
-          if (attempt) for (const outcome of writeOutcome(attempt)) dispatch(outcome);
+            try {
+              attempt = {
+                type: "add-note",
+                change: effect.change,
+                ending: await writeImages(database, null, effect.designId, effect.change),
+              };
+            } catch {
+              // A throw is the write's ending too: it still folds, so a failed
+              // note leaves the composer open exactly as a refusal does.
+              attempt = { type: "add-note", change: effect.change, ending: { kind: "thrown" } };
+            }
 
-          return;
+            fold(attempt);
+            return;
+          }
+
+          case "remove-image-note": {
+            let attempt: GalleryWriteAttempt;
+
+            try {
+              attempt = {
+                type: "remove-note",
+                change: effect.change,
+                ending: await writeImages(database, null, effect.designId, effect.change),
+              };
+            } catch {
+              attempt = { type: "remove-note", change: effect.change, ending: { kind: "thrown" } };
+            }
+
+            fold(attempt);
+            return;
+          }
         }
-
-        let ending: GalleryWriteEnding;
-        try {
-          ending = await writeImages(database, null, effect.designId, effect.change);
-        } catch {
-          // A throw is the write's ending too: it still folds, so a failed
-          // note leaves the composer open exactly as a refusal does.
-          ending = { kind: "thrown" };
-        }
-
-        const attempt = noteAttempt(effect.change, ending);
-
-        if (!attempt) return;
-
-        for (const outcome of writeOutcome(attempt)) dispatch(outcome);
       };
 
       for (const effect of result.effects) void perform(effect);

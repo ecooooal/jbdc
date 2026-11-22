@@ -3,7 +3,6 @@ import {
   createInitialGalleryState,
   galleryReducer,
   imageNoteBlockView,
-  noteAttempt,
   writeOutcome,
 } from "../lib/gallery-reducer";
 import { DESIGN_ID, journey, noNoteUI, onImage, send, stage } from "./gallery-reducer-fixtures";
@@ -241,12 +240,7 @@ describe("a refused or thrown note", () => {
     });
     if (effect.type !== "add-image-note") return;
 
-    const attempt = noteAttempt(effect.change, ending);
-
-    expect(attempt).not.toBeNull();
-    if (!attempt) return;
-
-    const events = writeOutcome(attempt);
+    const events = writeOutcome({ type: "add-note", change: effect.change, ending });
 
     expect(events).toEqual([]);
     for (const event of events) tester.send(event);
