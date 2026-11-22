@@ -11,10 +11,13 @@ import {
   createWoolCoat,
   database,
   missingSourceFile,
+  setupWritePathFixtures,
   sourceFile,
   store,
   storedFiles,
 } from "./write-path-fixtures";
+
+setupWritePathFixtures();
 
 describe("attaching images", () => {
   test("several at once is one action and records one image_change event", async () => {

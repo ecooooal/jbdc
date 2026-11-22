@@ -5,11 +5,14 @@ import {
   createWoolCoat,
   database,
   missingSourceFile,
+  setupWritePathFixtures,
   sourceFile,
   store,
   storeThatCannotRelease,
   storedFiles,
 } from "./write-path-fixtures";
+
+setupWritePathFixtures();
 
 test("a removal whose release is refused still stores", async () => {
   const designId = createWoolCoat();

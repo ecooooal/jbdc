@@ -1,9 +1,10 @@
 /**
- * Fixtures shared by the write path's test files. Every test gets a fresh
- * migrated database, a real temp Image store, and a scratch directory holding
- * the source files a pick would hand the write path. `database`, `store` and
- * `storeDirectory` are the live values for the test that is running; the rest
- * build what a write needs.
+ * Fixtures shared by the write path's two suites: `write-path` and
+ * `write-path-release`. Call `setupWritePathFixtures()` at the top of a suite to
+ * give every test a fresh migrated database, a real temp Image store, and a
+ * scratch directory holding the source files a pick would hand the write path.
+ * `database` and `store` are the live values for the test that is running; the
+ * rest build what a write needs.
  */
 import { mkdtempSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -17,24 +18,29 @@ import type { ImageStore } from "../lib/image-store";
 export let database: ReturnType<typeof createTempDatabase>["database"];
 /** The store this test's writes copy into. */
 export let store: ImageStore;
-/** The directory the store keeps its files in, so a suite can count them. */
-export let storeDirectory: string;
 
+let storeDirectory: string;
 let dispose: () => void;
 let disposeStore: () => void;
 let sourceDirectory: string;
 
-beforeEach(() => {
-  ({ database, dispose } = createTempDatabase());
-  sourceDirectory = mkdtempSync(join(tmpdir(), "jbdc-image-sources-"));
-  ({ store, directory: storeDirectory, dispose: disposeStore } = createTempImageStore());
-});
+/**
+ * Registers the per-test setup both write path suites need; call it once at the
+ * top of a suite.
+ */
+export function setupWritePathFixtures(): void {
+  beforeEach(() => {
+    ({ database, dispose } = createTempDatabase());
+    sourceDirectory = mkdtempSync(join(tmpdir(), "jbdc-image-sources-"));
+    ({ store, directory: storeDirectory, dispose: disposeStore } = createTempImageStore());
+  });
 
-afterEach(() => {
-  dispose();
-  disposeStore();
-  rmSync(sourceDirectory, { recursive: true, force: true });
-});
+  afterEach(() => {
+    dispose();
+    disposeStore();
+    rmSync(sourceDirectory, { recursive: true, force: true });
+  });
+}
 
 /** A source file on disk, the way a picked image arrives. */
 export function sourceFile(name: string, contents: string): string {
@@ -50,7 +56,11 @@ export function missingSourceFile(name: string): string {
   return join(sourceDirectory, name);
 }
 
-/** A store that copies for real and always refuses to release a file. */
+/**
+ * A store that copies for real and always refuses to release a file. The row
+ * write is the truth, so an unreleased file is the store's problem: no release
+ * may fail the write.
+ */
 export function storeThatCannotRelease(): ImageStore {
   return {
     copy: (sourcePath) => store.copy(sourcePath),
