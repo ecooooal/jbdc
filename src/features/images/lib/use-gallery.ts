@@ -42,9 +42,9 @@ function eventOf(fact: GalleryFact, stages: readonly GalleryStage[]): GalleryEve
  * the events that answer owes. The plus press declares one pick-and-attach, so
  * the runner opens the picker and attaches what it picked to the declared
  * stage. Each attempt carries the write path's own answer for that change kind;
- * a pick or a write that throws is one ending like any other, folded by the same
- * rule, so this bridge carries no policy of its own. The notes' writes need no
- * Image store; they copy and release nothing.
+ * the picker's answer is one ending like any other, folded by the same rule, so
+ * this bridge carries no policy and no catch of its own. The notes' writes need
+ * no Image store; they copy and release nothing.
  */
 export function useGallery(designId: string) {
   const database = useDatabase();
@@ -76,66 +76,40 @@ export function useGallery(designId: string) {
             // ending the owner sees, so it says nothing on the rail.
             if (!store || !picker) return;
 
-            try {
-              const picked = await picker.pick();
+            const picked = await picker.pick();
 
-              if (picked.kind === "picked") {
-                const ending = await writeImages(database, store, effect.designId, {
-                  kind: "attach",
-                  images: picked.sourcePaths.map((sourcePath) => ({
-                    sourcePath,
-                    kind: effect.kind,
-                  })),
-                });
+            if (picked.kind === "picked") {
+              const ending = await writeImages(database, store, effect.designId, {
+                kind: "attach",
+                images: picked.sourcePaths.map((sourcePath) => ({
+                  sourcePath,
+                  kind: effect.kind,
+                })),
+              });
 
-                fold({ type: "attach", ending });
-              } else {
-                fold({ type: "attach", ending: picked });
-              }
-            } catch {
-              // A pick or a copy that throws is the gesture's ending too, never
-              // an unhandled rejection behind the plus card.
-              fold({ type: "attach", ending: { kind: "thrown" } });
+              fold({ type: "attach", ending });
+            } else {
+              fold({ type: "attach", ending: picked });
             }
 
             return;
           }
 
-          case "add-image-note": {
-            let attempt: GalleryWriteAttempt;
-
-            try {
-              attempt = {
-                type: "add-note",
-                change: effect.change,
-                ending: await writeImages(database, null, effect.designId, effect.change),
-              };
-            } catch {
-              // A throw is the write's ending too: it still folds, so a failed
-              // note leaves the composer open exactly as a refusal does.
-              attempt = { type: "add-note", change: effect.change, ending: { kind: "thrown" } };
-            }
-
-            fold(attempt);
+          case "add-image-note":
+            fold({
+              type: "add-note",
+              change: effect.change,
+              ending: await writeImages(database, null, effect.designId, effect.change),
+            });
             return;
-          }
 
-          case "remove-image-note": {
-            let attempt: GalleryWriteAttempt;
-
-            try {
-              attempt = {
-                type: "remove-note",
-                change: effect.change,
-                ending: await writeImages(database, null, effect.designId, effect.change),
-              };
-            } catch {
-              attempt = { type: "remove-note", change: effect.change, ending: { kind: "thrown" } };
-            }
-
-            fold(attempt);
+          case "remove-image-note":
+            fold({
+              type: "remove-note",
+              change: effect.change,
+              ending: await writeImages(database, null, effect.designId, effect.change),
+            });
             return;
-          }
         }
       };
 

@@ -22,9 +22,6 @@ const NOTE_TEXT = "The collar sits high.";
 /** An id that is no row, so the write path answers the row-missing ending. */
 const MISSING_ID = "not-a-row";
 
-/** An ending only a throw produces: the runner catches it instead of a result. */
-type ThrownEnding = { kind: "thrown" };
-
 /** The picker's endings, which answer a press that never reached a write. */
 type PickEnding = Extract<ImagePickResult, { kind: "cancelled" } | { kind: "denied" }>;
 
@@ -87,8 +84,8 @@ afterEach(() => {
   rmSync(sourceDirectory, { recursive: true, force: true });
 });
 
-/** An attach whose ending came before any write: the picker answered, or the write threw. */
-function attachPicked(ending: PickEnding | ThrownEnding): GalleryWriteAttempt {
+/** An attach whose ending came before any write: the picker answered. */
+function attachPicked(ending: PickEnding): GalleryWriteAttempt {
   return { type: "attach", ending };
 }
 
@@ -96,13 +93,24 @@ function attachPicked(ending: PickEnding | ThrownEnding): GalleryWriteAttempt {
 async function attachWritten(
   change: ImageAttachChange,
   design = designId,
+  imageStore: ImageStore | null = store,
 ): Promise<GalleryWriteAttempt> {
-  const ending: ImageAttachResult = await writeImages(database, store, design, change, NOW);
+  const ending: ImageAttachResult = await writeImages(database, imageStore, design, change, NOW);
 
   return { type: "attach", ending };
 }
 
-/** One note declaration performed by the write path, ending read from its own add-note result. */
+/** A store that cannot read a picked file, so the write path answers store-failed. */
+function failingStore(): ImageStore {
+  return {
+    ...store,
+    async copy() {
+      throw new Error("unreadable picked file");
+    },
+  };
+}
+
+/** One declared note whose write landed, or answered a refusal. */
 async function addNoteWritten(
   change: ImageAddNoteChange,
   design = designId,
@@ -122,23 +130,13 @@ async function removeNoteWritten(
   return { type: "remove-note", change, ending };
 }
 
-/** One declared note whose write threw. */
-function addNoteThrown(change: ImageAddNoteChange): GalleryWriteAttempt {
-  return { type: "add-note", change, ending: { kind: "thrown" } };
-}
-
-/** One declared note removal whose write threw. */
-function removeNoteThrown(change: ImageRemoveNoteChange): GalleryWriteAttempt {
-  return { type: "remove-note", change, ending: { kind: "thrown" } };
-}
-
 /**
  * Every ending of every gallery write, each against exactly the events it owes.
  * The write path produces every ending it can reach, against a real temp
- * database and image store; only the picker's two answers and the throw are
- * hand-built, because no write produces them. The stored images and the Event
- * ride the live read, so only the notes' own landing and the attach's failure
- * have anything to say.
+ * database and image store; only the picker's two answers are hand-built,
+ * because no write produces them. The stored images and the Event ride the live
+ * read, so only the notes' own landing and the attach's failure have anything
+ * to say.
  */
 const ROWS: readonly {
   name: string;
@@ -184,8 +182,31 @@ const ROWS: readonly {
     events: () => [FAILED],
   },
   {
-    name: "an attach whose write threw owes one failed attach",
-    attempt: async () => attachPicked({ kind: "thrown" }),
+    name: "an attach whose copy failed owes one failed attach",
+    attempt: () =>
+      attachWritten(
+        {
+          kind: "attach",
+          images: [
+            { sourcePath: sourceFile("unreadable.jpg", "unreadable bytes"), kind: "sketch" },
+          ],
+        },
+        designId,
+        failingStore(),
+      ),
+    events: () => [FAILED],
+  },
+  {
+    name: "an attach with no store owes one failed attach",
+    attempt: () =>
+      attachWritten(
+        {
+          kind: "attach",
+          images: [{ sourcePath: sourceFile("stray.jpg", "stray bytes"), kind: "sketch" }],
+        },
+        designId,
+        null,
+      ),
     events: () => [FAILED],
   },
 
@@ -211,11 +232,6 @@ const ROWS: readonly {
     attempt: () => addNoteWritten({ kind: "add-note", imageId, text: NOTE_TEXT }, MISSING_ID),
     events: () => [],
   },
-  {
-    name: "a note whose write threw owes nothing",
-    attempt: async () => addNoteThrown({ kind: "add-note", imageId, text: NOTE_TEXT }),
-    events: () => [],
-  },
 
   // Remove-note: every ending owes nothing. The live read is the only answer.
   {
@@ -231,11 +247,6 @@ const ROWS: readonly {
   {
     name: "a removal whose Design row vanished owes nothing",
     attempt: () => removeNoteWritten({ kind: "remove-note", noteId }, MISSING_ID),
-    events: () => [],
-  },
-  {
-    name: "a removal whose write threw owes nothing",
-    attempt: async () => removeNoteThrown({ kind: "remove-note", noteId }),
     events: () => [],
   },
 ];

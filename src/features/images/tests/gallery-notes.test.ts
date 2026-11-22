@@ -217,14 +217,9 @@ describe("declaring a note write", () => {
   });
 });
 
-describe("a refused or thrown note", () => {
-  test.each([
-    {
-      ending: { kind: "refused", field: "image-note", message: "A note has a cap." },
-      name: "refused",
-    },
-    { ending: { kind: "thrown" }, name: "thrown" },
-  ] as const)("a $name note keeps the composer's words", ({ ending }) => {
+describe("a refused note", () => {
+  test("keeps the composer's words", () => {
+    const ending = { kind: "refused", field: "image-note", message: "A note has a cap." } as const;
     const tester = testerAt();
 
     tester.send({ type: "image-note-composer-opened" });

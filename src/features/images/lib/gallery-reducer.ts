@@ -129,36 +129,34 @@ export type GalleryFact =
 /** The picker's answer that picked no file: a change of mind, or a refused permission. */
 type PickEnding = Extract<ImagePickResult, { kind: "cancelled" } | { kind: "denied" }>;
 
-/** The ending a write gives instead of a result: it threw. */
-type ThrownEnding = { kind: "thrown" };
-
-/** One attempt to attach: the picker's answer, the write's own answer for an attach, or a throw. */
+/** One attempt to attach: the picker's answer, or the write's own answer for an attach. */
 type GalleryAttachAttempt = {
   type: "attach";
-  ending: PickEnding | ImageAttachResult | ThrownEnding;
+  ending: PickEnding | ImageAttachResult;
 };
 
 /** One declared note, bound to the image it belongs to. */
 type GalleryAddNoteAttempt = {
   type: "add-note";
   change: ImageAddNoteChange;
-  ending: ImageAddNoteResult | ThrownEnding;
+  ending: ImageAddNoteResult;
 };
 
 /** One declared note removal. */
 type GalleryRemoveNoteAttempt = {
   type: "remove-note";
   change: ImageRemoveNoteChange;
-  ending: ImageRemoveNoteResult | ThrownEnding;
+  ending: ImageRemoveNoteResult;
 };
 
 /**
  * One gallery write attempt: the change the gallery declared where its fold
  * reads it, and the ending it observed. Each write's ending is the write path's
- * own answer for that change kind, plus the throw (and, for an attach, the
- * picker's answer), because the write path narrows the rest at its interface.
- * The fold is therefore total and has no branch for an ending its write cannot
- * produce, and needs no guard to tell the writes apart.
+ * own answer for that change kind, plus the picker's answer for an attach,
+ * because the write path narrows the rest at its interface and answers a failed
+ * store instead of throwing. The fold is therefore total and has no branch for
+ * an ending its write cannot produce, and needs no guard to tell the writes
+ * apart.
  */
 export type GalleryWriteAttempt =
   GalleryAttachAttempt | GalleryAddNoteAttempt | GalleryRemoveNoteAttempt;
@@ -166,8 +164,8 @@ export type GalleryWriteAttempt =
 /**
  * What an attach owes: a cancel and a stored write say nothing — the live read
  * carries the landing, and a change of mind is not a failure — while a denial,
- * a refusal, a vanished Design row, a store that could not take the file, and a
- * throw all say the images did not land.
+ * a refusal, a vanished Design row, and a store that could not take the file
+ * all say the images did not land.
  */
 function attachOutcome({ ending }: GalleryAttachAttempt): GalleryEvent[] {
   switch (ending.kind) {
@@ -178,15 +176,14 @@ function attachOutcome({ ending }: GalleryAttachAttempt): GalleryEvent[] {
     case "refused":
     case "design-missing":
     case "store-failed":
-    case "thrown":
       return [{ type: "attach-failed" }];
   }
 }
 
 /**
  * What an add-note owes: only the stored note is an event, and its rule closes
- * the composer it was written in. A refusal, a missed row, and a throw owe
- * nothing, so the composer keeps the owner's words.
+ * the composer it was written in. A refusal and a missed row owe nothing, so
+ * the composer keeps the owner's words.
  */
 function addNoteOutcome({ change, ending }: GalleryAddNoteAttempt): GalleryEvent[] {
   switch (ending.kind) {
@@ -195,7 +192,6 @@ function addNoteOutcome({ change, ending }: GalleryAddNoteAttempt): GalleryEvent
     case "refused":
     case "design-missing":
     case "image-missing":
-    case "thrown":
       return [];
   }
 }
@@ -210,7 +206,6 @@ function removeNoteOutcome({ ending }: GalleryRemoveNoteAttempt): GalleryEvent[]
     case "image-note-removed":
     case "image-note-missing":
     case "design-missing":
-    case "thrown":
       return [];
   }
 }
@@ -465,7 +460,7 @@ export function galleryReducer(state: GalleryState, event: GalleryEvent): Galler
 
     case "image-note-save-pressed":
       // The composer stays open until the stored note's own event closes it, so
-      // a refusal or a thrown write keeps the owner's words.
+      // a refusal keeps the owner's words.
       return state.imageNoteComposer
         ? {
             state,

@@ -119,7 +119,7 @@ test("the plus card attaches the picked files to the stage the owner chose", asy
   ]);
 });
 
-test("a copy that throws leaves the stage unchanged and says so", async () => {
+test("a copy that fails leaves the stage unchanged and says so", async () => {
   const design = createDesign(database, { name: "Wool coat" });
   const sourcePath = join(sourceDirectory, "front.jpg");
   const failing: ImageStore = {
