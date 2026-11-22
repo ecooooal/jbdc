@@ -1,4 +1,5 @@
 import {
+  attachAttempt,
   noteAttempt,
   writeOutcome,
   type GalleryEvent,
@@ -34,14 +35,7 @@ type RemoveNoteEnding = Extract<GalleryWriteAttempt, { type: "remove-note" }>["e
 
 /** One attach of one file to the stage the gallery shows. */
 function attach(ending: AttachEnding): GalleryWriteAttempt {
-  return {
-    type: "attach",
-    change: {
-      kind: "attach",
-      images: [{ sourcePath: "/tmp/opencode/sketch.jpg", kind: "sketch" }],
-    },
-    ending,
-  };
+  return { type: "attach", ending };
 }
 
 /** One note declared for the image the composer was opened on. */
@@ -202,6 +196,32 @@ describe("a note attempt's ending", () => {
   });
 });
 
+describe("an attach attempt's ending", () => {
+  test("an ending its gesture cannot reach folds to nothing", () => {
+    expect(attachAttempt({ kind: "image-note-stored", note: NOTE })).toBeNull();
+    expect(attachAttempt({ kind: "image-note-removed", note: NOTE })).toBeNull();
+    expect(attachAttempt({ kind: "image-missing", imageId: IMAGE_ID })).toBeNull();
+    expect(attachAttempt({ kind: "image-note-missing", noteId: NOTE_ID })).toBeNull();
+  });
+
+  test("a refusal folds only when it names a field the attach decides", () => {
+    expect(
+      attachAttempt({ kind: "refused", field: "image-note", message: "A note has a cap." }),
+    ).toBeNull();
+  });
+
+  test("an ending its union lists gives the attempt to fold", () => {
+    expect(attachAttempt({ kind: "cancelled" })).toEqual({
+      type: "attach",
+      ending: { kind: "cancelled" },
+    });
+    expect(attachAttempt({ kind: "thrown" })).toEqual({
+      type: "attach",
+      ending: { kind: "thrown" },
+    });
+  });
+});
+
 describe("a gallery write's refusal", () => {
   test("neither write admits the other's refusal", () => {
     // The compile is the assertion: each directive fails `pnpm typecheck` the
@@ -210,10 +230,6 @@ describe("a gallery write's refusal", () => {
     // @ts-expect-error an attach cannot answer with a note's refusal
     const attachWithNoteRefusal: GalleryWriteAttempt = {
       type: "attach",
-      change: {
-        kind: "attach",
-        images: [{ sourcePath: "/tmp/opencode/sketch.jpg", kind: "sketch" }],
-      },
       ending: { kind: "refused", field: "image-note", message: "A note has a cap." },
     };
     // @ts-expect-error a note cannot answer with a structural refusal

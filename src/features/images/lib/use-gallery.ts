@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useDatabase, useLiveRead } from "@/features/database/react";
 import {
+  attachAttempt,
   createInitialGalleryState,
   galleryReducer,
   galleryView,
@@ -13,23 +14,31 @@ import {
   type GalleryWriteEnding,
 } from "./gallery-reducer";
 import { imageNotesOf } from "./image-notes";
+import { useImagePicker } from "./image-picker-context";
+import type { ImagePickResult } from "./image-picker";
 import { coverOf, imageStages } from "./images";
+import { useImageStore } from "./image-store-context";
 import { designImagesRead, writeImages } from "./records";
 
 /**
  * The Detail gallery: the Design's images and their notes live read feeding
  * the gallery reducer. The read declares the tables it watches, so an attach,
  * remove, reclassify, or note write re-runs it, and the reducer keeps the
- * selection or falls back to the Cover. Every gesture carries the journey it
- * happened against, because a pure reducer cannot read the catalog.
+ * selection or falls back to the Cover. A gesture carries the journey it
+ * happened against when a rule needs it, because a pure reducer cannot read the
+ * catalog.
  *
  * The runner runs the reducer, performs each write it declares, and dispatches
- * the events that answer owes. A write that throws is one ending like any
- * other: the fold says what it means, so this bridge carries no policy of its
- * own. The notes' writes need no Image store; they copy and release nothing.
+ * the events that answer owes. The plus press declares one pick-and-attach, so
+ * the runner opens the picker and attaches what it picked to the declared
+ * stage. A pick or a write that throws is one ending like any other: the fold
+ * says what it means, so this bridge carries no policy of its own. The notes'
+ * writes need no Image store; they copy and release nothing.
  */
 export function useGallery(designId: string) {
   const database = useDatabase();
+  const store = useImageStore();
+  const picker = useImagePicker();
   const declaration = useMemo(() => designImagesRead(designId), [designId]);
   const { data, error, status } = useLiveRead(declaration);
   const stages = useMemo(() => imageStages(data.images), [data.images]);
@@ -45,9 +54,37 @@ export function useGallery(designId: string) {
       setState(result.state);
 
       const perform = async (effect: GalleryEffect) => {
-        // The plus press's pick joins the runner in the next step; this step
-        // only declares it.
-        if (effect.type === "attach-images") return;
+        if (effect.type === "attach-images") {
+          // No store or no picker means nothing can be picked or copied. That
+          // is an invariant about the providers above this surface, not an
+          // ending the owner sees, so it says nothing on the rail.
+          if (!store || !picker) return;
+
+          let ending: ImagePickResult | GalleryWriteEnding;
+
+          try {
+            const picked = await picker.pick();
+
+            if (picked.kind === "picked") {
+              ending = await writeImages(database, store, effect.designId, {
+                kind: "attach",
+                images: picked.sourcePaths.map((sourcePath) => ({ sourcePath, kind: effect.kind })),
+              });
+            } else {
+              ending = picked;
+            }
+          } catch {
+            // A pick or a copy that throws is the gesture's ending too, never
+            // an unhandled rejection behind the plus card.
+            ending = { kind: "thrown" };
+          }
+
+          const attempt = attachAttempt(ending);
+
+          if (attempt) for (const outcome of writeOutcome(attempt)) dispatch(outcome);
+
+          return;
+        }
 
         let ending: GalleryWriteEnding;
         try {
@@ -67,7 +104,7 @@ export function useGallery(designId: string) {
 
       for (const effect of result.effects) void perform(effect);
     },
-    [database],
+    [database, picker, store],
   );
 
   useEffect(() => {

@@ -1,7 +1,6 @@
 import { View } from "react-native";
 import { Text } from "@/shared/components/ui/text";
 import { imageNotesOf } from "../lib/image-notes";
-import { useAttachImages } from "../lib/use-attach-images";
 import { useGallery } from "../lib/use-gallery";
 import { useImageViewer } from "../lib/use-image-viewer";
 import { GalleryHero } from "./gallery-hero";
@@ -22,7 +21,6 @@ import { JourneyRail } from "./journey-rail";
 export function DesignGallery({ designId }: { designId: string }) {
   const { state, stages, images, imageNotes, view, noteView, send, dispatch, error, status } =
     useGallery(designId);
-  const attach = useAttachImages(designId, state.kind, dispatch);
   const viewer = useImageViewer(designId);
   const viewed = viewer.state.imageId
     ? (images.find((image) => image.id === viewer.state.imageId) ?? null)
@@ -58,7 +56,7 @@ export function DesignGallery({ designId }: { designId: string }) {
         attachFailed={state.attachFailed}
         onStagePress={(kind) => send({ type: "stage-pressed", kind })}
         onImagePress={(imageId) => send({ type: "image-pressed", imageId })}
-        onAddPress={() => void attach()}
+        onAddPress={() => dispatch({ type: "attach-pressed" })}
       />
 
       {viewed ? (

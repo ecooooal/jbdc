@@ -108,7 +108,6 @@ export type GalleryEvent =
   | (GalleryGesture & { stages: readonly GalleryStage[] });
 
 /** The change one attempt declares, narrowed from the write path's one union. */
-type AttachChange = Extract<ImageChange, { kind: "attach" }>;
 type AddNoteChange = Extract<ImageChange, { kind: "add-note" }>;
 type RemoveNoteChange = Extract<ImageChange, { kind: "remove-note" }>;
 
@@ -151,8 +150,8 @@ type RemoveNoteEnding =
     >
   | ThrownEnding;
 
-/** One declared attach: the change, and every ending the gesture can reach. */
-type GalleryAttachAttempt = { type: "attach"; change: AttachChange; ending: AttachEnding };
+/** One attempt to attach: every ending the pick or the write can give. */
+type GalleryAttachAttempt = { type: "attach"; ending: AttachEnding };
 
 /** One declared note, bound to the image it belongs to. */
 type GalleryAddNoteAttempt = { type: "add-note"; change: AddNoteChange; ending: AddNoteEnding };
@@ -165,16 +164,32 @@ type GalleryRemoveNoteAttempt = {
 };
 
 /**
- * One gallery write attempt: the change the gallery declared and the ending it
- * observed. Each write carries only the endings it can reach plus the throw, so
- * the fold is total over these unions and has no branch for an ending its write
- * cannot produce.
+ * One gallery write attempt: the change the gallery declared where its fold
+ * reads it, and the ending it observed. Each write carries only the endings it
+ * can reach plus the throw, so the fold is total over these unions and has no
+ * branch for an ending its write cannot produce.
  */
 export type GalleryWriteAttempt =
   GalleryAttachAttempt | GalleryAddNoteAttempt | GalleryRemoveNoteAttempt;
 
 /** What one write answered: the write path's result, or the fact it threw. */
 export type GalleryWriteEnding = ImageWriteResult | ThrownEnding;
+
+/** Whether an ending is one an attach's own attempt union lists. */
+function isAttachEnding(ending: ImagePickResult | GalleryWriteEnding): ending is AttachEnding {
+  switch (ending.kind) {
+    case "cancelled":
+    case "denied":
+    case "stored":
+    case "design-missing":
+    case "thrown":
+      return true;
+    case "refused":
+      return ending.field === "images" || ending.field === "kind";
+    default:
+      return false;
+  }
+}
 
 /** Whether an ending is one an add-note's own attempt union lists. */
 function isAddNoteEnding(ending: GalleryWriteEnding): ending is AddNoteEnding {
@@ -202,6 +217,19 @@ function isRemoveNoteEnding(ending: GalleryWriteEnding): ending is RemoveNoteEnd
     default:
       return false;
   }
+}
+
+/**
+ * The attempt one attach gesture made: the answer the pick or the write gave.
+ * The picker's answer and the write path's one return union are both inputs to
+ * one gesture, and neither can say that an attach reaches a structural ending
+ * and a note does not, so the answer is checked against the attach's own union:
+ * a matched one folds, and an ending the gesture cannot produce folds nothing.
+ */
+export function attachAttempt(
+  answer: ImagePickResult | GalleryWriteEnding,
+): GalleryWriteAttempt | null {
+  return isAttachEnding(answer) ? { type: "attach", ending: answer } : null;
 }
 
 /**
