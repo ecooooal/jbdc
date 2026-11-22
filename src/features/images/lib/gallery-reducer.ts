@@ -38,6 +38,8 @@ export type ImageNoteComposer = {
  * rows.
  */
 export type GalleryState = {
+  /** The Design this gallery shows; every effect names it. */
+  designId: string;
   kind: ImageKind;
   imageId: string | null;
   /**
@@ -64,11 +66,12 @@ export type GalleryState = {
 /**
  * The writes the gallery asks for, as data for its thin runner. A note is
  * declared where the state that names it lives: the composer holds its image
- * and words, and a note row holds its id.
+ * and words, and a note row holds its id. The Design and the change ride the
+ * effect, so the runner calls the write path without building anything itself.
  */
 export type GalleryEffect =
-  | { type: "add-image-note"; imageId: string; text: string }
-  | { type: "remove-image-note"; noteId: string };
+  | { type: "add-image-note"; designId: string; change: AddNoteChange }
+  | { type: "remove-image-note"; designId: string; change: RemoveNoteChange };
 
 /** What one gallery event settled and the writes it asked for. */
 export type GalleryResult = {
@@ -169,22 +172,50 @@ export type GalleryWriteAttempt =
 /** What one write answered: the write path's result, or the fact it threw. */
 export type GalleryWriteEnding = ImageWriteResult | ThrownEnding;
 
+/** Whether an ending is one an add-note's own attempt union lists. */
+function isAddNoteEnding(ending: GalleryWriteEnding): ending is AddNoteEnding {
+  switch (ending.kind) {
+    case "image-note-stored":
+    case "design-missing":
+    case "image-missing":
+    case "thrown":
+      return true;
+    case "refused":
+      return ending.field === "image-note";
+    default:
+      return false;
+  }
+}
+
+/** Whether an ending is one a remove-note's own attempt union lists. */
+function isRemoveNoteEnding(ending: GalleryWriteEnding): ending is RemoveNoteEnding {
+  switch (ending.kind) {
+    case "image-note-removed":
+    case "image-note-missing":
+    case "design-missing":
+    case "thrown":
+      return true;
+    default:
+      return false;
+  }
+}
+
 /**
  * The attempt one note write made: the change the gallery declared, and the
  * answer the write path gave. The write path's one return union cannot say that
- * an add-note reaches a note's endings and a removal a removal's; the change
- * names which write ran, so the narrowed union is restored here where the fold
- * reads it.
+ * an add-note reaches a note's endings and a removal a removal's, so each write
+ * checks the ending against its own union: a matched one folds, and an ending
+ * its write cannot produce folds nothing.
  */
 export function noteAttempt(
   change: AddNoteChange | RemoveNoteChange,
   ending: GalleryWriteEnding,
-): GalleryWriteAttempt {
-  return (
-    change.kind === "add-note"
-      ? { type: "add-note", change, ending }
-      : { type: "remove-note", change, ending }
-  ) as GalleryWriteAttempt;
+): GalleryWriteAttempt | null {
+  if (change.kind === "add-note") {
+    return isAddNoteEnding(ending) ? { type: "add-note", change, ending } : null;
+  }
+
+  return isRemoveNoteEnding(ending) ? { type: "remove-note", change, ending } : null;
 }
 
 /**
@@ -260,8 +291,9 @@ export function writeOutcome(attempt: GalleryWriteAttempt): GalleryEvent[] {
  * strongest stage. The read replaces this at once with the Cover's stage,
  * unless the owner has chosen an empty stage in the meantime.
  */
-export function createInitialGalleryState(): GalleryState {
+export function createInitialGalleryState(designId: string): GalleryState {
   return {
+    designId,
     kind: "final",
     imageId: null,
     awaitingKind: null,
@@ -487,8 +519,12 @@ export function galleryReducer(state: GalleryState, event: GalleryEvent): Galler
             effects: [
               {
                 type: "add-image-note",
-                imageId: state.imageNoteComposer.imageId,
-                text: state.imageNoteComposer.draft,
+                designId: state.designId,
+                change: {
+                  kind: "add-note",
+                  imageId: state.imageNoteComposer.imageId,
+                  text: state.imageNoteComposer.draft,
+                },
               },
             ],
           }
@@ -496,7 +532,16 @@ export function galleryReducer(state: GalleryState, event: GalleryEvent): Galler
 
     case "image-note-delete-pressed":
       // The row's id is the whole request; the live read is the only answer.
-      return { state, effects: [{ type: "remove-image-note", noteId: event.noteId }] };
+      return {
+        state,
+        effects: [
+          {
+            type: "remove-image-note",
+            designId: state.designId,
+            change: { kind: "remove-note", noteId: event.noteId },
+          },
+        ],
+      };
 
     case "image-note-added": {
       // The note landed on the image the composer was opened for. A read that

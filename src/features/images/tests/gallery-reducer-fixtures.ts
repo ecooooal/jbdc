@@ -9,9 +9,13 @@ import {
   createInitialGalleryState,
   galleryReducer,
   type GalleryEvent,
+  type GalleryResult,
   type GalleryStage,
   type GalleryState,
 } from "../lib/gallery-reducer";
+
+/** The Design every fixture gallery shows. */
+export const DESIGN_ID = "design-silk-slip";
 
 /** One stage, its images oldest first. */
 export function stage(kind: ImageKind, ...ids: string[]): GalleryStage {
@@ -28,9 +32,19 @@ export function journey(): GalleryStage[] {
   ];
 }
 
-/** Drives the reducer with the sequence of events and answers the state it settled on. */
-export function send(state: GalleryState, ...events: GalleryEvent[]): GalleryState {
-  return events.reduce((current, event) => galleryReducer(current, event).state, state);
+/**
+ * Drives the reducer with the sequence of events and answers the state it
+ * settled on along with every effect the events declared.
+ */
+export function send(state: GalleryState, ...events: GalleryEvent[]): GalleryResult {
+  return events.reduce<GalleryResult>(
+    (result, event) => {
+      const next = galleryReducer(result.state, event);
+
+      return { state: next.state, effects: [...result.effects, ...next.effects] };
+    },
+    { state, effects: [] },
+  );
 }
 
 /** A gallery state's note UI before the owner opens anything. */
@@ -38,5 +52,5 @@ export const noNoteUI = { imageNoteComposer: null, imageNotesExpanded: false };
 
 /** A gallery looking at one image, with nothing else settled yet. */
 export function onImage(imageId: string, kind: ImageKind = "sketch"): GalleryState {
-  return { ...createInitialGalleryState(), kind, imageId };
+  return { ...createInitialGalleryState(DESIGN_ID), kind, imageId };
 }

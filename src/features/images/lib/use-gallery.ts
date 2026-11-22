@@ -34,7 +34,7 @@ export function useGallery(designId: string) {
   const { data, error, status } = useLiveRead(declaration);
   const stages = useMemo(() => imageStages(data.images), [data.images]);
   const cover = useMemo(() => coverOf(data.images)?.id ?? null, [data.images]);
-  const [state, setState] = useState(createInitialGalleryState);
+  const [state, setState] = useState(() => createInitialGalleryState(designId));
   const latest = useRef(state);
 
   const dispatch = useCallback(
@@ -45,26 +45,25 @@ export function useGallery(designId: string) {
       setState(result.state);
 
       const perform = async (effect: GalleryEffect) => {
-        const change =
-          effect.type === "add-image-note"
-            ? ({ kind: "add-note", imageId: effect.imageId, text: effect.text } as const)
-            : ({ kind: "remove-note", noteId: effect.noteId } as const);
-
         let ending: GalleryWriteEnding;
         try {
-          ending = await writeImages(database, null, designId, change);
+          ending = await writeImages(database, null, effect.designId, effect.change);
         } catch {
           // A throw is the write's ending too: it still folds, so a failed
           // note leaves the composer open exactly as a refusal does.
           ending = { kind: "thrown" };
         }
 
-        for (const outcome of writeOutcome(noteAttempt(change, ending))) dispatch(outcome);
+        const attempt = noteAttempt(effect.change, ending);
+
+        if (!attempt) return;
+
+        for (const outcome of writeOutcome(attempt)) dispatch(outcome);
       };
 
       for (const effect of result.effects) void perform(effect);
     },
-    [database, designId],
+    [database],
   );
 
   useEffect(() => {
