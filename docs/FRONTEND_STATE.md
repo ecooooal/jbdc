@@ -26,14 +26,14 @@ One file per **surface**, not per feature: two screens that do not share a state
 
 Start with `useReducer` from React. Most surfaces here need no effect runner at all: `expo-sqlite` writes are synchronous and `useLiveRead` already pushes read results in. Declare effects as data only when a surface has async work whose order or outcome is a decision.
 
-Do not take a dependency for it. There is no maintained effect-reducer package for React 19; if the need is real, vendor a small hook beside the surface that uses it, with its own tests.
+Do not take a dependency for it. There is no maintained effect-reducer package for React 19: one shared runner at `src/shared/hooks/use-reducer-runner.ts` runs the visit, the gallery and the viewer, each keeping only a perform body. It carries its own test.
 
 The rules:
 
 1. **One reducer per surface**, exporting `<Surface>State`, `<Surface>Event`, `<Surface>Effect` and `createInitial<Surface>State()`. No React import.
 2. **Events are facts, not commands.** An event says what happened outside the reducer; it never says what state to set. A gesture is named after the gesture (`press-delete`, `edit-opened`), something the world reports is past tense (`design-saved`, `save-failed`, `app-backgrounded`). Names are kebab-case. A setter event such as `set-saving`, `set-modal-open` or `UPDATE_PROGRESS` is not allowed, because the caller would already have decided what changes. A fact is never forged to borrow a neighbouring rule: when a caller needs a slice's rule for its own field, the slice exports the rule as a pure helper (`clearInlineRefusal` is the shape), not a fact to re-dispatch.
 3. **Effects are commands, and they are data.** Name them with an imperative verb (`commit-edit`, `archive-designs`) and put everything the handler needs on the effect object. A handler never reaches into props or closures for its input. That is what makes the effect worth asserting on.
-4. **The runner is thin.** Each handler makes one call and dispatches the outcome as an event. It contains no `if` about what to do next: that is the reducer's decision, made when it handles the outcome. A handler may return a cleanup function.
+4. **The runner is thin.** Each handler makes one call and dispatches the outcome as an event. It contains no `if` about what to do next: that is the reducer's decision, made when it handles the outcome. The shared runner discards a performer's return, so a performer returns nothing today.
 5. **The reducer never reads the clock, randomness, dimensions or device state.** Put the value on the event, e.g. `{ type: "edit-closed", now: Date.now() }`. That is how coalescing and timing become deterministic.
 6. **Derived rules are selectors**, pure functions of state. Do not copy them into state and do not duplicate them in a component. Presentation-only formatting may stay in render.
 7. **A `useEffect` in a component only bridges to the outside world.** It subscribes and dispatches what it hears; it does not set local state and it does not decide anything. `DatabaseProvider` closing the handle on unmount is the shape.
@@ -83,7 +83,7 @@ Two layers. The rule is which layer gets what.
 
 - It covers what a reducer test cannot reach: a gesture dispatches the right event, a state looks the way the user sees it (accessible name, disabled, visible), a bridge subscribes and unsubscribes, a screen navigates.
 - It does not cover a transition. If a scenario can be driven by sending events to the reducer, it belongs there. Awaiting `act` flushes every pending update, so a rendered test cannot see transient states a reducer test can.
-- `renderHook` is for bridge hooks (rule 7): assert that a subscription dispatches what it hears and cleans up on unmount.
+- `renderHook` is for bridge hooks (rule 7) and the shared runner: assert that a subscription dispatches what it hears and cleans up on unmount, and that the runner performs declared effects against the state the previous event produced — the effect loop exists only in React, so it is tested by rendering.
 - Prefer `getByRole`, then accessible name and placeholder; `getByTestId` is the last resort. Prefer `userEvent` over `fireEvent`. The Jest matchers extend on import; no setup file is needed.
 - Do not mock the port or the driver. `@/features/database/testing` opens a real temporary database and supplies `createSyncSubscribe()`, whose `notify(table)` fires the listeners watching that table. A screen test that needs the catalogue passes a temp `database` and that adapter's `subscribe` to `DatabaseProvider` — the seam is the provider, not a mock of it. `src/features/designs/tests/new-design-form.test.tsx` is the first such test.
 - A native `Select` does not open in Jest. `@rn-primitives/select` positions its portal from the trigger's `measure` callback, which RNTL never fires. Test the picker's rule at the records/reducer seam; to cover trigger wiring, fire the `onValueChange` handler directly.
