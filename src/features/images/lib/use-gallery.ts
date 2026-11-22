@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import { useDatabase, useLiveRead } from "@/features/database/react";
+import { useReducerRunner } from "@/shared/hooks/use-reducer-runner";
 import {
   createInitialGalleryState,
   galleryReducer,
@@ -38,13 +39,12 @@ function eventOf(fact: GalleryFact, stages: readonly GalleryStage[]): GalleryEve
  * one door — `send` — which carries the journey a gesture happened against,
  * because a pure reducer cannot read the catalog.
  *
- * The runner runs the reducer, performs each write it declares, and dispatches
- * the events that answer owes. The plus press declares one pick-and-attach, so
- * the runner opens the picker and attaches what it picked to the declared
- * stage. Each attempt carries the write path's own answer for that change kind;
- * the picker's answer is one ending like any other, folded by the same rule, so
- * this bridge carries no policy and no catch of its own. The notes' writes need
- * no Image store; they copy and release nothing.
+ * The plus press declares one pick-and-attach, so the perform body opens the
+ * picker and attaches what it picked to the declared stage. Each attempt
+ * carries the write path's own answer for that change kind; the picker's
+ * answer is one ending like any other, folded by the same rule, so this bridge
+ * carries no policy and no catch of its own. The notes' writes need no Image
+ * store; they copy and release nothing.
  */
 export function useGallery(designId: string) {
   const database = useDatabase();
@@ -54,68 +54,63 @@ export function useGallery(designId: string) {
   const { data, error, status } = useLiveRead(declaration);
   const stages = useMemo(() => imageStages(data.images), [data.images]);
   const cover = useMemo(() => coverOf(data.images)?.id ?? null, [data.images]);
-  const [state, setState] = useState(() => createInitialGalleryState(designId));
-  const latest = useRef(state);
 
-  const dispatch = useCallback(
-    function dispatch(event: GalleryEvent) {
-      const result = galleryReducer(latest.current, event);
-
-      latest.current = result.state;
-      setState(result.state);
-
+  const perform = useCallback(
+    async (effect: GalleryEffect, dispatch: (event: GalleryEvent) => void) => {
       const fold = (attempt: GalleryWriteAttempt) => {
         for (const outcome of writeOutcome(attempt)) dispatch(outcome);
       };
 
-      const perform = async (effect: GalleryEffect) => {
-        switch (effect.type) {
-          case "attach-images": {
-            // No store or no picker means nothing can be picked or copied. That
-            // is an invariant about the providers above this surface, not an
-            // ending the owner sees, so it says nothing on the rail.
-            if (!store || !picker) return;
+      switch (effect.type) {
+        case "attach-images": {
+          // No store or no picker means nothing can be picked or copied. That
+          // is an invariant about the providers above this surface, not an
+          // ending the owner sees, so it says nothing on the rail.
+          if (!store || !picker) return;
 
-            const picked = await picker.pick();
+          const picked = await picker.pick();
 
-            if (picked.kind === "picked") {
-              const ending = await writeImages(database, store, effect.designId, {
-                kind: "attach",
-                images: picked.sourcePaths.map((sourcePath) => ({
-                  sourcePath,
-                  kind: effect.kind,
-                })),
-              });
+          if (picked.kind === "picked") {
+            const ending = await writeImages(database, store, effect.designId, {
+              kind: "attach",
+              images: picked.sourcePaths.map((sourcePath) => ({
+                sourcePath,
+                kind: effect.kind,
+              })),
+            });
 
-              fold({ type: "attach", ending });
-            } else {
-              fold({ type: "attach", ending: picked });
-            }
-
-            return;
+            fold({ type: "attach", ending });
+          } else {
+            fold({ type: "attach", ending: picked });
           }
 
-          case "add-image-note":
-            fold({
-              type: "add-note",
-              change: effect.change,
-              ending: await writeImages(database, null, effect.designId, effect.change),
-            });
-            return;
-
-          case "remove-image-note":
-            fold({
-              type: "remove-note",
-              change: effect.change,
-              ending: await writeImages(database, null, effect.designId, effect.change),
-            });
-            return;
+          return;
         }
-      };
 
-      for (const effect of result.effects) void perform(effect);
+        case "add-image-note":
+          fold({
+            type: "add-note",
+            change: effect.change,
+            ending: await writeImages(database, null, effect.designId, effect.change),
+          });
+          return;
+
+        case "remove-image-note":
+          fold({
+            type: "remove-note",
+            change: effect.change,
+            ending: await writeImages(database, null, effect.designId, effect.change),
+          });
+          return;
+      }
     },
     [database, picker, store],
+  );
+
+  const [state, dispatch] = useReducerRunner(
+    galleryReducer,
+    () => createInitialGalleryState(designId),
+    perform,
   );
 
   useEffect(() => {
