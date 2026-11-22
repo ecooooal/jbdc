@@ -2,6 +2,8 @@
 
 A private, local-first archive of one designer's clothing designs: what was made, why, and what happened to it. Everything here is written for a single owner working alone, with no customers, orders, or money in the model.
 
+Words for the code's mechanisms and parts — fold, attempt, the rail — are code vocabulary, not domain terms; docs/CODE-VOCABULARY.md defines them.
+
 ## Records
 
 **Design**:

@@ -1,0 +1,68 @@
+# Code vocabulary
+
+The words issues use come in three kinds: domain words (GLOSSARY.md owns them), code vocabulary (this file owns them — the codebase's own words for its mechanisms and parts), and plain English. Entries are added lazily, when an issue first uses the word.
+
+## The write pattern
+
+The designs package's Edit visit proved this shape; the images gallery adopts it.
+
+**fold**:
+A pure function that maps one write attempt's observed ending into the feature's events. The designs precedent is `writeOutcome`; nothing else decides what an answer means.
+_Note_: the glossary's _Avoid_ on "outcome" is scoped to the Decision Event; the fold's name is fine.
+
+**attempt**:
+One write try as data: the declared write beside its observed ending.
+
+**ending**:
+How an attempt concluded. An attach ends in the picker's answer, the write's answer, or a thrown write; a note write ends in the write's answer or a thrown write. The union is narrowed per write, so the fold is total.
+
+**effects**:
+What a reducer's result asks a runner to perform, carried beside the state it returns. The reducer declares; the runner performs.
+
+**runner**:
+The hook that runs the reducer, performs each declared effect, wraps a thrown write into the attempt, folds the ending, and dispatches the returned events. It carries no policy: reviewing a write's behaviour means reading the fold.
+
+## The images gallery
+
+The Detail screen's images component, its parts, and its writes.
+
+**the gallery**:
+The images component on the Design Detail screen: the hero, the note block, the journey rail, and the viewer.
+_Note_: the Library entry's _Avoid_ on "gallery" bars calling that screen by this word; this word is the component.
+
+**the journey**:
+One design's images grouped by kind, in process order — inspiration, sketch, prototype, final — oldest first within each.
+
+**the stage**:
+One kind's group in the journey: the images that share a kind.
+_Note_: the Status entry's _Avoid_ on "stage" is about a design's standing, not this grouping.
+
+**the rail**:
+The journey rail: the stage row with each stage's images, and the plus card.
+
+**the hero**:
+The large showing of the current image, with its position and count in the stage and the swipe that walks the journey.
+
+**the plus card**:
+The rail's add-images card. A press opens the picker and attaches what comes back to the stage the gallery is on.
+
+**the composer**:
+The in-place note editor under the hero: the draft textarea with Save and Cancel, bound to the image it was opened on. Only a stored note closes it.
+
+**the note block**:
+The current image's commentary beneath the hero: the notes list, its expansion control, and the composer when open.
+
+**the viewer**:
+The full-screen image view, whose own reducer owns reclassification and the one remove question.
+
+**the picker**:
+The system image-file chooser, as a port. It answers picked files, a backed-out cancel, or a denied permission — three endings, only one worth telling the owner about.
+
+**the live read**:
+The reactive database read that re-runs whenever the tables it watches change. A write lands through it; the rail and the note block never copy rows.
+
+**the write path**:
+The images module's one function for every image write — attach, reclassify, remove, add-note, remove-note. It answers once with its seven kinds and throws on a failed copy.
+
+**the missing-adapters guard**:
+The runner's wiring check: with no image store or picker available, the write cannot be attempted.
