@@ -166,6 +166,27 @@ type GalleryRemoveNoteAttempt = {
 export type GalleryWriteAttempt =
   GalleryAttachAttempt | GalleryAddNoteAttempt | GalleryRemoveNoteAttempt;
 
+/** What one write answered: the write path's result, or the fact it threw. */
+export type GalleryWriteEnding = ImageWriteResult | ThrownEnding;
+
+/**
+ * The attempt one note write made: the change the gallery declared, and the
+ * answer the write path gave. The write path's one return union cannot say that
+ * an add-note reaches a note's endings and a removal a removal's; the change
+ * names which write ran, so the narrowed union is restored here where the fold
+ * reads it.
+ */
+export function noteAttempt(
+  change: AddNoteChange | RemoveNoteChange,
+  ending: GalleryWriteEnding,
+): GalleryWriteAttempt {
+  return (
+    change.kind === "add-note"
+      ? { type: "add-note", change, ending }
+      : { type: "remove-note", change, ending }
+  ) as GalleryWriteAttempt;
+}
+
 /**
  * What an attach owes: a cancel and a stored write say nothing — the live read
  * carries the landing, and a change of mind is not a failure — while a denial,

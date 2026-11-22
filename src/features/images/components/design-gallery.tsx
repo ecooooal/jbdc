@@ -48,12 +48,7 @@ export function DesignGallery({ designId }: { designId: string }) {
       />
 
       {view.image ? (
-        <ImageNoteBlock
-          designId={designId}
-          view={noteView}
-          composer={state.imageNoteComposer}
-          dispatch={dispatch}
-        />
+        <ImageNoteBlock view={noteView} composer={state.imageNoteComposer} dispatch={dispatch} />
       ) : null}
 
       <JourneyRail

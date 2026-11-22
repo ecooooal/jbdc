@@ -7,7 +7,6 @@ import { Text } from "@/shared/components/ui/text";
 import { Textarea } from "@/shared/components/ui/textarea";
 import type { ImageNoteBlockView, GalleryEvent, ImageNoteComposer } from "../lib/gallery-reducer";
 import type { ImageNote } from "../lib/images";
-import { useImageNoteWrites } from "../lib/use-image-notes";
 
 /**
  * The current image's commentary, directly under the hero: what the owner
@@ -16,29 +15,19 @@ import { useImageNoteWrites } from "../lib/use-image-notes";
  * one press — no confirmation, no inline edit, because a correction is a
  * delete-and-rewrite. The composer and the list's expansion belong to the
  * gallery reducer, so changing the image drops both rather than carrying a
- * half-written note to another picture.
+ * half-written note to another picture. Save and delete only declare the write;
+ * the composer closes when the stored note's event arrives, so a refused note
+ * keeps the owner's words.
  */
 export function ImageNoteBlock({
-  designId,
   view,
   composer,
   dispatch,
 }: {
-  designId: string;
   view: ImageNoteBlockView<ImageNote>;
   composer: ImageNoteComposer | null;
   dispatch: Dispatch<GalleryEvent>;
 }) {
-  const { addNote, removeNote } = useImageNoteWrites(designId, dispatch);
-
-  const save = () => {
-    if (!composer) return;
-
-    // A note over its cap or without words is refused by the write path, which
-    // says nothing; the composer keeps the draft so it can be trimmed.
-    void addNote(composer.imageId, composer.draft);
-  };
-
   return (
     <View className="border-border rounded-2xl border px-3 pb-2 pt-1">
       <View className="flex-row items-center justify-between">
@@ -71,7 +60,7 @@ export function ImageNoteBlock({
             size="icon"
             variant="ghost"
             accessibilityLabel={`Delete note ${index + 1}`}
-            onPress={() => void removeNote(note.id)}
+            onPress={() => dispatch({ type: "image-note-delete-pressed", noteId: note.id })}
           >
             <Icon as={X} className="text-muted-foreground size-4" />
           </Button>
@@ -111,7 +100,11 @@ export function ImageNoteBlock({
             >
               <Text>Cancel</Text>
             </Button>
-            <Button size="sm" accessibilityLabel="Save note" onPress={save}>
+            <Button
+              size="sm"
+              accessibilityLabel="Save note"
+              onPress={() => dispatch({ type: "image-note-save-pressed" })}
+            >
               <Text>Save note</Text>
             </Button>
           </View>
