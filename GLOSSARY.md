@@ -2,6 +2,8 @@
 
 A private, local-first archive of one designer's clothing designs: what was made, why, and what happened to it. Everything here is written for a single owner working alone, with no customers, orders, or money in the model.
 
+Words for the code's mechanisms and parts — fold, attempt, the rail — are code vocabulary, not domain terms; docs/CODE-VOCABULARY.md defines them.
+
 ## Records
 
 **Design**:
@@ -21,8 +23,16 @@ The part of a design that names it: its name, description, Category, and Collect
 _Avoid_: header, overview, basics, metadata
 
 **Image**:
-A visual file attached to a design, carrying an optional kind that says what role it plays in the process: `sketch`, `material`, `inspiration`, `prototype`, `final`, or `photoshoot`. The kind is a label, not history — an image can be reclassified as the design changes.
+A visual file attached to a design, carrying the kind that says what role it plays in the process: `inspiration`, `sketch`, `prototype`, or `final`. The kind is required — every image is a step in the journey — and is a label, not history: an image can be reclassified as the design changes.
 _Avoid_: photo, picture, asset, attachment — and "design" for the sketch kind, which collides with Design itself.
+
+**Cover**:
+The image that represents a design: the newest image of the highest kind the design has, in the order `final`, `prototype`, `sketch`, `inspiration`. Derived, never marked or stored — reclassifying an image can change it — and a design with no images has none.
+_Avoid_: primary, thumbnail, "marked image"
+
+**Image note**:
+One item of the commentary list attached to an image: what the owner decided there, and why. Added or removed, never edited in place, and it dies with its image.
+_Avoid_: caption, comment — and "note" alone, which is an Event
 
 **Category**:
 The garment type a design is, chosen from a list the owner maintains. At most one per design, and a design may have none.
@@ -51,7 +61,7 @@ _Avoid_: sample, toile, mockup
 ## History
 
 **History**:
-The append-only sequence of Events kept for one design, newest first when read. One visit is one Event, so History reads as work, not keystrokes.
+The append-only sequence of Events kept for one design, newest first when read. A visit records at most one Event, and a structural image action records its own `image_change` Event immediately, so History reads as work, not keystrokes.
 _Avoid_: audit log, activity feed, revision history
 
 **Visit**:
@@ -63,11 +73,11 @@ Where a design stands right now: Concept, In Development, Approved, Produced, Re
 _Avoid_: state, stage, phase
 
 **Event**:
-A recorded happening in a design's history — a status change, a decision, an edit, or a note. Written once and never altered; a correction is a new event.
+A recorded happening in a design's history — a status change, a decision, an edit, a note, or an `image_change`. Written once and never altered; a correction is a new event.
 _Avoid_: revision, change log, audit trail, activity
 
 **Diff**:
-What one visit changed, as its Event stores it: each field with the value it had and the value it became, plus the Material uses the visit added, removed, or corrected. An empty diff is no Event.
+What one Event changed, as it stores it: for a visit, each field with the value it had and the value it became, plus the Material uses it added, removed, or corrected; for an `image_change`, the images that action attached, removed, or reclassified. An empty diff is no Event.
 _Avoid_: patch, delta, changeset — and "diff" for comparing versions, which this app does not do.
 
 **Decision**:
@@ -76,6 +86,7 @@ _Avoid_: verdict, outcome
 
 **Note**:
 A free-text event the owner writes to explain something no other event captures.
+_Avoid_: "image note", which is a different record
 
 **Rejected**:
 A status meaning this design will not proceed. It keeps its reason, its images, and its specifications, and stays in the catalog.

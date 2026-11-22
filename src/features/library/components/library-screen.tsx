@@ -1,20 +1,20 @@
-import { router } from 'expo-router';
-import { Plus } from 'lucide-react-native';
-import { ScrollView, useWindowDimensions, View } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useCardDensity } from '@/features/settings/react';
-import { Button } from '@/shared/components/ui/button';
-import { Icon } from '@/shared/components/ui/icon';
-import { Text } from '@/shared/components/ui/text';
+import { router } from "expo-router";
+import { Plus } from "lucide-react-native";
+import { ScrollView, useWindowDimensions, View } from "react-native";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { useCardDensity } from "@/features/settings/react";
+import { Button } from "@/shared/components/ui/button";
+import { Icon } from "@/shared/components/ui/icon";
+import { Text } from "@/shared/components/ui/text";
 import {
   LIBRARY_GRID_GAP,
   LIBRARY_HORIZONTAL_PADDING,
   LIBRARY_SIDE_PADDING,
   libraryGrid,
-} from '../lib/grid';
-import { useLibraryDesigns } from '../lib/use-library-designs';
-import { DensityControl } from './density-control';
-import { LibraryCard } from './library-card';
+} from "../lib/grid";
+import { useLibraryDesigns } from "../lib/use-library-designs";
+import { DensityControl } from "./density-control";
+import { LibraryCard } from "./library-card";
 
 /** Splits the designs into the rows the chosen density asks for. */
 function chunk<T>(items: readonly T[], size: number): T[][] {
@@ -39,18 +39,14 @@ export function LibraryScreen() {
   const insets = useSafeAreaInsets();
   const contentWidth = Math.max(
     0,
-    viewportWidth - insets.left - insets.right - LIBRARY_HORIZONTAL_PADDING
+    viewportWidth - insets.left - insets.right - LIBRARY_HORIZONTAL_PADDING,
   );
   const { columns, cardWidth } = libraryGrid(density, contentWidth);
   const rows = chunk(designs, columns);
-  const isEmpty = status === 'ready' && designs.length === 0;
+  const isEmpty = status === "ready" && designs.length === 0;
 
   return (
-    <SafeAreaView
-      style={{ flex: 1 }}
-      className="bg-background"
-      edges={['top', 'left', 'right']}
-    >
+    <SafeAreaView style={{ flex: 1 }} className="bg-background" edges={["top", "left", "right"]}>
       <View className="flex-1 pt-6" style={{ paddingHorizontal: LIBRARY_SIDE_PADDING }}>
         <View className="flex-row items-center justify-between gap-3">
           <Text variant="h3">Library</Text>
@@ -61,7 +57,7 @@ export function LibraryScreen() {
                 size="icon"
                 variant="outline"
                 accessibilityLabel="Create design"
-                onPress={() => router.push('/designs/new')}
+                onPress={() => router.push("/designs/new")}
               >
                 <Icon as={Plus} />
               </Button>
@@ -69,11 +65,9 @@ export function LibraryScreen() {
           </View>
         </View>
 
-        {error ? (
-          <Text className="text-destructive mt-6">{error.message}</Text>
-        ) : null}
+        {error ? <Text className="text-destructive mt-6">{error.message}</Text> : null}
 
-        {status === 'loading' ? null : isEmpty ? (
+        {status === "loading" ? null : isEmpty ? (
           <View className="flex-1 items-center justify-center gap-5 pb-16">
             <View className="items-center gap-2">
               <Text variant="h4">The library is empty</Text>
@@ -81,7 +75,7 @@ export function LibraryScreen() {
                 Designs you add will appear here.
               </Text>
             </View>
-            <Button onPress={() => router.push('/designs/new')}>
+            <Button onPress={() => router.push("/designs/new")}>
               <Icon as={Plus} />
               <Text>Create a design</Text>
             </Button>
@@ -97,7 +91,7 @@ export function LibraryScreen() {
                         design={design}
                         density={density}
                         onPress={() =>
-                          router.push({ pathname: '/designs/[id]', params: { id: design.id } })
+                          router.push({ pathname: "/designs/[id]", params: { id: design.id } })
                         }
                       />
                     </View>

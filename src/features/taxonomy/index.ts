@@ -3,25 +3,14 @@
  * name trimming and the optional Collection year; screens only pick from it.
  */
 export {
-  COLLECTION_YEAR_MAX,
-  COLLECTION_YEAR_MIN,
   createCategory,
   createCollection,
   InvalidCollectionYearError,
   InvalidTaxonomyNameError,
   listCategories,
-  listCollections,
   readTaxonomyNames,
   readTaxonomyNamesFrom,
   TAXONOMY_NAME_MAX_LENGTH,
   taxonomyLabel,
-  taxonomyRead,
-} from './lib/records';
-export type {
-  Category,
-  Collection,
-  CreateCategoryInput,
-  CreateCollectionInput,
-  TaxonomyNames,
-  TaxonomyRows,
-} from './lib/records';
+} from "./lib/records";
+export type { TaxonomyNames } from "./lib/records";

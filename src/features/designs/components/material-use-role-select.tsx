@@ -1,12 +1,12 @@
-import { MATERIAL_USE_ROLES, type MaterialUseRole } from '@/features/database';
+import { MATERIAL_USE_ROLES, type MaterialUseRole } from "@/features/database";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/shared/components/ui/select';
-import { materialUseRoleLabel } from '../lib/material-use-role';
+} from "@/shared/components/ui/select";
+import { materialUseRoleLabel } from "../lib/material-use-role";
 
 /** The `main | secondary | other` picker shared by the add and edit forms. */
 export function MaterialUseRoleSelect({

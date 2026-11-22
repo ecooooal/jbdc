@@ -32,7 +32,15 @@ GitHub shares one number space across issues and PRs, so a bare `#42` may be eit
 
 ## When a skill says "publish to the issue tracker"
 
-Create a GitHub issue.
+Create a GitHub issue, with the body conventions below.
+
+## Ticket bodies
+
+Three conventions every published ticket follows:
+
+- **A `## Terms` block.** The words the ticket uses that carry app meaning, names only. Two lines: domain words (GLOSSARY.md owns them) and code vocabulary (docs/CODE-VOCABULARY.md owns them); anything else in the ticket is plain English. A reader checks the block, then the file that owns the word, and never guesses between app meaning and plain English.
+- **Complete sentences in the criteria.** Subject, verb, object — dropped articles and telegraphic lists stay in conversation, out of tickets. Atomicity survives: one claim per criterion, and a second "and" is a second criterion.
+- **Criteria split by who verifies them.** `### Verifiable in the repo` holds what a suite row, a compile error, or a structure proves — the agent's green run settles it. `### Verifiable in the app` holds the scenarios the Owner runs on a device — only she settles them. Write "None" as a sentence when a side is empty.
 
 ## When a skill says "fetch the relevant ticket"
 

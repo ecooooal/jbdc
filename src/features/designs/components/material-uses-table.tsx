@@ -1,9 +1,9 @@
-import { Pressable, View } from 'react-native';
-import type { MaterialUse } from '@/features/designs';
-import { Text } from '@/shared/components/ui/text';
-import { materialUseRoleLabel } from '../lib/material-use-role';
+import { Pressable, View } from "react-native";
+import type { MaterialUse } from "@/features/designs";
+import { Text } from "@/shared/components/ui/text";
+import { materialUseRoleLabel } from "../lib/material-use-role";
 
-const ROW_CLASS = 'border-border flex-row gap-3 border-b px-4 py-3 last:border-b-0';
+const ROW_CLASS = "border-border flex-row gap-3 border-b px-4 py-3 last:border-b-0";
 
 /**
  * The `Material / Colour / Role` table. Edit passes `onUsePress` so a row opens
@@ -40,7 +40,7 @@ export function MaterialUsesTable({
           <Pressable
             key={materialUse.id}
             onPress={onUsePress ? () => onUsePress(materialUse) : undefined}
-            accessibilityRole={onUsePress ? 'button' : undefined}
+            accessibilityRole={onUsePress ? "button" : undefined}
             accessibilityLabel={
               onUsePress ? `Edit ${materialUse.materialName} (${materialUse.colour})` : undefined
             }

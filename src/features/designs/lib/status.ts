@@ -1,12 +1,12 @@
-import type { DesignStatus } from '@/features/database';
+import type { DesignStatus } from "@/features/database";
 
 const STATUS_LABELS: Record<DesignStatus, string> = {
-  concept: 'Concept',
-  in_development: 'In Development',
-  approved: 'Approved',
-  produced: 'Produced',
-  rejected: 'Rejected',
-  archived: 'Archived',
+  concept: "Concept",
+  in_development: "In Development",
+  approved: "Approved",
+  produced: "Produced",
+  rejected: "Rejected",
+  archived: "Archived",
 };
 
 /** The owner-facing name of a Status, as written in GLOSSARY.md. */

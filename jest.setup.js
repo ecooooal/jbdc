@@ -15,8 +15,8 @@ void globalThis.__ExpoImportMetaRegistry;
 // Node test environment. The UI kit only needs its Animated wrapper and the
 // fade presets, so a tiny stand-in keeps the render tests running without the
 // native worklets runtime.
-jest.mock('react-native-reanimated', () => {
-  const { View } = require('react-native');
+jest.mock("react-native-reanimated", () => {
+  const { View } = require("react-native");
   const Animated = { View, createAnimatedComponent: (Component) => Component };
 
   return {
@@ -24,7 +24,7 @@ jest.mock('react-native-reanimated', () => {
     default: Animated,
     FadeIn: { reduceMotion: () => ({}) },
     FadeOut: { reduceMotion: () => ({}) },
-    ReduceMotion: { System: 'system' },
+    ReduceMotion: { System: "system" },
   };
 });
 
@@ -33,8 +33,8 @@ jest.mock('react-native-reanimated', () => {
 // ESM and is not in `transformIgnorePatterns`, so the two components the app
 // uses are mapped instead. A test that needs keyboard behaviour belongs on a
 // device, not here.
-jest.mock('react-native-keyboard-controller', () => {
-  const { ScrollView, View } = require('react-native');
+jest.mock("react-native-keyboard-controller", () => {
+  const { ScrollView, View } = require("react-native");
 
   return {
     KeyboardProvider: View,

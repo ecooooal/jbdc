@@ -1,6 +1,6 @@
-import { asc, eq, isNull } from 'drizzle-orm';
-import type { Database, DatabaseHandle } from '@/features/database';
-import { declareLiveRead, materials } from '@/features/database';
+import { asc, eq, isNull } from "drizzle-orm";
+import type { Database, DatabaseHandle } from "@/features/database";
+import { declareLiveRead, materials } from "@/features/database";
 
 /** A name is trimmed and must survive trimming; this is the only cap. */
 export const MATERIAL_NAME_MAX_LENGTH = 120;
@@ -16,23 +16,23 @@ export type CreateMaterialInput = {
 };
 
 export class InvalidMaterialNameError extends Error {
-  constructor(readonly reason: 'empty' | 'too_long' | 'duplicate') {
+  constructor(readonly reason: "empty" | "too_long" | "duplicate") {
     super(
-      reason === 'empty'
-        ? 'A material needs a name.'
-        : reason === 'too_long'
+      reason === "empty"
+        ? "A material needs a name."
+        : reason === "too_long"
           ? `A material name can be at most ${MATERIAL_NAME_MAX_LENGTH} characters.`
-          : 'That material is already in the list.'
+          : "That material is already in the list.",
     );
-    this.name = 'InvalidMaterialNameError';
+    this.name = "InvalidMaterialNameError";
   }
 }
 
 function normalizeName(raw: string): string {
   const name = raw.trim();
 
-  if (name.length === 0) throw new InvalidMaterialNameError('empty');
-  if (name.length > MATERIAL_NAME_MAX_LENGTH) throw new InvalidMaterialNameError('too_long');
+  if (name.length === 0) throw new InvalidMaterialNameError("empty");
+  if (name.length > MATERIAL_NAME_MAX_LENGTH) throw new InvalidMaterialNameError("too_long");
 
   return name;
 }
@@ -92,7 +92,7 @@ export function readMaterialNames(database: Database): ReadonlyMap<string, strin
 export function createMaterial(
   database: Database,
   input: CreateMaterialInput,
-  now: number = Date.now()
+  now: number = Date.now(),
 ): Material {
   const name = normalizeName(input.name);
   const rows = database.db
@@ -101,7 +101,7 @@ export function createMaterial(
     .where(eq(materials.name, name))
     .all();
 
-  if (rows.some((row) => row.deletedAt === null)) throw new InvalidMaterialNameError('duplicate');
+  if (rows.some((row) => row.deletedAt === null)) throw new InvalidMaterialNameError("duplicate");
 
   const removed = rows[0];
 

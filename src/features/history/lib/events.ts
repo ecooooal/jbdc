@@ -1,14 +1,27 @@
-import { desc, eq, sql } from 'drizzle-orm';
-import type { Database, DesignEventKind, LiveReadDeclaration } from '@/features/database';
-import { categories, collections, declareLiveRead, designEvents } from '@/features/database';
-import { readTaxonomyNames, type TaxonomyNames } from '@/features/taxonomy';
+import { desc, eq, sql } from "drizzle-orm";
+import type {
+  Database,
+  DatabaseHandle,
+  DesignEventKind,
+  ImageKind,
+  LiveReadDeclaration,
+} from "@/features/database";
+import {
+  categories,
+  collections,
+  declareLiveRead,
+  designEvents,
+  images,
+} from "@/features/database";
+import { readTaxonomyNames, type TaxonomyNames } from "@/features/taxonomy";
 import {
   DESIGN_EDITABLE_FIELDS,
   type DesignEditableField,
   type DesignFields,
   type MaterialUse,
   type MaterialUsesPair,
-} from '@/features/designs';
+} from "@/features/designs";
+import type { HistoryLine } from "./lines";
 
 /** What one field was before an edit and what it became. Null means empty. */
 export type DesignFieldChange = {
@@ -17,7 +30,7 @@ export type DesignFieldChange = {
 };
 
 /** One Material use a visit added, removed, or corrected, as History reads it back. */
-export type RecordedMaterialUse = Omit<MaterialUse, 'designId' | 'createdAt'>;
+export type RecordedMaterialUse = Omit<MaterialUse, "designId" | "createdAt">;
 
 /** A corrected Material use: what it was before the visit and what it became. */
 export type MaterialUseCorrection = {
@@ -32,21 +45,58 @@ export type MaterialUsesDiff = {
   changed?: MaterialUseCorrection[];
 };
 
-/** One line History prints for a Material use, keyed for rendering. */
-export type MaterialUseLine = {
-  key: string;
-  text: string;
+/** One image as History records it: its identity, its kind, and its stored file. */
+export type RecordedImage = {
+  id: string;
+  kind: ImageKind;
+  contentHash: string;
+  extension: string;
 };
+
+/** One Image row as the images module stores it, before History projects it. */
+type ImageRow = typeof images.$inferSelect;
+
+/**
+ * What one structural image action did, as the images module reports it: whole
+ * Image rows. History decides which of their fields it keeps.
+ */
+export type ImageChangeRows = {
+  attached?: ImageRow[];
+  removed?: ImageRow[];
+  reclassified?: { from: ImageRow; to: ImageRow }[];
+};
+
+/** A reclassified image: the kind it had and the kind it became. */
+export type ImageReclassification = {
+  from: RecordedImage;
+  to: RecordedImage;
+};
+
+/**
+ * What one structural image action did: the images it attached, the image it
+ * removed, or the image it reclassified. One action writes one Event, so a
+ * multi-attach carries several `attached` entries in one diff.
+ */
+export type ImageChangeDiff = {
+  attached?: RecordedImage[];
+  removed?: RecordedImage[];
+  reclassified?: ImageReclassification[];
+};
+
+/** One line History prints for a Material use, keyed for rendering. */
+export type MaterialUseLine = HistoryLine;
 
 /**
  * What one visit changed: the fields whose values differ, each with
  * its old and new value, plus the Material uses it added, removed, or
  * corrected. The uses are a key of their own rather than a field, because they
  * live in their own table; an Event written before that key existed simply has
- * no `materials`.
+ * no `materials`. `images` rides in the same diff shape but is written by the
+ * images module's own immediate Event, never by a visit.
  */
 export type DesignEditDiff = Partial<Record<DesignEditableField, DesignFieldChange>> & {
   materials?: MaterialUsesDiff;
+  images?: ImageChangeDiff;
 };
 
 /** A visit's changes, as the Edit screen hands them to History at close. */
@@ -73,7 +123,7 @@ export type DesignEvent = {
 };
 
 /** A stored Event row, before its JSON diff is parsed. */
-type DesignEventRow = Omit<DesignEvent, 'diff'> & {
+type DesignEventRow = Omit<DesignEvent, "diff"> & {
   diff: string | null;
 };
 
@@ -82,10 +132,7 @@ type DesignEventRow = Omit<DesignEvent, 'diff'> & {
  * its old and new value, or null when the visit changed nothing. Pure, so
  * coalescing is tested without a screen or a database (ADR-0004).
  */
-export function diffDesignFields(
-  before: DesignFields,
-  after: DesignFields
-): DesignEditDiff | null {
+export function diffDesignFields(before: DesignFields, after: DesignFields): DesignEditDiff | null {
   const diff: DesignEditDiff = {};
 
   for (const field of DESIGN_EDITABLE_FIELDS) {
@@ -118,7 +165,7 @@ function materialUseChangeOf(materialUse: MaterialUse): RecordedMaterialUse {
  */
 export function diffMaterialUses(
   before: readonly MaterialUse[],
-  after: readonly MaterialUse[]
+  after: readonly MaterialUse[],
 ): MaterialUsesDiff | null {
   const beforeById = new Map(before.map((materialUse) => [materialUse.id, materialUse]));
   const afterById = new Map(after.map((materialUse) => [materialUse.id, materialUse]));
@@ -269,7 +316,7 @@ export function recordEdit(
   database: Database,
   designId: string,
   visit: Visit,
-  now: number = Date.now()
+  now: number = Date.now(),
 ): DesignEvent | null {
   const diff: DesignEditDiff = diffDesignFields(visit.before, visit.after) ?? {};
   const materials = visit.materialUses
@@ -283,7 +330,7 @@ export function recordEdit(
   const event: DesignEvent = {
     id: database.newId(),
     designId,
-    kind: 'edit',
+    kind: "edit",
     reason: null,
     potentialImprovements: null,
     diff,
@@ -293,6 +340,77 @@ export function recordEdit(
   database.db
     .insert(designEvents)
     .values({ ...event, diff: JSON.stringify(diff) })
+    .run();
+
+  return event;
+}
+
+/** The empty answer an image change gives: nothing was attached, removed, or reclassified. */
+function isEmptyImageChange(changes: ImageChangeRows): boolean {
+  return (
+    (changes.attached?.length ?? 0) === 0 &&
+    (changes.removed?.length ?? 0) === 0 &&
+    (changes.reclassified?.length ?? 0) === 0
+  );
+}
+
+/** The part of one Image row History keeps. */
+function recordedImage(image: ImageRow): RecordedImage {
+  return {
+    id: image.id,
+    kind: image.kind,
+    contentHash: image.contentHash,
+    extension: image.extension,
+  };
+}
+
+/** The diff History stores for the whole rows one action touched. */
+function recordedImageChanges(changes: ImageChangeRows): ImageChangeDiff {
+  return {
+    ...(changes.attached && { attached: changes.attached.map(recordedImage) }),
+    ...(changes.removed && { removed: changes.removed.map(recordedImage) }),
+    ...(changes.reclassified && {
+      reclassified: changes.reclassified.map(({ from, to }) => ({
+        from: recordedImage(from),
+        to: recordedImage(to),
+      })),
+    }),
+  };
+}
+
+/**
+ * Records one structural image action — an attach, a remove, or a
+ * reclassification — as a single `image_change` Event. The images module hands
+ * the whole Image rows the action touched and the identity it took from the
+ * Database port; History projects its own record of each, so a field it keeps
+ * changes only here. This writer owns the row, the kind, and the diff encoding,
+ * and nothing else appends an image Event. It writes through `db` so the images
+ * module can pass its transaction's handle, keeping the Event beside the rows
+ * it describes. An empty change writes nothing and returns null.
+ */
+export function recordImageChange(
+  db: DatabaseHandle,
+  {
+    id,
+    designId,
+    changes,
+    createdAt,
+  }: { id: string; designId: string; changes: ImageChangeRows; createdAt: number },
+): DesignEvent | null {
+  if (isEmptyImageChange(changes)) return null;
+
+  const event: DesignEvent = {
+    id,
+    designId,
+    kind: "image_change",
+    reason: null,
+    potentialImprovements: null,
+    diff: { images: recordedImageChanges(changes) },
+    createdAt,
+  };
+
+  db.insert(designEvents)
+    .values({ ...event, diff: JSON.stringify(event.diff) })
     .run();
 
   return event;

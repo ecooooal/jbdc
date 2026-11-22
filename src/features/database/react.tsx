@@ -1,14 +1,14 @@
-import type { PropsWithChildren } from 'react';
-import { createContext, useContext, useEffect, useMemo, useState } from 'react';
-import { openAppDatabaseWithLiveReads } from './expo';
+import type { PropsWithChildren } from "react";
+import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { openAppDatabaseWithLiveReads } from "./lib/expo-database";
 import {
   liveReadTableName,
   type LiveReadDeclaration,
   type LiveReadSubscribe,
-} from './lib/live-read';
-import type { Database } from './lib/port';
+} from "./lib/live-read";
+import type { Database } from "./lib/port";
 
-export type LiveReadStatus = 'loading' | 'ready' | 'error';
+type LiveReadStatus = "loading" | "ready" | "error";
 
 /** The status each declared read carries beside its declared row shape. */
 export type LiveReadFields = {
@@ -16,7 +16,7 @@ export type LiveReadFields = {
   status: LiveReadStatus;
 };
 
-export type LiveReadResult<Row> = {
+type LiveReadResult<Row> = {
   /** The declared row shape; before the first read it is the declared default. */
   data: Row;
   error: Error | undefined;
@@ -39,22 +39,22 @@ function toError(caught: unknown): Error {
  * rather than a stale screen.
  */
 export function useLiveRead<Row extends object>(
-  declaration: LiveReadDeclaration<Row>
+  declaration: LiveReadDeclaration<Row>,
 ): LiveReadResult<Row> {
   const database = useDatabase();
   const subscribe = useContext(SubscribeContext);
 
   if (!subscribe) {
-    throw new Error('useLiveRead must be used inside <DatabaseProvider>.');
+    throw new Error("useLiveRead must be used inside <DatabaseProvider>.");
   }
 
   const { read, empty, tables } = declaration;
   const run = useMemo(() => () => read(database), [database, read]);
-  const tableKey = tables.map(liveReadTableName).join(',');
+  const tableKey = tables.map(liveReadTableName).join(",");
   const [result, setResult] = useState<LiveReadResult<Row>>({
     data: empty,
     error: undefined,
-    status: 'loading',
+    status: "loading",
   });
 
   useEffect(() => {
@@ -64,13 +64,13 @@ export function useLiveRead<Row extends object>(
       try {
         const data = run();
 
-        if (active) setResult({ data, error: undefined, status: 'ready' });
+        if (active) setResult({ data, error: undefined, status: "ready" });
       } catch (caught) {
         if (active) {
           setResult((current) => ({
             data: current.data,
             error: toError(caught),
-            status: 'error',
+            status: "error",
           }));
         }
       }
@@ -78,7 +78,7 @@ export function useLiveRead<Row extends object>(
 
     refresh();
 
-    const unsubscribe = subscribe(tableKey === '' ? [] : tableKey.split(','), refresh);
+    const unsubscribe = subscribe(tableKey === "" ? [] : tableKey.split(","), refresh);
 
     return () => {
       active = false;
@@ -130,7 +130,7 @@ export function useDatabase(): Database {
   const database = useContext(DatabaseContext);
 
   if (!database) {
-    throw new Error('useDatabase must be used inside <DatabaseProvider>.');
+    throw new Error("useDatabase must be used inside <DatabaseProvider>.");
   }
 
   return database;

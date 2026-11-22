@@ -1,6 +1,6 @@
-import { eq } from 'drizzle-orm';
-import type { Database } from '@/features/database';
-import { settings } from '@/features/database';
+import { eq } from "drizzle-orm";
+import type { Database } from "@/features/database";
+import { settings } from "@/features/database";
 
 /** The Library's three card densities: one list row, two tiles, or four tiles. */
 export const CARD_DENSITIES = [1, 2, 4] as const;
@@ -11,7 +11,7 @@ export type CardDensity = (typeof CARD_DENSITIES)[number];
 export const DEFAULT_CARD_DENSITY: CardDensity = 2;
 
 /** The one `settings` key card density occupies. */
-const CARD_DENSITY_KEY = 'library.cardDensity';
+const CARD_DENSITY_KEY = "library.cardDensity";
 
 export type Settings = {
   /** The owner's chosen Library density, or the default when none is stored. */

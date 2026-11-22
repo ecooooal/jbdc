@@ -1,7 +1,7 @@
-import { View } from 'react-native';
-import { Button } from '@/shared/components/ui/button';
-import { Input } from '@/shared/components/ui/input';
-import { Text } from '@/shared/components/ui/text';
+import { View } from "react-native";
+import { Button } from "@/shared/components/ui/button";
+import { Input } from "@/shared/components/ui/input";
+import { Text } from "@/shared/components/ui/text";
 
 /**
  * One entry created without leaving the form that needs it. The Collection form

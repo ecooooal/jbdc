@@ -7,10 +7,7 @@
 export {
   createMaterial,
   InvalidMaterialNameError,
-  listMaterials,
   MATERIAL_NAME_MAX_LENGTH,
-  materialsRead,
-  readMaterialNames,
   readMaterialNamesFrom,
-} from './lib/records';
-export type { CreateMaterialInput, Material, MaterialsRows } from './lib/records';
+} from "./lib/records";
+export type { Material } from "./lib/records";

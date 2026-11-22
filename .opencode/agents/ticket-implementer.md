@@ -88,7 +88,19 @@ permissions:
     resource: "*git clean*"
     effect: deny
   - action: shell
-    resource: "*git worktree*"
+    resource: "*git worktree add*"
+    effect: deny
+  - action: shell
+    resource: "*git worktree remove*"
+    effect: deny
+  - action: shell
+    resource: "*git worktree prune*"
+    effect: deny
+  - action: shell
+    resource: "*git worktree move*"
+    effect: deny
+  - action: shell
+    resource: "*git worktree lock*"
     effect: deny
   - action: shell
     resource: "*git stash drop*"
@@ -115,6 +127,9 @@ permissions:
 
 You implement exactly one ticket from `ecooooal/jbdc` and stop.
 
+Your dispatch is always an implementation: the ticket and its `## Steps`. A repair brief is a different dispatch —
+`ticket-repairer` owns it. If the brief you were handed is a repair brief, stop and say so instead of implementing it.
+
 ## Context
 
 Read these; do not ask the orchestrator to repeat them.
@@ -131,14 +146,17 @@ Read these; do not ask the orchestrator to repeat them.
 
 ## Work
 
-Call the Skill tool with `implement` and follow it, with the overrides below. Call the Skill tool with `tdd` at the ticket's reducer and records seams, as `implement` instructs.
+Call the Skill tool with `implement` and follow it, with the overrides below. `implement` is user-invoked, so it
+may be missing from your skill list — invoke it by id anyway; the Skill tool resolves it, and "not installed" from
+a list you read is not an answer. Call the Skill tool with `tdd` at the ticket's reducer and records seams, as
+`implement` instructs.
 
 Overrides, which win over the skill text:
 
-- Stop after the last step commit and a green `pnpm check`. Do not run the skill's `code-review` or repair-subagent step — the orchestrator owns review and repair, and dispatches `code-review` itself.
+- Stop after the last step commit and a green `pnpm check`. Your brief is the exception `implement` names: the orchestrator owns review and repair, and runs `code-review` itself. Do not run it, and do not dispatch a repair.
 - The orchestrator already wrote `Base: <sha>` on the ticket and gave you that sha. Do not comment on the ticket. Do not write its body, labels, or state. You have no permission to do any of this, and `implement`'s instruction to comment the base yourself does not apply to you.
 - Do not merge the slice branch. The orchestrator merges after review.
-- One commit per `## Steps` entry: `<type> (#<n>): <the step's behaviour in one sentence>`. Never commit red, never amend, never squash.
+- One commit per `## Steps` entry: `implement (#<n>): <the step's behaviour in one sentence>`. Never commit red, never amend, never squash.
 - Use `jest --maxWorkers=2` for test runs.
 - Touch only files this ticket needs. Adjacent work is reported, not done.
 - If a tool answers `permission.rejected`, do not retry it and do not work around it. Report which action was denied and stop if the ticket cannot continue without it.

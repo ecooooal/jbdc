@@ -1,10 +1,10 @@
-import { and, desc, eq, getTableColumns, isNull } from 'drizzle-orm';
+import { and, desc, eq, getTableColumns, isNull } from "drizzle-orm";
 import type {
   Database,
   DatabaseHandle,
   LiveReadDeclaration,
   MaterialUseRole,
-} from '@/features/database';
+} from "@/features/database";
 import {
   categories,
   collections,
@@ -13,31 +13,31 @@ import {
   designs,
   MATERIAL_USE_ROLES,
   materials,
-} from '@/features/database';
-import { diffDesignFields, diffMaterialUses } from '@/features/history';
-import { readMaterialNamesFrom } from '@/features/materials';
-import { readTaxonomyNamesFrom, taxonomyLabel } from '@/features/taxonomy';
-import { CREATIVE_DIRECTION_FIELDS } from './creative-direction-fields';
-import { DESIGN_EDITABLE_FIELDS, type DesignEditableField } from './fields';
-import { DESIGN_NAME_MAX_LENGTH, designNameProblem } from './limits';
-import { normalizeOptionalText } from './optional-text';
-import type { DesignSectionField } from './sections';
-import { SPECIFICATION_FIELDS } from './specification-fields';
+} from "@/features/database";
+import { diffDesignFields, diffMaterialUses } from "@/features/history";
+import { readMaterialNamesFrom } from "@/features/materials";
+import { readTaxonomyNamesFrom, taxonomyLabel } from "@/features/taxonomy";
+import { CREATIVE_DIRECTION_FIELDS } from "./creative-direction-fields";
+import { DESIGN_EDITABLE_FIELDS, type DesignEditableField } from "./fields";
+import { DESIGN_NAME_MAX_LENGTH, designNameProblem } from "./limits";
+import { normalizeOptionalText } from "./optional-text";
+import type { DesignSectionField } from "./sections";
+import { SPECIFICATION_FIELDS } from "./specification-fields";
 
-export { DESIGN_NAME_MAX_LENGTH, designNameProblem } from './limits';
+export { DESIGN_NAME_MAX_LENGTH, designNameProblem } from "./limits";
 
 /**
  * A design as it is stored. Derived from the table, so a new section field is
  * added in the schema and the field list, not here. `searchText` is derived on
  * every write and is not part of the record a feature works with.
  */
-export type Design = Omit<typeof designs.$inferSelect, 'searchText'>;
+export type Design = Omit<typeof designs.$inferSelect, "searchText">;
 
 /** The editable fields of a stored Design, from the one field list. Null means empty. */
 export type DesignFields = Pick<Design, DesignEditableField>;
 
 /** A new Design: a name is required, every other editable field is optional. */
-export type CreateDesignInput = { name: string } & Partial<Omit<DesignFields, 'name'>>;
+export type CreateDesignInput = { name: string } & Partial<Omit<DesignFields, "name">>;
 
 /**
  * A partial write: an absent field is left alone, while an explicit null
@@ -69,9 +69,9 @@ export type UpdateMaterialUseInput = Partial<AddMaterialUseInput>;
 
 /** One Material use a write stores, as a change rather than a function call. */
 export type MaterialUseChange =
-  | { kind: 'add'; input: AddMaterialUseInput }
-  | { kind: 'correct'; useId: string; patch: UpdateMaterialUseInput }
-  | { kind: 'remove'; useId: string };
+  | { kind: "add"; input: AddMaterialUseInput }
+  | { kind: "correct"; useId: string; patch: UpdateMaterialUseInput }
+  | { kind: "remove"; useId: string };
 
 /**
  * Everything one write is asked to store: the fields the owner changed and the
@@ -89,11 +89,11 @@ export type DesignChanges = {
  * one `fields` entry for the patch, then one per Material use in declared order.
  */
 export type ChangeOutcome =
-  | { kind: 'fields'; design: Design }
-  | { kind: 'add'; materialUse: MaterialUse }
-  | { kind: 'correct'; materialUse: MaterialUse }
-  | { kind: 'remove'; materialUse: MaterialUse }
-  | { kind: 'use-missing'; useId: string };
+  | { kind: "fields"; design: Design }
+  | { kind: "add"; materialUse: MaterialUse }
+  | { kind: "correct"; materialUse: MaterialUse }
+  | { kind: "remove"; materialUse: MaterialUse }
+  | { kind: "use-missing"; useId: string };
 
 /**
  * The one answer a write gives: what it stored with one outcome per declared
@@ -102,7 +102,7 @@ export type ChangeOutcome =
  */
 export type DesignWriteResult =
   | {
-      kind: 'stored';
+      kind: "stored";
       /** The row as it now stands, whether or not anything changed. */
       design: Design;
       /** Every use the row holds after the write, with names resolved and ordered. */
@@ -110,8 +110,8 @@ export type DesignWriteResult =
       /** One outcome per declared change, in declared order. */
       outcomes: ChangeOutcome[];
     }
-  | { kind: 'refused'; field: 'name' | 'colour'; message: string }
-  | { kind: 'design-missing' };
+  | { kind: "refused"; field: "name" | "colour"; message: string }
+  | { kind: "design-missing" };
 
 /**
  * A Design's Material uses as a visit opened and as it will close. The two
@@ -131,21 +131,21 @@ export type DesignDetail = Design & {
 };
 
 /** The one sentence a refused name carries, shared by create and by the write. */
-function nameProblemMessage(problem: 'empty' | 'too_long'): string {
-  return problem === 'empty'
-    ? 'A design needs a name.'
+function nameProblemMessage(problem: "empty" | "too_long"): string {
+  return problem === "empty"
+    ? "A design needs a name."
     : `A design name can be at most ${DESIGN_NAME_MAX_LENGTH} characters.`;
 }
 
 export class InvalidDesignNameError extends Error {
-  constructor(readonly reason: 'empty' | 'too_long') {
+  constructor(readonly reason: "empty" | "too_long") {
     super(nameProblemMessage(reason));
-    this.name = 'InvalidDesignNameError';
+    this.name = "InvalidDesignNameError";
   }
 }
 
 /** The one sentence a refused colour carries. */
-const EMPTY_COLOUR_MESSAGE = 'A material use needs a colour.';
+const EMPTY_COLOUR_MESSAGE = "A material use needs a colour.";
 
 /**
  * The columns a read selects, derived from the table. `searchText` is derived
@@ -161,15 +161,13 @@ const { searchText: _derivedSearchText, ...designColumns } = getTableColumns(des
 function optionalTextValues<Field extends DesignSectionField>(
   fields: readonly { field: Field }[],
   current: Design | null,
-  input: Partial<Record<Field, string | null | undefined>>
+  input: Partial<Record<Field, string | null | undefined>>,
 ): Record<Field, string | null> {
   const values = {} as Record<Field, string | null>;
 
   for (const { field } of fields) {
     values[field] =
-      input[field] === undefined
-        ? (current?.[field] ?? null)
-        : normalizeOptionalText(input[field]);
+      input[field] === undefined ? (current?.[field] ?? null) : normalizeOptionalText(input[field]);
   }
 
   return values;
@@ -194,7 +192,7 @@ function buildSearchText(
   design: DesignFields,
   category: string | null,
   collection: string | null,
-  materialUseParts: readonly string[]
+  materialUseParts: readonly string[],
 ): string {
   return [
     design.name,
@@ -206,7 +204,7 @@ function buildSearchText(
     ...materialUseParts,
   ]
     .filter(Boolean)
-    .join(' ')
+    .join(" ")
     .toLowerCase();
 }
 
@@ -214,7 +212,7 @@ function buildSearchText(
 function designTaxonomyNames(
   database: Database,
   categoryId: string | null,
-  collectionId: string | null
+  collectionId: string | null,
 ): { category: string | null; collection: string | null } {
   return designTaxonomyNamesFrom(database.db, categoryId, collectionId);
 }
@@ -222,7 +220,7 @@ function designTaxonomyNames(
 function designTaxonomyNamesFrom(
   db: DatabaseHandle,
   categoryId: string | null,
-  collectionId: string | null
+  collectionId: string | null,
 ): { category: string | null; collection: string | null } {
   const names = readTaxonomyNamesFrom(db);
 
@@ -233,7 +231,7 @@ function designTaxonomyNamesFrom(
 }
 
 const MATERIAL_USE_ROLE_ORDER = Object.fromEntries(
-  MATERIAL_USE_ROLES.map((role, index) => [role, index])
+  MATERIAL_USE_ROLES.map((role, index) => [role, index]),
 ) as Record<MaterialUseRole, number>;
 
 function compareMaterialUses(left: MaterialUse, right: MaterialUse): number {
@@ -254,7 +252,7 @@ function compareMaterialUses(left: MaterialUse, right: MaterialUse): number {
 function materialUsesFrom(
   db: DatabaseHandle,
   designId: string,
-  names: ReadonlyMap<string, string> = readMaterialNamesFrom(db)
+  names: ReadonlyMap<string, string> = readMaterialNamesFrom(db),
 ): MaterialUse[] {
   const rows = db
     .select({
@@ -304,7 +302,7 @@ function designAfterPatch(current: Design, input: UpdateDesignInput): Design {
 /** The editable column values a write stores for a Design. */
 function editableValues(design: Design): Partial<Design> {
   return Object.fromEntries(
-    DESIGN_EDITABLE_FIELDS.map((field) => [field, design[field]])
+    DESIGN_EDITABLE_FIELDS.map((field) => [field, design[field]]),
   ) as Partial<Design>;
 }
 
@@ -324,7 +322,7 @@ function storedColour(raw: string): string | null {
 export function createDesign(
   database: Database,
   input: CreateDesignInput,
-  now: number = Date.now()
+  now: number = Date.now(),
 ): Design {
   const name = normalizeName(input.name);
   const description = normalizeOptionalText(input.description);
@@ -339,7 +337,7 @@ export function createDesign(
     collectionId,
     ...optionalTextValues(SPECIFICATION_FIELDS, null, input),
     ...optionalTextValues(CREATIVE_DIRECTION_FIELDS, null, input),
-    status: 'concept',
+    status: "concept",
     createdAt: now,
     updatedAt: now,
     deletedAt: null,
@@ -369,13 +367,13 @@ export function writeDesign(
   database: Database,
   designId: string,
   changes: DesignChanges,
-  now: number = Date.now()
+  now: number = Date.now(),
 ): DesignWriteResult {
   return database.transaction((tx) => {
     // Read the row first: a refusal is about a row that exists, so a missing
     // Design answers `design-missing` whatever the changes hold.
     const current = designFrom(tx, designId);
-    if (!current) return { kind: 'design-missing' };
+    if (!current) return { kind: "design-missing" };
 
     // Validate inside the transaction: a refusal stores nothing, and no row
     // write can land without the search text that belongs with it. A name is
@@ -387,7 +385,7 @@ export function writeDesign(
       const problem = designNameProblem(fields.name);
 
       if (problem) {
-        return { kind: 'refused', field: 'name', message: nameProblemMessage(problem) };
+        return { kind: "refused", field: "name", message: nameProblemMessage(problem) };
       }
 
       fields.name = fields.name.trim();
@@ -395,23 +393,29 @@ export function writeDesign(
 
     for (const change of changes.uses ?? []) {
       const colour =
-        change.kind === 'add'
+        change.kind === "add"
           ? change.input.colour
-          : change.kind === 'correct'
+          : change.kind === "correct"
             ? change.patch.colour
             : undefined;
 
       if (colour !== undefined && storedColour(colour) === null) {
-        return { kind: 'refused', field: 'colour', message: EMPTY_COLOUR_MESSAGE };
+        return { kind: "refused", field: "colour", message: EMPTY_COLOUR_MESSAGE };
       }
     }
 
     const uses = (changes.uses ?? []).map((change) => {
-      if (change.kind === 'add') {
-        return { ...change, input: { ...change.input, colour: storedColour(change.input.colour)! } };
+      if (change.kind === "add") {
+        return {
+          ...change,
+          input: { ...change.input, colour: storedColour(change.input.colour)! },
+        };
       }
-      if (change.kind === 'correct' && change.patch.colour !== undefined) {
-        return { ...change, patch: { ...change.patch, colour: storedColour(change.patch.colour)! } };
+      if (change.kind === "correct" && change.patch.colour !== undefined) {
+        return {
+          ...change,
+          patch: { ...change.patch, colour: storedColour(change.patch.colour)! },
+        };
       }
       return change;
     });
@@ -426,7 +430,7 @@ export function writeDesign(
     const useOutcomes: ChangeOutcome[] = [];
 
     for (const change of uses) {
-      if (change.kind === 'add') {
+      if (change.kind === "add") {
         const use: MaterialUse = {
           id: database.newId(),
           designId,
@@ -437,20 +441,20 @@ export function writeDesign(
           createdAt: now,
         };
         working.push(use);
-        useOutcomes.push({ kind: 'add', materialUse: use });
+        useOutcomes.push({ kind: "add", materialUse: use });
         continue;
       }
 
       const index = working.findIndex((use) => use.id === change.useId);
 
       if (index < 0) {
-        useOutcomes.push({ kind: 'use-missing', useId: change.useId });
+        useOutcomes.push({ kind: "use-missing", useId: change.useId });
         continue;
       }
 
-      if (change.kind === 'remove') {
+      if (change.kind === "remove") {
         const [gone] = working.splice(index, 1);
-        useOutcomes.push({ kind: 'remove', materialUse: gone });
+        useOutcomes.push({ kind: "remove", materialUse: gone });
         continue;
       }
 
@@ -463,7 +467,7 @@ export function writeDesign(
         role: change.patch.role ?? working[index].role,
       };
       working[index] = nextUse;
-      useOutcomes.push({ kind: 'correct', materialUse: nextUse });
+      useOutcomes.push({ kind: "correct", materialUse: nextUse });
     }
 
     const materialUses = working.sort(compareMaterialUses);
@@ -471,12 +475,12 @@ export function writeDesign(
       !diffDesignFields(current, next) && !diffMaterialUses(beforeUses, materialUses);
     const stored: Design = unchanged ? current : { ...next, updatedAt: now };
     const outcomes: ChangeOutcome[] = [
-      ...(changes.fields ? [{ kind: 'fields' as const, design: stored }] : []),
+      ...(changes.fields ? [{ kind: "fields" as const, design: stored }] : []),
       ...useOutcomes,
     ];
 
     if (unchanged) {
-      return { kind: 'stored', design: stored, materialUses, outcomes };
+      return { kind: "stored", design: stored, materialUses, outcomes };
     }
 
     const taxonomy = designTaxonomyNamesFrom(tx, next.categoryId, next.collectionId);
@@ -489,14 +493,14 @@ export function writeDesign(
           next,
           taxonomy.category,
           taxonomy.collection,
-          materialUseSearchParts(materialUses)
+          materialUseSearchParts(materialUses),
         ),
       })
       .where(eq(designs.id, designId))
       .run();
 
     for (const outcome of useOutcomes) {
-      if (outcome.kind === 'add') {
+      if (outcome.kind === "add") {
         const use = outcome.materialUse;
 
         tx.insert(designMaterials)
@@ -512,7 +516,7 @@ export function writeDesign(
         continue;
       }
 
-      if (outcome.kind === 'correct') {
+      if (outcome.kind === "correct") {
         const use = outcome.materialUse;
 
         tx.update(designMaterials)
@@ -522,12 +526,12 @@ export function writeDesign(
         continue;
       }
 
-      if (outcome.kind === 'remove') {
+      if (outcome.kind === "remove") {
         tx.delete(designMaterials).where(eq(designMaterials.id, outcome.materialUse.id)).run();
       }
     }
 
-    return { kind: 'stored', design: stored, materialUses, outcomes };
+    return { kind: "stored", design: stored, materialUses, outcomes };
   });
 }
 

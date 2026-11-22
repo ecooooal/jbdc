@@ -1,6 +1,6 @@
-import { asc, isNull } from 'drizzle-orm';
-import type { Database, DatabaseHandle } from '@/features/database';
-import { categories, collections, declareLiveRead } from '@/features/database';
+import { asc, isNull } from "drizzle-orm";
+import type { Database, DatabaseHandle } from "@/features/database";
+import { categories, collections, declareLiveRead } from "@/features/database";
 
 /** A name is trimmed and must survive trimming; this is the only cap. */
 export const TAXONOMY_NAME_MAX_LENGTH = 120;
@@ -33,33 +33,33 @@ export type CreateCollectionInput = {
 
 export class InvalidTaxonomyNameError extends Error {
   constructor(
-    readonly kind: 'category' | 'collection',
-    readonly reason: 'empty' | 'too_long'
+    readonly kind: "category" | "collection",
+    readonly reason: "empty" | "too_long",
   ) {
     super(
-      reason === 'empty'
+      reason === "empty"
         ? `A ${kind} needs a name.`
-        : `A ${kind} name can be at most ${TAXONOMY_NAME_MAX_LENGTH} characters.`
+        : `A ${kind} name can be at most ${TAXONOMY_NAME_MAX_LENGTH} characters.`,
     );
-    this.name = 'InvalidTaxonomyNameError';
+    this.name = "InvalidTaxonomyNameError";
   }
 }
 
 export class InvalidCollectionYearError extends Error {
   constructor(readonly year: number) {
     super(
-      `A collection year must be a whole number between ${COLLECTION_YEAR_MIN} and ${COLLECTION_YEAR_MAX}.`
+      `A collection year must be a whole number between ${COLLECTION_YEAR_MIN} and ${COLLECTION_YEAR_MAX}.`,
     );
-    this.name = 'InvalidCollectionYearError';
+    this.name = "InvalidCollectionYearError";
   }
 }
 
-function normalizeName(kind: 'category' | 'collection', raw: string): string {
+function normalizeName(kind: "category" | "collection", raw: string): string {
   const name = raw.trim();
 
-  if (name.length === 0) throw new InvalidTaxonomyNameError(kind, 'empty');
+  if (name.length === 0) throw new InvalidTaxonomyNameError(kind, "empty");
   if (name.length > TAXONOMY_NAME_MAX_LENGTH) {
-    throw new InvalidTaxonomyNameError(kind, 'too_long');
+    throw new InvalidTaxonomyNameError(kind, "too_long");
   }
 
   return name;
@@ -169,9 +169,9 @@ export function taxonomyLabel(entry: { name: string; year?: number | null }): st
 export function createCategory(
   database: Database,
   input: CreateCategoryInput,
-  now: number = Date.now()
+  now: number = Date.now(),
 ): Category {
-  const name = normalizeName('category', input.name);
+  const name = normalizeName("category", input.name);
   const category: Category = { id: database.newId(), name };
 
   database.db
@@ -189,9 +189,9 @@ export function createCategory(
 export function createCollection(
   database: Database,
   input: CreateCollectionInput,
-  now: number = Date.now()
+  now: number = Date.now(),
 ): Collection {
-  const name = normalizeName('collection', input.name);
+  const name = normalizeName("collection", input.name);
   const year = normalizeYear(input.year);
   const collection: Collection = { id: database.newId(), name, year };
 

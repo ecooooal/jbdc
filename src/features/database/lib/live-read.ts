@@ -1,5 +1,5 @@
-import { getTableConfig, type SQLiteTable } from 'drizzle-orm/sqlite-core';
-import type { Database } from './port';
+import { getTableConfig, type SQLiteTable } from "drizzle-orm/sqlite-core";
+import type { Database } from "./port";
 
 /** A table a live read watches. */
 export type LiveReadTable = SQLiteTable;
@@ -35,7 +35,7 @@ export type LiveReadDeclaration<Row extends object> = {
 
 /** Declares a live read without changing it; the type parameter names its row. */
 export function declareLiveRead<Row extends object>(
-  declaration: LiveReadDeclaration<Row>
+  declaration: LiveReadDeclaration<Row>,
 ): LiveReadDeclaration<Row> {
   return declaration;
 }

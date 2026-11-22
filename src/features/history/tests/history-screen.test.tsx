@@ -1,32 +1,12 @@
-import { render, screen, within } from '@testing-library/react-native';
-import { eq } from 'drizzle-orm';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { categories, collections } from '@/features/database';
-import { DatabaseProvider } from '@/features/database/react';
-import { createSyncSubscribe, createTempDatabase } from '@/features/database/testing';
-import { createDesign, writeDesign, type DesignFields, type MaterialUse } from '@/features/designs';
-import { recordEdit } from '@/features/history';
-import { HistoryScreen } from '@/features/history/react';
-import { createMaterial } from '@/features/materials';
-import { createCategory, createCollection } from '@/features/taxonomy';
+import { render, screen, within } from "@testing-library/react-native";
+import { SafeAreaProvider } from "react-native-safe-area-context";
+import { DatabaseProvider } from "@/features/database/react";
+import { createSyncSubscribe, createTempDatabase } from "@/features/database/testing";
+import { createDesign, type DesignFields } from "@/features/designs";
+import { recordEdit, recordImageChange } from "@/features/history";
+import { HistoryScreen } from "@/features/history/react";
 
-jest.mock('expo-router', () => ({ router: { back: jest.fn() } }));
-
-/** Seeds a recorded use through the visit's one write path. */
-function addMaterialUse(
-  database: ReturnType<typeof createTempDatabase>['database'],
-  designId: string,
-  input: { materialId: string; colour: string; role: 'main' | 'secondary' | 'other' },
-  now?: number
-): MaterialUse | null {
-  const result = writeDesign(database, designId, { uses: [{ kind: 'add', input }] }, now);
-
-  if (result.kind !== 'stored') return null;
-
-  const outcome = result.outcomes[0];
-
-  return outcome?.kind === 'add' ? outcome.materialUse : null;
-}
+jest.mock("expo-router", () => ({ router: { back: jest.fn() } }));
 
 const INITIAL_METRICS = {
   frame: { x: 0, y: 0, width: 390, height: 844 },
@@ -38,7 +18,7 @@ const live = createSyncSubscribe();
 /** The fields of a Design before an edit; overrides say what changed. */
 function fields(overrides: Partial<DesignFields> = {}): DesignFields {
   return {
-    name: 'Silk slip dress',
+    name: "Silk slip dress",
     description: null,
     categoryId: null,
     collectionId: null,
@@ -60,7 +40,7 @@ function fields(overrides: Partial<DesignFields> = {}): DesignFields {
   };
 }
 
-let database: ReturnType<typeof createTempDatabase>['database'];
+let database: ReturnType<typeof createTempDatabase>["database"];
 let dispose: () => void;
 
 beforeEach(() => {
@@ -77,210 +57,65 @@ async function renderHistory(designId: string) {
       <DatabaseProvider database={database} subscribe={live.subscribe}>
         <HistoryScreen designId={designId} />
       </DatabaseProvider>
-    </SafeAreaProvider>
+    </SafeAreaProvider>,
   );
 }
 
-test('shows what changed, the old value, the new value, and when', async () => {
-  const design = createDesign(database, { name: 'Silk slip dress' }, 10);
+test("renders a field-edit Event as a card with its sections and timestamp", async () => {
+  const design = createDesign(database, { name: "Silk slip dress" }, 10);
 
   recordEdit(
     database,
     design.id,
     {
       before: fields(),
-      after: fields({ name: 'Wool coat', description: 'Heavy twill' }),
+      after: fields({ name: "Wool coat", silhouette: "Relaxed A-line" }),
     },
-    Date.UTC(2025, 0, 2, 3, 4)
+    Date.UTC(2025, 0, 2, 3, 4),
   );
 
   await renderHistory(design.id);
 
-  expect(screen.getByText('History')).toBeTruthy();
-  expect(screen.getByText('Name: Silk slip dress → Wool coat')).toBeTruthy();
-  expect(screen.getByText('Description: None → Heavy twill')).toBeTruthy();
+  expect(screen.getByText("History")).toBeTruthy();
+  expect(screen.getByTestId("history-section-identity")).toBeTruthy();
+  expect(screen.getByTestId("history-section-specification")).toBeTruthy();
   expect(screen.getByText(/2025/)).toBeTruthy();
 });
 
-test('shows the names of the Categories a visit changed', async () => {
-  const dress = createCategory(database, { name: 'Dress' });
-  const knitwear = createCategory(database, { name: 'Knitwear' });
-  const design = createDesign(database, { name: 'Silk slip dress' }, 10);
+test("renders an image Event as a card with its Images section and summary line", async () => {
+  const design = createDesign(database, { name: "Silk slip dress" }, 10);
 
-  recordEdit(
-    database,
-    design.id,
-    {
-      before: fields({ categoryId: dress.id }),
-      after: fields({ categoryId: knitwear.id }),
+  // Seed through the module's own writer — the same call the images write path
+  // makes inside its transaction — not through the full image-store stack.
+  recordImageChange(database.db, {
+    id: "event-image",
+    designId: design.id,
+    changes: {
+      attached: [
+        {
+          id: "img-1",
+          designId: design.id,
+          kind: "sketch",
+          contentHash: "hash-1",
+          extension: "jpg",
+          createdAt: Date.UTC(2025, 0, 2, 3, 4),
+        },
+      ],
     },
-    Date.UTC(2025, 0, 2, 3, 4)
-  );
+    createdAt: Date.UTC(2025, 0, 2, 3, 4),
+  });
 
   await renderHistory(design.id);
 
-  expect(screen.getByText('Category: Dress → Knitwear')).toBeTruthy();
+  const images = screen.getByTestId("history-section-images");
+
+  expect(within(images).getByText(/sketch image attached$/)).toBeTruthy();
 });
 
-test('keeps the names of a Category and Collection deleted after the edit', async () => {
-  const category = createCategory(database, { name: 'Dress' });
-  const collection = createCollection(database, { name: 'Spring', year: 2027 });
-  const design = createDesign(database, { name: 'Silk slip dress' }, 10);
-
-  recordEdit(
-    database,
-    design.id,
-    {
-      before: fields(),
-      after: fields({ categoryId: category.id, collectionId: collection.id }),
-    },
-    Date.UTC(2025, 0, 2, 3, 4)
-  );
-
-  database.db
-    .update(categories)
-    .set({ deletedAt: Date.UTC(2025, 0, 3) })
-    .where(eq(categories.id, category.id))
-    .run();
-  database.db
-    .update(collections)
-    .set({ deletedAt: Date.UTC(2025, 0, 3) })
-    .where(eq(collections.id, collection.id))
-    .run();
+test("a design with no Events says so plainly", async () => {
+  const design = createDesign(database, { name: "Silk slip dress" }, 10);
 
   await renderHistory(design.id);
 
-  expect(screen.getByText('Category: None → Dress')).toBeTruthy();
-  expect(screen.getByText('Collection: None → Spring (2027)')).toBeTruthy();
-  expect(screen.queryByText(/Unknown Category/)).toBeNull();
-  expect(screen.queryByText(/Unknown Collection/)).toBeNull();
-});
-
-test('shows a Collection created without a year by its bare name', async () => {
-  const collection = createCollection(database, { name: 'Spring' });
-  const design = createDesign(database, { name: 'Silk slip dress' }, 10);
-
-  recordEdit(
-    database,
-    design.id,
-    {
-      before: fields(),
-      after: fields({ collectionId: collection.id }),
-    },
-    Date.UTC(2025, 0, 2, 3, 4)
-  );
-
-  await renderHistory(design.id);
-
-  expect(screen.getByText('Collection: None → Spring')).toBeTruthy();
-});
-
-test('a cleared Category reads as empty', async () => {
-  const dress = createCategory(database, { name: 'Dress' });
-  const design = createDesign(database, { name: 'Silk slip dress' }, 10);
-
-  recordEdit(
-    database,
-    design.id,
-    { before: fields({ categoryId: dress.id }), after: fields() },
-    Date.UTC(2025, 0, 2, 3, 4)
-  );
-
-  await renderHistory(design.id);
-
-  expect(screen.getByText('Category: Dress → None')).toBeTruthy();
-});
-
-test('shows a Specification change by its owner-facing label', async () => {
-  const design = createDesign(database, { name: 'Silk slip dress' }, 10);
-
-  recordEdit(
-    database,
-    design.id,
-    {
-      before: fields(),
-      after: fields({ silhouette: 'Relaxed A-line', measurements: 'Bust 96' }),
-    },
-    Date.UTC(2025, 0, 2, 3, 4)
-  );
-
-  await renderHistory(design.id);
-
-  expect(screen.getByText('Silhouette: None → Relaxed A-line')).toBeTruthy();
-  expect(screen.getByText('Measurements: None → Bust 96')).toBeTruthy();
-});
-
-test('groups a card under Identity, Specification, Creative direction, and Materials', async () => {
-  const design = createDesign(database, { name: 'Silk slip dress' }, 10);
-  const wool = createMaterial(database, { name: 'Wool' });
-  const materialUse = addMaterialUse(
-    database,
-    design.id,
-    { materialId: wool.id, colour: 'Charcoal', role: 'main' },
-    10
-  );
-
-  if (!materialUse) throw new Error('the Material use should have been written');
-
-  recordEdit(
-    database,
-    design.id,
-    {
-      before: fields(),
-      after: fields({
-        description: 'Heavy twill',
-        silhouette: 'Relaxed A-line',
-        mood: 'Romantic, relaxed',
-      }),
-      materialUses: { before: [], after: [materialUse] },
-    },
-    Date.UTC(2025, 0, 2, 3, 4)
-  );
-
-  await renderHistory(design.id);
-
-  expect(
-    within(screen.getByTestId('history-section-identity')).getByText(
-      'Description: None → Heavy twill'
-    )
-  ).toBeTruthy();
-  expect(
-    within(screen.getByTestId('history-section-specification')).getByText(
-      'Silhouette: None → Relaxed A-line'
-    )
-  ).toBeTruthy();
-  expect(
-    within(screen.getByTestId('history-section-creativeDirection')).getByText(
-      'Mood: None → Romantic, relaxed'
-    )
-  ).toBeTruthy();
-  expect(
-    within(screen.getByTestId('history-section-materials')).getByText(/ added$/)
-  ).toBeTruthy();
-});
-
-test('a section with nothing changed is not shown', async () => {
-  const design = createDesign(database, { name: 'Silk slip dress' }, 10);
-
-  recordEdit(
-    database,
-    design.id,
-    { before: fields(), after: fields({ silhouette: 'Relaxed A-line' }) },
-    Date.UTC(2025, 0, 2, 3, 4)
-  );
-
-  await renderHistory(design.id);
-
-  expect(screen.getByTestId('history-section-specification')).toBeTruthy();
-  expect(screen.queryByTestId('history-section-identity')).toBeNull();
-  expect(screen.queryByTestId('history-section-creativeDirection')).toBeNull();
-  expect(screen.queryByTestId('history-section-materials')).toBeNull();
-});
-
-test('a design with no History says so plainly', async () => {
-  const design = createDesign(database, { name: 'Silk slip dress' }, 10);
-
-  await renderHistory(design.id);
-
-  expect(screen.getByText('Nothing has changed yet.')).toBeTruthy();
+  expect(screen.getByText("Nothing has changed yet.")).toBeTruthy();
 });

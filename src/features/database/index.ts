@@ -3,21 +3,24 @@
  *
  * This entry is driver-free on purpose: feature modules import the query-handle
  * type and the schema here and never see expo-sqlite or better-sqlite3. The
- * adapters live in `./expo` (the app) and `./testing` (Jest).
+ * adapters live in `./lib/expo-database` (the app) and `./testing` (Jest).
  */
-export type { DatabaseHandle, Database } from './lib/port';
-export { declareLiveRead } from './lib/live-read';
-export type { LiveReadDeclaration, LiveReadTable } from './lib/live-read';
+export type { DatabaseHandle, Database } from "./lib/port";
+export { declareLiveRead } from "./lib/live-read";
+export type { LiveReadDeclaration, LiveReadTable } from "./lib/live-read";
 export {
   categories,
   collections,
   designEvents,
   designMaterials,
   designs,
+  imageNotes,
+  images,
   materials,
   settings,
   DESIGN_EVENT_KINDS,
   DESIGN_STATUSES,
+  IMAGE_KINDS,
   MATERIAL_USE_ROLES,
-} from './schema';
-export type { DesignEventKind, DesignStatus, MaterialUseRole } from './schema';
+} from "./schema";
+export type { DesignEventKind, DesignStatus, ImageKind, MaterialUseRole } from "./schema";

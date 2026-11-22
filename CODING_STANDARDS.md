@@ -8,7 +8,9 @@ check can make. Mechanical rules live in code, not here:
 
 A review reads the standards set together: `docs/FRONTEND_STATE.md`,
 `docs/EXPO-FOLDER-STRUCTURE.md`, `docs/EXPO-DB.md`, `GLOSSARY.md`, and the
-ADRs under `docs/adr/`.
+ADRs under `docs/adr/`. For each source the diff can contradict, name the
+decision it settles and say whether it now disagrees; a source opened but not
+checked is not a source.
 
 ## Commits
 
@@ -28,25 +30,34 @@ ADRs under `docs/adr/`.
   work, and never give a one-line prose change its own commit.
 - **Generated files travel alone.** `snapshot.json`, `migration.sql`, and
   `migrations.js` share a commit with their schema change and nothing else.
-  Their hundreds of lines hide every file beside them.
+  Their hundreds of lines hide every file beside them. When the step's content is
+  the schema change itself, they ride in that step's commit with the schema and
+  the migration test; "alone" means not beside unrelated code.
 - **A rename travels alone.** Moving a file and changing its behaviour in one
   commit hides both from the reviewer.
 - **A fat commit means a coarse ticket.** If the ticket does not name its steps
   up front, the steps get invented at commit time — once, at the end. Split the
   ticket, not the commit.
-- **Subject names the ticket.** `<type> (#<ticket>): <reason>`, e.g.
-  `feat (#14): edit a design's fields without a Save button`. Types in use:
-  `feat`, `fix`, `refactor`, `test`, `docs`, `chore`. A change with no ticket
-  names the files it touches instead of inventing a number, comma-separated
-  when there are several: `chore (CODING_STANDARDS, AGENTS): …`.
+- **Subject names the ticket and the skill.** `<type> (#<ticket>): <reason>`,
+  e.g. `implement (#14): edit a design's fields without a Save button`. A
+  ticket commit is typed by the skill that produced it: `implement` for a step
+  commit, `review` for a repair commit. `git log --oneline` then says whether a
+  commit is feature work or review work without reading the diff. A person
+  fixing a ticket by hand keeps `fix (#<ticket>)`.
+  A change with no ticket names the files it touches instead of inventing a
+  number, comma-separated when there are several, and keeps the content types —
+  `feat`, `fix`, `refactor`, `test`, `docs`, `chore`:
+  `chore (CODING_STANDARDS, AGENTS): …`.
   The Spec review reads the ticket from the subject, so a commit without one is
-  unreviewable.
+  unreviewable, and `.githooks/commit-msg` rejects a subject that names no
+  change.
 
 ## Architecture
 
-- **Adapters stay mechanical.** `expo.ts` and `lib/better-sqlite3-driver.ts`
-  translate calls only. Semantics live in the port (`lib/port.ts`); a rule that
-  can be tested on the port does not belong in an adapter.
+- **Adapters stay mechanical.** `lib/expo-database.ts` and
+  `lib/better-sqlite3-driver.ts` translate calls only. Semantics live in the
+  port (`lib/port.ts`); a rule that can be tested on the port does not belong in
+  an adapter.
 - **A write names the row it missed.** A write returns the row it stored, or
   `null` for exactly one reason: the row it targeted is missing. A write that
   can miss more than one row — a Design and one of its Material uses — says
@@ -62,6 +73,11 @@ ADRs under `docs/adr/`.
   changes first.
 - **State** lives in reducers. See `docs/FRONTEND_STATE.md`.
 - Client components get only what they use.
+- **An entry point exports only what another package imports.** `index.ts` and
+  `react.ts` are the contract between features; a function or type only the
+  package's own tree uses stays in `lib/`. `scripts/check-entry-exports.mjs`
+  enforces it; its baseline lists the exports that predate the rule, so any
+  name the check reports is one the diff added.
 
 ## Tests
 

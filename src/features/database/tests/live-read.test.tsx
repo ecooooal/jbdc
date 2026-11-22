@@ -1,21 +1,18 @@
-import { renderHook } from '@testing-library/react-native';
+import { renderHook } from "@testing-library/react-native";
 import {
   categories,
   declareLiveRead,
   type Database,
   type LiveReadTable,
-} from '@/features/database';
-import { DatabaseProvider, useLiveRead } from '@/features/database/react';
-import { createSyncSubscribe, createTempDatabase } from '@/features/database/testing';
-import { expectLiveReadReruns } from '@/features/database/testing-live';
+} from "@/features/database";
+import { DatabaseProvider, useLiveRead } from "@/features/database/react";
+import { createSyncSubscribe, createTempDatabase } from "@/features/database/testing";
+import { expectLiveReadReruns } from "@/features/database/testing-live";
 
 type Names = { names: string[] };
 
 function addCategory(database: Database, name: string): void {
-  database.db
-    .insert(categories)
-    .values({ id: database.newId(), name, createdAt: 0 })
-    .run();
+  database.db.insert(categories).values({ id: database.newId(), name, createdAt: 0 }).run();
 }
 
 /** A real read over Categories, declaring exactly the tables it is handed. */
@@ -44,28 +41,30 @@ afterEach(() => {
   dispose();
 });
 
-test('a live read re-runs when a watched table changes', async () => {
+test("a live read re-runs when a watched table changes", async () => {
   const declaration = readsCategoryNames([categories]);
 
   await expectLiveReadReruns(declaration, categories, database, (database) => {
-    addCategory(database, 'Knitwear');
+    addCategory(database, "Knitwear");
   });
 });
 
-test('a live read that does not declare a table it reads fails the check', async () => {
+test("a live read that does not declare a table it reads fails the check", async () => {
   const complete = readsCategoryNames([categories]);
   const missing = readsCategoryNames([]);
-  const change = (database: Database) => addCategory(database, 'Knitwear');
+  const change = (database: Database) => addCategory(database, "Knitwear");
 
-  await expect(expectLiveReadReruns(complete, categories, database, change)).resolves.toBeUndefined();
+  await expect(
+    expectLiveReadReruns(complete, categories, database, change),
+  ).resolves.toBeUndefined();
   await expect(expectLiveReadReruns(missing, categories, database, change)).rejects.toThrow();
 });
 
-test('a failing read keeps the declared default shape and reports error status', async () => {
+test("a failing read keeps the declared default shape and reports error status", async () => {
   const declaration = declareLiveRead<Names>({
     tables: [categories],
     read: () => {
-      throw new Error('no catalog');
+      throw new Error("no catalog");
     },
     empty: { names: [] },
   });
@@ -80,6 +79,6 @@ test('a failing read keeps the declared default shape and reports error status',
   });
 
   expect(result.current.data).toEqual({ names: [] });
-  expect(result.current.status).toBe('error');
-  expect(result.current.error?.message).toBe('no catalog');
+  expect(result.current.status).toBe("error");
+  expect(result.current.error?.message).toBe("no catalog");
 });

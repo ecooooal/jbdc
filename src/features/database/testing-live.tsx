@@ -1,19 +1,11 @@
-import { act, render } from '@testing-library/react-native';
-import {
-  liveReadTableName,
-  type LiveReadDeclaration,
-  type LiveReadTable,
-} from './lib/live-read';
-import type { Database } from './lib/port';
-import { DatabaseProvider, useLiveRead } from './react';
-import { createSyncSubscribe } from './testing';
+import { act, render } from "@testing-library/react-native";
+import { liveReadTableName, type LiveReadDeclaration, type LiveReadTable } from "./lib/live-read";
+import type { Database } from "./lib/port";
+import { DatabaseProvider, useLiveRead } from "./react";
+import { createSyncSubscribe } from "./testing";
 
 /** Mounts one declared read in the app's provider seam; the hook does the rest. */
-function Probe<Row extends object>({
-  declaration,
-}: {
-  declaration: LiveReadDeclaration<Row>;
-}) {
+function Probe<Row extends object>({ declaration }: { declaration: LiveReadDeclaration<Row> }) {
   useLiveRead(declaration);
 
   return null;
@@ -30,7 +22,7 @@ export async function expectLiveReadReruns<Row extends object>(
   declaration: LiveReadDeclaration<Row>,
   table: LiveReadTable,
   database: Database,
-  change: (database: Database) => void
+  change: (database: Database) => void | Promise<void>,
 ): Promise<void> {
   let reads = 0;
   const counted: LiveReadDeclaration<Row> = {
@@ -45,13 +37,13 @@ export async function expectLiveReadReruns<Row extends object>(
   const view = await render(
     <DatabaseProvider database={database} subscribe={live.subscribe}>
       <Probe declaration={counted} />
-    </DatabaseProvider>
+    </DatabaseProvider>,
   );
   const before = reads;
 
   try {
     await act(async () => {
-      change(database);
+      await change(database);
       live.notify(liveReadTableName(table));
     });
 

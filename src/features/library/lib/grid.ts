@@ -1,4 +1,4 @@
-import type { CardDensity } from '@/features/settings';
+import type { CardDensity } from "@/features/settings";
 
 /** The space between two cards, in dp. */
 export const LIBRARY_GRID_GAP = 12;

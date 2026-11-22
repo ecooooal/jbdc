@@ -1,15 +1,12 @@
-import { router } from 'expo-router';
-import { Plus } from 'lucide-react-native';
-import { useReducer } from 'react';
-import { View } from 'react-native';
-import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useDatabase } from '@/features/database/react';
-import {
-  createDesign,
-  DESIGN_NAME_MAX_LENGTH,
-  InvalidDesignNameError,
-} from '@/features/designs';
+import { router } from "expo-router";
+import { Plus } from "lucide-react-native";
+import { useReducer } from "react";
+import { View } from "react-native";
+import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { useDatabase } from "@/features/database/react";
+import { createDesign } from "@/features/designs";
+import { DESIGN_NAME_MAX_LENGTH, InvalidDesignNameError } from "../lib/records";
 import {
   createCategory,
   createCollection,
@@ -17,22 +14,22 @@ import {
   InvalidTaxonomyNameError,
   TAXONOMY_NAME_MAX_LENGTH,
   taxonomyLabel,
-} from '@/features/taxonomy';
-import { useTaxonomy } from '@/features/taxonomy/react';
-import { Button } from '@/shared/components/ui/button';
-import { Icon } from '@/shared/components/ui/icon';
-import { Input } from '@/shared/components/ui/input';
-import { Text } from '@/shared/components/ui/text';
-import { inlineCreationResult } from '../lib/inline-creation-reducer';
+} from "@/features/taxonomy";
+import { useTaxonomy } from "@/features/taxonomy/react";
+import { Button } from "@/shared/components/ui/button";
+import { Icon } from "@/shared/components/ui/icon";
+import { Input } from "@/shared/components/ui/input";
+import { Text } from "@/shared/components/ui/text";
+import { inlineCreationResult } from "../lib/inline-creation-reducer";
 import {
   canCreateDesign,
   collectionYearFromInput,
   createInitialNewDesignFormState,
   newDesignFormReducer,
-} from '../lib/new-design-form-reducer';
-import { FormField } from './form-field';
-import { InlineCreationPanel } from './inline-creation-panel';
-import { TaxonomySelect } from './taxonomy-select';
+} from "../lib/new-design-form-reducer";
+import { FormField } from "./form-field";
+import { InlineCreationPanel } from "./inline-creation-panel";
+import { TaxonomySelect } from "./taxonomy-select";
 
 /**
  * The create-design form. A name is the only input; Category and Collection
@@ -45,7 +42,7 @@ export function NewDesignForm() {
   const [state, dispatch] = useReducer(
     newDesignFormReducer,
     undefined,
-    createInitialNewDesignFormState
+    createInitialNewDesignFormState,
   );
   const selectedCategory = categories.find((category) => category.id === state.categoryId) ?? null;
   const selectedCollection =
@@ -53,17 +50,17 @@ export function NewDesignForm() {
 
   function addCategory() {
     dispatch({
-      type: 'inline-fact',
+      type: "inline-fact",
       fact: inlineCreationResult(
         () => createCategory(database, { name: state.inline.name }),
-        InvalidTaxonomyNameError
+        InvalidTaxonomyNameError,
       ),
     });
   }
 
   function addCollection() {
     dispatch({
-      type: 'inline-fact',
+      type: "inline-fact",
       fact: inlineCreationResult(
         () =>
           createCollection(database, {
@@ -71,7 +68,7 @@ export function NewDesignForm() {
             year: collectionYearFromInput(state.inlineYear),
           }),
         InvalidTaxonomyNameError,
-        InvalidCollectionYearError
+        InvalidCollectionYearError,
       ),
     });
   }
@@ -86,7 +83,7 @@ export function NewDesignForm() {
     } catch (caught) {
       if (!(caught instanceof InvalidDesignNameError)) throw caught;
 
-      dispatch({ type: 'design-creation-refused', message: caught.message });
+      dispatch({ type: "design-creation-refused", message: caught.message });
       return;
     }
 
@@ -96,11 +93,16 @@ export function NewDesignForm() {
   const canCreate = canCreateDesign(state);
 
   return (
-    <SafeAreaView style={{ flex: 1 }} className="bg-background" edges={['top', 'left', 'right']}>
+    <SafeAreaView style={{ flex: 1 }} className="bg-background" edges={["top", "left", "right"]}>
       <KeyboardAwareScrollView
         style={{ flex: 1 }}
         bottomOffset={24}
-        contentContainerStyle={{ gap: 24, paddingHorizontal: 24, paddingTop: 24, paddingBottom: 48 }}
+        contentContainerStyle={{
+          gap: 24,
+          paddingHorizontal: 24,
+          paddingTop: 24,
+          paddingBottom: 48,
+        }}
         keyboardShouldPersistTaps="handled"
       >
         <View className="gap-1">
@@ -111,7 +113,7 @@ export function NewDesignForm() {
         <FormField label="Name">
           <Input
             value={state.name}
-            onChangeText={(name) => dispatch({ type: 'name-changed', name })}
+            onChangeText={(name) => dispatch({ type: "name-changed", name })}
             placeholder="Silk slip dress"
             autoFocus
             returnKeyType="done"
@@ -132,12 +134,12 @@ export function NewDesignForm() {
             placeholder="No category"
             value={selectedCategory}
             items={categories}
-            disabled={status !== 'ready'}
+            disabled={status !== "ready"}
             onSelect={(category) =>
-              dispatch({ type: 'category-chosen', categoryId: category?.id ?? null })
+              dispatch({ type: "category-chosen", categoryId: category?.id ?? null })
             }
           />
-          {state.inline.open && state.inlineKind === 'category' ? (
+          {state.inline.open && state.inlineKind === "category" ? (
             <InlineCreationPanel
               title="New category"
               submitLabel="Add category"
@@ -145,17 +147,17 @@ export function NewDesignForm() {
               error={state.inline.error}
               maxLength={TAXONOMY_NAME_MAX_LENGTH}
               onNameChange={(name) =>
-                dispatch({ type: 'inline-fact', fact: { type: 'name-changed', name } })
+                dispatch({ type: "inline-fact", fact: { type: "name-changed", name } })
               }
               onSubmit={addCategory}
-              onCancel={() => dispatch({ type: 'inline-fact', fact: { type: 'closed' } })}
+              onCancel={() => dispatch({ type: "inline-fact", fact: { type: "closed" } })}
             />
           ) : (
             <Button
               size="sm"
               variant="ghost"
               className="self-start"
-              onPress={() => dispatch({ type: 'inline-opened', kind: 'category' })}
+              onPress={() => dispatch({ type: "inline-opened", kind: "category" })}
             >
               <Icon as={Plus} />
               <Text>New category</Text>
@@ -169,35 +171,35 @@ export function NewDesignForm() {
             placeholder="No collection"
             value={selectedCollection}
             items={collections}
-            disabled={status !== 'ready'}
+            disabled={status !== "ready"}
             itemLabel={taxonomyLabel}
             onSelect={(collection) =>
-              dispatch({ type: 'collection-chosen', collectionId: collection?.id ?? null })
+              dispatch({ type: "collection-chosen", collectionId: collection?.id ?? null })
             }
           />
-          {state.inline.open && state.inlineKind === 'collection' ? (
+          {state.inline.open && state.inlineKind === "collection" ? (
             <InlineCreationPanel
               title="New collection"
               submitLabel="Add collection"
               name={state.inline.name}
               yearField={{
                 value: state.inlineYear,
-                onChange: (year) => dispatch({ type: 'inline-year-changed', year }),
+                onChange: (year) => dispatch({ type: "inline-year-changed", year }),
               }}
               error={state.inline.error}
               maxLength={TAXONOMY_NAME_MAX_LENGTH}
               onNameChange={(name) =>
-                dispatch({ type: 'inline-fact', fact: { type: 'name-changed', name } })
+                dispatch({ type: "inline-fact", fact: { type: "name-changed", name } })
               }
               onSubmit={addCollection}
-              onCancel={() => dispatch({ type: 'inline-fact', fact: { type: 'closed' } })}
+              onCancel={() => dispatch({ type: "inline-fact", fact: { type: "closed" } })}
             />
           ) : (
             <Button
               size="sm"
               variant="ghost"
               className="self-start"
-              onPress={() => dispatch({ type: 'inline-opened', kind: 'collection' })}
+              onPress={() => dispatch({ type: "inline-opened", kind: "collection" })}
             >
               <Icon as={Plus} />
               <Text>New collection</Text>

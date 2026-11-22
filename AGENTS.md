@@ -30,7 +30,7 @@ For expo eas, see `docs/EXPO-EAS.md`
 
 ### Issue tracker
 
-Issues and specs live as GitHub issues in `ecooooal/jbdc`, managed with the `gh` CLI. See `docs/agents/issue-tracker.md`.
+Issues and specs live as GitHub issues, managed with the `gh` CLI, which resolves this repo from the remote — run `gh` without `--repo`. See `docs/agents/issue-tracker.md`.
 
 Git access is read-only: the GitHub token manages issues and PRs but cannot push commits. Hand branch pushes (`git push`) to the user, then open the PR with `gh` once the branch is on the remote.
 

@@ -34,6 +34,14 @@
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 76
         }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "JBDC reads your photos only to attach the ones you pick to a design.",
+          "cameraPermission": "JBDC uses your camera only to photograph a design you attach.",
+          "microphonePermission": false
+        }
       ]
     ],
     "experiments": {

@@ -1,5 +1,5 @@
-const { defineConfig } = require('eslint/config');
-const expoConfig = require('eslint-config-expo/flat');
+const { defineConfig } = require("eslint/config");
+const expoConfig = require("eslint-config-expo/flat");
 
 // Mechanical boundaries from AGENTS.md and docs/EXPO-DB.md. Patterns match the
 // raw import specifier, so they cover `@/features/...` aliases and bare
@@ -7,30 +7,30 @@ const expoConfig = require('eslint-config-expo/flat');
 // scripts/check-feature-boundaries.mjs in pre-commit and CI.
 const boundaryRules = {
   entryPoints: {
-    group: ['**/features/*/lib/**', '**/features/*/tests/**'],
-    message: 'Import the feature package entry point, not its lib/ or tests/.',
+    group: ["**/features/*/lib/**", "**/features/*/tests/**"],
+    message: "Import the feature package entry point, not its lib/ or tests/.",
   },
   expoSqlite: {
-    group: ['expo-sqlite'],
-    message: 'Only src/features/database/expo.ts may import expo-sqlite.',
+    group: ["expo-sqlite"],
+    message: "Only src/features/database/lib/expo-database.ts may import expo-sqlite.",
   },
   betterSqlite3: {
-    group: ['better-sqlite3'],
-    message: 'Tests only: use @/features/database/testing.',
+    group: ["better-sqlite3"],
+    message: "Tests only: use @/features/database/testing.",
   },
 };
 
 // `src/app` is routing only: a route renders a screen from a feature entry
 // point, so it never composes shared UI or reaches into a feature's components.
 const routesOnly = {
-  group: ['@/shared/components/**', '**/features/*/components/**'],
+  group: ["@/shared/components/**", "**/features/*/components/**"],
   message:
-    'src/app is routing only. Render the screen from a feature entry point; its UI lives in features/<feature>/components.',
+    "src/app is routing only. Render the screen from a feature entry point; its UI lives in features/<feature>/components.",
 };
 
 function restrictedImports(exempt = [], extra = []) {
   return [
-    'error',
+    "error",
     {
       patterns: [
         ...Object.entries(boundaryRules)
@@ -50,49 +50,49 @@ const effectListAssertion = {
   selector:
     "CallExpression[callee.property.name='toHaveLength'][callee.object.arguments.0.callee.property.name='getEffects']",
   message:
-    'Assert the whole effect list with toEqual (docs/FRONTEND_STATE.md §Testing); a length lets a substituted effect pass.',
+    "Assert the whole effect list with toEqual (docs/FRONTEND_STATE.md §Testing); a length lets a substituted effect pass.",
 };
 
 const negatedEffectListAssertion = {
   selector:
     "CallExpression[callee.property.name='toHaveLength'][callee.object.object.arguments.0.callee.property.name='getEffects']",
   message:
-    'Assert the whole effect list with toEqual (docs/FRONTEND_STATE.md §Testing); a length lets a substituted effect pass.',
+    "Assert the whole effect list with toEqual (docs/FRONTEND_STATE.md §Testing); a length lets a substituted effect pass.",
 };
 
 module.exports = defineConfig([
   expoConfig,
   {
-    ignores: ['dist/*', 'src/features/database/migrations/**'],
+    ignores: ["dist/*", "src/features/database/migrations/**"],
   },
   {
-    files: ['**/*.{ts,tsx}'],
+    files: ["**/*.{ts,tsx}"],
     rules: {
-      'no-restricted-imports': restrictedImports(),
+      "no-restricted-imports": restrictedImports(),
     },
   },
   {
-    files: ['src/app/**/*.{ts,tsx}'],
+    files: ["src/app/**/*.{ts,tsx}"],
     rules: {
-      'no-restricted-imports': restrictedImports([], [routesOnly]),
+      "no-restricted-imports": restrictedImports([], [routesOnly]),
     },
   },
   {
-    files: ['src/features/database/expo.ts'],
+    files: ["src/features/database/lib/expo-database.ts"],
     rules: {
-      'no-restricted-imports': restrictedImports(['expoSqlite']),
+      "no-restricted-imports": restrictedImports(["expoSqlite"]),
     },
   },
   {
-    files: ['src/features/database/lib/better-sqlite3-driver.ts'],
+    files: ["src/features/database/lib/better-sqlite3-driver.ts"],
     rules: {
-      'no-restricted-imports': restrictedImports(['betterSqlite3']),
+      "no-restricted-imports": restrictedImports(["betterSqlite3"]),
     },
   },
   {
-    files: ['**/tests/**/*.{ts,tsx}'],
+    files: ["**/tests/**/*.{ts,tsx}"],
     rules: {
-      'no-restricted-syntax': ['error', effectListAssertion, negatedEffectListAssertion],
+      "no-restricted-syntax": ["error", effectListAssertion, negatedEffectListAssertion],
     },
   },
 ]);

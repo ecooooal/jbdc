@@ -11,14 +11,14 @@ export type InlineCreationState = {
 
 /** What happened to the panel — five facts, and no knowledge of what is created. */
 export type InlineCreationEvent =
-  | { type: 'opened' }
-  | { type: 'closed' }
-  | { type: 'name-changed'; name: string }
-  | { type: 'created'; id: string }
-  | { type: 'refused'; message: string };
+  | { type: "opened" }
+  | { type: "closed" }
+  | { type: "name-changed"; name: string }
+  | { type: "created"; id: string }
+  | { type: "refused"; message: string };
 
 export function createInitialInlineCreationState(): InlineCreationState {
-  return { open: false, name: '', error: null };
+  return { open: false, name: "", error: null };
 }
 
 /** The error a create's own rule throws; any other error is a bug, not an answer. */
@@ -34,10 +34,10 @@ export function inlineCreationResult<Created extends { id: string }>(
   ...refusals: Refusal[]
 ): InlineCreationEvent {
   try {
-    return { type: 'created', id: create().id };
+    return { type: "created", id: create().id };
   } catch (caught) {
     if (refusals.some((refusal) => caught instanceof refusal)) {
-      return { type: 'refused', message: (caught as Error).message };
+      return { type: "refused", message: (caught as Error).message };
     }
 
     throw caught;
@@ -61,17 +61,17 @@ export function clearInlineRefusal(state: InlineCreationState): InlineCreationSt
  */
 export function inlineCreationReducer(
   state: InlineCreationState,
-  event: InlineCreationEvent
+  event: InlineCreationEvent,
 ): InlineCreationState {
   switch (event.type) {
-    case 'opened':
-      return { open: true, name: '', error: null };
-    case 'closed':
-    case 'created':
+    case "opened":
+      return { open: true, name: "", error: null };
+    case "closed":
+    case "created":
       return createInitialInlineCreationState();
-    case 'name-changed':
+    case "name-changed":
       return clearInlineRefusal({ ...state, name: event.name });
-    case 'refused':
+    case "refused":
       return { ...state, error: event.message };
   }
 }

@@ -1,11 +1,11 @@
-import { CARD_DENSITIES, cardDensityFrom, type CardDensity } from '@/features/settings';
-import { Text } from '@/shared/components/ui/text';
-import { ToggleGroup, ToggleGroupItem } from '@/shared/components/ui/toggle-group';
+import { CARD_DENSITIES, cardDensityFrom, type CardDensity } from "@/features/settings";
+import { Text } from "@/shared/components/ui/text";
+import { ToggleGroup, ToggleGroupItem } from "@/shared/components/ui/toggle-group";
 
 const DENSITY_LABELS: Record<CardDensity, string> = {
-  1: 'One design per row',
-  2: 'Two designs per row',
-  4: 'Four designs per row',
+  1: "One design per row",
+  2: "Two designs per row",
+  4: "Four designs per row",
 };
 
 /** The Library's 1 / 2 / 4 per-row switch. The choice is persisted on press. */
