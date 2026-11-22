@@ -4,6 +4,7 @@ import { useImageStore } from "./image-store-context";
 import { writeImages } from "./records";
 import {
   createInitialViewerState,
+  removalOutcome,
   viewerReducer,
   type ViewerEffect,
   type ViewerEvent,
@@ -12,11 +13,11 @@ import {
 
 /**
  * Runs the viewer's reducer and the writes it asks for. The database calls are
- * synchronous, so an effect is performed inside `send` and the live read is the
- * only answer the viewer needs: a stored reclassification re-runs the gallery
- * and moves the image to its new stage, and a removal drops it from the read.
- * A write that throws leaves the catalog as it was; the live read stays the
- * truth rather than the viewer inventing a second outcome.
+ * synchronous, so an effect is performed inside `send`; the write path answers
+ * once and never throws, so a removal's ending is folded like the gallery's: a
+ * stored removal closes the viewer, and every other answer keeps the image open
+ * and says it did not land. A reclassification's answer needs no surface: the
+ * live read moves the image to the stage the write stored.
  */
 export function useImageViewer(designId: string): {
   state: ViewerState;
@@ -28,28 +29,27 @@ export function useImageViewer(designId: string): {
   const latest = useRef(state);
 
   const send = useCallback(
-    (event: ViewerEvent) => {
+    function send(event: ViewerEvent) {
       const result = viewerReducer(latest.current, event);
       latest.current = result.state;
       setState(result.state);
 
       const perform = async (effect: ViewerEffect) => {
-        try {
-          if (effect.type === "reclassify-image") {
-            await writeImages(database, null, designId, {
-              kind: "reclassify",
-              imageId: effect.imageId,
-              to: effect.to,
-            });
-          } else {
-            await writeImages(database, store, designId, {
-              kind: "remove",
-              imageId: effect.imageId,
-            });
-          }
-        } catch {
-          // Nothing was written, so the image stays where the live read has it.
+        if (effect.type === "reclassify-image") {
+          await writeImages(database, null, designId, {
+            kind: "reclassify",
+            imageId: effect.imageId,
+            to: effect.to,
+          });
+          return;
         }
+
+        const ending = await writeImages(database, store, designId, {
+          kind: "remove",
+          imageId: effect.imageId,
+        });
+
+        for (const outcome of removalOutcome(effect.imageId, ending)) send(outcome);
       };
 
       for (const effect of result.effects) void perform(effect);

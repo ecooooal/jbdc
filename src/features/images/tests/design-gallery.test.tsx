@@ -1,8 +1,9 @@
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { eq } from "drizzle-orm";
 import { act, render, screen, userEvent } from "@testing-library/react-native";
-import type { ImageKind } from "@/features/database";
+import { designs, type ImageKind } from "@/features/database";
 import { DatabaseProvider } from "@/features/database/react";
 import { createSyncSubscribe, createTempDatabase } from "@/features/database/testing";
 import { createDesign } from "@/features/designs";
@@ -272,4 +273,25 @@ test("Remove asks once before deleting the image and its notes", async () => {
   expect(listDesignImages(database, design.id)).toEqual([]);
   expect(listDesignImageNotes(database, design.id)).toEqual([]);
   expect(screen.queryByText("Remove this image and its notes?")).toBeNull();
+});
+
+test("a removal that does not land keeps the image open and says so", async () => {
+  const design = createDesign(database, { name: "Wool coat" });
+
+  await attach(design.id, "sketch", "sketch bytes", 1000);
+  await renderGallery(design.id);
+  await openViewer("Open Sketch image 1 of 1");
+
+  // The Design leaves the catalog while the viewer is open, so the removal
+  // answers design-missing; the live read has not run, so the gallery still
+  // shows the image the owner is trying to remove.
+  database.db.update(designs).set({ deletedAt: 2000 }).where(eq(designs.id, design.id)).run();
+
+  await userEvent.press(screen.getByRole("button", { name: "Remove image" }));
+  await userEvent.press(screen.getByRole("button", { name: "Remove image and notes" }));
+  await act(async () => {});
+
+  expect(screen.getByLabelText("Image viewer")).toBeTruthy();
+  expect(screen.getByText("The image could not be removed.")).toBeTruthy();
+  expect(listDesignImages(database, design.id)).toHaveLength(1);
 });

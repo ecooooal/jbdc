@@ -53,7 +53,7 @@ The in-place note editor under the hero: the draft textarea with Save and Cancel
 The current image's commentary beneath the hero: the notes list, its expansion control, and the composer when open.
 
 **the viewer**:
-The full-screen image view, whose own reducer owns reclassification and the one remove question.
+The full-screen image view, whose own reducer owns reclassification, the one remove question, and whether the last removal landed.
 
 **the picker**:
 The system image-file chooser, as a port. It answers picked files, a backed-out cancel, or a denied permission — three endings, only one worth telling the owner about.

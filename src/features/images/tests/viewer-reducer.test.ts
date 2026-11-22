@@ -1,5 +1,10 @@
 import { createReducerTester } from "@/shared/testing/reducer-tester";
-import { createInitialViewerState, viewerReducer, type ViewerEvent } from "../lib/viewer-reducer";
+import {
+  createInitialViewerState,
+  removalOutcome,
+  viewerReducer,
+  type ViewerEvent,
+} from "../lib/viewer-reducer";
 
 /** Drives the viewer reducer with the sequence of events and answers what settled. */
 function viewer(...events: ViewerEvent[]) {
@@ -19,7 +24,11 @@ describe("opening the viewer", () => {
   test("opens on the image the owner tapped, with nothing asked", () => {
     const tester = opened();
 
-    expect(tester.getState()).toEqual({ imageId: "image-1", confirmingRemoval: false });
+    expect(tester.getState()).toEqual({
+      imageId: "image-1",
+      confirmingRemoval: false,
+      removeFailed: false,
+    });
     expect(tester.getEffects()).toEqual([]);
   });
 
@@ -40,7 +49,11 @@ describe("reclassifying in the viewer", () => {
 
     tester.send({ type: "kind-pressed", kind: "final" });
 
-    expect(tester.getState()).toEqual({ imageId: "image-1", confirmingRemoval: false });
+    expect(tester.getState()).toEqual({
+      imageId: "image-1",
+      confirmingRemoval: false,
+      removeFailed: false,
+    });
     expect(tester.getEffects()).toEqual([
       { type: "reclassify-image", imageId: "image-1", to: "final" },
     ]);
@@ -60,18 +73,81 @@ describe("removing an image", () => {
 
     tester.send({ type: "remove-pressed" });
 
-    expect(tester.getState()).toEqual({ imageId: "image-1", confirmingRemoval: true });
+    expect(tester.getState()).toEqual({
+      imageId: "image-1",
+      confirmingRemoval: true,
+      removeFailed: false,
+    });
     expect(tester.getEffects()).toEqual([]);
   });
 
-  test("answering the question removes the image once and closes", () => {
+  test("answering the question declares the removal and keeps the image until it answers", () => {
     const tester = opened();
 
     tester.send({ type: "remove-pressed" });
     tester.send({ type: "remove-confirmed" });
 
+    expect(tester.getState()).toEqual({
+      imageId: "image-1",
+      confirmingRemoval: false,
+      removeFailed: false,
+    });
+    expect(tester.getEffects()).toEqual([{ type: "remove-image", imageId: "image-1" }]);
+  });
+
+  test("a stored removal closes the viewer", () => {
+    const tester = opened();
+
+    tester.send({ type: "remove-pressed" });
+    tester.send({ type: "remove-confirmed" });
+    tester.send({ type: "remove-stored", imageId: "image-1" });
+
     expect(tester.getState()).toEqual(createInitialViewerState());
     expect(tester.getEffects()).toEqual([{ type: "remove-image", imageId: "image-1" }]);
+  });
+
+  test("a failed removal keeps the image open and says it did not land", () => {
+    const tester = opened();
+
+    tester.send({ type: "remove-pressed" });
+    tester.send({ type: "remove-confirmed" });
+    tester.send({ type: "remove-failed", imageId: "image-1" });
+
+    expect(tester.getState()).toEqual({
+      imageId: "image-1",
+      confirmingRemoval: false,
+      removeFailed: true,
+    });
+    expect(tester.getEffects()).toEqual([{ type: "remove-image", imageId: "image-1" }]);
+  });
+
+  test("pressing Remove again clears the last failure", () => {
+    const tester = opened();
+
+    tester.send({ type: "remove-pressed" });
+    tester.send({ type: "remove-confirmed" });
+    tester.send({ type: "remove-failed", imageId: "image-1" });
+    tester.send({ type: "remove-pressed" });
+
+    expect(tester.getState()).toEqual({
+      imageId: "image-1",
+      confirmingRemoval: true,
+      removeFailed: false,
+    });
+  });
+
+  test("a failure for another image is ignored", () => {
+    const tester = opened();
+
+    tester.send({ type: "remove-pressed" });
+    tester.send({ type: "remove-confirmed" });
+    tester.send({ type: "remove-failed", imageId: "image-2" });
+
+    expect(tester.getState()).toEqual({
+      imageId: "image-1",
+      confirmingRemoval: false,
+      removeFailed: false,
+    });
   });
 
   test("a confirm without the question deletes nothing", () => {
@@ -79,7 +155,11 @@ describe("removing an image", () => {
 
     tester.send({ type: "remove-confirmed" });
 
-    expect(tester.getState()).toEqual({ imageId: "image-1", confirmingRemoval: false });
+    expect(tester.getState()).toEqual({
+      imageId: "image-1",
+      confirmingRemoval: false,
+      removeFailed: false,
+    });
     expect(tester.getEffects()).toEqual([]);
   });
 
@@ -99,7 +179,29 @@ describe("removing an image", () => {
     tester.send({ type: "remove-pressed" });
     tester.send({ type: "remove-cancelled" });
 
-    expect(tester.getState()).toEqual({ imageId: "image-1", confirmingRemoval: false });
+    expect(tester.getState()).toEqual({
+      imageId: "image-1",
+      confirmingRemoval: false,
+      removeFailed: false,
+    });
     expect(tester.getEffects()).toEqual([]);
+  });
+});
+
+describe("a removal's ending", () => {
+  test("a stored removal closes the viewer", () => {
+    expect(removalOutcome("image-1", { kind: "stored", images: [], event: null })).toEqual([
+      { type: "remove-stored", imageId: "image-1" },
+    ]);
+  });
+
+  test.each([
+    { ending: { kind: "store-failed" }, name: "store-failed" },
+    { ending: { kind: "design-missing" }, name: "design-missing" },
+    { ending: { kind: "image-missing", imageId: "image-1" }, name: "image-missing" },
+  ] as const)("a $name removal keeps the image and says so", ({ ending }) => {
+    expect(removalOutcome("image-1", ending)).toEqual([
+      { type: "remove-failed", imageId: "image-1" },
+    ]);
   });
 });

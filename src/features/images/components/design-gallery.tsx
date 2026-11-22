@@ -64,6 +64,7 @@ export function DesignGallery({ designId }: { designId: string }) {
           image={viewed}
           notes={imageNotesOf(imageNotes, viewed.id)}
           confirmingRemoval={viewer.state.confirmingRemoval}
+          removeFailed={viewer.state.removeFailed}
           send={viewer.send}
         />
       ) : null}

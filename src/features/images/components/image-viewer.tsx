@@ -17,16 +17,19 @@ import type { ViewerEvent } from "../lib/viewer-reducer";
  * where they are written. The viewer is the whole screen, so the hero's swipe
  * and the rail wait behind it. The image keeps a bounded area and everything
  * beneath it scrolls, so a long note never pushes the controls out of reach.
+ * A removal that did not land leaves the image open and says so beside Remove.
  */
 export function ImageViewer({
   image,
   notes,
   confirmingRemoval,
+  removeFailed,
   send,
 }: {
   image: StoredImage;
   notes: readonly ImageNote[];
   confirmingRemoval: boolean;
+  removeFailed: boolean;
   send: (event: ViewerEvent) => void;
 }) {
   const uri = useImageUri(image);
@@ -139,6 +142,10 @@ export function ImageViewer({
               <Text>Remove image</Text>
             </Button>
           )}
+
+          {removeFailed ? (
+            <Text className="text-white/80">The image could not be removed.</Text>
+          ) : null}
         </ScrollView>
       </View>
     </Modal>
