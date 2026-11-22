@@ -25,7 +25,7 @@ function journey(): GalleryStage[] {
 
 /** Drives the reducer with the sequence of events and answers the state it settled on. */
 function send(state: GalleryState, ...events: GalleryEvent[]): GalleryState {
-  return events.reduce(galleryReducer, state);
+  return events.reduce((current, event) => galleryReducer(current, event).state, state);
 }
 
 /** A gallery state's note UI before the owner opens anything. */

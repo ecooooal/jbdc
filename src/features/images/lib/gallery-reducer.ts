@@ -61,6 +61,21 @@ export type GalleryState = {
   imageNotesExpanded: boolean;
 };
 
+/**
+ * The writes the gallery asks for, as data for its thin runner. A note is
+ * declared where the state that names it lives: the composer holds its image
+ * and words, and a note row holds its id.
+ */
+export type GalleryEffect =
+  | { type: "add-image-note"; imageId: string; text: string }
+  | { type: "remove-image-note"; noteId: string };
+
+/** What one gallery event settled and the writes it asked for. */
+export type GalleryResult = {
+  state: GalleryState;
+  effects: GalleryEffect[];
+};
+
 /** What the owner did to the gallery. */
 export type GalleryGesture =
   | { type: "stage-pressed"; kind: ImageKind }
@@ -341,6 +356,11 @@ function selected(state: GalleryState, kind: ImageKind, imageId: string | null):
   return { ...state, kind, imageId, imageNoteComposer: null, imageNotesExpanded: false };
 }
 
+/** A result that asks for no write. */
+function only(state: GalleryState): GalleryResult {
+  return { state, effects: [] };
+}
+
 /**
  * The gallery's decisions. It opens on the Cover; a later read keeps the
  * selected image while it exists — moving it to the stage its reclassification
@@ -351,14 +371,15 @@ function selected(state: GalleryState, kind: ImageKind, imageId: string | null):
  * that failed is a flag the rail reads until the owner tries again or presses a
  * stage, and it never moves the selection. The note composer opens on the
  * current image, closes when the note lands, and is dropped when the owner
- * moves on.
+ * moves on. The result carries the writes the event declares; every event but
+ * the notes' own press declares none.
  */
-export function galleryReducer(state: GalleryState, event: GalleryEvent): GalleryState {
+export function galleryReducer(state: GalleryState, event: GalleryEvent): GalleryResult {
   switch (event.type) {
     case "images-read": {
       const kept = locationOf(event.stages, state.imageId);
 
-      if (kept) return { ...selected(state, kept.kind, kept.imageId), awaitingKind: null };
+      if (kept) return only({ ...selected(state, kept.kind, kept.imageId), awaitingKind: null });
 
       // The chosen empty stage keeps its place when a read arrives: it holds
       // the stage empty until its first image, then selects that image. Without
@@ -368,79 +389,83 @@ export function galleryReducer(state: GalleryState, event: GalleryEvent): Galler
         const chosen = event.stages.find((candidate) => candidate.kind === state.awaitingKind);
         const first = chosen?.images[0];
 
-        return {
+        return only({
           ...selected(state, state.awaitingKind, first?.id ?? null),
           awaitingKind: first ? null : state.awaitingKind,
-        };
+        });
       }
 
       const cover = locationOf(event.stages, event.cover);
 
-      return {
+      return only({
         ...selected(state, cover?.kind ?? state.kind, cover?.imageId ?? null),
         awaitingKind: null,
-      };
+      });
     }
 
     case "stage-pressed": {
       const stage = event.stages.find((candidate) => candidate.kind === event.kind);
       const first = stage?.images[0] ?? null;
 
-      return {
+      return only({
         ...selected(state, event.kind, first?.id ?? null),
         awaitingKind: first ? null : event.kind,
         attachFailed: false,
-      };
+      });
     }
 
     case "image-pressed": {
       const located = locationOf(event.stages, event.imageId);
 
-      return located
-        ? { ...selected(state, located.kind, located.imageId), awaitingKind: null }
-        : state;
+      return only(
+        located ? { ...selected(state, located.kind, located.imageId), awaitingKind: null } : state,
+      );
     }
 
     case "hero-swiped": {
       const stepped = step(event.stages, state.imageId, event.direction);
 
-      return stepped
-        ? { ...selected(state, stepped.kind, stepped.imageId), awaitingKind: null }
-        : state;
+      return only(
+        stepped ? { ...selected(state, stepped.kind, stepped.imageId), awaitingKind: null } : state,
+      );
     }
 
     case "attach-pressed":
-      return { ...state, attachFailed: false };
+      return only({ ...state, attachFailed: false });
 
     case "attach-failed":
-      return { ...state, attachFailed: true };
+      return only({ ...state, attachFailed: true });
 
     case "image-note-composer-opened":
       // A note needs the image it explains; with none selected there is nothing
       // to open the composer on.
-      return state.imageId
-        ? { ...state, imageNoteComposer: { imageId: state.imageId, draft: "" } }
-        : state;
+      return only(
+        state.imageId
+          ? { ...state, imageNoteComposer: { imageId: state.imageId, draft: "" } }
+          : state,
+      );
 
     case "image-note-composer-closed":
-      return { ...state, imageNoteComposer: null };
+      return only({ ...state, imageNoteComposer: null });
 
     case "image-note-draft-changed":
-      return state.imageNoteComposer
-        ? { ...state, imageNoteComposer: { ...state.imageNoteComposer, draft: event.draft } }
-        : state;
+      return only(
+        state.imageNoteComposer
+          ? { ...state, imageNoteComposer: { ...state.imageNoteComposer, draft: event.draft } }
+          : state,
+      );
 
     case "image-note-added": {
       // The note landed on the image the composer was opened for. A read that
       // moved the owner elsewhere has already dropped that composer, so only a
       // note for the open composer clears it. The list keeps its state: a
       // collapsed block stays collapsed, so a third note stays behind the two.
-      if (state.imageNoteComposer?.imageId !== event.imageId) return state;
+      if (state.imageNoteComposer?.imageId !== event.imageId) return only(state);
 
-      return { ...state, imageNoteComposer: null };
+      return only({ ...state, imageNoteComposer: null });
     }
 
     case "image-notes-more-pressed":
-      return { ...state, imageNotesExpanded: !state.imageNotesExpanded };
+      return only({ ...state, imageNotesExpanded: !state.imageNotesExpanded });
   }
 }

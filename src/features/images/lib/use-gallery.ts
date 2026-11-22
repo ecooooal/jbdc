@@ -5,7 +5,9 @@ import {
   galleryReducer,
   galleryView,
   imageNoteBlockView,
+  type GalleryEvent,
   type GalleryGesture,
+  type GalleryState,
 } from "./gallery-reducer";
 import { imageNotesOf } from "./image-notes";
 import { coverOf, imageStages } from "./images";
@@ -23,7 +25,11 @@ export function useGallery(designId: string) {
   const { data, error, status } = useLiveRead(declaration);
   const stages = useMemo(() => imageStages(data.images), [data.images]);
   const cover = useMemo(() => coverOf(data.images)?.id ?? null, [data.images]);
-  const [state, dispatch] = useReducer(galleryReducer, undefined, createInitialGalleryState);
+  const [state, dispatch] = useReducer(
+    (current: GalleryState, event: GalleryEvent) => galleryReducer(current, event).state,
+    undefined,
+    createInitialGalleryState,
+  );
 
   useEffect(() => {
     dispatch({ type: "images-read", stages, cover });
