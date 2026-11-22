@@ -1,53 +1,20 @@
-import { mkdtempSync, readdirSync, rmSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
-import { createTempDatabase } from "@/features/database/testing";
 import { createDesign, getDesign } from "@/features/designs";
 import { coverOf, writeImages } from "@/features/images";
-import type { ImageStore } from "../lib/image-store";
+import { listDesignEvents } from "@/features/history";
 import {
   listDesignImages,
   type ImageAttachResult,
   type ImageReclassifyResult,
   type ImageRemoveResult,
 } from "../lib/records";
-import { createTempImageStore } from "@/features/images/testing";
-import { listDesignEvents } from "@/features/history";
-
-let database: ReturnType<typeof createTempDatabase>["database"];
-let dispose: () => void;
-let sourceDirectory: string;
-let store: ImageStore;
-let storeDirectory: string;
-let disposeStore: () => void;
-
-beforeEach(() => {
-  ({ database, dispose } = createTempDatabase());
-  sourceDirectory = mkdtempSync(join(tmpdir(), "jbdc-image-sources-"));
-  ({ store, directory: storeDirectory, dispose: disposeStore } = createTempImageStore());
-});
-
-afterEach(() => {
-  dispose();
-  disposeStore();
-  rmSync(sourceDirectory, { recursive: true, force: true });
-});
-
-/** A source file on disk, the way a picked image arrives. */
-function sourceFile(name: string, contents: string): string {
-  const path = join(sourceDirectory, name);
-  writeFileSync(path, contents);
-
-  return path;
-}
-
-function createWoolCoat(now = 500): string {
-  return createDesign(database, { name: "Wool coat" }, now).id;
-}
-
-function storedFiles(): string[] {
-  return readdirSync(storeDirectory);
-}
+import {
+  createWoolCoat,
+  database,
+  missingSourceFile,
+  sourceFile,
+  store,
+  storedFiles,
+} from "./write-path-fixtures";
 
 describe("attaching images", () => {
   test("several at once is one action and records one image_change event", async () => {
@@ -426,7 +393,7 @@ describe("refused writes", () => {
         kind: "attach",
         images: [
           { sourcePath: copied, kind: "sketch" },
-          { sourcePath: join(sourceDirectory, "missing.jpg"), kind: "sketch" },
+          { sourcePath: missingSourceFile("missing.jpg"), kind: "sketch" },
         ],
       },
       1000,
@@ -460,7 +427,7 @@ describe("refused writes", () => {
           kind: "attach",
           images: [
             { sourcePath: shared, kind: "sketch" },
-            { sourcePath: join(sourceDirectory, "missing.jpg"), kind: "sketch" },
+            { sourcePath: missingSourceFile("missing.jpg"), kind: "sketch" },
           ],
         },
         2000,
