@@ -33,7 +33,7 @@ The rules:
 1. **One reducer per surface**, exporting `<Surface>State`, `<Surface>Event`, `<Surface>Effect` and `createInitial<Surface>State()`. No React import.
 2. **Events are facts, not commands.** An event says what happened outside the reducer; it never says what state to set. A gesture is named after the gesture (`press-delete`, `edit-opened`), something the world reports is past tense (`design-saved`, `save-failed`, `app-backgrounded`). Names are kebab-case. A setter event such as `set-saving`, `set-modal-open` or `UPDATE_PROGRESS` is not allowed, because the caller would already have decided what changes. A fact is never forged to borrow a neighbouring rule: when a caller needs a slice's rule for its own field, the slice exports the rule as a pure helper (`clearInlineRefusal` is the shape), not a fact to re-dispatch.
 3. **Effects are commands, and they are data.** Name them with an imperative verb (`commit-edit`, `archive-designs`) and put everything the handler needs on the effect object. A handler never reaches into props or closures for its input. That is what makes the effect worth asserting on.
-4. **The runner is thin.** Each handler makes one call and dispatches the outcome as an event. It contains no `if` about what to do next: that is the reducer's decision, made when it handles the outcome. The shared runner discards a performer's return, so a performer returns nothing today.
+4. **The runner is thin.** Each handler makes one call and dispatches the outcome as an event. It contains no `if` about what to do next: that is the reducer's decision, made when it handles the outcome. The shared runner calls `perform` and discards what it returns without awaiting it, so a perform body may be async for its own I/O; the only result the runner acts on is the events that body dispatches.
 5. **The reducer never reads the clock, randomness, dimensions or device state.** Put the value on the event, e.g. `{ type: "edit-closed", now: Date.now() }`. That is how coalescing and timing become deterministic.
 6. **Derived rules are selectors**, pure functions of state. Do not copy them into state and do not duplicate them in a component. Presentation-only formatting may stay in render.
 7. **A `useEffect` in a component only bridges to the outside world.** It subscribes and dispatches what it hears; it does not set local state and it does not decide anything. `DatabaseProvider` closing the handle on unmount is the shape.
@@ -42,7 +42,7 @@ Three situations come up often enough to have a fixed answer:
 
 - **One I/O must finish before the next starts.** Either chain them with an outcome event, or declare one effect and put the order on it as data.
 - **A late outcome.** Name what it was for (`designId`) and have the reducer ignore one for a surface that has since moved on.
-- **A caller that awaits.** The hook puts a `requestId` on the event, the reducer copies it onto the effect, and the runner settles the promise when the effect is done. The reducer still decides.
+- **A caller that awaits.** There is no request id and no promise to settle: `dispatch` returns nothing and the runner discards a performer's return without awaiting it, so `await send(…)` awaits nothing at all. Work finishes by the outcome event its perform body dispatches, and a caller reads the state that event produced — the gallery awaits the picker and the write path inside one perform body and folds each answer back as an event. The reducer still decides what the outcome means.
 
 ## React Native exceptions
 
