@@ -5,35 +5,8 @@
  */
 export { DESIGN_EDITABLE_FIELDS, DESIGN_IDENTITY_FIELDS, designFieldLabel } from "./lib/fields";
 export type { DesignEditableField } from "./lib/fields";
-export { DESIGN_SECTIONS, isDesignSectionTab } from "./lib/sections";
+export { DESIGN_SECTIONS } from "./lib/sections";
 export type { DesignSectionTab } from "./lib/sections";
-export { materialUseRoleLabel } from "./lib/material-use-role";
-export {
-  createDesign,
-  designDetailRead,
-  DESIGN_NAME_MAX_LENGTH,
-  designNameProblem,
-  getDesign,
-  getDesignDetail,
-  InvalidDesignNameError,
-  listDesigns,
-  listMaterialUses,
-  writeDesign,
-} from "./lib/records";
-export type {
-  AddMaterialUseInput,
-  ChangeOutcome,
-  CreateDesignInput,
-  Design,
-  DesignChanges,
-  DesignDetail,
-  DesignDetailRows,
-  DesignFields,
-  DesignWriteResult,
-  MaterialUse,
-  MaterialUseChange,
-  MaterialUsesPair,
-  UpdateDesignInput,
-  UpdateMaterialUseInput,
-} from "./lib/records";
+export { createDesign, getDesign, writeDesign } from "./lib/records";
+export type { DesignFields, MaterialUse, MaterialUsesPair } from "./lib/records";
 export { designStatusLabel } from "./lib/status";

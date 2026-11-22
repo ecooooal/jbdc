@@ -257,7 +257,7 @@ describe("a failed attach", () => {
       attachFailed: true,
       ...noNoteUI,
     });
-    expect(settle(failed, { type: "attach-pressed" }).attachFailed).toBe(false);
+    expect(settle(failed, { type: "attach-pressed", kind: "final" }).attachFailed).toBe(false);
   });
 
   test("clears when the owner presses a stage", () => {
@@ -275,14 +275,14 @@ describe("a failed attach", () => {
 });
 
 describe("the plus press", () => {
-  test("clears a stale failure and declares the pick to the stage on the rail", () => {
+  test("clears a stale failure and declares the pick to the stage it names", () => {
     const failed = settle(
       createInitialGalleryState(DESIGN_ID),
       { type: "stage-pressed", kind: "sketch", stages: journey() },
       { type: "attach-failed" },
     );
 
-    expect(send(failed, { type: "attach-pressed" })).toEqual({
+    expect(send(failed, { type: "attach-pressed", kind: "sketch" })).toEqual({
       state: {
         designId: DESIGN_ID,
         kind: "sketch",
@@ -293,6 +293,13 @@ describe("the plus press", () => {
       },
       effects: [{ type: "attach-images", designId: DESIGN_ID, kind: "sketch" }],
     });
+  });
+
+  test("names the stage the plus card sits on, not the one state happens to hold", () => {
+    expect(
+      send(createInitialGalleryState(DESIGN_ID), { type: "attach-pressed", kind: "sketch" })
+        .effects,
+    ).toEqual([{ type: "attach-images", designId: DESIGN_ID, kind: "sketch" }]);
   });
 });
 

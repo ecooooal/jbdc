@@ -9,27 +9,10 @@
  * owns the snapshot (ADR-0004).
  */
 export {
-  designHistoryRead,
   diffDesignFields,
   diffMaterialUses,
   listDesignEvents,
-  materialUseLines,
   recordEdit,
   recordImageChange,
 } from "./lib/events";
-export { DESIGN_HISTORY_SECTIONS } from "./lib/sections";
-export type { DesignHistorySection, DesignHistorySectionDefinition } from "./lib/sections";
-export type {
-  DesignEditDiff,
-  DesignEvent,
-  DesignHistoryRows,
-  DesignFieldChange,
-  ImageChangeDiff,
-  ImageReclassification,
-  MaterialUsesDiff,
-  MaterialUseCorrection,
-  MaterialUseLine,
-  RecordedImage,
-  RecordedMaterialUse,
-  Visit,
-} from "./lib/events";
+export type { DesignEvent } from "./lib/events";

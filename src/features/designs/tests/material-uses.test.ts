@@ -2,17 +2,14 @@ import { eq } from "drizzle-orm";
 import type { Database } from "@/features/database";
 import { designMaterials, designs, materials } from "@/features/database";
 import { createTempDatabase } from "@/features/database/testing";
-import {
-  createDesign,
-  getDesign,
-  listMaterialUses,
-  writeDesign,
-  type AddMaterialUseInput,
-  type DesignWriteResult,
-  type MaterialUse,
-  type UpdateDesignInput,
-  type UpdateMaterialUseInput,
-} from "@/features/designs";
+import { createDesign, getDesign, writeDesign, type MaterialUse } from "@/features/designs";
+import type {
+  AddMaterialUseInput,
+  DesignWriteResult,
+  UpdateDesignInput,
+  UpdateMaterialUseInput,
+} from "../lib/records";
+import { listMaterialUses } from "../lib/records";
 import { createMaterial } from "@/features/materials";
 
 /** The outcomes a stored answer holds; a refusal or a missing row holds none. */

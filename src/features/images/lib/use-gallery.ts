@@ -10,7 +10,8 @@ import {
   writeOutcome,
   type GalleryEffect,
   type GalleryEvent,
-  type GalleryGesture,
+  type GalleryFact,
+  type GalleryStage,
   type GalleryWriteEnding,
 } from "./gallery-reducer";
 import { imageNotesOf } from "./image-notes";
@@ -20,13 +21,25 @@ import { coverOf, imageStages } from "./images";
 import { useImageStore } from "./image-store-context";
 import { designImagesRead, writeImages } from "./records";
 
+/** The one event a component's fact becomes: a gesture carries the live journey. */
+function eventOf(fact: GalleryFact, stages: readonly GalleryStage[]): GalleryEvent {
+  switch (fact.type) {
+    case "stage-pressed":
+    case "image-pressed":
+    case "hero-swiped":
+      return { ...fact, stages };
+    default:
+      return fact;
+  }
+}
+
 /**
  * The Detail gallery: the Design's images and their notes live read feeding
  * the gallery reducer. The read declares the tables it watches, so an attach,
  * remove, reclassify, or note write re-runs it, and the reducer keeps the
- * selection or falls back to the Cover. A gesture carries the journey it
- * happened against when a rule needs it, because a pure reducer cannot read the
- * catalog.
+ * selection or falls back to the Cover. Components reach the reducer through
+ * one door — `send` — which carries the journey a gesture happened against,
+ * because a pure reducer cannot read the catalog.
  *
  * The runner runs the reducer, performs each write it declares, and dispatches
  * the events that answer owes. The plus press declares one pick-and-attach, so
@@ -119,7 +132,7 @@ export function useGallery(designId: string) {
   );
 
   const send = useCallback(
-    (gesture: GalleryGesture) => dispatch({ ...gesture, stages }),
+    (fact: GalleryFact) => dispatch(eventOf(fact, stages)),
     [dispatch, stages],
   );
 
@@ -131,7 +144,6 @@ export function useGallery(designId: string) {
     view: galleryView(stages, state),
     noteView,
     send,
-    dispatch,
     error,
     status,
   };

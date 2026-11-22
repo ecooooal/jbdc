@@ -6,10 +6,11 @@ import type { ImageKind } from "@/features/database";
 import { DatabaseProvider } from "@/features/database/react";
 import { createSyncSubscribe, createTempDatabase } from "@/features/database/testing";
 import { createDesign } from "@/features/designs";
-import { listDesignImages, writeImages, type ImageStore } from "@/features/images";
+import { writeImages } from "@/features/images";
 import { DesignGallery, ImagePickerProvider, ImageStoreProvider } from "@/features/images/react";
 import { createTempImageStore } from "@/features/images/testing";
-import { listDesignImageNotes } from "../lib/records";
+import type { ImageStore } from "../lib/image-store";
+import { listDesignImageNotes, listDesignImages } from "../lib/records";
 import type { ImagePicker, ImagePickResult } from "../lib/image-picker";
 
 const live = createSyncSubscribe();

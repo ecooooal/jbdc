@@ -11,7 +11,8 @@ import {
 } from "@/features/database";
 import { createTempDatabase } from "@/features/database/testing";
 import { expectLiveReadReruns } from "@/features/database/testing-live";
-import { createDesign, designDetailRead, getDesignDetail, writeDesign } from "@/features/designs";
+import { createDesign, writeDesign } from "@/features/designs";
+import { designDetailRead, getDesignDetail } from "../lib/records";
 import { createMaterial } from "@/features/materials";
 import { createCategory, createCollection } from "@/features/taxonomy";
 

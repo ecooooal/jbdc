@@ -1,15 +1,9 @@
 import { eq } from "drizzle-orm";
 import { designs } from "@/features/database";
 import { createTempDatabase } from "@/features/database/testing";
-import {
-  createDesign,
-  getDesign,
-  listMaterialUses,
-  writeDesign,
-  type ChangeOutcome,
-  type DesignWriteResult,
-  type MaterialUse,
-} from "@/features/designs";
+import { createDesign, getDesign, writeDesign, type MaterialUse } from "@/features/designs";
+import type { ChangeOutcome, DesignWriteResult } from "../lib/records";
+import { listMaterialUses } from "../lib/records";
 import { createMaterial } from "@/features/materials";
 
 function storedSearchText(database: ReturnType<typeof createTempDatabase>["database"]): string {

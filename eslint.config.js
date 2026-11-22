@@ -12,7 +12,7 @@ const boundaryRules = {
   },
   expoSqlite: {
     group: ["expo-sqlite"],
-    message: "Only src/features/database/expo.ts may import expo-sqlite.",
+    message: "Only src/features/database/lib/expo-database.ts may import expo-sqlite.",
   },
   betterSqlite3: {
     group: ["better-sqlite3"],
@@ -78,7 +78,7 @@ module.exports = defineConfig([
     },
   },
   {
-    files: ["src/features/database/expo.ts"],
+    files: ["src/features/database/lib/expo-database.ts"],
     rules: {
       "no-restricted-imports": restrictedImports(["expoSqlite"]),
     },

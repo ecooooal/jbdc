@@ -19,7 +19,7 @@ import { JourneyRail } from "./journey-rail";
  * above Detail's hero text.
  */
 export function DesignGallery({ designId }: { designId: string }) {
-  const { state, stages, images, imageNotes, view, noteView, send, dispatch, error, status } =
+  const { state, stages, images, imageNotes, view, noteView, send, error, status } =
     useGallery(designId);
   const viewer = useImageViewer(designId);
   const viewed = viewer.state.imageId
@@ -46,7 +46,7 @@ export function DesignGallery({ designId }: { designId: string }) {
       />
 
       {view.image ? (
-        <ImageNoteBlock view={noteView} composer={state.imageNoteComposer} dispatch={dispatch} />
+        <ImageNoteBlock view={noteView} composer={state.imageNoteComposer} send={send} />
       ) : null}
 
       <JourneyRail
@@ -56,7 +56,7 @@ export function DesignGallery({ designId }: { designId: string }) {
         attachFailed={state.attachFailed}
         onStagePress={(kind) => send({ type: "stage-pressed", kind })}
         onImagePress={(imageId) => send({ type: "image-pressed", imageId })}
-        onAddPress={() => dispatch({ type: "attach-pressed" })}
+        onAddPress={(kind) => send({ type: "attach-pressed", kind })}
       />
 
       {viewed ? (

@@ -1,11 +1,7 @@
 import { settings as settingsTable } from "@/features/database";
 import { createTempDatabase, openTestDatabase } from "@/features/database/testing";
-import {
-  CARD_DENSITIES,
-  cardDensityFrom,
-  createSettings,
-  DEFAULT_CARD_DENSITY,
-} from "@/features/settings";
+import { CARD_DENSITIES, cardDensityFrom } from "@/features/settings";
+import { createSettings, DEFAULT_CARD_DENSITY } from "../lib/settings";
 
 describe("settings", () => {
   let database: ReturnType<typeof createTempDatabase>["database"];

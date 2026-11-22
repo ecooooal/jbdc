@@ -10,7 +10,7 @@ import {
   type ImageKind,
   type LiveReadDeclaration,
 } from "@/features/database";
-import { recordImageChange, type DesignEvent, type RecordedImage } from "@/features/history";
+import { recordImageChange, type DesignEvent } from "@/features/history";
 import { imageNoteProblem, imageNoteProblemMessage } from "./image-notes";
 import type { Image, ImageNote } from "./images";
 import type { ImageFile, ImageStore } from "./image-store";
@@ -54,16 +54,6 @@ export type ImageWriteResult =
   | { kind: "design-missing" }
   | { kind: "image-missing"; imageId: string }
   | { kind: "image-note-missing"; noteId: string };
-
-/** The one image record History keeps in an Event's diff. */
-function recorded(image: Image): RecordedImage {
-  return {
-    id: image.id,
-    kind: image.kind,
-    contentHash: image.contentHash,
-    extension: image.extension,
-  };
-}
 
 /** One Design's images, oldest first, so a stage reads as a chronicle. */
 function imagesFrom(db: DatabaseHandle, designId: string): Image[] {
@@ -251,7 +241,7 @@ export async function writeImages(
       const event = recordImageChange(tx, {
         id: database.newId(),
         designId,
-        changes: { attached: stored.map(recorded) },
+        changes: { attached: stored },
         createdAt: now,
       });
 
@@ -321,7 +311,7 @@ export async function writeImages(
       const event = recordImageChange(tx, {
         id: database.newId(),
         designId,
-        changes: { reclassified: [{ from: recorded(image), to: recorded(to) }] },
+        changes: { reclassified: [{ from: image, to }] },
         createdAt: now,
       });
 
@@ -339,7 +329,7 @@ export async function writeImages(
     const event = recordImageChange(tx, {
       id: database.newId(),
       designId,
-      changes: { removed: [recorded(image)] },
+      changes: { removed: [image] },
       createdAt: now,
     });
 

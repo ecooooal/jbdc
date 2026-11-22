@@ -1,15 +1,14 @@
 import { eq, getTableColumns } from "drizzle-orm";
 import { designs } from "@/features/database";
 import { createTempDatabase, openTestDatabase } from "@/features/database/testing";
+import { createDesign, getDesign } from "@/features/designs";
 import {
-  createDesign,
   DESIGN_NAME_MAX_LENGTH,
   designNameProblem,
-  getDesign,
   getDesignDetail,
   InvalidDesignNameError,
   listDesigns,
-} from "@/features/designs";
+} from "../lib/records";
 import { listLibraryDesigns } from "@/features/library";
 import { createCategory, createCollection } from "@/features/taxonomy";
 

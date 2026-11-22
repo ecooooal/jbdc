@@ -3,7 +3,6 @@ import { ChevronLeft } from "lucide-react-native";
 import { useState } from "react";
 import { ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import type { DesignDetail } from "@/features/designs";
 import { DesignGallery } from "@/features/images/react";
 import { Badge } from "@/shared/components/ui/badge";
 import { Button } from "@/shared/components/ui/button";
@@ -16,6 +15,7 @@ import {
   type DesignSectionFieldDefinition,
   type DesignSectionTab,
 } from "../lib/sections";
+import type { DesignDetail } from "../lib/records";
 import { useDesignDetail } from "../lib/use-design-detail";
 import { DesignStatusBadge } from "./design-status-badge";
 import { MaterialUsesTable } from "./material-uses-table";

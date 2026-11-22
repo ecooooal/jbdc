@@ -2,15 +2,13 @@ import { randomUUID } from "node:crypto";
 import { eq } from "drizzle-orm";
 import { categories, collections, designs } from "@/features/database";
 import { createTempDatabase } from "@/features/database/testing";
+import { createDesign, getDesign, writeDesign } from "@/features/designs";
 import {
-  createDesign,
   DESIGN_NAME_MAX_LENGTH,
-  getDesign,
   getDesignDetail,
-  writeDesign,
   type Design,
   type UpdateDesignInput,
-} from "@/features/designs";
+} from "../lib/records";
 import { listLibraryDesigns } from "@/features/library";
 import { createCategory, createCollection } from "@/features/taxonomy";
 

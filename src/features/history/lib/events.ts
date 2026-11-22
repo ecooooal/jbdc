@@ -6,7 +6,13 @@ import type {
   ImageKind,
   LiveReadDeclaration,
 } from "@/features/database";
-import { categories, collections, declareLiveRead, designEvents } from "@/features/database";
+import {
+  categories,
+  collections,
+  declareLiveRead,
+  designEvents,
+  images,
+} from "@/features/database";
 import { readTaxonomyNames, type TaxonomyNames } from "@/features/taxonomy";
 import {
   DESIGN_EDITABLE_FIELDS,
@@ -45,6 +51,19 @@ export type RecordedImage = {
   kind: ImageKind;
   contentHash: string;
   extension: string;
+};
+
+/** One Image row as the images module stores it, before History projects it. */
+type ImageRow = typeof images.$inferSelect;
+
+/**
+ * What one structural image action did, as the images module reports it: whole
+ * Image rows. History decides which of their fields it keeps.
+ */
+export type ImageChangeRows = {
+  attached?: ImageRow[];
+  removed?: ImageRow[];
+  reclassified?: { from: ImageRow; to: ImageRow }[];
 };
 
 /** A reclassified image: the kind it had and the kind it became. */
@@ -326,8 +345,8 @@ export function recordEdit(
   return event;
 }
 
-/** The empty answer an image diff gives: nothing was attached, removed, or reclassified. */
-function isEmptyImageChange(changes: ImageChangeDiff): boolean {
+/** The empty answer an image change gives: nothing was attached, removed, or reclassified. */
+function isEmptyImageChange(changes: ImageChangeRows): boolean {
   return (
     (changes.attached?.length ?? 0) === 0 &&
     (changes.removed?.length ?? 0) === 0 &&
@@ -335,14 +354,39 @@ function isEmptyImageChange(changes: ImageChangeDiff): boolean {
   );
 }
 
+/** The part of one Image row History keeps. */
+function recordedImage(image: ImageRow): RecordedImage {
+  return {
+    id: image.id,
+    kind: image.kind,
+    contentHash: image.contentHash,
+    extension: image.extension,
+  };
+}
+
+/** The diff History stores for the whole rows one action touched. */
+function recordedImageChanges(changes: ImageChangeRows): ImageChangeDiff {
+  return {
+    ...(changes.attached && { attached: changes.attached.map(recordedImage) }),
+    ...(changes.removed && { removed: changes.removed.map(recordedImage) }),
+    ...(changes.reclassified && {
+      reclassified: changes.reclassified.map(({ from, to }) => ({
+        from: recordedImage(from),
+        to: recordedImage(to),
+      })),
+    }),
+  };
+}
+
 /**
  * Records one structural image action — an attach, a remove, or a
  * reclassification — as a single `image_change` Event. The images module hands
- * the facts and the identity it took from the Database port; this writer owns
- * the row, the kind, and the diff encoding, and nothing else appends an image
- * Event. It writes through `db` so the images module can pass its transaction's
- * handle, keeping the Event beside the rows it describes. An empty diff writes
- * nothing and returns null.
+ * the whole Image rows the action touched and the identity it took from the
+ * Database port; History projects its own record of each, so a field it keeps
+ * changes only here. This writer owns the row, the kind, and the diff encoding,
+ * and nothing else appends an image Event. It writes through `db` so the images
+ * module can pass its transaction's handle, keeping the Event beside the rows
+ * it describes. An empty change writes nothing and returns null.
  */
 export function recordImageChange(
   db: DatabaseHandle,
@@ -351,7 +395,7 @@ export function recordImageChange(
     designId,
     changes,
     createdAt,
-  }: { id: string; designId: string; changes: ImageChangeDiff; createdAt: number },
+  }: { id: string; designId: string; changes: ImageChangeRows; createdAt: number },
 ): DesignEvent | null {
   if (isEmptyImageChange(changes)) return null;
 
@@ -361,7 +405,7 @@ export function recordImageChange(
     kind: "image_change",
     reason: null,
     potentialImprovements: null,
-    diff: { images: changes },
+    diff: { images: recordedImageChanges(changes) },
     createdAt,
   };
 

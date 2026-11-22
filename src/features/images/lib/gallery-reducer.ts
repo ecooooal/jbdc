@@ -90,22 +90,35 @@ export type GalleryGesture =
   | { type: "hero-swiped"; direction: SwipeDirection };
 
 /**
- * A fact the gallery handles. A gesture carries the live journey beside it,
- * because the reducer is pure and cannot read the catalog: the stages are the
- * value the rule needs, the way `now` rides on an event that must time itself.
+ * Every fact the gallery handles, in three parts: the facts a component sends,
+ * stated once in `GalleryFact`; the facts only the runner reports; and a
+ * gesture carrying the live journey. The bare gesture arm is excluded from the
+ * facts because the reducer's gesture cases read the stages the rule needs —
+ * the reducer is pure and cannot read the catalog — the way `now` rides on an
+ * event that must time itself.
  */
 export type GalleryEvent =
+  | Exclude<GalleryFact, GalleryGesture>
   | { type: "images-read"; stages: readonly GalleryStage[]; cover: string | null }
-  | { type: "attach-pressed" }
   | { type: "attach-failed" }
+  | { type: "image-note-added"; imageId: string }
+  | (GalleryGesture & { stages: readonly GalleryStage[] });
+
+/**
+ * Every fact a component can send the gallery. A gesture names what the owner
+ * did; the door attaches the live journey the reducer needs. The facts only the
+ * runner reports — a read, a failed attach, a stored note — are absent, so a
+ * component cannot forge one.
+ */
+export type GalleryFact =
+  | GalleryGesture
+  | { type: "attach-pressed"; kind: ImageKind }
   | { type: "image-note-composer-opened" }
   | { type: "image-note-composer-closed" }
   | { type: "image-note-draft-changed"; draft: string }
   | { type: "image-note-save-pressed" }
   | { type: "image-note-delete-pressed"; noteId: string }
-  | { type: "image-note-added"; imageId: string }
-  | { type: "image-notes-more-pressed" }
-  | (GalleryGesture & { stages: readonly GalleryStage[] });
+  | { type: "image-notes-more-pressed" };
 
 /** The change one attempt declares, narrowed from the write path's one union. */
 type AddNoteChange = Extract<ImageChange, { kind: "add-note" }>;
@@ -519,12 +532,11 @@ export function galleryReducer(state: GalleryState, event: GalleryEvent): Galler
     }
 
     case "attach-pressed":
-      // Choosing the stage was the kind decision, so the press declares one
-      // pick-and-attach to the stage the rail shows. Reading the stage from
-      // state here is what keeps the write and the rail from drifting apart.
+      // The plus card names the stage it sits on, so the write and the rail
+      // cannot drift apart and the stage is derived once.
       return {
         state: { ...state, attachFailed: false },
-        effects: [{ type: "attach-images", designId: state.designId, kind: state.kind }],
+        effects: [{ type: "attach-images", designId: state.designId, kind: event.kind }],
       };
 
     case "attach-failed":
