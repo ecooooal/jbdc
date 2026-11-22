@@ -250,14 +250,6 @@ export function writeImages(
   change: ImageRemoveNoteChange,
   now?: number,
 ): Promise<ImageRemoveNoteResult>;
-/** A change whose kind is only known as the union answers with every ending. */
-export function writeImages(
-  database: Database,
-  store: ImageStore | null,
-  designId: string,
-  change: ImageChange,
-  now?: number,
-): Promise<ImageWriteResult>;
 export async function writeImages(
   database: Database,
   store: ImageStore | null,
