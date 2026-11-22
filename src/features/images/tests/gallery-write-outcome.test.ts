@@ -89,31 +89,35 @@ afterEach(() => {
  * total over endings and several endings fold alike, so the expected kind is
  * what makes a row fail when its write takes another path.
  */
-type Written = {
+type AttemptExpectation = {
   attempt: GalleryWriteAttempt;
-  ending: GalleryWriteAttempt["ending"]["kind"];
+  expected: GalleryWriteAttempt["ending"]["kind"];
 };
 
-/** An attach whose ending came before any write: the picker answered. */
-function attachPicked(ending: PickEnding): Written {
-  return { attempt: { type: "attach", ending }, ending: ending.kind };
+/**
+ * An attach whose ending came before any write: the picker answered. The row
+ * names the kind it expects on its own, so the expectation cannot follow the
+ * attempt it is meant to check.
+ */
+function attachPicked(ending: PickEnding, expected: PickEnding["kind"]): AttemptExpectation {
+  return { attempt: { type: "attach", ending }, expected };
 }
 
 /** What an attach's write run may vary, beside the ending the row expects it to answer. */
 type AttachWrittenOptions = {
   design?: string;
   imageStore?: ImageStore | null;
-  ending: ImageAttachResult["kind"];
+  expected: ImageAttachResult["kind"];
 };
 
 /** One attach performed by the write path, its result beside the ending the row expects. */
 async function attachWritten(
   change: ImageAttachChange,
-  { design = designId, imageStore = store, ending }: AttachWrittenOptions,
-): Promise<Written> {
+  { design = designId, imageStore = store, expected }: AttachWrittenOptions,
+): Promise<AttemptExpectation> {
   const result: ImageAttachResult = await writeImages(database, imageStore, design, change, NOW);
 
-  return { attempt: { type: "attach", ending: result }, ending };
+  return { attempt: { type: "attach", ending: result }, expected };
 }
 
 /** A store that cannot read a picked file, so the write path answers store-failed. */
@@ -126,24 +130,36 @@ function failingStore(): ImageStore {
   };
 }
 
+/** What a declared note's write run may vary, beside the ending the row expects it to answer. */
+type AddNoteWrittenOptions = {
+  design?: string;
+  expected: ImageAddNoteResult["kind"];
+};
+
 /** One declared note performed by the write path, its result beside the ending the row expects. */
 async function addNoteWritten(
   change: ImageAddNoteChange,
-  { design = designId, ending }: { design?: string; ending: ImageAddNoteResult["kind"] },
-): Promise<Written> {
+  { design = designId, expected }: AddNoteWrittenOptions,
+): Promise<AttemptExpectation> {
   const result: ImageAddNoteResult = await writeImages(database, null, design, change, NOW);
 
-  return { attempt: { type: "add-note", change, ending: result }, ending };
+  return { attempt: { type: "add-note", change, ending: result }, expected };
 }
+
+/** What a note removal's write run may vary, beside the ending the row expects it to answer. */
+type RemoveNoteWrittenOptions = {
+  design?: string;
+  expected: ImageRemoveNoteResult["kind"];
+};
 
 /** One note removal performed by the write path, its result beside the ending the row expects. */
 async function removeNoteWritten(
   change: ImageRemoveNoteChange,
-  { design = designId, ending }: { design?: string; ending: ImageRemoveNoteResult["kind"] },
-): Promise<Written> {
+  { design = designId, expected }: RemoveNoteWrittenOptions,
+): Promise<AttemptExpectation> {
   const result: ImageRemoveNoteResult = await writeImages(database, null, design, change, NOW);
 
-  return { attempt: { type: "remove-note", change, ending: result }, ending };
+  return { attempt: { type: "remove-note", change, ending: result }, expected };
 }
 
 /**
@@ -156,19 +172,19 @@ async function removeNoteWritten(
  */
 const ROWS: readonly {
   name: string;
-  attempt: () => Promise<Written>;
+  attempt: () => Promise<AttemptExpectation>;
   events: () => GalleryEvent[];
 }[] = [
   // Attach: a cancel and a stored write say nothing; the other four say the
   // images did not land.
   {
     name: "a cancelled pick owes nothing",
-    attempt: async () => attachPicked({ kind: "cancelled" }),
+    attempt: async () => attachPicked({ kind: "cancelled" }, "cancelled"),
     events: () => [],
   },
   {
     name: "a denied pick owes one failed attach",
-    attempt: async () => attachPicked({ kind: "denied" }),
+    attempt: async () => attachPicked({ kind: "denied" }, "denied"),
     events: () => [FAILED],
   },
   {
@@ -179,13 +195,13 @@ const ROWS: readonly {
           kind: "attach",
           images: [{ sourcePath: sourceFile("stored.jpg", "stored bytes"), kind: "sketch" }],
         },
-        { ending: "stored" },
+        { expected: "stored" },
       ),
     events: () => [],
   },
   {
     name: "a refused attach owes one failed attach",
-    attempt: () => attachWritten({ kind: "attach", images: [] }, { ending: "refused" }),
+    attempt: () => attachWritten({ kind: "attach", images: [] }, { expected: "refused" }),
     events: () => [FAILED],
   },
   {
@@ -196,7 +212,7 @@ const ROWS: readonly {
           kind: "attach",
           images: [{ sourcePath: sourceFile("vanished.jpg", "vanished bytes"), kind: "sketch" }],
         },
-        { design: MISSING_ID, ending: "design-missing" },
+        { design: MISSING_ID, expected: "design-missing" },
       ),
     events: () => [FAILED],
   },
@@ -210,7 +226,7 @@ const ROWS: readonly {
             { sourcePath: sourceFile("unreadable.jpg", "unreadable bytes"), kind: "sketch" },
           ],
         },
-        { imageStore: failingStore(), ending: "store-failed" },
+        { imageStore: failingStore(), expected: "store-failed" },
       ),
     events: () => [FAILED],
   },
@@ -222,7 +238,7 @@ const ROWS: readonly {
           kind: "attach",
           images: [{ sourcePath: sourceFile("stray.jpg", "stray bytes"), kind: "sketch" }],
         },
-        { imageStore: null, ending: "store-failed" },
+        { imageStore: null, expected: "store-failed" },
       ),
     events: () => [FAILED],
   },
@@ -234,14 +250,14 @@ const ROWS: readonly {
     attempt: () =>
       addNoteWritten(
         { kind: "add-note", imageId, text: NOTE_TEXT },
-        { ending: "image-note-stored" },
+        { expected: "image-note-stored" },
       ),
     events: () => [{ type: "image-note-added", imageId }],
   },
   {
     name: "a refused note owes nothing: the composer keeps its words",
     attempt: () =>
-      addNoteWritten({ kind: "add-note", imageId, text: "   " }, { ending: "refused" }),
+      addNoteWritten({ kind: "add-note", imageId, text: "   " }, { expected: "refused" }),
     events: () => [],
   },
   {
@@ -249,7 +265,7 @@ const ROWS: readonly {
     attempt: () =>
       addNoteWritten(
         { kind: "add-note", imageId: MISSING_ID, text: NOTE_TEXT },
-        { ending: "image-missing" },
+        { expected: "image-missing" },
       ),
     events: () => [],
   },
@@ -258,7 +274,7 @@ const ROWS: readonly {
     attempt: () =>
       addNoteWritten(
         { kind: "add-note", imageId, text: NOTE_TEXT },
-        { design: MISSING_ID, ending: "design-missing" },
+        { design: MISSING_ID, expected: "design-missing" },
       ),
     events: () => [],
   },
@@ -267,7 +283,7 @@ const ROWS: readonly {
   {
     name: "a removed note owes nothing: the live read drops the row",
     attempt: () =>
-      removeNoteWritten({ kind: "remove-note", noteId }, { ending: "image-note-removed" }),
+      removeNoteWritten({ kind: "remove-note", noteId }, { expected: "image-note-removed" }),
     events: () => [],
   },
   {
@@ -275,7 +291,7 @@ const ROWS: readonly {
     attempt: () =>
       removeNoteWritten(
         { kind: "remove-note", noteId: MISSING_ID },
-        { ending: "image-note-missing" },
+        { expected: "image-note-missing" },
       ),
     events: () => [],
   },
@@ -284,7 +300,7 @@ const ROWS: readonly {
     attempt: () =>
       removeNoteWritten(
         { kind: "remove-note", noteId },
-        { design: MISSING_ID, ending: "design-missing" },
+        { design: MISSING_ID, expected: "design-missing" },
       ),
     events: () => [],
   },
@@ -294,7 +310,7 @@ describe("a gallery write's ending", () => {
   test.each(ROWS)("$name", async ({ attempt, events }) => {
     const written = await attempt();
 
-    expect(written.attempt.ending.kind).toBe(written.ending);
+    expect(written.attempt.ending.kind).toBe(written.expected);
     expect(writeOutcome(written.attempt)).toEqual(events());
   });
 });
