@@ -4,35 +4,53 @@ import { useCallback, useEffect } from "react";
 import { AppState, BackHandler, Pressable, View } from "react-native";
 import { FadeInUp, ReduceMotion } from "react-native-reanimated";
 import { useAppTheme } from "@/features/settings/react";
+import { Badge } from "@/shared/components/ui/badge";
 import { Button } from "@/shared/components/ui/button";
 import { Icon } from "@/shared/components/ui/icon";
 import { NativeOnlyAnimatedView } from "@/shared/components/ui/native-only-animated-view";
+import { Text } from "@/shared/components/ui/text";
 import { QUIET_MOTION_DURATION_MS } from "@/shared/lib/motion";
 import type { LibraryScreenEvent } from "../lib/library-screen-reducer";
 
-/** One row of the speed-dial: a circular icon button with its spoken name. */
+/**
+ * One row of the speed-dial: a paper action, named in the sans face beside its
+ * glyph. The paper is opaque so the row reads over photography, and the Thread
+ * Line keeps it from floating as a shadow. An action that does not exist yet
+ * says so in a pill instead of fading to a ghost over the work behind it.
+ */
 function FabAction({
+  label,
   accessibilityLabel,
+  hint,
   icon,
   disabled,
   onPress,
 }: {
+  label: string;
   accessibilityLabel: string;
+  hint?: string;
   icon: LucideIcon;
   disabled?: boolean;
   onPress?: () => void;
 }) {
   return (
-    <Button
-      size="icon"
-      variant="outline"
-      className="h-12 w-12 rounded-full"
+    <Pressable
+      role="button"
       accessibilityLabel={accessibilityLabel}
+      accessibilityHint={hint}
+      accessibilityState={{ disabled }}
       disabled={disabled}
       onPress={onPress}
+      className="border-border bg-background active:bg-accent min-h-12 flex-row flex-wrap items-center gap-3 rounded-lg border px-4 py-2.5 shadow-sm shadow-black/5"
     >
       <Icon as={icon} />
-    </Button>
+      <Text className="text-sm font-medium">{label}</Text>
+      {disabled ? (
+        <Badge variant="outline" className="ml-auto">
+          <Text>Coming soon</Text>
+        </Badge>
+      ) : null}
+    </Pressable>
   );
 }
 
@@ -44,9 +62,9 @@ export const FAB_SCROLL_CLEARANCE = 56 + 12;
 
 /**
  * The Library's one floating button: shut, it opens its actions; open, it
- * offers add design, the theme toggle, and settings, stacked upward above its
- * corner. Add opens the create screen, the toggle flips the app between light
- * and dark and persists the choice, and settings stays visibly disabled until
+ * stacks named paper rows above its corner, Add nearest the button and Settings
+ * farthest. Add opens the create screen, the theme row flips the app between
+ * light and dark and persists the choice, and Settings says "Coming soon" until
  * its screen exists. The expansion rises and fades in inside the quiet motion
  * budget; the button always sits above the single view's details panel.
  *
@@ -107,25 +125,39 @@ export function LibraryFab({
           onPress={() => send({ type: "fab-dismissed" })}
         />
       ) : null}
-      <View pointerEvents="box-none" className="absolute end-6 z-30 items-end" style={{ bottom }}>
+      <View
+        pointerEvents="box-none"
+        className="absolute end-6 start-6 z-30 items-end"
+        style={{ bottom }}
+      >
         {open ? (
           <NativeOnlyAnimatedView
             entering={FadeInUp.duration(QUIET_MOTION_DURATION_MS).reduceMotion(ReduceMotion.System)}
           >
-            <View className="items-end gap-3">
+            <View className="max-w-full items-stretch gap-3">
+              {/* Add sits nearest the button; Settings, the one that does not
+                  exist yet, sits farthest and says so. */}
               <FabAction
-                accessibilityLabel="Add design"
-                icon={Plus}
-                onPress={() => send({ type: "fab-action-taken", action: "add" })}
+                label="Settings"
+                accessibilityLabel="Settings"
+                hint="Coming soon"
+                icon={Settings}
+                disabled
               />
               <FabAction
+                label={nextScheme === "dark" ? "Dark theme" : "Light theme"}
                 accessibilityLabel={themeLabel}
                 icon={nextScheme === "dark" ? Moon : Sun}
                 onPress={() =>
                   send({ type: "fab-action-taken", action: "theme", scheme: nextScheme })
                 }
               />
-              <FabAction accessibilityLabel="Settings" icon={Settings} disabled />
+              <FabAction
+                label="Add design"
+                accessibilityLabel="Add design"
+                icon={Plus}
+                onPress={() => send({ type: "fab-action-taken", action: "add" })}
+              />
             </View>
           </NativeOnlyAnimatedView>
         ) : null}

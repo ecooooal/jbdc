@@ -108,6 +108,12 @@ test("the FAB expands into add, theme, and settings actions", async () => {
   expect(screen.getByRole("button", { name: "Add design" })).toBeTruthy();
   expect(screen.getByRole("button", { name: "Switch to dark theme" })).toBeTruthy();
   expect(screen.getByRole("button", { name: "Settings" })).toBeDisabled();
+
+  // Every action is named on paper, and the one that does not exist yet says
+  // so instead of fading into the work behind it.
+  expect(screen.getByText("Add design")).toBeTruthy();
+  expect(screen.getByText("Dark theme")).toBeTruthy();
+  expect(screen.getByText("Coming soon")).toBeTruthy();
 });
 
 test("the FAB's add action opens the create screen", async () => {
