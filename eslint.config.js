@@ -60,6 +60,14 @@ const negatedEffectListAssertion = {
     "Assert the whole effect list with toEqual (docs/FRONTEND_STATE.md §Testing); a length lets a substituted effect pass.",
 };
 
+// A test asserts what the Owner reads, not the shape of the element carrying
+// it: `heading.props.children` still passes while every heading renders blank.
+const elementShapeAssertion = {
+  selector: "MemberExpression[property.name='children'][object.property.name='props']",
+  message:
+    "Assert the rendered text with toHaveTextContent; element.props.children reads the element's shape, not its behaviour.",
+};
+
 module.exports = defineConfig([
   expoConfig,
   {
@@ -92,7 +100,12 @@ module.exports = defineConfig([
   {
     files: ["**/tests/**/*.{ts,tsx}"],
     rules: {
-      "no-restricted-syntax": ["error", effectListAssertion, negatedEffectListAssertion],
+      "no-restricted-syntax": [
+        "error",
+        effectListAssertion,
+        negatedEffectListAssertion,
+        elementShapeAssertion,
+      ],
     },
   },
 ]);
