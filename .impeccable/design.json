@@ -94,7 +94,7 @@
       { "name": "overlay-enter", "value": "fade 200ms ease-out", "purpose": "Overlays and dialogs arriving; honors Reduce Motion." },
       { "name": "overlay-exit", "value": "fade 150ms ease-in", "purpose": "Overlays leaving; honors Reduce Motion." },
       { "name": "reveal", "value": "200ms linear", "purpose": "Accordion-style section reveals." },
-      { "name": "press", "value": "instant, never animated", "purpose": "Tonal shift to 90% (buttons); a Library card dips slightly and takes a faint ink wash." }
+      { "name": "press", "value": "instant, never animated", "purpose": "Tonal shift to 90% (buttons); a Library card dips slightly and takes a faint ink wash, held a beat before its route opens." }
     ]
   },
   "components": [

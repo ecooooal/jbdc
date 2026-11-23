@@ -1,12 +1,14 @@
-import { fireEvent, render, screen, userEvent, within } from "@testing-library/react-native";
+import { act, fireEvent, render, screen, userEvent, within } from "@testing-library/react-native";
+import { router } from "expo-router";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { DatabaseProvider } from "@/features/database/react";
 import { createSyncSubscribe, createTempDatabase } from "@/features/database/testing";
 import { createDesign } from "@/features/designs";
+import { listLibraryDesigns } from "@/features/library";
 import { LibraryScreen } from "@/features/library/react";
 import type { Grouping } from "@/features/settings";
 import { createCollection } from "@/features/taxonomy";
-import { PRESS_HIGHLIGHT_SCALE } from "../components/press-highlight";
+import { PRESS_HIGHLIGHT_HOLD_MS, PRESS_HIGHLIGHT_SCALE } from "../components/press-highlight";
 
 jest.mock("expo-router", () => ({ router: { push: jest.fn() } }));
 
@@ -22,6 +24,7 @@ let dispose: () => void;
 
 beforeEach(() => {
   ({ database, dispose } = createTempDatabase());
+  jest.clearAllMocks();
 });
 
 afterEach(() => {
@@ -279,6 +282,46 @@ test("every density's tap target dips and tints while pressed", async () => {
     await fireEvent(target, "pressOut");
 
     expect(target).toHaveStyle({ transform: [{ scale: 1 }] });
+    expect(tint).toHaveStyle({ opacity: 0 });
+  }
+});
+
+/** Waits out the held beat the press highlight stays visible for. */
+async function waitOutHighlightHold() {
+  await act(
+    async () => await new Promise((resolve) => setTimeout(resolve, PRESS_HIGHLIGHT_HOLD_MS)),
+  );
+}
+
+test("a tap on a card at every density opens its Detail after the highlight hold", async () => {
+  seedStream();
+  const user = userEvent.setup();
+  const freshest = listLibraryDesigns(database).find((design) => design.name === "Freshest dress");
+
+  if (!freshest) throw new Error("No Library design named Freshest dress");
+
+  await renderLibrary();
+
+  for (const density of DENSITY_LABELS) {
+    await user.press(screen.getByLabelText(density));
+
+    const target = screen.getByRole("button", { name: "Freshest dress" });
+    const tint = within(target).getByTestId("press-highlight");
+
+    jest.mocked(router.push).mockClear();
+    await fireEvent(target, "press");
+    await fireEvent(target, "pressOut");
+
+    // The highlight is still up, and the route has not opened yet.
+    expect(router.push).not.toHaveBeenCalled();
+    expect(tint).toHaveStyle({ opacity: 1 });
+
+    await waitOutHighlightHold();
+
+    expect(router.push).toHaveBeenLastCalledWith({
+      pathname: "/designs/[id]",
+      params: { id: freshest.id },
+    });
     expect(tint).toHaveStyle({ opacity: 0 });
   }
 });

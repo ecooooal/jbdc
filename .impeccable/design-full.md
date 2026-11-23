@@ -283,7 +283,7 @@ Photography keeps fixed ratios: 4:5 for the hero, 3:4 for journey thumbs and add
 
 ## Motion & Micro-interaction
 
-Motion is quiet and decelerating: overlays fade in over 200ms and out over 150ms (Reanimated, honoring the system Reduce Motion setting); accordion-style reveals take 200ms; press feedback is an instant tonal shift (a button darkens to 90%, a Library card dips slightly and takes a faint ink wash), with no animation at all. Nothing bounces, nothing loops, nothing moves for decoration. Screen-to-screen transitions stay plain fades until a deliberate polish phase changes them.
+Motion is quiet and decelerating: overlays fade in over 200ms and out over 150ms (Reanimated, honoring the system Reduce Motion setting); accordion-style reveals take 200ms; press feedback is an instant tonal shift (a button darkens to 90%, a Library card dips slightly and takes a faint ink wash) held for a beat so the Owner sees it before the route opens — the press itself never animates. Nothing bounces, nothing loops, nothing moves for decoration. Screen-to-screen transitions stay plain fades until a deliberate polish phase changes them.
 
 ### Named Rules
 
@@ -327,7 +327,7 @@ The library is uniwind + rn-primitives with shadcn-style slot names; every color
 - **Corner style:** 14px (10px for list rows and compact tiles).
 - **Background:** Unbleached Paper with a Thread Line hairline and the whisper shadow.
 - **Structure:** Cover-first tiles — image block on top, 12–16px text block below (name, then meta, then status pill). List row: 64px cover, name, one meta line, trailing badge.
-- **Press:** Whole card is the button; pressed cards dip slightly and take a faint ink wash.
+- **Press:** Whole card is the button; pressed cards dip slightly and take a faint ink wash, held a beat before Detail opens.
 - **Insets:** Grouped records inside a card sit on a Kraft Layer block (14px radius, 16px padding) — the current bordered rows are the scaffold precursor of this committed pattern.
 
 ### Inputs / Fields
