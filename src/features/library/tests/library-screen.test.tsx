@@ -76,6 +76,91 @@ test("the search and filter placeholder icons render disabled", async () => {
   expect(screen.getByRole("button", { name: "Filter" })).toBeDisabled();
 });
 
+/** Three designs with no Collection, freshest first as the default read orders them. */
+function seedStream() {
+  createDesign(database, { name: "Freshest dress" }, 3000);
+  createDesign(database, { name: "Middle skirt" }, 2000);
+  createDesign(database, { name: "Oldest coat" }, 1000);
+}
+
+/** The width of one single-view page in the pager's settle events. */
+const PAGE_WIDTH = 390;
+
+/**
+ * Ends a swipe on the pager at a horizontal offset, as the scroll view reports
+ * it: the page it settles on is what the header's position chip shows.
+ */
+async function settlePagerAt(offset: number) {
+  await fireEvent(screen.getByTestId("single-view"), "momentumScrollEnd", {
+    nativeEvent: {
+      contentOffset: { x: offset, y: 0 },
+      contentSize: { width: PAGE_WIDTH * 8, height: 700 },
+      layoutMeasurement: { width: PAGE_WIDTH, height: 700 },
+      zoomScale: 1,
+    },
+  });
+}
+
+/** The design names the single view shows, in the order its pages are laid out. */
+function pageNames(): (string | string[])[] {
+  return screen.getAllByRole("heading").map((heading) => heading.props.children);
+}
+
+test("density 1 pages the first Design full-screen instead of listing it", async () => {
+  seedStream();
+  const user = userEvent.setup();
+
+  await renderLibrary();
+  await user.press(screen.getByLabelText("One design per row"));
+
+  expect(screen.getByTestId("single-view")).toBeTruthy();
+  expect(screen.queryByTestId("library-row-0")).toBeNull();
+  expect(pageNames()).toEqual(["Freshest dress", "Middle skirt", "Oldest coat"]);
+  expect(screen.getByText("1 / 3")).toBeTruthy();
+});
+
+test("a swipe settles on its page and both edges stop the pager", async () => {
+  seedStream();
+  const user = userEvent.setup();
+
+  await renderLibrary();
+  await user.press(screen.getByLabelText("One design per row"));
+
+  await settlePagerAt(PAGE_WIDTH);
+
+  expect(screen.getByText("2 / 3")).toBeTruthy();
+
+  await settlePagerAt(PAGE_WIDTH * 2);
+
+  expect(screen.getByText("3 / 3")).toBeTruthy();
+
+  await settlePagerAt(PAGE_WIDTH * 5);
+
+  expect(screen.getByText("3 / 3")).toBeTruthy();
+
+  await settlePagerAt(-PAGE_WIDTH);
+
+  expect(screen.getByText("1 / 3")).toBeTruthy();
+});
+
+test("the pager walks the grouping selector's order, not the read's", async () => {
+  seedCollections();
+  const user = userEvent.setup();
+
+  await renderLibrary();
+  await user.press(screen.getByLabelText("One design per row"));
+  await chooseGrouping("per-collection");
+
+  expect(pageNames()).toEqual([
+    "Spring blouse",
+    "Spring skirt",
+    "Spring dress",
+    "Spring scarf",
+    "Autumn coat",
+    "No season dress",
+  ]);
+});
+
 /** Two Collections, four designs in Spring, one in none; Spring is freshest, then Autumn. */
 function seedCollections() {
   const spring = createCollection(database, { name: "Spring" }, 1);

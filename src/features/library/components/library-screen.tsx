@@ -13,12 +13,13 @@ import {
   LIBRARY_SIDE_PADDING,
   libraryGrid,
 } from "../lib/grid";
-import { groupLibraryDesigns } from "../lib/grouping";
+import { groupLibraryDesigns, orderedLibraryDesigns } from "../lib/grouping";
 import type { LibraryDesign } from "../lib/query";
 import { useLibraryDesigns } from "../lib/use-library-designs";
 import { DensityControl } from "./density-control";
 import { GroupingSelect } from "./grouping-select";
 import { LibraryCard } from "./library-card";
+import { SingleView } from "./single-view";
 
 /** The heading of the trailing group for designs in no Collection. */
 const NO_COLLECTION_LABEL = "No collection";
@@ -46,7 +47,7 @@ function SectionGrid({
   onOpen,
 }: {
   designs: readonly LibraryDesign[];
-  density: CardDensity;
+  density: Exclude<CardDensity, 1>;
   columns: number;
   cardWidth: number;
   onOpen: (design: LibraryDesign) => void;
@@ -72,11 +73,13 @@ function SectionGrid({
 }
 
 /**
- * The Library screen: the grid of active designs, or the empty state offering
- * create. The chosen density decides the column count; the card width follows
- * the viewport, so rotating the device reflows the grid instead of breaking it.
- * The chosen grouping decides whether the grid is one flat stream or sections
- * under their Collection headers.
+ * The Library screen: at density 1, the single view paging one Design at a
+ * time; at 2 and 4, the grid of active designs; or the empty state offering
+ * create. The chosen density decides between the pager and the grid, and the
+ * card width follows the viewport, so rotating the device reflows the grid
+ * instead of breaking it. The chosen grouping decides whether the grid is one
+ * flat stream or sections under their Collection headers, and the pager walks
+ * the same ordered list.
  */
 export function LibraryScreen() {
   const { designs, error, status } = useLibraryDesigns();
@@ -84,10 +87,8 @@ export function LibraryScreen() {
   const { grouping, setGrouping } = useGrouping();
   const { width: viewportWidth } = useWindowDimensions();
   const insets = useSafeAreaInsets();
-  const contentWidth = Math.max(
-    0,
-    viewportWidth - insets.left - insets.right - LIBRARY_HORIZONTAL_PADDING,
-  );
+  const screenWidth = Math.max(0, viewportWidth - insets.left - insets.right);
+  const contentWidth = Math.max(0, screenWidth - LIBRARY_HORIZONTAL_PADDING);
   const { columns, cardWidth } = libraryGrid(density, contentWidth);
   const arrangement = groupLibraryDesigns(designs, grouping);
   const isEmpty = status === "ready" && designs.length === 0;
@@ -97,7 +98,7 @@ export function LibraryScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1 }} className="bg-background" edges={["top", "left", "right"]}>
-      <View className="flex-1 pt-6" style={{ paddingHorizontal: LIBRARY_SIDE_PADDING }}>
+      <View className="pt-6" style={{ paddingHorizontal: LIBRARY_SIDE_PADDING }}>
         <View className="z-10 flex-row items-center justify-between gap-3">
           <GroupingSelect grouping={grouping} onChange={setGrouping} />
           <View className="flex-row items-center gap-2">
@@ -122,21 +123,32 @@ export function LibraryScreen() {
         </View>
 
         {error ? <Text className="text-destructive mt-6">{error.message}</Text> : null}
+      </View>
 
-        {status === "loading" ? null : isEmpty ? (
-          <View className="flex-1 items-center justify-center gap-5 pb-16">
-            <View className="items-center gap-2">
-              <Text variant="h4">The library is empty</Text>
-              <Text variant="muted" className="text-center">
-                Designs you add will appear here.
-              </Text>
-            </View>
-            <Button onPress={() => router.push("/designs/new")}>
-              <Icon as={Plus} />
-              <Text>Create a design</Text>
-            </Button>
+      {status === "loading" ? null : isEmpty ? (
+        <View
+          className="flex-1 items-center justify-center gap-5 pb-16"
+          style={{ paddingHorizontal: LIBRARY_SIDE_PADDING }}
+        >
+          <View className="items-center gap-2">
+            <Text variant="h4">The library is empty</Text>
+            <Text variant="muted" className="text-center">
+              Designs you add will appear here.
+            </Text>
           </View>
-        ) : (
+          <Button onPress={() => router.push("/designs/new")}>
+            <Icon as={Plus} />
+            <Text>Create a design</Text>
+          </Button>
+        </View>
+      ) : density === 1 ? (
+        <SingleView
+          designs={orderedLibraryDesigns(arrangement)}
+          width={screenWidth}
+          onOpen={openDesign}
+        />
+      ) : (
+        <View className="flex-1" style={{ paddingHorizontal: LIBRARY_SIDE_PADDING }}>
           <ScrollView className="mt-6 flex-1" showsVerticalScrollIndicator={false}>
             {arrangement.kind === "grouped" ? (
               <View className="gap-6 pb-8">
@@ -169,8 +181,8 @@ export function LibraryScreen() {
               </View>
             )}
           </ScrollView>
-        )}
-      </View>
+        </View>
+      )}
     </SafeAreaView>
   );
 }

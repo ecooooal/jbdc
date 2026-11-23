@@ -23,18 +23,6 @@ function Meta({ value, placeholder }: { value: string | null; placeholder: strin
   );
 }
 
-function MetaLine({ design }: { design: LibraryDesign }) {
-  return (
-    <View className="flex-row items-center gap-2">
-      <Meta value={design.category} placeholder="No category" />
-      <Text variant="muted" className="opacity-40">
-        ·
-      </Text>
-      <Meta value={design.collection} placeholder="No collection" />
-    </View>
-  );
-}
-
 function MetaStack({ design }: { design: LibraryDesign }) {
   return (
     <View className="gap-0.5">
@@ -72,22 +60,6 @@ function Cover({ design, className }: { design: LibraryDesign; className?: strin
   );
 }
 
-/** Density 1: a full-width list row, not a large card. */
-function ListRow({ design }: { design: LibraryDesign }) {
-  return (
-    <Card className="flex-row items-center gap-3 rounded-lg py-3 pl-3 pr-4">
-      <Cover design={design} className="size-16 rounded-md" />
-      <View className="flex-1 gap-1">
-        <Text role="heading" aria-level={3} className="text-base font-medium" numberOfLines={1}>
-          {design.name}
-        </Text>
-        <MetaLine design={design} />
-      </View>
-      <DesignStatusBadge status={design.status} />
-    </Card>
-  );
-}
-
 /** Density 2 and 4: a cover-first tile. Four per row keeps only the name readable. */
 function Tile({ design, density }: { design: LibraryDesign; density: Exclude<CardDensity, 1> }) {
   const compact = density === 4;
@@ -122,10 +94,10 @@ function Tile({ design, density }: { design: LibraryDesign; density: Exclude<Car
 }
 
 /**
- * One Design in the Library. The shape follows the owner's chosen density:
- * one is a list row with every field, two is a roomy tile, four is a compact
- * tile that keeps the cover and name legible. The whole card is one button:
- * pressing it opens that Design.
+ * One Design in the Library. The shape follows the owner's chosen density: two
+ * is a roomy tile, four is a compact tile that keeps the cover and name
+ * legible; density one is the single view and draws no card. The whole card is
+ * one button: pressing it opens that Design.
  */
 export function LibraryCard({
   design,
@@ -133,12 +105,12 @@ export function LibraryCard({
   onPress,
 }: {
   design: LibraryDesign;
-  density: CardDensity;
+  density: Exclude<CardDensity, 1>;
   onPress: () => void;
 }) {
   return (
     <Pressable role="button" onPress={onPress} className="active:opacity-70">
-      {density === 1 ? <ListRow design={design} /> : <Tile design={design} density={density} />}
+      <Tile design={design} density={density} />
     </Pressable>
   );
 }

@@ -52,7 +52,7 @@ function libraryDesign(name: string): LibraryDesign {
   return design;
 }
 
-async function renderCard(design: LibraryDesign, density: CardDensity) {
+async function renderCard(design: LibraryDesign, density: Exclude<CardDensity, 1>) {
   return render(
     <ImageStoreProvider store={store}>
       <LibraryCard design={design} density={density} onPress={() => {}} />
@@ -77,14 +77,14 @@ test("the card renders the Cover from the store", async () => {
   expect(screen.queryByTestId("cover-placeholder")).toBeNull();
 });
 
-test("the card shows the Cover at every density", async () => {
+test("the card shows the Cover at both grid densities", async () => {
   const designId = createDesign(database, { name: "Wool coat" }, 500).id;
 
   await attach(designId, "prototype", "prototype bytes", 1000);
 
   const design = libraryDesign("Wool coat");
 
-  for (const density of [1, 2, 4] as const) {
+  for (const density of [2, 4] as const) {
     const view = await renderCard(design, density);
 
     expect(screen.getByLabelText("Cover of Wool coat")).toBeTruthy();

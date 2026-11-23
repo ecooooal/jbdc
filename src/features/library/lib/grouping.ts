@@ -60,3 +60,14 @@ export function groupLibraryDesigns(
 
   return { kind: "grouped", sections };
 }
+
+/**
+ * The arrangement's designs in the order the Library shows them: the flat
+ * stream, or each Collection section in turn. The single view pages this list,
+ * so swiping between designs never disagrees with the grids.
+ */
+export function orderedLibraryDesigns(arrangement: LibraryArrangement): LibraryDesign[] {
+  return arrangement.kind === "flat"
+    ? arrangement.designs
+    : arrangement.sections.flatMap((section) => section.designs);
+}
