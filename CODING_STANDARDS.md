@@ -27,7 +27,9 @@ checked is not a source.
 - **Prose rides with what it describes.** A comment, a glossary line, or an ADR
   line lands in the commit whose behaviour it explains. If that commit is
   already pushed, it lands in the ticket's repair commit. Never amend pushed
-  work, and never give a one-line prose change its own commit.
+  work, and never give a one-line prose change its own commit. A phrase you
+  rename gets a row in `scripts/check-retired-terms.mjs` naming its
+  replacement, so a copy left behind fails `pnpm check`, not a reviewer.
 - **Generated files travel alone.** `snapshot.json`, `migration.sql`, and
   `migrations.js` share a commit with their schema change and nothing else.
   Their hundreds of lines hide every file beside them. When the step's content is

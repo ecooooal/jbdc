@@ -35,4 +35,5 @@ jobs:
       - run: node scripts/check-entry-exports.mjs
       - run: node scripts/check-frontend-state.mjs
       - run: node scripts/check-test-size.mjs
+      - run: node scripts/check-retired-terms.mjs
       - run: pnpm test
