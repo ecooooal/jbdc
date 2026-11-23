@@ -1,5 +1,5 @@
 /**
- * Settings — React entry point. The Library reads and writes its card density
- * through the hook; no screen touches the `settings` table itself.
+ * Settings — React entry point. Surfaces read and write their preferences
+ * through the module's hooks; no screen touches the `settings` table itself.
  */
 export { useCardDensity } from "./lib/use-card-density";

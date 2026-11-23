@@ -4,14 +4,14 @@ import { createSettings, type ThemeChoice } from "./settings";
 
 export type ThemeChoiceState = {
   theme: ThemeChoice;
-  /** Persists the choice and applies it in the same render. */
+  /** Persists the choice; the next render reports it. */
   setTheme: (theme: ThemeChoice) => void;
 };
 
 /**
  * The Owner's app-wide theme choice. The first render reads the persisted row
- * synchronously, so the app never flashes the system's appearance before a
- * stored choice arrives; every change writes through to `settings`.
+ * synchronously, so a stored choice is the state's first value; every change
+ * writes through to `settings`.
  */
 export function useThemeChoice(): ThemeChoiceState {
   const database = useDatabase();

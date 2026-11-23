@@ -61,16 +61,14 @@ export function cardDensityFrom(value: string | undefined): CardDensity | null {
 }
 
 /**
- * The grouping a stored or control value names, or null when it names none.
- * Settings falls back to the default; the control simply ignores it.
+ * The grouping a stored value names, or null when it names no choice.
  */
 export function groupingFrom(value: string | undefined): Grouping | null {
   return GROUPINGS.find((candidate) => candidate === value) ?? null;
 }
 
 /**
- * The theme a stored or control value names, or null when it names none.
- * Settings falls back to follow-system; the toggle simply ignores it.
+ * The theme a stored value names, or null when it names no choice.
  */
 export function themeChoiceFrom(value: string | undefined): ThemeChoice | null {
   return THEME_CHOICES.find((candidate) => candidate === value) ?? null;

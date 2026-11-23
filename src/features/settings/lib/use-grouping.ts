@@ -4,14 +4,14 @@ import { createSettings, type Grouping } from "./settings";
 
 export type GroupingState = {
   grouping: Grouping;
-  /** Persists the choice and updates the Library in the same render. */
+  /** Persists the choice; the next render reports it. */
   setGrouping: (grouping: Grouping) => void;
 };
 
 /**
- * The Library's grouping. The first render reads the persisted row
- * synchronously, so the grid never flashes Per design before the stored
- * choice arrives; every change writes through to `settings`.
+ * The Library's grouping choice. The first render reads the persisted row
+ * synchronously, so a stored choice is the state's first value; every change
+ * writes through to `settings`.
  */
 export function useGrouping(): GroupingState {
   const database = useDatabase();
