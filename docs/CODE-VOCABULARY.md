@@ -84,4 +84,4 @@ _Note_: the palettes live in `src/global.css`; `src/shared/lib/theme.ts` derives
 ## The Library's FAB
 
 **the FAB**:
-The Library's floating action button in the bottom corner, a speed-dial: collapsed it holds its actions shut; expanded it stacks add design, the theme toggle, and the disabled settings action above the corner within the quiet motion budget, clearing the single view's details panel. It owns add now that the header carries no create button.
+The Library's floating action button in the bottom corner, a speed-dial: collapsed it holds its actions shut; expanded it stacks add design, the theme toggle, and the disabled settings action above the corner within the quiet motion budget, clearing the single view's details panel. It owns add now that the header carries no create button. Any exit shuts it — a tap outside, choosing an action, leaving the route, backgrounding the app, or Android's Back — so a return never finds it open.

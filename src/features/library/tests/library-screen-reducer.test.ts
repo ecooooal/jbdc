@@ -8,6 +8,13 @@ import {
 /** The Design every press fixture names. */
 const DESIGN_ID = "design-silk-slip";
 
+/** The exits that shut the FAB's actions without choosing one. */
+const CLOSING_EXITS = [
+  { type: "fab-dismissed" },
+  { type: "library-left" },
+  { type: "app-backgrounded" },
+] as const satisfies readonly LibraryScreenEvent[];
+
 /** Drives the Library reducer with the sequence of events and answers what settled. */
 function library(...events: LibraryScreenEvent[]) {
   const tester = createReducerTester(libraryScreenReducer, createInitialLibraryScreenState());
@@ -22,6 +29,7 @@ describe("pressing a Library card", () => {
     const tester = library({ type: "press-started", designId: DESIGN_ID });
 
     expect(tester.getState()).toEqual({
+      actionsOpen: false,
       press: { designId: DESIGN_ID, phase: "down" },
     });
     expect(tester.getEffects()).toEqual([]);
@@ -36,6 +44,7 @@ describe("pressing a Library card", () => {
     const tester = library({ type: "card-tapped", designId: DESIGN_ID });
 
     expect(tester.getState()).toEqual({
+      actionsOpen: false,
       press: { designId: DESIGN_ID, phase: "holding" },
     });
     expect(tester.getEffects()).toEqual([{ type: "hold-cards-open", designId: DESIGN_ID }]);
@@ -48,6 +57,7 @@ describe("pressing a Library card", () => {
     );
 
     expect(tester.getState()).toEqual({
+      actionsOpen: false,
       press: { designId: DESIGN_ID, phase: "holding" },
     });
     expect(tester.getEffects()).toEqual([{ type: "hold-cards-open", designId: DESIGN_ID }]);
@@ -60,6 +70,7 @@ describe("pressing a Library card", () => {
     );
 
     expect(tester.getState()).toEqual({
+      actionsOpen: false,
       press: { designId: DESIGN_ID, phase: "holding" },
     });
     expect(tester.getEffects()).toEqual([{ type: "hold-cards-open", designId: DESIGN_ID }]);
@@ -85,8 +96,61 @@ describe("pressing a Library card", () => {
     );
 
     expect(tester.getState()).toEqual({
+      actionsOpen: false,
       press: { designId: DESIGN_ID, phase: "holding" },
     });
     expect(tester.getEffects()).toEqual([{ type: "hold-cards-open", designId: DESIGN_ID }]);
+  });
+});
+
+describe("the FAB's actions", () => {
+  test("its own tap opens the actions and another tap shuts them", () => {
+    const tester = library({ type: "fab-tapped" });
+
+    expect(tester.getState()).toEqual({
+      ...createInitialLibraryScreenState(),
+      actionsOpen: true,
+    });
+    expect(tester.getEffects()).toEqual([]);
+
+    tester.send({ type: "fab-tapped" });
+
+    expect(tester.getState()).toEqual(createInitialLibraryScreenState());
+    expect(tester.getEffects()).toEqual([]);
+  });
+
+  test("choosing add shuts the actions and asks for the create screen", () => {
+    const tester = library({ type: "fab-tapped" }, { type: "fab-action-taken", action: "add" });
+
+    expect(tester.getState()).toEqual(createInitialLibraryScreenState());
+    expect(tester.getEffects()).toEqual([{ type: "open-create-screen" }]);
+  });
+
+  test("choosing the theme shuts the actions and asks for the chosen scheme", () => {
+    const tester = library(
+      { type: "fab-tapped" },
+      { type: "fab-action-taken", action: "theme", scheme: "dark" },
+    );
+
+    expect(tester.getState()).toEqual(createInitialLibraryScreenState());
+    expect(tester.getEffects()).toEqual([{ type: "apply-theme", scheme: "dark" }]);
+  });
+
+  test("an action taken after the actions have shut asks for nothing", () => {
+    const tester = library(
+      { type: "fab-tapped" },
+      { type: "fab-action-taken", action: "add" },
+      { type: "fab-action-taken", action: "add" },
+    );
+
+    expect(tester.getState()).toEqual(createInitialLibraryScreenState());
+    expect(tester.getEffects()).toEqual([{ type: "open-create-screen" }]);
+  });
+
+  test.each(CLOSING_EXITS)("$type shuts the actions", (exit) => {
+    const tester = library({ type: "fab-tapped" }, exit);
+
+    expect(tester.getState()).toEqual(createInitialLibraryScreenState());
+    expect(tester.getEffects()).toEqual([]);
   });
 });

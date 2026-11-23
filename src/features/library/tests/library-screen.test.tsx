@@ -1,5 +1,6 @@
 import { act, fireEvent, render, screen, userEvent, within } from "@testing-library/react-native";
-import { router } from "expo-router";
+import { router, useFocusEffect } from "expo-router";
+import { AppState, BackHandler } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { Uniwind } from "uniwind";
 import { DatabaseProvider } from "@/features/database/react";
@@ -12,7 +13,7 @@ import { ThemeChoiceProvider } from "@/features/settings/react";
 import { createCollection } from "@/features/taxonomy";
 import { PRESS_HIGHLIGHT_HOLD_MS } from "../lib/library-screen-reducer";
 
-jest.mock("expo-router", () => ({ router: { push: jest.fn() } }));
+jest.mock("expo-router", () => ({ router: { push: jest.fn() }, useFocusEffect: jest.fn() }));
 
 const INITIAL_METRICS = {
   frame: { x: 0, y: 0, width: 390, height: 844 },
@@ -27,6 +28,7 @@ let dispose: () => void;
 beforeEach(() => {
   ({ database, dispose } = createTempDatabase());
   jest.clearAllMocks();
+  jest.mocked(useFocusEffect).mockReset();
 });
 
 afterEach(() => {
@@ -137,6 +139,106 @@ test("the FAB's theme action persists the chosen mode and applies it", async () 
   await user.press(screen.getByRole("button", { name: "More actions" }));
 
   expect(screen.getByRole("button", { name: "Switch to light theme" })).toBeTruthy();
+});
+
+test("an outside tap closes the FAB instead of reaching the card below", async () => {
+  const user = userEvent.setup();
+  seedStream();
+
+  await renderLibrary();
+  await user.press(screen.getByRole("button", { name: "More actions" }));
+  await fireEvent.press(screen.getByTestId("library-fab-dismiss"));
+
+  expect(screen.queryByRole("button", { name: "Add design" })).toBeNull();
+  expect(router.push).not.toHaveBeenCalled();
+});
+
+test("leaving the Library closes the FAB", async () => {
+  let closeOnLeave: (() => void) | undefined;
+
+  jest.mocked(useFocusEffect).mockImplementation((effect) => {
+    const cleanup = effect();
+
+    closeOnLeave = typeof cleanup === "function" ? cleanup : undefined;
+  });
+
+  const user = userEvent.setup();
+  seedStream();
+
+  await renderLibrary();
+  await user.press(screen.getByRole("button", { name: "More actions" }));
+
+  expect(screen.getByRole("button", { name: "Add design" })).toBeTruthy();
+
+  await act(async () => closeOnLeave?.());
+
+  expect(screen.queryByRole("button", { name: "Add design" })).toBeNull();
+});
+
+test("backgrounding the app closes the FAB", async () => {
+  // The RN Jest preset already mocks AppState with a subscription-returning
+  // listener, so the test reads the handler it recorded instead of replacing it.
+  const addEventListener = AppState.addEventListener as unknown as jest.Mock;
+  const user = userEvent.setup();
+  seedStream();
+
+  await renderLibrary();
+  await user.press(screen.getByRole("button", { name: "More actions" }));
+
+  expect(screen.getByRole("button", { name: "Add design" })).toBeTruthy();
+
+  const handler = addEventListener.mock.calls.at(-1)?.[1] as (status: string) => void;
+
+  if (!handler) throw new Error("The FAB did not subscribe to AppState");
+
+  await act(async () => handler("background"));
+
+  expect(screen.queryByRole("button", { name: "Add design" })).toBeNull();
+});
+
+test("the system Back closes the open FAB and stays on the Library", async () => {
+  const handlers: (() => boolean | null | undefined)[] = [];
+  const addEventListener = jest.spyOn(BackHandler, "addEventListener").mockImplementation(((
+    _event: string,
+    handler: () => boolean | null | undefined,
+  ) => {
+    handlers.push(handler);
+
+    return { remove: jest.fn() };
+  }) as never);
+
+  const user = userEvent.setup();
+  seedStream();
+
+  await renderLibrary();
+  await user.press(screen.getByRole("button", { name: "More actions" }));
+
+  let consumed = false;
+
+  await act(async () => {
+    consumed = handlers[0]() === true;
+  });
+
+  expect(consumed).toBe(true);
+  expect(screen.queryByRole("button", { name: "Add design" })).toBeNull();
+  addEventListener.mockRestore();
+});
+
+test("the content behind the open actions is hidden from assistive tech", async () => {
+  const user = userEvent.setup();
+  seedStream();
+
+  await renderLibrary();
+
+  const content = screen.getByTestId("library-content");
+
+  expect(content).toHaveProp("importantForAccessibility", "auto");
+  expect(content).toHaveProp("accessibilityElementsHidden", false);
+
+  await user.press(screen.getByRole("button", { name: "More actions" }));
+
+  expect(content).toHaveProp("importantForAccessibility", "no-hide-descendants");
+  expect(content).toHaveProp("accessibilityElementsHidden", true);
 });
 
 /** Three designs with no Collection, freshest first as the default read orders them. */
