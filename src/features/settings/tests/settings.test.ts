@@ -1,7 +1,13 @@
 import { settings as settingsTable } from "@/features/database";
 import { createTempDatabase, openTestDatabase } from "@/features/database/testing";
 import { CARD_DENSITIES, cardDensityFrom } from "@/features/settings";
-import { createSettings, DEFAULT_CARD_DENSITY } from "../lib/settings";
+import {
+  createSettings,
+  DEFAULT_CARD_DENSITY,
+  DEFAULT_GROUPING,
+  GROUPINGS,
+  groupingFrom,
+} from "../lib/settings";
 
 describe("settings", () => {
   let database: ReturnType<typeof createTempDatabase>["database"];
@@ -64,6 +70,62 @@ describe("settings", () => {
 
       try {
         expect(createSettings(reopened).cardDensity()).toBe(density);
+      } finally {
+        reopened.close();
+      }
+    } finally {
+      disposeFirst();
+    }
+  });
+
+  test("opens at Per design when the owner has not chosen a grouping", () => {
+    expect(DEFAULT_GROUPING).toBe("per-design");
+    expect(createSettings(database).grouping()).toBe("per-design");
+  });
+
+  test("a new Settings instance reads the chosen grouping", () => {
+    createSettings(database).setGrouping("per-collection");
+
+    expect(createSettings(database).grouping()).toBe("per-collection");
+  });
+
+  test("changing the grouping replaces the previous one", () => {
+    const settings = createSettings(database);
+
+    settings.setGrouping("per-collection");
+    settings.setGrouping("per-design");
+
+    expect(createSettings(database).grouping()).toBe("per-design");
+  });
+
+  test("a value that names no grouping is not a choice", () => {
+    expect(groupingFrom(undefined)).toBeNull();
+    expect(groupingFrom("by-colour")).toBeNull();
+
+    for (const grouping of GROUPINGS) {
+      expect(groupingFrom(grouping)).toBe(grouping);
+    }
+  });
+
+  test("the default grouping stands when the stored value names none", () => {
+    createSettings(database).setGrouping("per-collection");
+
+    database.db.update(settingsTable).set({ value: "by-colour" }).run();
+
+    expect(createSettings(database).grouping()).toBe("per-design");
+  });
+
+  test.each(GROUPINGS)("remembers grouping %s across launches", (grouping) => {
+    const { database: first, path, dispose: disposeFirst } = createTempDatabase();
+
+    try {
+      createSettings(first).setGrouping(grouping);
+      first.close();
+
+      const reopened = openTestDatabase(path);
+
+      try {
+        expect(createSettings(reopened).grouping()).toBe(grouping);
       } finally {
         reopened.close();
       }
