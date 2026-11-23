@@ -70,7 +70,6 @@ test("the grouping dropdown replaces the screen title and remembers the choice",
 
   const spring = within(screen.getByTestId("library-section-Spring"));
 
-  expect(spring.getByRole("heading", { name: "Spring" })).toHaveProp("aria-level", 3);
   expect(within(spring.getByTestId("library-row-0")).getAllByRole("button")).toHaveLength(2);
 
   // A second screen reads the stored choice, like the next launch of the app.

@@ -76,7 +76,6 @@ function Tile({ design, density }: { design: LibraryDesign; density: Exclude<Car
       <View className={cn("gap-2", compact ? "p-2" : "p-3")}>
         <Text
           role="heading"
-          aria-level={4}
           className={cn("font-medium", compact ? "text-xs leading-4" : "text-base leading-5")}
           numberOfLines={2}
         >

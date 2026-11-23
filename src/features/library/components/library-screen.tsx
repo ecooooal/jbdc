@@ -224,9 +224,7 @@ export function LibraryScreen() {
                       testID={`library-section-${section.collection ?? NO_COLLECTION_KEY}`}
                       className="gap-3"
                     >
-                      <Text variant="h4" aria-level={3}>
-                        {section.collection ?? NO_COLLECTION_LABEL}
-                      </Text>
+                      <Text variant="h4">{section.collection ?? NO_COLLECTION_LABEL}</Text>
                       <SectionGrid
                         designs={section.designs}
                         density={density}
