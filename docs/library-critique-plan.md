@@ -27,6 +27,11 @@ control in the density control's segmented shell. Both stay disabled with a
 "Coming soon" hint until their screens exist; the pair holds the right side of
 the single header row.
 
+**Adapt (2026-11-24):** the 2-up tile's name is no longer capped at two lines,
+so a 2.0× text setting shows it whole; the tile grows and the row keeps its
+shared bottom line. The card meta line the critique named went with the distill
+pass, and the plate caption is the one-word "No cover".
+
 ## Evidence base
 
 Reviewed on the attached Android phone (1080×2400 @ 440 dpi) running Expo Go, in light and dark, densities 1 / 2 / 4, both groupings, and font scale 1.0 and 1.3. The MIUI "Tools" floating gear in screenshots is OS chrome, not this app.

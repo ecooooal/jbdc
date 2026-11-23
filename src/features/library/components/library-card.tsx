@@ -30,7 +30,8 @@ function Cover({ name, uri }: { name: string; uri: string }) {
  * line made neighbouring tiles taller than their content, so the tile keeps
  * only what survives a glance. The card fills its row's height and the pill
  * sits at the bottom, so a tile with a shorter name still ends on the same
- * line as its neighbour.
+ * line as its neighbour. The name takes as many lines as it needs, so the
+ * Owner's text-size setting never clips it mid-word.
  */
 function Tile({ design }: { design: LibraryDesign }) {
   const uri = useImageUri(design.cover);
@@ -43,11 +44,7 @@ function Tile({ design }: { design: LibraryDesign }) {
         <EmptyCover name={design.name} size="tile" className="aspect-[4/5] w-full" />
       )}
       <View className="flex-1 gap-2 p-3">
-        <Text
-          role="heading"
-          numberOfLines={2}
-          className="font-serif text-2xl font-semibold leading-7 tracking-tight"
-        >
+        <Text role="heading" className="font-serif text-2xl font-semibold leading-7 tracking-tight">
           {design.name}
         </Text>
         <View className="flex-1" />
