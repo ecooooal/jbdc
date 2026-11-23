@@ -8,7 +8,10 @@ const DENSITY_LABELS: Record<CardDensity, string> = {
   4: "Four designs per row",
 };
 
-/** The Library's 1 / 2 / 4 per-row switch. The choice is persisted on press. */
+/**
+ * The Library's density switch: the single view at 1, two or four designs per
+ * row. The choice is persisted on press.
+ */
 export function DensityControl({
   density,
   onChange,
