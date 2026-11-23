@@ -19,7 +19,7 @@ cheap model of your choosing and only execute steps.
 - #24 is the slice spec, not a ticket. Never dispatch it.
 - Implementer model: omit the `model` parameter by default — `ticket-implementer` and `ticket-repairer` both pin
   `opencode/hy4-flash-free`. When `$ARGUMENTS` contains the word `deepseek`, pass
-  `model: opencode-go/deepseek-v4.1-flash#high` on every dispatch and repair. The token is a switch, not a
+  `model: opencode-go/deepseek-v4.1-flash#max` on every dispatch and repair. The token is a switch, not a
   ticket number; strip it before the frontier loop.
 
 ## 0. Slice gate
