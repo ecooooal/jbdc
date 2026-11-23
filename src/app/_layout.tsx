@@ -3,19 +3,44 @@ import { DMMono_400Regular } from "@expo-google-fonts/dm-mono";
 import { DMSans_400Regular, DMSans_500Medium, DMSans_700Bold } from "@expo-google-fonts/dm-sans";
 import { PortalHost } from "@rn-primitives/portal";
 import { useFonts } from "expo-font";
-import { DarkTheme, Stack, ThemeProvider } from "expo-router";
+import { Stack, ThemeProvider } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
+import { StatusBar } from "expo-status-bar";
 import { useEffect, useState } from "react";
 import { KeyboardProvider } from "react-native-keyboard-controller";
 import { DatabaseProvider } from "@/features/database/react";
 import { createExpoImagePicker, createExpoImageStore } from "@/features/images/expo";
 import { ImagePickerProvider, ImageStoreProvider } from "@/features/images/react";
+import { ThemeChoiceProvider, useAppTheme } from "@/features/settings/react";
 import { DETAIL_ARRIVAL } from "@/shared/lib/motion";
+import { NAV_THEME } from "@/shared/lib/theme";
 import "../global.css";
 
 SplashScreen.preventAutoHideAsync().catch(() => {
   // Fast-refresh reloads can race the splash; keeping it visible is best-effort.
 });
+
+/**
+ * The navigation chrome and the status bar follow the app's resolved scheme,
+ * so no screen is half one mode and half the other.
+ */
+function AppNavigator() {
+  const { scheme } = useAppTheme();
+
+  return (
+    <ThemeProvider value={NAV_THEME[scheme]}>
+      <StatusBar style={scheme === "dark" ? "light" : "dark"} />
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="index" />
+        <Stack.Screen name="designs/new" options={{ presentation: "modal" }} />
+        <Stack.Screen name="designs/[id]/index" options={DETAIL_ARRIVAL.screen} />
+        <Stack.Screen name="designs/[id]/edit" />
+        <Stack.Screen name="designs/[id]/history" />
+      </Stack>
+      <PortalHost />
+    </ThemeProvider>
+  );
+}
 
 export default function RootLayout() {
   const [imageStore] = useState(createExpoImageStore);
@@ -53,22 +78,15 @@ export default function RootLayout() {
 
   return (
     <DatabaseProvider>
-      <ImageStoreProvider store={imageStore}>
-        <ImagePickerProvider picker={imagePicker}>
-          <KeyboardProvider>
-            <ThemeProvider value={DarkTheme}>
-              <Stack screenOptions={{ headerShown: false }}>
-                <Stack.Screen name="index" />
-                <Stack.Screen name="designs/new" options={{ presentation: "modal" }} />
-                <Stack.Screen name="designs/[id]/index" options={DETAIL_ARRIVAL.screen} />
-                <Stack.Screen name="designs/[id]/edit" />
-                <Stack.Screen name="designs/[id]/history" />
-              </Stack>
-              <PortalHost />
-            </ThemeProvider>
-          </KeyboardProvider>
-        </ImagePickerProvider>
-      </ImageStoreProvider>
+      <ThemeChoiceProvider>
+        <ImageStoreProvider store={imageStore}>
+          <ImagePickerProvider picker={imagePicker}>
+            <KeyboardProvider>
+              <AppNavigator />
+            </KeyboardProvider>
+          </ImagePickerProvider>
+        </ImageStoreProvider>
+      </ThemeChoiceProvider>
     </DatabaseProvider>
   );
 }

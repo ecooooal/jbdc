@@ -8,6 +8,7 @@ import {
   DEFAULT_THEME_CHOICE,
   GROUPINGS,
   groupingFrom,
+  resolveThemeScheme,
   THEME_CHOICES,
   themeChoiceFrom,
 } from "../lib/settings";
@@ -172,6 +173,14 @@ describe("settings", () => {
     database.db.update(settingsTable).set({ value: "sepia" }).run();
 
     expect(createSettings(database).theme()).toBe("follow-system");
+  });
+
+  test("follow-system resolves to the system's scheme and a choice stands", () => {
+    expect(resolveThemeScheme("follow-system", "dark")).toBe("dark");
+    expect(resolveThemeScheme("follow-system", "light")).toBe("light");
+    expect(resolveThemeScheme("follow-system", null)).toBe("light");
+    expect(resolveThemeScheme("light", "dark")).toBe("light");
+    expect(resolveThemeScheme("dark", "light")).toBe("dark");
   });
 
   test("grouping and theme keep their own values", () => {

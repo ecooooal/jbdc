@@ -78,5 +78,5 @@ The Library's ordering choice: *Per design*, the flat, most recently updated fir
 The Library at density 1: one Design per page, its Cover filling the frame beneath a details panel, paged horizontally in the grouping's order and bounded at the first and last Design. A Design with no Cover keeps the page's shape with the dashed placeholder, and the panel blurs only photography.
 
 **theme**:
-The Owner's app-wide appearance choice: *light*, *dark*, or *follow-system*, the default until she chooses. Stored behind its own settings key and validated on read, so nothing stored means the system's appearance.
+The Owner's app-wide appearance choice: *light*, *dark*, or *follow-system*, the default until she chooses. Stored behind its own settings key and validated on read, so nothing stored means the system's appearance. The root applies it through the styling engine and the navigation theme, so every surface and the navigation chrome follow it.
 _Note_: `src/shared/lib/theme.ts` holds the styling engine's palettes and navigation theme objects; this word is the Owner's choice, not those.

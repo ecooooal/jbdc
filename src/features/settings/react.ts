@@ -4,3 +4,4 @@
  */
 export { useCardDensity } from "./lib/use-card-density";
 export { useGrouping } from "./lib/use-grouping";
+export { ThemeChoiceProvider, useAppTheme } from "./lib/theme-choice-provider";
