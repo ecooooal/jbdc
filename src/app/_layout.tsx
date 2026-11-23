@@ -10,6 +10,7 @@ import { KeyboardProvider } from "react-native-keyboard-controller";
 import { DatabaseProvider } from "@/features/database/react";
 import { createExpoImagePicker, createExpoImageStore } from "@/features/images/expo";
 import { ImagePickerProvider, ImageStoreProvider } from "@/features/images/react";
+import { DETAIL_ARRIVAL } from "@/shared/lib/motion";
 import "../global.css";
 
 SplashScreen.preventAutoHideAsync().catch(() => {
@@ -59,7 +60,7 @@ export default function RootLayout() {
               <Stack screenOptions={{ headerShown: false }}>
                 <Stack.Screen name="index" />
                 <Stack.Screen name="designs/new" options={{ presentation: "modal" }} />
-                <Stack.Screen name="designs/[id]/index" />
+                <Stack.Screen name="designs/[id]/index" options={DETAIL_ARRIVAL.screen} />
                 <Stack.Screen name="designs/[id]/edit" />
                 <Stack.Screen name="designs/[id]/history" />
               </Stack>

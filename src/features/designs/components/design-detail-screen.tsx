@@ -2,6 +2,7 @@ import { router } from "expo-router";
 import { ChevronLeft } from "lucide-react-native";
 import { useState } from "react";
 import { ScrollView, View } from "react-native";
+import Animated, { ZoomIn } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { DesignGallery } from "@/features/images/react";
 import { Badge } from "@/shared/components/ui/badge";
@@ -9,6 +10,7 @@ import { Button } from "@/shared/components/ui/button";
 import { Icon } from "@/shared/components/ui/icon";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/components/ui/tabs";
 import { Text } from "@/shared/components/ui/text";
+import { DETAIL_ARRIVAL } from "@/shared/lib/motion";
 import {
   DESIGN_SECTIONS,
   isDesignSectionTab,
@@ -190,6 +192,15 @@ function DesignDetailContent({ design }: { design: DesignDetail }) {
 }
 
 /**
+ * The Detail's half of its arrival: while the native stack fades the screen,
+ * its content settles from a small zoom. Reanimated's default Reduce Motion
+ * behaviour keeps that an instant cut when the system asks.
+ */
+const DETAIL_ZOOM = ZoomIn.duration(DETAIL_ARRIVAL.zoom.duration).withInitialValues({
+  transform: [{ scale: DETAIL_ARRIVAL.zoom.from }],
+});
+
+/**
  * Detail for one Design, opened from its Library card. It subscribes to the
  * record, so later edits show here without reopening the screen. Back returns
  * to the Library.
@@ -198,54 +209,56 @@ export function DesignDetailScreen({ designId }: { designId: string }) {
   const { design, error, status } = useDesignDetail(designId);
 
   return (
-    <SafeAreaView style={{ flex: 1 }} className="bg-background" edges={["top", "left", "right"]}>
-      <View className="flex-row items-center justify-between px-4 pt-2">
-        <Button
-          size="icon"
-          variant="ghost"
-          accessibilityLabel="Back to Library"
-          onPress={() => router.back()}
-        >
-          <Icon as={ChevronLeft} />
-        </Button>
-        {design ? (
-          <View className="flex-row items-center gap-1">
-            <Button
-              size="sm"
-              variant="ghost"
-              accessibilityLabel="History"
-              onPress={() =>
-                router.push({ pathname: "/designs/[id]/history", params: { id: designId } })
-              }
-            >
-              <Text>History</Text>
-            </Button>
-            <Button
-              size="sm"
-              variant="ghost"
-              accessibilityLabel="Edit design"
-              onPress={() =>
-                router.push({ pathname: "/designs/[id]/edit", params: { id: designId } })
-              }
-            >
-              <Text>Edit</Text>
-            </Button>
-          </View>
-        ) : null}
-      </View>
-
-      {error ? (
-        <Text className="text-destructive px-6 pt-4">{error.message}</Text>
-      ) : status === "loading" ? null : design ? (
-        <DesignDetailContent design={design} />
-      ) : (
-        <View className="flex-1 items-center justify-center gap-2 px-6 pb-16">
-          <Text variant="h4">This design is not here</Text>
-          <Text variant="muted" className="text-center">
-            It may have been removed.
-          </Text>
+    <Animated.View entering={DETAIL_ZOOM} style={{ flex: 1 }}>
+      <SafeAreaView style={{ flex: 1 }} className="bg-background" edges={["top", "left", "right"]}>
+        <View className="flex-row items-center justify-between px-4 pt-2">
+          <Button
+            size="icon"
+            variant="ghost"
+            accessibilityLabel="Back to Library"
+            onPress={() => router.back()}
+          >
+            <Icon as={ChevronLeft} />
+          </Button>
+          {design ? (
+            <View className="flex-row items-center gap-1">
+              <Button
+                size="sm"
+                variant="ghost"
+                accessibilityLabel="History"
+                onPress={() =>
+                  router.push({ pathname: "/designs/[id]/history", params: { id: designId } })
+                }
+              >
+                <Text>History</Text>
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                accessibilityLabel="Edit design"
+                onPress={() =>
+                  router.push({ pathname: "/designs/[id]/edit", params: { id: designId } })
+                }
+              >
+                <Text>Edit</Text>
+              </Button>
+            </View>
+          ) : null}
         </View>
-      )}
-    </SafeAreaView>
+
+        {error ? (
+          <Text className="text-destructive px-6 pt-4">{error.message}</Text>
+        ) : status === "loading" ? null : design ? (
+          <DesignDetailContent design={design} />
+        ) : (
+          <View className="flex-1 items-center justify-center gap-2 px-6 pb-16">
+            <Text variant="h4">This design is not here</Text>
+            <Text variant="muted" className="text-center">
+              It may have been removed.
+            </Text>
+          </View>
+        )}
+      </SafeAreaView>
+    </Animated.View>
   );
 }

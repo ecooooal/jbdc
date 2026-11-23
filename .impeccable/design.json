@@ -94,7 +94,8 @@
       { "name": "overlay-enter", "value": "fade 200ms ease-out", "purpose": "Overlays and dialogs arriving; honors Reduce Motion." },
       { "name": "overlay-exit", "value": "fade 150ms ease-in", "purpose": "Overlays leaving; honors Reduce Motion." },
       { "name": "reveal", "value": "200ms linear", "purpose": "Accordion-style section reveals." },
-      { "name": "press", "value": "instant, never animated", "purpose": "Tonal shift to 90% (buttons); a Library card dips slightly and takes a faint ink wash, held a beat before its route opens." }
+      { "name": "press", "value": "instant, never animated", "purpose": "Tonal shift to 90% (buttons); a Library card dips slightly and takes a faint ink wash, held a beat before its route opens." },
+      { "name": "detail-arrival", "value": "fade + small zoom, 200ms ease-out", "purpose": "The Library's Detail route only: a 0.96 to 1 zoom inside the screen fade; every other route keeps its default transition. Honors Reduce Motion." }
     ]
   },
   "components": [
@@ -181,7 +182,7 @@
   ],
   "narrative": {
     "northStar": "The Atelier Ledger",
-    "overview": "JBDC is one designer's private catalog of her own clothing designs, and the interface reads as her bound studio notebook: warm paper surfaces, a wood-toned accent for the things that matter, serif titles like specimen labels. The photography is the artwork; the chrome is the furniture around it. The feel is warm, unhurried, precise — a working archive, not a showcase.\n\nThe system is quiet archival. Depth comes from paper tonal steps and hairline borders, never from shadow play; press feedback is a tonal shift, not a bounce; motion is a short fade that honors the system Reduce Motion setting. Color is spent on meaning only: Sanded Wood marks confirmed work and primary actions, Muslin Sage marks work in progress and active selection, Rejection Red marks what did not proceed. Everything else is paper and ink.",
+    "overview": "JBDC is one designer's private catalog of her own clothing designs, and the interface reads as her bound studio notebook: warm paper surfaces, a wood-toned accent for the things that matter, serif titles like specimen labels. The photography is the artwork; the chrome is the furniture around it. The feel is warm, unhurried, precise — a working archive, not a showcase.\n\nThe system is quiet archival. Depth comes from paper tonal steps and hairline borders, never from shadow play; press feedback is a tonal shift, not a bounce; motion is a short fade that honors the system Reduce Motion setting, with one small zoom-fade into a design's Detail. Color is spent on meaning only: Sanded Wood marks confirmed work and primary actions, Muslin Sage marks work in progress and active selection, Rejection Red marks what did not proceed. Everything else is paper and ink.",
     "keyCharacteristics": [
       "Paper tonal hierarchy — Warm Paper page, Unbleached Paper cards, Kraft Layer insets — instead of shadows",
       "Cormorant Garamond titles over DM Sans body; DM Mono for ids, measurements, constants",

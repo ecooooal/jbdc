@@ -163,7 +163,7 @@ components:
 
 JBDC is one designer's private catalog of her own clothing designs, and the interface reads as her bound studio notebook: warm paper surfaces, a wood-toned accent for the things that matter, serif titles like specimen labels. The photography is the artwork; the chrome is the furniture around it. The feel is warm, unhurried, precise — a working archive, not a showcase.
 
-The system is quiet archival. Depth comes from paper tonal steps and hairline borders, never from shadow play; press feedback is a tonal shift, not a bounce; motion is a short fade that honors the system Reduce Motion setting. Color is spent on meaning only: Sanded Wood marks confirmed work and primary actions, Muslin Sage marks work in progress and active selection, Rejection Red marks what did not proceed. Everything else is paper and ink.
+The system is quiet archival. Depth comes from paper tonal steps and hairline borders, never from shadow play; press feedback is a tonal shift, not a bounce; motion is a short fade that honors the system Reduce Motion setting, with one small zoom-fade into a design's Detail. Color is spent on meaning only: Sanded Wood marks confirmed work and primary actions, Muslin Sage marks work in progress and active selection, Rejection Red marks what did not proceed. Everything else is paper and ink.
 
 The normative token source is `docs/design-token.md` (committed 2026-11-23). **Wiring status:** the component library in code is uniwind + rn-primitives (shadcn-style slot names), but `src/global.css` still carries the scaffold palette and the three typefaces are not yet bundled. New screens follow this document; converging `global.css` and loading the fonts is a separate wiring chore, not a design decision.
 
@@ -283,7 +283,7 @@ Photography keeps fixed ratios: 4:5 for the hero, 3:4 for journey thumbs and add
 
 ## Motion & Micro-interaction
 
-Motion is quiet and decelerating: overlays fade in over 200ms and out over 150ms (Reanimated, honoring the system Reduce Motion setting); accordion-style reveals take 200ms; press feedback is an instant tonal shift (a button darkens to 90%, a Library card dips slightly and takes a faint ink wash) held for a beat so the Owner sees it before the route opens — the press itself never animates. Nothing bounces, nothing loops, nothing moves for decoration. Screen-to-screen transitions stay plain fades until a deliberate polish phase changes them.
+Motion is quiet and decelerating: overlays fade in over 200ms and out over 150ms (Reanimated, honoring the system Reduce Motion setting); accordion-style reveals take 200ms; press feedback is an instant tonal shift (a button darkens to 90%, a Library card dips slightly and takes a faint ink wash) held for a beat so the Owner sees it before the route opens — the press itself never animates. Nothing bounces, nothing loops, nothing moves for decoration. Screen-to-screen transitions are plain fades, except the Library's Detail arrival: a small zoom-fade inside the same budget, on that route only.
 
 ### Named Rules
 
