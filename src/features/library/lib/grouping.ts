@@ -1,13 +1,27 @@
 import type { Grouping } from "@/features/settings";
 import type { LibraryDesign } from "./query";
 
-/** One section of the Library: a Collection's designs, or the unfiled ones. */
+/** One section of a grouped Library: a Collection's designs, or the unfiled ones. */
 export type LibrarySection = {
   /** The Collection's label, or null for designs in no Collection. */
   collection: string | null;
   /** The section's designs, most recently updated first like the flat stream. */
   designs: LibraryDesign[];
 };
+
+/**
+ * The Library's arrangement: the chosen grouping applied to the rows its live
+ * read produced. Per design is the flat stream, so its designs carry no
+ * Collection label a section would claim; per collection gathers them under
+ * their Collection instead.
+ */
+export type LibraryArrangement =
+  { kind: "flat"; designs: LibraryDesign[] } | { kind: "grouped"; sections: LibrarySection[] };
+
+/** The most recent update among a Collection's designs, which orders the sections. */
+function newest(designs: readonly LibraryDesign[]): number {
+  return Math.max(...designs.map((design) => design.updatedAt));
+}
 
 /**
  * The Library's grouping rule, over the rows its live read already produces.
@@ -20,9 +34,8 @@ export type LibrarySection = {
 export function groupLibraryDesigns(
   designs: readonly LibraryDesign[],
   grouping: Grouping,
-): LibrarySection[] {
-  if (designs.length === 0) return [];
-  if (grouping === "per-design") return [{ collection: null, designs: [...designs] }];
+): LibraryArrangement {
+  if (grouping === "per-design") return { kind: "flat", designs: [...designs] };
 
   const byCollection = new Map<string, LibraryDesign[]>();
   const unfiled: LibraryDesign[] = [];
@@ -39,22 +52,11 @@ export function groupLibraryDesigns(
     else byCollection.set(design.collection, [design]);
   }
 
-  const ranked: (LibrarySection & { freshest: number })[] = [...byCollection.entries()].map(
-    ([collection, members]) => ({
-      collection,
-      designs: members,
-      freshest: Math.max(...members.map((design) => design.updatedAt)),
-    }),
-  );
-
-  ranked.sort((left, right) => right.freshest - left.freshest);
-
-  const sections: LibrarySection[] = ranked.map(({ collection, designs }) => ({
-    collection,
-    designs,
-  }));
+  const sections: LibrarySection[] = [...byCollection.entries()]
+    .sort(([, left], [, right]) => newest(right) - newest(left))
+    .map(([collection, members]) => ({ collection, designs: members }));
 
   if (unfiled.length > 0) sections.push({ collection: null, designs: unfiled });
 
-  return sections;
+  return { kind: "grouped", sections };
 }

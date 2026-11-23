@@ -21,9 +21,7 @@ test("Per design returns the flat updated-first list unchanged", () => {
     design("Oldest", "Autumn", 100),
   ];
 
-  const sections = groupLibraryDesigns(designs, "per-design");
-
-  expect(sections).toEqual([{ collection: null, designs }]);
+  expect(groupLibraryDesigns(designs, "per-design")).toEqual({ kind: "flat", designs });
 });
 
 test("Per collection orders groups by their most recently updated design", () => {
@@ -34,10 +32,13 @@ test("Per collection orders groups by their most recently updated design", () =>
     design("Autumn trousers", "Autumn", 100),
   ];
 
-  expect(groupLibraryDesigns(designs, "per-collection")).toEqual([
-    { collection: "Spring", designs: [designs[0], designs[2]] },
-    { collection: "Autumn", designs: [designs[1], designs[3]] },
-  ]);
+  expect(groupLibraryDesigns(designs, "per-collection")).toEqual({
+    kind: "grouped",
+    sections: [
+      { collection: "Spring", designs: [designs[0], designs[2]] },
+      { collection: "Autumn", designs: [designs[1], designs[3]] },
+    ],
+  });
 });
 
 test("Per collection keeps the freshest named group above a fresher unfiled design", () => {
@@ -47,14 +48,17 @@ test("Per collection keeps the freshest named group above a fresher unfiled desi
     design("Autumn coat", "Autumn", 300),
   ];
 
-  expect(groupLibraryDesigns(designs, "per-collection")).toEqual([
-    { collection: "Spring", designs: [designs[1]] },
-    { collection: "Autumn", designs: [designs[2]] },
-    { collection: null, designs: [designs[0]] },
-  ]);
+  expect(groupLibraryDesigns(designs, "per-collection")).toEqual({
+    kind: "grouped",
+    sections: [
+      { collection: "Spring", designs: [designs[1]] },
+      { collection: "Autumn", designs: [designs[2]] },
+      { collection: null, designs: [designs[0]] },
+    ],
+  });
 });
 
 test("an empty list groups into nothing", () => {
-  expect(groupLibraryDesigns([], "per-design")).toEqual([]);
-  expect(groupLibraryDesigns([], "per-collection")).toEqual([]);
+  expect(groupLibraryDesigns([], "per-design")).toEqual({ kind: "flat", designs: [] });
+  expect(groupLibraryDesigns([], "per-collection")).toEqual({ kind: "grouped", sections: [] });
 });

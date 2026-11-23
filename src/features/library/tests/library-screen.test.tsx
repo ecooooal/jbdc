@@ -1,9 +1,10 @@
-import { render, screen, userEvent, within } from "@testing-library/react-native";
+import { fireEvent, render, screen, userEvent, within } from "@testing-library/react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { DatabaseProvider } from "@/features/database/react";
 import { createSyncSubscribe, createTempDatabase } from "@/features/database/testing";
 import { createDesign } from "@/features/designs";
 import { LibraryScreen } from "@/features/library/react";
+import type { Grouping } from "@/features/settings";
 import { createCollection } from "@/features/taxonomy";
 
 jest.mock("expo-router", () => ({ router: { push: jest.fn() } }));
@@ -44,17 +45,21 @@ test("the empty view names the Library, not the Catalog", async () => {
 });
 
 test("the grouping dropdown replaces the screen title and remembers the choice", async () => {
-  const user = userEvent.setup();
+  seedCollections();
   const first = await renderLibrary();
 
   expect(screen.queryByText("Library")).toBeNull();
   expect(screen.getByRole("combobox", { name: "Grouping" })).toBeTruthy();
   expect(screen.getByText("Per design")).toBeTruthy();
 
-  await user.press(screen.getByRole("combobox", { name: "Grouping" }));
-  await user.press(screen.getByRole("option", { name: "Per collection" }));
+  await chooseGrouping("per-collection");
 
   expect(screen.getByText("Per collection")).toBeTruthy();
+
+  const spring = within(screen.getByTestId("library-section-Spring"));
+
+  expect(spring.getByRole("heading", { name: "Spring" })).toBeTruthy();
+  expect(within(spring.getByTestId("library-row-0")).getAllByRole("button")).toHaveLength(2);
 
   // A second screen reads the stored choice, like the next launch of the app.
   await first.unmount();
@@ -71,25 +76,39 @@ test("the search and filter placeholder icons render disabled", async () => {
   expect(screen.getByRole("button", { name: "Filter" })).toBeDisabled();
 });
 
-/** Two Collections, one design in none, freshest first: Spring, Autumn, no season. */
+/** Two Collections, four designs in Spring, one in none; Spring is freshest, then Autumn. */
 function seedCollections() {
   const spring = createCollection(database, { name: "Spring" }, 1);
   const autumn = createCollection(database, { name: "Autumn" }, 2);
 
   createDesign(database, { name: "Autumn coat", collectionId: autumn.id }, 1000);
+  createDesign(database, { name: "Spring scarf", collectionId: spring.id }, 500);
   createDesign(database, { name: "Spring skirt", collectionId: spring.id }, 2000);
   createDesign(database, { name: "No season dress" }, 3000);
   createDesign(database, { name: "Spring blouse", collectionId: spring.id }, 4000);
+  createDesign(database, { name: "Spring dress", collectionId: spring.id }, 1500);
 }
 
-async function chooseGrouping(user: ReturnType<typeof userEvent.setup>, grouping: string) {
-  await user.press(screen.getByRole("combobox", { name: "Grouping" }));
-  await user.press(screen.getByRole("option", { name: grouping }));
+/** The labels the picker shows, so the seam hands over what a pick would. */
+const GROUPING_LABELS: Record<Grouping, string> = {
+  "per-design": "Per design",
+  "per-collection": "Per collection",
+};
+
+/**
+ * Opens the grouping choice through its primitive, which Jest cannot do: the
+ * native Select positions its portal from the trigger's measure callback, and
+ * the test renderer never fires it. Firing the handler is the documented seam.
+ */
+async function chooseGrouping(grouping: Grouping) {
+  await fireEvent(screen.getByRole("combobox", { name: "Grouping" }), "valueChange", {
+    value: grouping,
+    label: GROUPING_LABELS[grouping],
+  });
 }
 
 test("Per collection regroups the density-2 grid under Collection headers", async () => {
   seedCollections();
-  const user = userEvent.setup();
 
   await renderLibrary();
 
@@ -97,7 +116,7 @@ test("Per collection regroups the density-2 grid under Collection headers", asyn
   expect(screen.getByText("Spring blouse")).toBeTruthy();
   expect(screen.queryByRole("heading", { name: "Spring" })).toBeNull();
 
-  await chooseGrouping(user, "Per collection");
+  await chooseGrouping("per-collection");
 
   const spring = within(screen.getByTestId("library-section-Spring"));
 
@@ -123,12 +142,13 @@ test("Per collection keeps its section grids at density 4", async () => {
   await renderLibrary();
 
   await user.press(screen.getByLabelText("Four designs per row"));
-  await chooseGrouping(user, "Per collection");
+  await chooseGrouping("per-collection");
 
-  expect(
-    within(screen.getByTestId("library-section-Spring")).getByText("Spring skirt"),
-  ).toBeTruthy();
-  expect(
-    within(screen.getByTestId("library-section-no-collection")).getByText("No season dress"),
-  ).toBeTruthy();
+  const spring = within(screen.getByTestId("library-section-Spring"));
+  const firstRow = within(spring.getByTestId("library-row-0"));
+
+  expect(spring.getByRole("heading", { name: "Spring" })).toBeTruthy();
+  expect(firstRow.getAllByRole("button")).toHaveLength(4);
+  expect(firstRow.getByText("Spring blouse")).toBeTruthy();
+  expect(firstRow.getByText("Spring scarf")).toBeTruthy();
 });

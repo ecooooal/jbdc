@@ -53,8 +53,13 @@ function SectionGrid({
 }) {
   return (
     <View style={{ gap: LIBRARY_GRID_GAP }}>
-      {chunk(designs, columns).map((row) => (
-        <View key={row[0].id} className="flex-row" style={{ gap: LIBRARY_GRID_GAP }}>
+      {chunk(designs, columns).map((row, index) => (
+        <View
+          key={row[0].id}
+          testID={`library-row-${index}`}
+          className="flex-row"
+          style={{ gap: LIBRARY_GRID_GAP }}
+        >
           {row.map((design) => (
             <View key={design.id} style={{ width: cardWidth }}>
               <LibraryCard design={design} density={density} onPress={() => onOpen(design)} />
@@ -84,9 +89,11 @@ export function LibraryScreen() {
     viewportWidth - insets.left - insets.right - LIBRARY_HORIZONTAL_PADDING,
   );
   const { columns, cardWidth } = libraryGrid(density, contentWidth);
-  const sections = groupLibraryDesigns(designs, grouping);
-  const isGrouped = grouping === "per-collection";
+  const arrangement = groupLibraryDesigns(designs, grouping);
   const isEmpty = status === "ready" && designs.length === 0;
+  const openDesign = (design: LibraryDesign) => {
+    router.push({ pathname: "/designs/[id]", params: { id: design.id } });
+  };
 
   return (
     <SafeAreaView style={{ flex: 1 }} className="bg-background" edges={["top", "left", "right"]}>
@@ -131,34 +138,36 @@ export function LibraryScreen() {
           </View>
         ) : (
           <ScrollView className="mt-6 flex-1" showsVerticalScrollIndicator={false}>
-            <View className="gap-6 pb-8">
-              {sections.map((section) => (
-                <View
-                  key={section.collection ?? NO_COLLECTION_KEY}
-                  testID={
-                    isGrouped
-                      ? `library-section-${section.collection ?? NO_COLLECTION_KEY}`
-                      : undefined
-                  }
-                  className="gap-3"
-                >
-                  {isGrouped ? (
-                    <Text variant="h4" aria-level={2}>
-                      {section.collection ?? NO_COLLECTION_LABEL}
-                    </Text>
-                  ) : null}
-                  <SectionGrid
-                    designs={section.designs}
-                    density={density}
-                    columns={columns}
-                    cardWidth={cardWidth}
-                    onOpen={(design) =>
-                      router.push({ pathname: "/designs/[id]", params: { id: design.id } })
-                    }
-                  />
-                </View>
-              ))}
-            </View>
+            {arrangement.kind === "grouped" ? (
+              <View className="gap-6 pb-8">
+                {arrangement.sections.map((section) => (
+                  <View
+                    key={section.collection ?? NO_COLLECTION_KEY}
+                    testID={`library-section-${section.collection ?? NO_COLLECTION_KEY}`}
+                    className="gap-3"
+                  >
+                    <Text variant="h4">{section.collection ?? NO_COLLECTION_LABEL}</Text>
+                    <SectionGrid
+                      designs={section.designs}
+                      density={density}
+                      columns={columns}
+                      cardWidth={cardWidth}
+                      onOpen={openDesign}
+                    />
+                  </View>
+                ))}
+              </View>
+            ) : (
+              <View className="gap-6 pb-8">
+                <SectionGrid
+                  designs={arrangement.designs}
+                  density={density}
+                  columns={columns}
+                  cardWidth={cardWidth}
+                  onOpen={openDesign}
+                />
+              </View>
+            )}
           </ScrollView>
         )}
       </View>
