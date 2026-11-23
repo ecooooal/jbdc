@@ -2,8 +2,18 @@ import { View } from "react-native";
 import { Text } from "@/shared/components/ui/text";
 import { cn } from "@/shared/lib/utils";
 
-/** How much room the plate has: a whole page, a roomy tile, or a compact one. */
-export type EmptyCoverSize = "page" | "tile" | "compact";
+/** How much room the plate has: a whole page, or a tile in the grid. */
+export type EmptyCoverSize = "page" | "tile";
+
+/** One plate's spacing, name type, and caption. */
+type EmptyCoverShape = {
+  mount: string;
+  frame: string;
+  /** The name's type when the plate is the content, or null when the body names it. */
+  name: string | null;
+  lines: number;
+  caption: string;
+};
 
 /**
  * The dashed frame rides on the Kraft Layer, inset from the mount's edge so it
@@ -12,41 +22,37 @@ export type EmptyCoverSize = "page" | "tile" | "compact";
  * carries its own contrast (4.5:1 on Kraft in light, 4.7:1 in dark) instead of
  * disappearing the way a 1.1:1 hairline would.
  *
- * A compact tile has no room for the caption: 12px is the floor, and the name
- * stays. It holds two lines rather than three so a long name cannot outgrow the
- * frame once large text scales it.
+ * A page has no card body beneath it, so the Design's name sits in the frame
+ * in the title face: with no photography, the name is the content, and the
+ * sentence below it says what is absent. A tile's name lives in the card body,
+ * where the eye already reads it, so the frame keeps the one-word label — the
+ * sentence's "photography" breaks mid-word in a tile at large text. Both are
+ * 12px, the type floor.
  */
-const SIZE = {
+const SIZE: Record<EmptyCoverSize, EmptyCoverShape> = {
   page: {
     mount: "p-4",
     frame: "gap-3 rounded-xl p-6",
     name: "text-3xl leading-tight",
     lines: 3,
-    caption: true,
+    caption: "No photography yet",
   },
   tile: {
     mount: "rounded-xl p-2",
     frame: "gap-2 rounded-lg p-3",
-    name: "text-xl leading-6",
-    lines: 3,
-    caption: true,
+    name: null,
+    lines: 0,
+    caption: "No cover",
   },
-  compact: {
-    mount: "rounded-lg p-1",
-    frame: "rounded-md p-1.5",
-    name: "text-xs leading-4",
-    lines: 2,
-    caption: false,
-  },
-} as const;
+};
 
 /**
- * The Library's one empty Cover: a named plate where the photography would be.
- * The Design's name is set in the title face because, with no image, the name
- * is the content; the caption says plainly what is absent. No glyph, no
- * illustration — the dashed frame is the state, and the same component draws it
- * for a grid tile and a single-view page so an absent Cover reads the same at
- * every density.
+ * The Library's one empty Cover: a plate where the photography would be. On a
+ * single-view page the Design's name is set in the title face, because the
+ * plate is the page's content; on a tile the name stays in the card body. The
+ * caption says plainly what is absent. No glyph, no illustration — the dashed
+ * frame is the state, and the same component draws it for a grid tile and a
+ * single-view page so an absent Cover reads the same at every density.
  */
 export function EmptyCover({
   name,
@@ -71,18 +77,18 @@ export function EmptyCover({
           shape.frame,
         )}
       >
-        <Text
-          role="heading"
-          numberOfLines={shape.lines}
-          className={cn("font-serif font-semibold text-center tracking-tight", shape.name)}
-        >
-          {name}
-        </Text>
-        {shape.caption ? (
-          <Text testID="empty-cover-caption" className="text-foreground/70 text-center text-xs">
-            No photography yet
+        {shape.name ? (
+          <Text
+            role="heading"
+            numberOfLines={shape.lines}
+            className={cn("font-serif font-semibold text-center tracking-tight", shape.name)}
+          >
+            {name}
           </Text>
         ) : null}
+        <Text testID="empty-cover-caption" className="text-foreground/70 text-center text-xs">
+          {shape.caption}
+        </Text>
       </View>
     </View>
   );

@@ -10,7 +10,7 @@ import { listLibraryDesigns } from "@/features/library";
 import { LibraryScreen } from "@/features/library/react";
 import type { Grouping } from "@/features/settings";
 import { ThemeChoiceProvider } from "@/features/settings/react";
-import { createCollection } from "@/features/taxonomy";
+import { createCategory, createCollection } from "@/features/taxonomy";
 import { PRESS_HIGHLIGHT_HOLD_MS } from "../lib/library-screen-reducer";
 
 jest.mock("expo-router", () => ({ router: { push: jest.fn() }, useFocusEffect: jest.fn() }));
@@ -401,6 +401,25 @@ test("Per collection regroups the density-2 grid under Collection headers", asyn
   expect(unfiled.getByText("No season dress")).toBeTruthy();
 });
 
+test("a Collection section leaves its Collection out of the tiles' taxonomy", async () => {
+  const category = createCategory(database, { name: "Blouse" }, 1);
+  const collection = createCollection(database, { name: "Summer", year: 2026 }, 2);
+
+  createDesign(
+    database,
+    { name: "Linen dress", categoryId: category.id, collectionId: collection.id },
+    3000,
+  );
+
+  await renderLibrary();
+  await chooseGrouping("per-collection");
+
+  const summer = within(screen.getByTestId("library-section-Summer (2026)"));
+
+  expect(summer.getByText("Blouse")).toBeTruthy();
+  expect(summer.queryByText("Blouse · Summer (2026)")).toBeNull();
+});
+
 test("Per collection reads each Collection heading before its Designs", async () => {
   seedCollections();
 
@@ -425,26 +444,18 @@ test("Per collection reads each Collection heading before its Designs", async ()
   outline.forEach((name, index) => expect(headings[index]).toHaveTextContent(name));
 });
 
-test("Per collection keeps its section grids at density 4", async () => {
-  seedCollections();
-  const user = userEvent.setup();
+test("the density control offers the single view and two designs per row", async () => {
+  seedStream();
 
   await renderLibrary();
 
-  await user.press(screen.getByLabelText("Four designs per row"));
-  await chooseGrouping("per-collection");
-
-  const spring = within(screen.getByTestId("library-section-Spring"));
-  const firstRow = within(spring.getByTestId("library-row-0"));
-
-  expect(spring.getByRole("heading", { name: "Spring" })).toBeTruthy();
-  expect(firstRow.getAllByRole("button")).toHaveLength(4);
-  expect(firstRow.getByText("Spring blouse")).toBeTruthy();
-  expect(firstRow.getByText("Spring scarf")).toBeTruthy();
+  expect(screen.getByLabelText("Single view")).toBeTruthy();
+  expect(screen.getByLabelText("Two designs per row")).toBeTruthy();
+  expect(screen.queryByLabelText("Four designs per row")).toBeNull();
 });
 
 /** Every density, in the order the header's control names them. */
-const DENSITY_LABELS = ["Two designs per row", "Four designs per row", "Single view"] as const;
+const DENSITY_LABELS = ["Two designs per row", "Single view"] as const;
 
 test("a tap on a card at every density opens its Detail", async () => {
   seedStream();

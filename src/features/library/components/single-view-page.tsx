@@ -8,6 +8,7 @@ import { useImageUri } from "@/features/images/react";
 import { Text } from "@/shared/components/ui/text";
 import { cn } from "@/shared/lib/utils";
 import type { LibraryDesign } from "../lib/query";
+import { taxonomyLine } from "../lib/taxonomy-line";
 import { EmptyCover } from "./empty-cover";
 import { PressHighlight, type PressHighlightHandlers } from "./press-highlight";
 
@@ -29,14 +30,13 @@ const PANEL_POSITION = { position: "absolute", bottom: 0, left: 0, right: 0 } as
 
 /**
  * The panel over the photography: the Design's name in the serif title face,
- * then its Status pill beside the Category and Collection in the sans face.
- * This is the design system's one blur, and it frosts only the image beneath
- * it. Over a plate there is nothing to frost: the plate already names the
- * Design, so the panel becomes a plain paper caption with a Thread Line above
- * it, carrying only the record — Status, Category, Collection — and never
- * running over the plate's frame. Its bottom padding clears the home
- * indicator, and it lets touches through so a swipe can start anywhere on the
- * page.
+ * then its Status pill beside the one taxonomy line in the mono face. This is
+ * the design system's one blur, and it frosts only the image beneath it. Over
+ * a plate there is nothing to frost: the plate already names the Design, so
+ * the panel becomes a plain paper caption with a Thread Line above it,
+ * carrying only the record — Status and taxonomy — and never running over the
+ * plate's frame. Its bottom padding clears the home indicator, and it lets
+ * touches through so a swipe can start anywhere on the page.
  */
 function SingleViewPanel({
   design,
@@ -49,6 +49,7 @@ function SingleViewPanel({
   overPhotography: boolean;
 }) {
   const insets = useSafeAreaInsets();
+  const taxonomy = taxonomyLine(design);
   const details = (
     <View
       className={cn(
@@ -64,9 +65,9 @@ function SingleViewPanel({
       ) : null}
       <View className="flex-row flex-wrap items-center gap-2">
         <DesignStatusBadge status={design.status} />
-        <Text variant="muted">
-          {design.category ?? "No category"} · {design.collection ?? "No collection"}
-        </Text>
+        {taxonomy ? (
+          <Text className="text-muted-foreground font-mono text-sm leading-5">{taxonomy}</Text>
+        ) : null}
       </View>
     </View>
   );

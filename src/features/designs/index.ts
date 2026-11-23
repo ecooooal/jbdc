@@ -9,4 +9,3 @@ export { DESIGN_SECTIONS } from "./lib/sections";
 export type { DesignSectionTab } from "./lib/sections";
 export { createDesign, getDesign, writeDesign } from "./lib/records";
 export type { DesignFields, MaterialUse, MaterialUsesPair } from "./lib/records";
-export { designStatusLabel } from "./lib/status";

@@ -7,7 +7,7 @@
 - density 1 is the single column view: 1 design per screen and swipable instead of a list, in the grouping's order and bounded at the first and last
 	- fills the screen with the image
 	- the bottom part is blurred to provide space for the details: name, status, category, and collection; a design with no image keeps the page shape with the dashed placeholder
-- density 2 and 4 is the grid; Per collection gathers it under Collection headers, with "No collection" last
+- density 2 is the grid; Per collection gathers it under Collection labels, with "No collection" last. Four-up was dropped: a 4-up tile cannot hold the Design's name and the Status pill at the type floor.
 - bottom right of the screen is the FAB, expanding upward into three actions inside the quiet motion budget
 	- add design opens the create screen
 	- the theme button switches dark and light, persists the choice, and the whole app — navigation chrome included — follows it, following the system until she chooses

@@ -252,7 +252,7 @@ The code's shadcn-style slot names resolve to this palette:
 
 Portrait, phone-first, native stack navigation with OS headers hidden — every screen owns its header: serif title left, icon controls right, back is a ghost chevron. Content lives inside safe-area insets on every screen, with a 24px side margin, 24px section rhythm, 16px list rhythm, and 48px of breathing room at the end of every scroll.
 
-The Library grid is density-driven, not breakpoint-driven: the Owner chooses the Library's density (persisted) — the single view at 1, two or four designs per row — and the card width derives from the current viewport, so rotation reflows card width without ever breaking the column count. There are no media breakpoints in the system; density is a user decision, not a width decision.
+The Library grid is density-driven, not breakpoint-driven: the Owner chooses the Library's density (persisted) — the single view at 1, or two designs per row — and the card width derives from the current viewport, so rotation reflows card width without ever breaking the column count. There are no media breakpoints in the system; density is a user decision, not a width decision. Four-up is not offered: a tile that narrow cannot hold the Design's name and Status pill at the type floor.
 
 Forms and recorded sections group into inset blocks — one tonal step (Kraft Layer) or a hairline border inside the card — so a half-filled design reads as intentional rather than incomplete: empty sections simply say "Nothing recorded yet."
 

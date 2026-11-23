@@ -6,6 +6,13 @@ Target: `src/features/library/components/library-screen.tsx` (the Library screen
 **Scope agreed:** all five priority issues.
 **Design intent agreed:** the portfolio voice — Design names in Cormorant; Collection headers become a quieter label. This reverses today's inverted hierarchy (serif Collection h4 above sans Design names).
 
+**Follow-up (2026-11-24):** the first four P1s landed. The second critique
+(`2026-11-23T20-18-35Z`) carries the current work: the grid's inverted voice,
+and the 4-up tile. **4-up is dropped (approved):** a 4-up tile at the type floor
+cannot hold the Design's name and the full Status pill. Density is now 1 / 2;
+the typeset pass gives the 2-up tile the Cormorant name, one mono taxonomy
+line, equal-height tiles whose Status pills align, and no four-up lane.
+
 ## Evidence base
 
 Reviewed on the attached Android phone (1080×2400 @ 440 dpi) running Expo Go, in light and dark, densities 1 / 2 / 4, both groupings, and font scale 1.0 and 1.3. The MIUI "Tools" floating gear in screenshots is OS chrome, not this app.
@@ -31,7 +38,7 @@ Accessibility and theme chrome first (contained, verifiable), then empty covers,
 
 **Files:** `src/features/library/components/library-card.tsx`, `single-view-page.tsx`, `single-view.tsx`.
 
-**Done when:** a no-cover Design reads as a deliberate, named empty page at density 1 and as a named empty tile at 2 and 4; frame contrast ≥3:1; no t-shirt icon anywhere.
+**Done when:** a no-cover Design reads as a deliberate, named empty page at density 1 and as a named empty tile at 2; frame contrast ≥3:1; no t-shirt icon anywhere.
 
 ---
 
@@ -87,7 +94,7 @@ Accessibility and theme chrome first (contained, verifiable), then empty covers,
 **Problem.** No screen title; the grouping trigger reads as a filter field. 16px sans names under 20px serif Collection headers. Category and Collection are unlabeled gray lines whose order must be memorized; the Collection repeats on every card inside its own section. Wrapping titles make cards 16–20dp taller than their row (44px at 4-up, 55px at 2-up), producing ragged rows. At 4-up Status becomes bare 10px text. Search/Filter occupy permanent prime header space while dead. Density sits on the right although `docs/ui-improve.md` specifies it left beside grouping.
 
 **Change (portfolio voice).**
-- Design names in Cormorant at 2-up and 4-up, at the largest size the tile can hold legibly; Collection headers become a quiet DM Sans label (or DM Mono) with a hairline, not a serif heading that outranks the work.
+- Design names in Cormorant at 2-up, at the largest size the tile can hold legibly; Collection headers become a quiet DM Sans label (or DM Mono) with a hairline, not a serif heading that outranks the work. (4-up is dropped; see the follow-up note.)
 - Group metadata into one labeled line (`Outerwear · owidjd (2022)`) or set it in DM Mono so the eye can classify it; drop the Collection line inside a Collection section.
 - Give every tile a fixed metadata area so card bottoms align in every row; keep Status a pill at every density.
 - Add a screen title, or restyle the grouping trigger so it reads as the screen's label rather than a filter field.
@@ -108,4 +115,4 @@ Accessibility and theme chrome first (contained, verifiable), then empty covers,
 
 ## Verification
 
-Run the repo's documented checks (`docs/EXPO-COMMANDS.md`) plus the Library's test seams. Then re-render on the device: light and dark, densities 1/2/4, both groupings, font scale 1.0 and 1.3, and a no-cover Design in single view. Re-run `$impeccable critique` on the same target to compare against **24/40 (first run)**.
+Run the repo's documented checks (`docs/EXPO-COMMANDS.md`) plus the Library's test seams. Then re-render on the device: light and dark, densities 1/2, both groupings, font scale 1.0 and 1.3, and a no-cover Design in single view. Re-run `$impeccable critique` on the same target to compare against **24/40 (first run)**.

@@ -1,7 +1,7 @@
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { render, screen } from "@testing-library/react-native";
+import { render, screen, within } from "@testing-library/react-native";
 import type { ImageKind } from "@/features/database";
 import { createTempDatabase } from "@/features/database/testing";
 import { createDesign } from "@/features/designs";
@@ -9,9 +9,9 @@ import { writeImages, type ImageStore } from "@/features/images";
 import { ImageStoreProvider } from "@/features/images/react";
 import { createTempImageStore } from "@/features/images/testing";
 import { listLibraryDesigns } from "@/features/library";
+import { createCategory, createCollection } from "@/features/taxonomy";
 import type { LibraryDesign } from "../lib/query";
 import { LibraryCard } from "../components/library-card";
-import type { CardDensity } from "@/features/settings";
 import type { PressHighlightHandlers } from "../components/press-highlight";
 
 /** A card no finger is on, whose tap the test does not read. */
@@ -61,10 +61,13 @@ function libraryDesign(name: string): LibraryDesign {
   return design;
 }
 
-async function renderCard(design: LibraryDesign, density: Exclude<CardDensity, 1>) {
+async function renderCard(
+  design: LibraryDesign,
+  { omitCollection = false }: { omitCollection?: boolean } = {},
+) {
   return render(
     <ImageStoreProvider store={store}>
-      <LibraryCard design={design} density={density} press={IDLE_PRESS} />
+      <LibraryCard design={design} omitCollection={omitCollection} press={IDLE_PRESS} />
     </ImageStoreProvider>,
   );
 }
@@ -77,7 +80,7 @@ test("the card renders the Cover from the store", async () => {
 
   const design = libraryDesign("Wool coat");
 
-  await renderCard(design, 2);
+  await renderCard(design);
 
   const cover = screen.getByLabelText("Cover of Wool coat");
 
@@ -86,45 +89,76 @@ test("the card renders the Cover from the store", async () => {
   expect(screen.queryByTestId("empty-cover")).toBeNull();
 });
 
-test("the card shows the Cover at both grid densities", async () => {
-  const designId = createDesign(database, { name: "Wool coat" }, 500).id;
-
-  await attach(designId, "prototype", "prototype bytes", 1000);
-
-  const design = libraryDesign("Wool coat");
-
-  for (const density of [2, 4] as const) {
-    const view = await renderCard(design, density);
-
-    expect(screen.getByLabelText("Cover of Wool coat")).toBeTruthy();
-
-    await view.unmount();
-  }
-});
-
-test("an image-less design keeps the named plate in place of a Cover", async () => {
+test("an image-less design keeps the plate in place of a Cover", async () => {
   createDesign(database, { name: "Early concept" }, 500);
 
   const design = libraryDesign("Early concept");
 
-  await renderCard(design, 2);
+  await renderCard(design);
 
   expect(design.cover).toBeNull();
   expect(screen.getByTestId("empty-cover")).toBeTruthy();
   expect(screen.getByTestId("empty-cover-frame")).toBeTruthy();
-  expect(screen.getByText("No photography yet")).toBeTruthy();
-  expect(screen.getAllByText("Early concept")).toHaveLength(1);
+  expect(screen.getByText("No cover")).toBeTruthy();
   expect(screen.queryByLabelText(/^Cover of /)).toBeNull();
 });
 
-test("the compact plate keeps the name and drops the caption it has no room for", async () => {
+test("the tile names the Design in the card body, not twice in the plate", async () => {
   createDesign(database, { name: "Early concept" }, 500);
 
   const design = libraryDesign("Early concept");
 
-  await renderCard(design, 4);
+  await renderCard(design);
 
-  expect(screen.getByTestId("empty-cover")).toBeTruthy();
   expect(screen.getAllByText("Early concept")).toHaveLength(1);
-  expect(screen.queryByText("No photography yet")).toBeNull();
+  expect(within(screen.getByTestId("empty-cover")).queryByText("Early concept")).toBeNull();
+  expect(screen.getAllByRole("heading")).toHaveLength(1);
+});
+
+test("the tile prints one taxonomy line in the mono face", async () => {
+  const category = createCategory(database, { name: "Blouse" }, 1);
+  const collection = createCollection(database, { name: "Summer", year: 2026 }, 2);
+
+  createDesign(
+    database,
+    { name: "Wool coat", categoryId: category.id, collectionId: collection.id },
+    500,
+  );
+
+  await renderCard(libraryDesign("Wool coat"));
+
+  expect(screen.getByText("Blouse · Summer (2026)")).toBeTruthy();
+});
+
+test("a Collection section leaves the repeated Collection out of the tile", async () => {
+  const category = createCategory(database, { name: "Blouse" }, 1);
+  const collection = createCollection(database, { name: "Summer", year: 2026 }, 2);
+
+  createDesign(
+    database,
+    { name: "Wool coat", categoryId: category.id, collectionId: collection.id },
+    500,
+  );
+
+  await renderCard(libraryDesign("Wool coat"), { omitCollection: true });
+
+  expect(screen.getByText("Blouse")).toBeTruthy();
+  expect(screen.queryByText("Blouse · Summer (2026)")).toBeNull();
+});
+
+test("an unfiled Design gets no placeholder taxonomy", async () => {
+  createDesign(database, { name: "Early concept" }, 500);
+
+  await renderCard(libraryDesign("Early concept"));
+
+  expect(screen.queryByText("No category")).toBeNull();
+  expect(screen.queryByText("No collection")).toBeNull();
+});
+
+test("the tile keeps Status in its pill", async () => {
+  createDesign(database, { name: "Early concept" }, 500);
+
+  await renderCard(libraryDesign("Early concept"));
+
+  expect(screen.getByText("Concept")).toBeTruthy();
 });

@@ -2,8 +2,8 @@ import { eq } from "drizzle-orm";
 import type { Database } from "@/features/database";
 import { settings } from "@/features/database";
 
-/** The Library's three card densities: one list row, two tiles, or four tiles. */
-export const CARD_DENSITIES = [1, 2, 4] as const;
+/** The Library's two card densities: the single view, or two tiles per row. */
+export const CARD_DENSITIES = [1, 2] as const;
 
 export type CardDensity = (typeof CARD_DENSITIES)[number];
 

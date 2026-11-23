@@ -82,6 +82,14 @@ test("the page names the Design and states its Status, Category, and Collection"
   expect(screen.getByText("Dress · Spring")).toBeTruthy();
 });
 
+test("an unfiled Design's caption carries only its Status", async () => {
+  await renderPage(libraryDesign({ category: null, collection: null }));
+
+  expect(screen.queryByText("No category")).toBeNull();
+  expect(screen.queryByText("No collection")).toBeNull();
+  expect(screen.getByText("Concept")).toBeTruthy();
+});
+
 test("the page fills its frame with the Design's Cover", async () => {
   const design = libraryDesign({ cover: COVER });
 

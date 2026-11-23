@@ -4,7 +4,6 @@ import { useCallback } from "react";
 import { ScrollView, useWindowDimensions, View } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAppTheme, useCardDensity, useGrouping } from "@/features/settings/react";
-import type { CardDensity } from "@/features/settings";
 import { Button } from "@/shared/components/ui/button";
 import { Icon } from "@/shared/components/ui/icon";
 import { Text } from "@/shared/components/ui/text";
@@ -50,18 +49,19 @@ function chunk<T>(items: readonly T[], size: number): T[][] {
   return rows;
 }
 
-/** One section's grid: its designs chunked into rows at the chosen density. */
+/** One section's grid: its designs chunked into two-per-row tiles. */
 function SectionGrid({
   designs,
-  density,
   columns,
   cardWidth,
+  omitCollection,
   pressFor,
 }: {
   designs: readonly LibraryDesign[];
-  density: Exclude<CardDensity, 1>;
   columns: number;
   cardWidth: number;
+  /** Inside a Collection section the header already names the Collection. */
+  omitCollection: boolean;
   pressFor: (designId: string) => PressHighlightHandlers;
 }) {
   return (
@@ -70,12 +70,16 @@ function SectionGrid({
         <View
           key={row[0].id}
           testID={`library-row-${index}`}
-          className="flex-row"
+          className="flex-row items-stretch"
           style={{ gap: LIBRARY_GRID_GAP }}
         >
           {row.map((design) => (
             <View key={design.id} style={{ width: cardWidth }}>
-              <LibraryCard design={design} density={density} press={pressFor(design.id)} />
+              <LibraryCard
+                design={design}
+                omitCollection={omitCollection}
+                press={pressFor(design.id)}
+              />
             </View>
           ))}
         </View>
@@ -86,12 +90,12 @@ function SectionGrid({
 
 /**
  * The Library screen: at density 1, the single view paging one Design at a
- * time; at 2 and 4, the grid of active designs; or the empty state offering
- * create. The chosen density decides between the pager and the grid, and the
- * card width follows the viewport, so rotating the device reflows the grid
- * instead of breaking it. The chosen grouping decides whether the grid is one
- * flat stream or sections under their Collection headers, and the pager walks
- * the same ordered list.
+ * time; at 2, the grid of active designs; or the empty state offering create.
+ * The chosen density decides between the pager and the grid, and the card
+ * width follows the viewport, so rotating the device reflows the grid instead
+ * of breaking it. The chosen grouping decides whether the grid is one flat
+ * stream or sections under their Collection labels, and the pager walks the
+ * same ordered list.
  */
 export function LibraryScreen() {
   const { designs, error, status } = useLibraryDesigns();
@@ -224,12 +228,17 @@ export function LibraryScreen() {
                       testID={`library-section-${section.collection ?? NO_COLLECTION_KEY}`}
                       className="gap-3"
                     >
-                      <Text variant="h4">{section.collection ?? NO_COLLECTION_LABEL}</Text>
+                      <View className="flex-row items-center gap-3">
+                        <Text role="heading" className="text-muted-foreground text-xs font-medium">
+                          {section.collection ?? NO_COLLECTION_LABEL}
+                        </Text>
+                        <View className="bg-border h-px flex-1" />
+                      </View>
                       <SectionGrid
                         designs={section.designs}
-                        density={density}
                         columns={columns}
                         cardWidth={cardWidth}
+                        omitCollection
                         pressFor={pressFor}
                       />
                     </View>
@@ -239,9 +248,9 @@ export function LibraryScreen() {
                 <View className="gap-6">
                   <SectionGrid
                     designs={arrangement.designs}
-                    density={density}
                     columns={columns}
                     cardWidth={cardWidth}
+                    omitCollection={false}
                     pressFor={pressFor}
                   />
                 </View>

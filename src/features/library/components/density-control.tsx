@@ -5,15 +5,14 @@ import { ToggleGroup, ToggleGroupItem } from "@/shared/components/ui/toggle-grou
 const DENSITY_LABELS: Record<CardDensity, string> = {
   1: "Single view",
   2: "Two designs per row",
-  4: "Four designs per row",
 };
 
 /** The platform touch floor: 48 dp on Android, and past iOS's 44 pt. */
 const TOUCH_TARGET = "h-auto min-h-12 min-w-12 sm:h-auto sm:min-h-12 sm:min-w-12";
 
 /**
- * The Library's density switch: the single view at 1, two or four designs per
- * row. The choice is persisted on press. Each segment is a full 48 dp target,
+ * The Library's density switch: the single view at 1, two designs per row at
+ * 2. The choice is persisted on press. Each segment is a full 48 dp target,
  * so the control stays hittable on a phone even though its label is one digit.
  */
 export function DensityControl({

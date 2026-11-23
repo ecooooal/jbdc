@@ -31,25 +31,25 @@ describe("settings", () => {
   });
 
   test("a new Settings instance reads the chosen density", () => {
-    createSettings(database).setCardDensity(4);
+    createSettings(database).setCardDensity(1);
 
-    expect(createSettings(database).cardDensity()).toBe(4);
+    expect(createSettings(database).cardDensity()).toBe(1);
   });
 
   test("changing the choice replaces the previous one", () => {
     const settings = createSettings(database);
 
-    settings.setCardDensity(4);
     settings.setCardDensity(1);
+    settings.setCardDensity(2);
 
-    expect(createSettings(database).cardDensity()).toBe(1);
+    expect(createSettings(database).cardDensity()).toBe(2);
   });
 
   test("keeps the choice in one settings row", () => {
     const settings = createSettings(database);
 
-    settings.setCardDensity(4);
     settings.setCardDensity(1);
+    settings.setCardDensity(2);
 
     expect(database.db.select().from(settingsTable).all()).toHaveLength(1);
   });
@@ -57,10 +57,19 @@ describe("settings", () => {
   test("a value that names no density is not a choice", () => {
     expect(cardDensityFrom(undefined)).toBeNull();
     expect(cardDensityFrom("3")).toBeNull();
+    expect(cardDensityFrom("4")).toBeNull();
 
     for (const density of CARD_DENSITIES) {
       expect(cardDensityFrom(String(density))).toBe(density);
     }
+  });
+
+  test("a stored four-up density falls back to two", () => {
+    createSettings(database).setCardDensity(2);
+
+    database.db.update(settingsTable).set({ value: "4" }).run();
+
+    expect(createSettings(database).cardDensity()).toBe(2);
   });
 
   test.each(CARD_DENSITIES)("remembers density %i across launches", (density) => {
