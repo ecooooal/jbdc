@@ -28,8 +28,10 @@ import { useLibraryDesigns } from "../lib/use-library-designs";
 import { DensityControl } from "./density-control";
 import { GroupingSelect } from "./grouping-select";
 import { LibraryCard } from "./library-card";
+import { FAB_SCROLL_CLEARANCE, LibraryFab } from "./library-fab";
 import type { PressHighlightHandlers } from "./press-highlight";
 import { SingleView } from "./single-view";
+import { SINGLE_VIEW_PANEL_CLEARANCE } from "./single-view-page";
 
 /** The heading of the trailing group for designs in no Collection. */
 const NO_COLLECTION_LABEL = "No collection";
@@ -135,6 +137,11 @@ export function LibraryScreen() {
     onPress: () => dispatch({ type: "card-tapped", designId }),
   });
 
+  // The FAB clears the single view's details panel, which only sits there when
+  // that view is what the screen shows.
+  const overSingleView = density === 1 && status === "ready" && designs.length > 0;
+  const fabBottom = insets.bottom + (overSingleView ? SINGLE_VIEW_PANEL_CLEARANCE : 16);
+
   return (
     <SafeAreaView style={{ flex: 1 }} className="bg-background" edges={["top", "left", "right"]}>
       <View className="pt-6" style={{ paddingHorizontal: LIBRARY_SIDE_PADDING }}>
@@ -142,16 +149,6 @@ export function LibraryScreen() {
           <GroupingSelect grouping={grouping} onChange={setGrouping} />
           <View className="flex-row items-center gap-2">
             <DensityControl density={density} onChange={setDensity} />
-            {designs.length > 0 ? (
-              <Button
-                size="icon"
-                variant="outline"
-                accessibilityLabel="Create design"
-                onPress={() => router.push("/designs/new")}
-              >
-                <Icon as={Plus} />
-              </Button>
-            ) : null}
             <Button size="icon" variant="ghost" disabled accessibilityLabel="Search">
               <Icon as={Search} />
             </Button>
@@ -188,9 +185,13 @@ export function LibraryScreen() {
         />
       ) : (
         <View className="flex-1" style={{ paddingHorizontal: LIBRARY_SIDE_PADDING }}>
-          <ScrollView className="mt-6 flex-1" showsVerticalScrollIndicator={false}>
+          <ScrollView
+            className="mt-6 flex-1"
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={{ paddingBottom: insets.bottom + FAB_SCROLL_CLEARANCE }}
+          >
             {arrangement.kind === "grouped" ? (
-              <View className="gap-6 pb-8">
+              <View className="gap-6">
                 {arrangement.sections.map((section) => (
                   <View
                     key={section.collection ?? NO_COLLECTION_KEY}
@@ -209,7 +210,7 @@ export function LibraryScreen() {
                 ))}
               </View>
             ) : (
-              <View className="gap-6 pb-8">
+              <View className="gap-6">
                 <SectionGrid
                   designs={arrangement.designs}
                   density={density}
@@ -222,6 +223,8 @@ export function LibraryScreen() {
           </ScrollView>
         </View>
       )}
+
+      <LibraryFab bottom={fabBottom} />
     </SafeAreaView>
   );
 }

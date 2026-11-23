@@ -78,5 +78,10 @@ The Library's ordering choice: *Per design*, the flat, most recently updated fir
 The Library at density 1: one Design per page, its Cover filling the frame beneath a details panel, paged horizontally in the grouping's order and bounded at the first and last Design. A Design with no Cover keeps the page's shape with the dashed placeholder, and the panel blurs only photography.
 
 **theme**:
-The Owner's app-wide appearance choice: *light*, *dark*, or *follow-system*, the default until she chooses. Stored behind its own settings key and validated on read, so nothing stored means the system's appearance.
-_Note_: `src/shared/lib/theme.ts` holds the styling engine's palettes and navigation theme objects; this word is the Owner's choice, not those.
+The Owner's app-wide appearance choice: *light*, *dark*, or *follow-system*, the default until she chooses. Stored behind its own settings key and validated on read, so nothing stored means the system's appearance. The root applies it through the styling engine and the navigation theme, so every surface and the navigation chrome follow it.
+_Note_: the palettes live in `src/global.css`; `src/shared/lib/theme.ts` derives the navigation theme from the same values. This word is the Owner's choice, not those.
+
+## The Library's FAB
+
+**the FAB**:
+The Library's floating action button in the bottom corner, a speed-dial: collapsed it holds its actions shut; expanded it stacks add design, the theme toggle, and the disabled settings action above the corner within the quiet motion budget, clearing the single view's details panel. It owns add now that the header carries no create button.

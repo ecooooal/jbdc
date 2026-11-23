@@ -74,6 +74,20 @@ export function themeChoiceFrom(value: string | undefined): ThemeChoice | null {
   return THEME_CHOICES.find((candidate) => candidate === value) ?? null;
 }
 
+/**
+ * The appearance a choice and the system's current scheme resolve to: the
+ * Owner's fixed choice when she made one, otherwise the system's. A system
+ * with no preference reads as light, the page the archive is designed on.
+ */
+export function resolveThemeScheme(
+  theme: ThemeChoice,
+  systemScheme: "light" | "dark" | null | undefined,
+): "light" | "dark" {
+  if (theme !== "follow-system") return theme;
+
+  return systemScheme === "dark" ? "dark" : "light";
+}
+
 /** The stored value under one key, or undefined when the preference is unset. */
 function readSetting(database: Database, key: string): string | undefined {
   return database.db

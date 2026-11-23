@@ -12,6 +12,13 @@ import { PressHighlight, type PressHighlightHandlers } from "./press-highlight";
 /** How strongly the details panel frosts the photography behind it. */
 const PANEL_BLUR_INTENSITY = 50;
 
+/**
+ * The room the details panel takes above the bottom safe inset: its top
+ * padding, a two-line title, the status row, and the gap between them. A
+ * control that must not cover the panel sits above this.
+ */
+export const SINGLE_VIEW_PANEL_CLEARANCE = 160;
+
 /** What the BlurView blurs: the page's photography layer. */
 type BlurTarget = RefObject<ComponentRef<typeof View> | null>;
 

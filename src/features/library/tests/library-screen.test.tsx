@@ -1,12 +1,14 @@
 import { act, fireEvent, render, screen, userEvent, within } from "@testing-library/react-native";
 import { router } from "expo-router";
 import { SafeAreaProvider } from "react-native-safe-area-context";
+import { Uniwind } from "uniwind";
 import { DatabaseProvider } from "@/features/database/react";
 import { createSyncSubscribe, createTempDatabase } from "@/features/database/testing";
 import { createDesign } from "@/features/designs";
 import { listLibraryDesigns } from "@/features/library";
 import { LibraryScreen } from "@/features/library/react";
 import type { Grouping } from "@/features/settings";
+import { ThemeChoiceProvider } from "@/features/settings/react";
 import { createCollection } from "@/features/taxonomy";
 import { PRESS_HIGHLIGHT_HOLD_MS } from "../lib/library-screen-reducer";
 
@@ -30,13 +32,16 @@ beforeEach(() => {
 afterEach(() => {
   dispose();
   jest.useRealTimers();
+  Uniwind.setTheme("system");
 });
 
 async function renderLibrary() {
   return render(
     <SafeAreaProvider initialMetrics={INITIAL_METRICS}>
       <DatabaseProvider database={database} subscribe={live.subscribe}>
-        <LibraryScreen />
+        <ThemeChoiceProvider>
+          <LibraryScreen />
+        </ThemeChoiceProvider>
       </DatabaseProvider>
     </SafeAreaProvider>,
   );
@@ -79,6 +84,59 @@ test("the search and filter placeholder icons render disabled", async () => {
 
   expect(screen.getByRole("button", { name: "Search" })).toBeDisabled();
   expect(screen.getByRole("button", { name: "Filter" })).toBeDisabled();
+});
+
+test("the header carries no create button; the FAB owns add", async () => {
+  seedStream();
+
+  await renderLibrary();
+
+  expect(screen.queryByRole("button", { name: "Create design" })).toBeNull();
+});
+
+test("the FAB expands into add, theme, and settings actions", async () => {
+  seedStream();
+  const user = userEvent.setup();
+
+  await renderLibrary();
+
+  expect(screen.queryByRole("button", { name: "Add design" })).toBeNull();
+
+  await user.press(screen.getByRole("button", { name: "More actions" }));
+
+  expect(screen.getByRole("button", { name: "Add design" })).toBeTruthy();
+  expect(screen.getByRole("button", { name: "Switch to dark theme" })).toBeTruthy();
+  expect(screen.getByRole("button", { name: "Settings" })).toBeDisabled();
+});
+
+test("the FAB's add action opens the create screen", async () => {
+  const user = userEvent.setup();
+
+  await renderLibrary();
+  await user.press(screen.getByRole("button", { name: "More actions" }));
+  await user.press(screen.getByRole("button", { name: "Add design" }));
+
+  expect(router.push).toHaveBeenLastCalledWith("/designs/new");
+});
+
+test("the FAB's theme action persists the chosen mode and applies it", async () => {
+  const user = userEvent.setup();
+  const first = await renderLibrary();
+
+  await user.press(screen.getByRole("button", { name: "More actions" }));
+  await user.press(screen.getByRole("button", { name: "Switch to dark theme" }));
+
+  // Applied: the Library now offers the other mode.
+  await user.press(screen.getByRole("button", { name: "More actions" }));
+
+  expect(screen.getByRole("button", { name: "Switch to light theme" })).toBeTruthy();
+
+  // Persisted: a fresh app open reads the stored choice back.
+  await first.unmount();
+  await renderLibrary();
+  await user.press(screen.getByRole("button", { name: "More actions" }));
+
+  expect(screen.getByRole("button", { name: "Switch to light theme" })).toBeTruthy();
 });
 
 /** Three designs with no Collection, freshest first as the default read orders them. */

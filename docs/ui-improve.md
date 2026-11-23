@@ -2,13 +2,18 @@
 
 ## Library Screen
 - Header
-	- left side contains placeholder of dropdown different view type (per collection or per design)
-	- right sided contains placeholder for Search and filters 
-- single column view should now be 1 design per screen and swipable instead of a list
-	- for single view
-		- fills screen with the image
-		- bottom part should be blurred to provide spaces for the details
-- bottom right screen is a FAB containing settings, add design, and theme button (dark/light mode switch for now).
+	- left: the grouping dropdown (the view type: per collection or per design) and the compact density control
+	- right: search and filter placeholder icons, rendered disabled until they work
+- density 1 is the single column view: 1 design per screen and swipable instead of a list, in the grouping's order and bounded at the first and last
+	- fills the screen with the image
+	- the bottom part is blurred to provide space for the details: name, status, category, and collection; a design with no image keeps the page shape with the dashed placeholder
+- density 2 and 4 is the grid; Per collection gathers it under Collection headers, with "No collection" last
+- bottom right of the screen is the FAB, expanding upward into three actions inside the quiet motion budget
+	- add design opens the create screen
+	- the theme button switches dark and light, persists the choice, and the whole app — navigation chrome included — follows it, following the system until she chooses
+	- settings renders disabled until the settings screen exists
+	- the FAB stays above the single view's details panel
+- The header has no create button; the FAB owns add
 
 ## Design screen
 - Header
