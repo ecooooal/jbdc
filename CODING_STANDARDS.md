@@ -4,7 +4,7 @@ Read this before reviewing a diff. It holds judgement calls that no automated
 check can make. Mechanical rules live in code, not here:
 
 - Import boundaries and driver imports: `eslint.config.js`
-- Types, lint, tests: `.github/workflows/ci.yml` and `.githooks/pre-commit`
+- Types, lint, tests: `.github/workflows/ci.yml` and `.githooks/pre-push`
 
 A review reads the standards set together: `docs/FRONTEND_STATE.md`,
 `docs/EXPO-FOLDER-STRUCTURE.md`, `docs/EXPO-DB.md`, `GLOSSARY.md`, and the
