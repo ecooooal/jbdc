@@ -3,7 +3,7 @@ import { Text } from "@/shared/components/ui/text";
 import { ToggleGroup, ToggleGroupItem } from "@/shared/components/ui/toggle-group";
 
 const DENSITY_LABELS: Record<CardDensity, string> = {
-  1: "One design per row",
+  1: "Single view",
   2: "Two designs per row",
   4: "Four designs per row",
 };

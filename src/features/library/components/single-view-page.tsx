@@ -14,22 +14,53 @@ const PANEL_BLUR_INTENSITY = 50;
 /** What the BlurView blurs: the page's photography layer. */
 type BlurTarget = RefObject<ComponentRef<typeof View> | null>;
 
+/** Where the panel sits: pinned across the page's bottom edge. */
+const PANEL_POSITION = { position: "absolute", bottom: 0, left: 0, right: 0 } as const;
+
 /**
  * The panel over the photography: the Design's name in the serif title face,
  * then its Status pill beside the Category and Collection in the sans face.
- * This is the design system's one blur: it frosts only the image beneath it,
- * and the paper scrim keeps the details legible where the blur cannot. Its
- * bottom padding clears the home indicator, and it lets touches through so a
- * swipe can start anywhere on the page.
+ * This is the design system's one blur, and it frosts only the image beneath
+ * it: over the dashed placeholder the same content sits on a plain scrim, so
+ * nothing blurred ever rests on paper. Its bottom padding clears the home
+ * indicator, and it lets touches through so a swipe can start anywhere on the
+ * page.
  */
 function SingleViewPanel({
   design,
   blurTarget,
+  overPhotography,
 }: {
   design: LibraryDesign;
   blurTarget: BlurTarget;
+  /** True only when a Cover lies beneath the panel; a placeholder is paper. */
+  overPhotography: boolean;
 }) {
   const insets = useSafeAreaInsets();
+  const details = (
+    <View
+      className="bg-background/60 gap-2 px-6 pt-4"
+      style={{ paddingBottom: insets.bottom + 20 }}
+    >
+      <Text variant="h3" numberOfLines={2}>
+        {design.name}
+      </Text>
+      <View className="flex-row flex-wrap items-center gap-2">
+        <DesignStatusBadge status={design.status} />
+        <Text variant="muted">
+          {design.category ?? "No category"} · {design.collection ?? "No collection"}
+        </Text>
+      </View>
+    </View>
+  );
+
+  if (!overPhotography) {
+    return (
+      <View testID="single-view-panel" pointerEvents="none" style={PANEL_POSITION}>
+        {details}
+      </View>
+    );
+  }
 
   return (
     <BlurView
@@ -39,22 +70,9 @@ function SingleViewPanel({
       tint="default"
       blurMethod="dimezisBlurViewSdk31Plus"
       blurTarget={blurTarget}
-      style={{ position: "absolute", bottom: 0, left: 0, right: 0 }}
+      style={PANEL_POSITION}
     >
-      <View
-        className="bg-background/60 gap-2 px-6 pt-4"
-        style={{ paddingBottom: insets.bottom + 20 }}
-      >
-        <Text variant="h3" numberOfLines={2}>
-          {design.name}
-        </Text>
-        <View className="flex-row flex-wrap items-center gap-2">
-          <DesignStatusBadge status={design.status} />
-          <Text variant="muted">
-            {design.category ?? "No category"} · {design.collection ?? "No collection"}
-          </Text>
-        </View>
-      </View>
+      {details}
     </BlurView>
   );
 }
@@ -104,7 +122,7 @@ export function SingleViewPage({
         </Pressable>
       </BlurTargetView>
 
-      <SingleViewPanel design={design} blurTarget={blurTarget} />
+      <SingleViewPanel design={design} blurTarget={blurTarget} overPhotography={uri !== null} />
     </View>
   );
 }

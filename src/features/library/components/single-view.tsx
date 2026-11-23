@@ -56,14 +56,16 @@ export function SingleView({
         onMomentumScrollEnd={settle}
         onScrollEndDrag={settle}
       />
-      <View
-        pointerEvents="none"
-        className="absolute right-4 top-4 rounded-full bg-black/60 px-3 py-1"
-      >
-        <Text className="text-xs font-semibold text-white">
-          {settled + 1} / {designs.length}
-        </Text>
-      </View>
+      {designs.length > 0 ? (
+        <View
+          pointerEvents="none"
+          className="absolute right-4 top-4 rounded-full bg-black/60 px-3 py-1"
+        >
+          <Text className="text-xs font-semibold text-white">
+            {settled + 1} / {designs.length}
+          </Text>
+        </View>
+      ) : null}
     </View>
   );
 }

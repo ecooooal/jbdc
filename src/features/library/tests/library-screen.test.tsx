@@ -101,9 +101,18 @@ async function settlePagerAt(offset: number) {
   });
 }
 
-/** The design names the single view shows, in the order its pages are laid out. */
-function pageNames(): (string | string[])[] {
-  return screen.getAllByRole("heading").map((heading) => heading.props.children);
+/**
+ * Asserts the design names the single view shows, in the order its pages are
+ * laid out, by the text the Owner reads on each heading rather than the shape
+ * of the heading element.
+ */
+function expectPageNames(names: readonly string[]) {
+  const headings = screen.getAllByRole("heading");
+
+  expect(headings).toHaveLength(names.length);
+  names.forEach((name, index) => {
+    expect(headings[index]).toHaveTextContent(name);
+  });
 }
 
 test("density 1 pages the first Design full-screen instead of listing it", async () => {
@@ -111,11 +120,13 @@ test("density 1 pages the first Design full-screen instead of listing it", async
   const user = userEvent.setup();
 
   await renderLibrary();
-  await user.press(screen.getByLabelText("One design per row"));
+  await user.press(screen.getByLabelText("Single view"));
 
-  expect(screen.getByTestId("single-view")).toBeTruthy();
-  expect(screen.queryByTestId("library-row-0")).toBeNull();
-  expect(pageNames()).toEqual(["Freshest dress", "Middle skirt", "Oldest coat"]);
+  const pager = screen.getByTestId("single-view");
+
+  expect(pager.props.bounces).toBe(false);
+  expect(pager.props.overScrollMode).toBe("never");
+  expectPageNames(["Freshest dress", "Middle skirt", "Oldest coat"]);
   expect(screen.getByText("1 / 3")).toBeTruthy();
 });
 
@@ -124,7 +135,7 @@ test("a swipe settles on its page and both edges stop the pager", async () => {
   const user = userEvent.setup();
 
   await renderLibrary();
-  await user.press(screen.getByLabelText("One design per row"));
+  await user.press(screen.getByLabelText("Single view"));
 
   await settlePagerAt(PAGE_WIDTH);
 
@@ -148,10 +159,10 @@ test("the pager walks the grouping selector's order, not the read's", async () =
   const user = userEvent.setup();
 
   await renderLibrary();
-  await user.press(screen.getByLabelText("One design per row"));
+  await user.press(screen.getByLabelText("Single view"));
   await chooseGrouping("per-collection");
 
-  expect(pageNames()).toEqual([
+  expectPageNames([
     "Spring blouse",
     "Spring skirt",
     "Spring dress",

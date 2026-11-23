@@ -54,6 +54,17 @@ async function renderPage(design: LibraryDesign) {
   );
 }
 
+/**
+ * The native blur view expo-blur mounts for a frosted panel. Jest sees the
+ * native module under its adapter host type, so a page that blurs has one and
+ * a page that must not blur has none.
+ */
+const BLUR_HOST = "ViewManagerAdapter_ExpoBlur";
+
+function blurViews() {
+  return screen.container.queryAll((node) => node.type === BLUR_HOST);
+}
+
 test("the page names the Design and states its Status, Category, and Collection", async () => {
   await renderPage(libraryDesign());
 
@@ -71,6 +82,19 @@ test("the page fills its frame with the Design's Cover", async () => {
 
   expect(cover.props.source).toEqual([{ uri: store.uri(COVER) }]);
   expect(screen.queryByTestId("single-view-placeholder")).toBeNull();
+});
+
+test("the panel blurs the photography, and only the photography", async () => {
+  const withCover = await renderPage(libraryDesign({ cover: COVER }));
+
+  expect(blurViews()).toHaveLength(1);
+
+  await withCover.unmount();
+
+  await renderPage(libraryDesign());
+
+  expect(screen.getByTestId("single-view-panel")).toBeTruthy();
+  expect(blurViews()).toHaveLength(0);
 });
 
 test("a Design with no Cover keeps the dashed placeholder and its panel", async () => {
