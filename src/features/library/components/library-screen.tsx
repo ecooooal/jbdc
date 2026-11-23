@@ -3,6 +3,7 @@ import { Plus, Search, SlidersHorizontal } from "lucide-react-native";
 import { ScrollView, useWindowDimensions, View } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useCardDensity, useGrouping } from "@/features/settings/react";
+import type { CardDensity } from "@/features/settings";
 import { Button } from "@/shared/components/ui/button";
 import { Icon } from "@/shared/components/ui/icon";
 import { Text } from "@/shared/components/ui/text";
@@ -12,10 +13,18 @@ import {
   LIBRARY_SIDE_PADDING,
   libraryGrid,
 } from "../lib/grid";
+import { groupLibraryDesigns } from "../lib/grouping";
+import type { LibraryDesign } from "../lib/query";
 import { useLibraryDesigns } from "../lib/use-library-designs";
 import { DensityControl } from "./density-control";
 import { GroupingSelect } from "./grouping-select";
 import { LibraryCard } from "./library-card";
+
+/** The heading of the trailing group for designs in no Collection. */
+const NO_COLLECTION_LABEL = "No collection";
+
+/** The key and test id the unfiled group uses, where a Collection label would go. */
+const NO_COLLECTION_KEY = "no-collection";
 
 /** Splits the designs into the rows the chosen density asks for. */
 function chunk<T>(items: readonly T[], size: number): T[][] {
@@ -28,10 +37,41 @@ function chunk<T>(items: readonly T[], size: number): T[][] {
   return rows;
 }
 
+/** One section's grid: its designs chunked into rows at the chosen density. */
+function SectionGrid({
+  designs,
+  density,
+  columns,
+  cardWidth,
+  onOpen,
+}: {
+  designs: readonly LibraryDesign[];
+  density: CardDensity;
+  columns: number;
+  cardWidth: number;
+  onOpen: (design: LibraryDesign) => void;
+}) {
+  return (
+    <View style={{ gap: LIBRARY_GRID_GAP }}>
+      {chunk(designs, columns).map((row) => (
+        <View key={row[0].id} className="flex-row" style={{ gap: LIBRARY_GRID_GAP }}>
+          {row.map((design) => (
+            <View key={design.id} style={{ width: cardWidth }}>
+              <LibraryCard design={design} density={density} onPress={() => onOpen(design)} />
+            </View>
+          ))}
+        </View>
+      ))}
+    </View>
+  );
+}
+
 /**
  * The Library screen: the grid of active designs, or the empty state offering
  * create. The chosen density decides the column count; the card width follows
  * the viewport, so rotating the device reflows the grid instead of breaking it.
+ * The chosen grouping decides whether the grid is one flat stream or sections
+ * under their Collection headers.
  */
 export function LibraryScreen() {
   const { designs, error, status } = useLibraryDesigns();
@@ -44,7 +84,8 @@ export function LibraryScreen() {
     viewportWidth - insets.left - insets.right - LIBRARY_HORIZONTAL_PADDING,
   );
   const { columns, cardWidth } = libraryGrid(density, contentWidth);
-  const rows = chunk(designs, columns);
+  const sections = groupLibraryDesigns(designs, grouping);
+  const isGrouped = grouping === "per-collection";
   const isEmpty = status === "ready" && designs.length === 0;
 
   return (
@@ -90,20 +131,31 @@ export function LibraryScreen() {
           </View>
         ) : (
           <ScrollView className="mt-6 flex-1" showsVerticalScrollIndicator={false}>
-            <View className="pb-8" style={{ gap: LIBRARY_GRID_GAP }}>
-              {rows.map((row) => (
-                <View key={row[0].id} className="flex-row" style={{ gap: LIBRARY_GRID_GAP }}>
-                  {row.map((design) => (
-                    <View key={design.id} style={{ width: cardWidth }}>
-                      <LibraryCard
-                        design={design}
-                        density={density}
-                        onPress={() =>
-                          router.push({ pathname: "/designs/[id]", params: { id: design.id } })
-                        }
-                      />
-                    </View>
-                  ))}
+            <View className="gap-6 pb-8">
+              {sections.map((section) => (
+                <View
+                  key={section.collection ?? NO_COLLECTION_KEY}
+                  testID={
+                    isGrouped
+                      ? `library-section-${section.collection ?? NO_COLLECTION_KEY}`
+                      : undefined
+                  }
+                  className="gap-3"
+                >
+                  {isGrouped ? (
+                    <Text variant="h4" aria-level={2}>
+                      {section.collection ?? NO_COLLECTION_LABEL}
+                    </Text>
+                  ) : null}
+                  <SectionGrid
+                    designs={section.designs}
+                    density={density}
+                    columns={columns}
+                    cardWidth={cardWidth}
+                    onOpen={(design) =>
+                      router.push({ pathname: "/designs/[id]", params: { id: design.id } })
+                    }
+                  />
                 </View>
               ))}
             </View>
