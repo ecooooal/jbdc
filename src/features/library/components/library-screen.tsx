@@ -1,5 +1,6 @@
 import { router } from "expo-router";
 import { Plus, Search, SlidersHorizontal } from "lucide-react-native";
+import { useCallback } from "react";
 import { ScrollView, useWindowDimensions, View } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useCardDensity, useGrouping } from "@/features/settings/react";
@@ -7,6 +8,7 @@ import type { CardDensity } from "@/features/settings";
 import { Button } from "@/shared/components/ui/button";
 import { Icon } from "@/shared/components/ui/icon";
 import { Text } from "@/shared/components/ui/text";
+import { useReducerRunner } from "@/shared/hooks/use-reducer-runner";
 import {
   LIBRARY_GRID_GAP,
   LIBRARY_HORIZONTAL_PADDING,
@@ -14,11 +16,19 @@ import {
   libraryGrid,
 } from "../lib/grid";
 import { groupLibraryDesigns, orderedLibraryDesigns } from "../lib/grouping";
+import {
+  createInitialLibraryScreenState,
+  libraryScreenReducer,
+  PRESS_HIGHLIGHT_HOLD_MS,
+  type LibraryScreenEffect,
+  type LibraryScreenEvent,
+} from "../lib/library-screen-reducer";
 import type { LibraryDesign } from "../lib/query";
 import { useLibraryDesigns } from "../lib/use-library-designs";
 import { DensityControl } from "./density-control";
 import { GroupingSelect } from "./grouping-select";
 import { LibraryCard } from "./library-card";
+import type { PressHighlightHandlers } from "./press-highlight";
 import { SingleView } from "./single-view";
 
 /** The heading of the trailing group for designs in no Collection. */
@@ -44,13 +54,13 @@ function SectionGrid({
   density,
   columns,
   cardWidth,
-  onOpen,
+  pressFor,
 }: {
   designs: readonly LibraryDesign[];
   density: Exclude<CardDensity, 1>;
   columns: number;
   cardWidth: number;
-  onOpen: (design: LibraryDesign) => void;
+  pressFor: (designId: string) => PressHighlightHandlers;
 }) {
   return (
     <View style={{ gap: LIBRARY_GRID_GAP }}>
@@ -63,7 +73,7 @@ function SectionGrid({
         >
           {row.map((design) => (
             <View key={design.id} style={{ width: cardWidth }}>
-              <LibraryCard design={design} density={density} onPress={() => onOpen(design)} />
+              <LibraryCard design={design} density={density} press={pressFor(design.id)} />
             </View>
           ))}
         </View>
@@ -92,9 +102,38 @@ export function LibraryScreen() {
   const { columns, cardWidth } = libraryGrid(density, contentWidth);
   const arrangement = groupLibraryDesigns(designs, grouping);
   const isEmpty = status === "ready" && designs.length === 0;
-  const openDesign = (design: LibraryDesign) => {
-    router.push({ pathname: "/designs/[id]", params: { id: design.id } });
-  };
+
+  // The press declares its own beats: the held highlight waits out its timer
+  // and sends the elapsed fact back, and the open effect carries the Design.
+  const perform = useCallback(
+    (effect: LibraryScreenEffect, dispatch: (event: LibraryScreenEvent) => void) => {
+      switch (effect.type) {
+        case "hold-cards-open":
+          setTimeout(
+            () => dispatch({ type: "hold-elapsed", designId: effect.designId }),
+            PRESS_HIGHLIGHT_HOLD_MS,
+          );
+          return;
+        case "open-design":
+          router.push({ pathname: "/designs/[id]", params: { id: effect.designId } });
+          return;
+      }
+    },
+    [],
+  );
+
+  const [state, dispatch] = useReducerRunner(
+    libraryScreenReducer,
+    createInitialLibraryScreenState,
+    perform,
+  );
+
+  const pressFor = (designId: string): PressHighlightHandlers => ({
+    pressed: state.press?.designId === designId,
+    onPressIn: () => dispatch({ type: "press-started", designId }),
+    onPressOut: () => dispatch({ type: "press-released", designId }),
+    onPress: () => dispatch({ type: "card-tapped", designId }),
+  });
 
   return (
     <SafeAreaView style={{ flex: 1 }} className="bg-background" edges={["top", "left", "right"]}>
@@ -145,7 +184,7 @@ export function LibraryScreen() {
         <SingleView
           designs={orderedLibraryDesigns(arrangement)}
           width={screenWidth}
-          onOpen={openDesign}
+          pressFor={pressFor}
         />
       ) : (
         <View className="flex-1" style={{ paddingHorizontal: LIBRARY_SIDE_PADDING }}>
@@ -164,7 +203,7 @@ export function LibraryScreen() {
                       density={density}
                       columns={columns}
                       cardWidth={cardWidth}
-                      onOpen={openDesign}
+                      pressFor={pressFor}
                     />
                   </View>
                 ))}
@@ -176,7 +215,7 @@ export function LibraryScreen() {
                   density={density}
                   columns={columns}
                   cardWidth={cardWidth}
-                  onOpen={openDesign}
+                  pressFor={pressFor}
                 />
               </View>
             )}

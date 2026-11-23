@@ -2,6 +2,7 @@ import { useCallback, useState } from "react";
 import { FlatList, View, type NativeScrollEvent, type NativeSyntheticEvent } from "react-native";
 import { Text } from "@/shared/components/ui/text";
 import type { LibraryDesign } from "../lib/query";
+import type { PressHighlightHandlers } from "./press-highlight";
 import { SingleViewPage } from "./single-view-page";
 
 /** The page a settled horizontal offset lands on, kept inside the designs it has. */
@@ -21,12 +22,12 @@ function settledPage(offsetX: number, pageWidth: number, count: number): number 
 export function SingleView({
   designs,
   width,
-  onOpen,
+  pressFor,
 }: {
   designs: readonly LibraryDesign[];
   /** The exact width one page gets, so pages line up with the screen. */
   width: number;
-  onOpen: (design: LibraryDesign) => void;
+  pressFor: (designId: string) => PressHighlightHandlers;
 }) {
   const [page, setPage] = useState(0);
   const settled = Math.min(page, Math.max(designs.length - 1, 0));
@@ -51,7 +52,7 @@ export function SingleView({
         data={designs}
         keyExtractor={(design) => design.id}
         renderItem={({ item }) => (
-          <SingleViewPage design={item} width={width} onPress={() => onOpen(item)} />
+          <SingleViewPage design={item} width={width} press={pressFor(item.id)} />
         )}
         onMomentumScrollEnd={settle}
         onScrollEndDrag={settle}

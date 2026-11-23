@@ -7,7 +7,7 @@ import { DesignStatusBadge } from "@/features/designs/react";
 import { useImageUri } from "@/features/images/react";
 import { Text } from "@/shared/components/ui/text";
 import type { LibraryDesign } from "../lib/query";
-import { PressHighlight } from "./press-highlight";
+import { PressHighlight, type PressHighlightHandlers } from "./press-highlight";
 
 /** How strongly the details panel frosts the photography behind it. */
 const PANEL_BLUR_INTENSITY = 50;
@@ -87,12 +87,12 @@ function SingleViewPanel({
 export function SingleViewPage({
   design,
   width,
-  onPress,
+  press,
 }: {
   design: LibraryDesign;
   /** The page's exact width in dp, so a paged list lines its pages up. */
   width: number;
-  onPress: () => void;
+  press: PressHighlightHandlers;
 }) {
   const uri = useImageUri(design.cover);
   const blurTarget = useRef<ComponentRef<typeof View> | null>(null);
@@ -103,7 +103,7 @@ export function SingleViewPage({
         <PressHighlight
           accessibilityLabel={design.name}
           className="bg-muted h-full w-full"
-          onPress={onPress}
+          {...press}
         >
           {uri ? (
             <Image

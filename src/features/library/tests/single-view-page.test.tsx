@@ -4,6 +4,7 @@ import { ImageStoreProvider } from "@/features/images/react";
 import { createTempImageStore } from "@/features/images/testing";
 import type { Image } from "@/features/images";
 import type { LibraryDesign } from "../lib/query";
+import type { PressHighlightHandlers } from "../components/press-highlight";
 import { SingleViewPage } from "../components/single-view-page";
 
 const INITIAL_METRICS = {
@@ -44,11 +45,19 @@ function libraryDesign(overrides: Partial<LibraryDesign> = {}): LibraryDesign {
   };
 }
 
+/** A page no finger is on, whose tap the test does not read. */
+const IDLE_PRESS: PressHighlightHandlers = {
+  pressed: false,
+  onPressIn: () => {},
+  onPressOut: () => {},
+  onPress: () => {},
+};
+
 async function renderPage(design: LibraryDesign) {
   return render(
     <SafeAreaProvider initialMetrics={INITIAL_METRICS}>
       <ImageStoreProvider store={store}>
-        <SingleViewPage design={design} width={390} onPress={() => {}} />
+        <SingleViewPage design={design} width={390} press={IDLE_PRESS} />
       </ImageStoreProvider>
     </SafeAreaProvider>,
   );

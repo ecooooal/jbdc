@@ -10,7 +10,7 @@ import { Card } from "@/shared/components/ui/card";
 import { Icon } from "@/shared/components/ui/icon";
 import { Text } from "@/shared/components/ui/text";
 import { cn } from "@/shared/lib/utils";
-import { PressHighlight } from "./press-highlight";
+import { PressHighlight, type PressHighlightHandlers } from "./press-highlight";
 
 function Meta({ value, placeholder }: { value: string | null; placeholder: string }) {
   return value ? (
@@ -61,12 +61,17 @@ function Cover({ design, className }: { design: LibraryDesign; className?: strin
   );
 }
 
+/** The card's one corner rule: compact corners at four per row, roomy at two. */
+function cornerClass(density: Exclude<CardDensity, 1>): string {
+  return density === 4 ? "rounded-lg" : "rounded-xl";
+}
+
 /** Density 2 and 4: a cover-first tile. Four per row keeps only the name readable. */
 function Tile({ design, density }: { design: LibraryDesign; density: Exclude<CardDensity, 1> }) {
   const compact = density === 4;
 
   return (
-    <Card className={cn("gap-0 overflow-hidden py-0", compact ? "rounded-lg" : "rounded-xl")}>
+    <Card className={cn("gap-0 overflow-hidden py-0", cornerClass(density))}>
       <Cover design={design} className={cn("w-full", compact ? "aspect-square" : "aspect-[4/5]")} />
       <View className={cn("gap-2", compact ? "p-2" : "p-3")}>
         <Text
@@ -103,17 +108,17 @@ function Tile({ design, density }: { design: LibraryDesign; density: Exclude<Car
 export function LibraryCard({
   design,
   density,
-  onPress,
+  press,
 }: {
   design: LibraryDesign;
   density: Exclude<CardDensity, 1>;
-  onPress: () => void;
+  press: PressHighlightHandlers;
 }) {
   return (
     <PressHighlight
       accessibilityLabel={design.name}
-      overlayClassName={density === 4 ? "rounded-lg" : "rounded-xl"}
-      onPress={onPress}
+      overlayClassName={cornerClass(density)}
+      {...press}
     >
       <Tile design={design} density={density} />
     </PressHighlight>

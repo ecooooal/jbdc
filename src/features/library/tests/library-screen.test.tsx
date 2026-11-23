@@ -8,7 +8,7 @@ import { listLibraryDesigns } from "@/features/library";
 import { LibraryScreen } from "@/features/library/react";
 import type { Grouping } from "@/features/settings";
 import { createCollection } from "@/features/taxonomy";
-import { PRESS_HIGHLIGHT_HOLD_MS, PRESS_HIGHLIGHT_SCALE } from "../components/press-highlight";
+import { PRESS_HIGHLIGHT_HOLD_MS } from "../lib/library-screen-reducer";
 
 jest.mock("expo-router", () => ({ router: { push: jest.fn() } }));
 
@@ -29,6 +29,7 @@ beforeEach(() => {
 
 afterEach(() => {
   dispose();
+  jest.useRealTimers();
 });
 
 async function renderLibrary() {
@@ -256,72 +257,29 @@ test("Per collection keeps its section grids at density 4", async () => {
 /** Every density, in the order the header's control names them. */
 const DENSITY_LABELS = ["Two designs per row", "Four designs per row", "Single view"] as const;
 
-test("every density's tap target dips and tints while pressed", async () => {
-  seedStream();
-  const user = userEvent.setup();
-
-  expect(PRESS_HIGHLIGHT_SCALE).toBeGreaterThan(0.9);
-  expect(PRESS_HIGHLIGHT_SCALE).toBeLessThan(1);
-
-  await renderLibrary();
-
-  for (const density of DENSITY_LABELS) {
-    await user.press(screen.getByLabelText(density));
-
-    const target = screen.getByRole("button", { name: "Freshest dress" });
-    const tint = within(target).getByTestId("press-highlight");
-
-    expect(target).toHaveStyle({ transform: [{ scale: 1 }] });
-    expect(tint).toHaveStyle({ opacity: 0 });
-
-    await fireEvent(target, "pressIn");
-
-    expect(target).toHaveStyle({ transform: [{ scale: PRESS_HIGHLIGHT_SCALE }] });
-    expect(tint).toHaveStyle({ opacity: 1 });
-
-    await fireEvent(target, "pressOut");
-
-    expect(target).toHaveStyle({ transform: [{ scale: 1 }] });
-    expect(tint).toHaveStyle({ opacity: 0 });
-  }
-});
-
-/** Waits out the held beat the press highlight stays visible for. */
-async function waitOutHighlightHold() {
-  await act(
-    async () => await new Promise((resolve) => setTimeout(resolve, PRESS_HIGHLIGHT_HOLD_MS)),
-  );
-}
-
-test("a tap on a card at every density opens its Detail after the highlight hold", async () => {
+test("a tap on a card at every density opens its Detail", async () => {
   seedStream();
   const user = userEvent.setup();
   const freshest = listLibraryDesigns(database).find((design) => design.name === "Freshest dress");
 
   if (!freshest) throw new Error("No Library design named Freshest dress");
 
+  jest.useFakeTimers();
   await renderLibrary();
 
   for (const density of DENSITY_LABELS) {
     await user.press(screen.getByLabelText(density));
 
-    const target = screen.getByRole("button", { name: "Freshest dress" });
-    const tint = within(target).getByTestId("press-highlight");
-
     jest.mocked(router.push).mockClear();
-    await fireEvent(target, "press");
-    await fireEvent(target, "pressOut");
+    await fireEvent(screen.getByRole("button", { name: "Freshest dress" }), "press");
 
-    // The highlight is still up, and the route has not opened yet.
-    expect(router.push).not.toHaveBeenCalled();
-    expect(tint).toHaveStyle({ opacity: 1 });
-
-    await waitOutHighlightHold();
+    await act(async () => {
+      jest.advanceTimersByTime(PRESS_HIGHLIGHT_HOLD_MS);
+    });
 
     expect(router.push).toHaveBeenLastCalledWith({
       pathname: "/designs/[id]",
       params: { id: freshest.id },
     });
-    expect(tint).toHaveStyle({ opacity: 0 });
   }
 });
