@@ -131,8 +131,8 @@ You execute exactly one repair brief on one ticket branch and stop.
 
 - The brief: a `Repair brief — #<n>, reviewed at <sha>` comment on the ticket. The orchestrator's prompt names it,
   or names the ticket and the reviewed head so you can read it:
-  `gh issue view <n> --repo ecooooal/jbdc --json comments --jq '.comments[-1].body'`.
-- The ticket's acceptance criteria: `gh issue view <n> --repo ecooooal/jbdc --json number,title,body,labels`.
+  `gh issue view <n> --json comments --jq '.comments[-1].body'`.
+- The ticket's acceptance criteria: `gh issue view <n> --json number,title,body,labels`.
 - Repo rules when a judgement call is not covered by the brief: `CODING_STANDARDS.md`, `docs/FRONTEND_STATE.md`,
   `GLOSSARY.md`.
 - Your prompt carries the worktree, branch, base sha, and reviewed head.

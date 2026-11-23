@@ -134,7 +134,7 @@ Your dispatch is always an implementation: the ticket and its `## Steps`. A repa
 
 Read these; do not ask the orchestrator to repeat them.
 
-- The ticket: `gh issue view <n> --repo ecooooal/jbdc --json number,title,body,labels`
+- The ticket: `gh issue view <n> --json number,title,body,labels`
 - Repo rules: `AGENTS.md`, `CODING_STANDARDS.md`, `docs/FRONTEND_STATE.md`, `GLOSSARY.md`
 - The orchestrator's prompt carries your ticket number, worktree path, branch, slice branch, and base sha.
 

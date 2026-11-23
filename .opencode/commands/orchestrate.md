@@ -21,6 +21,9 @@ cheap model of your choosing and only execute steps.
   `opencode/hy4-flash-free`. When `$ARGUMENTS` contains the word `deepseek`, pass
   `model: opencode-go/deepseek-v4.1-flash#max` on every dispatch and repair. The token is a switch, not a
   ticket number; strip it before the frontier loop.
+- The model a subagent ran is a recorded fact, read back in §8: `session_v2.model` in
+  `~/.local/share/opencode/opencode.db` carries the `variant`, and `session_v2.tokens_reasoning` carries what
+  the effort spent. `~/.local/share/opencode/log` holds shell events only and cannot answer it.
 
 ## 0. Slice gate
 
@@ -41,7 +44,7 @@ A branch that is an ancestor of `origin/main` has shipped: stop, name it, and as
 For each ticket number in $ARGUMENTS:
 
 ```
-gh issue view <n> --repo ecooooal/jbdc --json number,title,state,body,labels,blockedBy \
+gh issue view <n> --json number,title,state,body,labels,blockedBy \
   --jq '{title, state, labels: [.labels[].name], open_blockers: [.blockedBy.nodes[] | select(.state=="OPEN") | .number], has_steps: (.body | contains("## Steps")), body}'
 ```
 
@@ -54,7 +57,7 @@ Wave order: dispatch the 2 you can, merge, then take the next 2. #36 only after 
 
 ```
 git -C /home/echo/workspace/jbdc rev-parse <slice>
-gh issue comment <n> --repo ecooooal/jbdc --body "Base: <that sha>"
+gh issue comment <n> --body "Base: <that sha>"
 git -C /home/echo/workspace/jbdc worktree add /home/echo/workspace/wt/<n> -b ticket/<n>-<slug> <that sha>
 cd /home/echo/workspace/wt/<n> && pnpm install --frozen-lockfile
 ```
@@ -185,7 +188,21 @@ marks the ticket stalled: leave the branch, report, move on. Never attempt a thi
 
 ## 8. Report
 
-Per ticket: verdict, base sha, SHA range, commit list, model, AC status, findings, merge result.
+Per ticket: verdict, base sha, SHA range, commit list, model as recorded, AC status, findings, merge result.
+
+Read the models back once, across the whole wave:
+
+```
+sqlite3 -column ~/.local/share/opencode/opencode.db \
+  "select substr(title,1,34) as session, model->>'$.variant' as variant,
+          tokens_reasoning as reasoning, tokens_output as output
+     from session_v2 where model->>'$.providerID'='opencode-go'
+     order by time_created desc limit 20;"
+```
+
+A requested `#max` answers as `variant = max` with reasoning tokens above zero. A null variant means the
+dispatch dropped the switch, whatever the tool call accepted.
+
 Held tickets, each with the blocking ticket and the path: `#<n> held behind #<m> (path)`.
 Then: integration branch name and tip, `pnpm check` result, tickets stalled or skipped with reasons, and the open question list.
 Never push, never close tickets, never tick AC boxes, never edit issue bodies or labels — the user does that.
