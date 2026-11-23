@@ -83,7 +83,7 @@ test("the card renders the Cover from the store", async () => {
 
   // expo-image normalizes a source to its list form.
   expect(cover.props.source).toEqual([{ uri: store.uri(design.cover!) }]);
-  expect(screen.queryByTestId("cover-placeholder")).toBeNull();
+  expect(screen.queryByTestId("empty-cover")).toBeNull();
 });
 
 test("the card shows the Cover at both grid densities", async () => {
@@ -102,7 +102,7 @@ test("the card shows the Cover at both grid densities", async () => {
   }
 });
 
-test("an image-less design keeps the quiet placeholder in the grid", async () => {
+test("an image-less design keeps the named plate in place of a Cover", async () => {
   createDesign(database, { name: "Early concept" }, 500);
 
   const design = libraryDesign("Early concept");
@@ -110,6 +110,21 @@ test("an image-less design keeps the quiet placeholder in the grid", async () =>
   await renderCard(design, 2);
 
   expect(design.cover).toBeNull();
-  expect(screen.getByTestId("cover-placeholder")).toBeTruthy();
+  expect(screen.getByTestId("empty-cover")).toBeTruthy();
+  expect(screen.getByTestId("empty-cover-frame")).toBeTruthy();
+  expect(screen.getByText("No photography yet")).toBeTruthy();
+  expect(screen.getAllByText("Early concept")).toHaveLength(1);
   expect(screen.queryByLabelText(/^Cover of /)).toBeNull();
+});
+
+test("the compact plate keeps the name and drops the caption it has no room for", async () => {
+  createDesign(database, { name: "Early concept" }, 500);
+
+  const design = libraryDesign("Early concept");
+
+  await renderCard(design, 4);
+
+  expect(screen.getByTestId("empty-cover")).toBeTruthy();
+  expect(screen.getAllByText("Early concept")).toHaveLength(1);
+  expect(screen.queryByText("No photography yet")).toBeNull();
 });

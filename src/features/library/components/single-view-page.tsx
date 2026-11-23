@@ -6,7 +6,9 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { DesignStatusBadge } from "@/features/designs/react";
 import { useImageUri } from "@/features/images/react";
 import { Text } from "@/shared/components/ui/text";
+import { cn } from "@/shared/lib/utils";
 import type { LibraryDesign } from "../lib/query";
+import { EmptyCover } from "./empty-cover";
 import { PressHighlight, type PressHighlightHandlers } from "./press-highlight";
 
 /** How strongly the details panel frosts the photography behind it. */
@@ -29,8 +31,10 @@ const PANEL_POSITION = { position: "absolute", bottom: 0, left: 0, right: 0 } as
  * The panel over the photography: the Design's name in the serif title face,
  * then its Status pill beside the Category and Collection in the sans face.
  * This is the design system's one blur, and it frosts only the image beneath
- * it: over the dashed placeholder the same content sits on a plain scrim, so
- * nothing blurred ever rests on paper. Its bottom padding clears the home
+ * it. Over a plate there is nothing to frost: the plate already names the
+ * Design, so the panel becomes a plain paper caption with a Thread Line above
+ * it, carrying only the record — Status, Category, Collection — and never
+ * running over the plate's frame. Its bottom padding clears the home
  * indicator, and it lets touches through so a swipe can start anywhere on the
  * page.
  */
@@ -41,18 +45,23 @@ function SingleViewPanel({
 }: {
   design: LibraryDesign;
   blurTarget: BlurTarget;
-  /** True only when a Cover lies beneath the panel; a placeholder is paper. */
+  /** True only when a Cover lies beneath the panel; a plate is paper. */
   overPhotography: boolean;
 }) {
   const insets = useSafeAreaInsets();
   const details = (
     <View
-      className="bg-background/60 gap-2 px-6 pt-4"
+      className={cn(
+        "gap-2 px-6 pt-4",
+        overPhotography ? "bg-background/60" : "bg-background border-border border-t",
+      )}
       style={{ paddingBottom: insets.bottom + 20 }}
     >
-      <Text variant="h3" numberOfLines={2}>
-        {design.name}
-      </Text>
+      {overPhotography ? (
+        <Text variant="h3" numberOfLines={2}>
+          {design.name}
+        </Text>
+      ) : null}
       <View className="flex-row flex-wrap items-center gap-2">
         <DesignStatusBadge status={design.status} />
         <Text variant="muted">
@@ -64,7 +73,7 @@ function SingleViewPanel({
 
   if (!overPhotography) {
     return (
-      <View testID="single-view-panel" pointerEvents="none" style={PANEL_POSITION}>
+      <View testID="single-view-panel" pointerEvents="none">
         {details}
       </View>
     );
@@ -88,8 +97,9 @@ function SingleViewPanel({
 /**
  * One Design as a single-view page: its Cover fills the frame edge to edge,
  * and the blurred panel states what the Owner is looking at. A Design with no
- * Cover keeps the same frame with the dashed placeholder, so every page holds
- * its shape and the panel never jumps.
+ * Cover keeps the same page with the named plate: the plate is inset so its
+ * dashed frame stays whole at every edge, and it ends above the paper caption
+ * rather than under it, so nothing clips the empty state.
  */
 export function SingleViewPage({
   design,
@@ -104,6 +114,18 @@ export function SingleViewPage({
   const uri = useImageUri(design.cover);
   const blurTarget = useRef<ComponentRef<typeof View> | null>(null);
 
+  if (!uri) {
+    return (
+      <View className="h-full overflow-hidden" style={{ width }}>
+        <PressHighlight accessibilityLabel={design.name} className="mb-4 mt-12 flex-1" {...press}>
+          <EmptyCover name={design.name} size="page" className="flex-1" />
+        </PressHighlight>
+
+        <SingleViewPanel design={design} blurTarget={blurTarget} overPhotography={false} />
+      </View>
+    );
+  }
+
   return (
     <View className="h-full overflow-hidden" style={{ width }}>
       <BlurTargetView ref={blurTarget} style={{ flex: 1 }}>
@@ -112,24 +134,17 @@ export function SingleViewPage({
           className="bg-muted h-full w-full"
           {...press}
         >
-          {uri ? (
-            <Image
-              testID="single-view-cover"
-              source={{ uri }}
-              accessibilityLabel={`Cover of ${design.name}`}
-              contentFit="cover"
-              style={{ width: "100%", height: "100%" }}
-            />
-          ) : (
-            <View
-              testID="single-view-placeholder"
-              className="border-border h-full w-full items-center justify-center border border-dashed"
-            />
-          )}
+          <Image
+            testID="single-view-cover"
+            source={{ uri }}
+            accessibilityLabel={`Cover of ${design.name}`}
+            contentFit="cover"
+            style={{ width: "100%", height: "100%" }}
+          />
         </PressHighlight>
       </BlurTargetView>
 
-      <SingleViewPanel design={design} blurTarget={blurTarget} overPhotography={uri !== null} />
+      <SingleViewPanel design={design} blurTarget={blurTarget} overPhotography />
     </View>
   );
 }

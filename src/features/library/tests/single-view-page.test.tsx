@@ -90,7 +90,7 @@ test("the page fills its frame with the Design's Cover", async () => {
   const cover = screen.getByLabelText("Cover of Silk slip dress");
 
   expect(cover.props.source).toEqual([{ uri: store.uri(COVER) }]);
-  expect(screen.queryByTestId("single-view-placeholder")).toBeNull();
+  expect(screen.queryByTestId("empty-cover")).toBeNull();
 });
 
 test("the panel blurs the photography, and only the photography", async () => {
@@ -106,12 +106,15 @@ test("the panel blurs the photography, and only the photography", async () => {
   expect(blurViews()).toHaveLength(0);
 });
 
-test("a Design with no Cover keeps the dashed placeholder and its panel", async () => {
+test("a Design with no Cover keeps the named plate and its paper caption", async () => {
   await renderPage(libraryDesign());
 
-  expect(screen.getByTestId("single-view-placeholder")).toBeTruthy();
+  expect(screen.getByTestId("empty-cover")).toBeTruthy();
+  expect(screen.getByTestId("empty-cover-frame")).toBeTruthy();
+  expect(screen.getByText("No photography yet")).toBeTruthy();
   expect(screen.queryByLabelText(/^Cover of /)).toBeNull();
-  expect(screen.getByText("Silk slip dress")).toBeTruthy();
+  // The plate names the Design; the caption below carries only the record.
+  expect(screen.getAllByText("Silk slip dress")).toHaveLength(1);
   expect(screen.getByText("Concept")).toBeTruthy();
   expect(screen.getByText("Dress · Spring")).toBeTruthy();
 });

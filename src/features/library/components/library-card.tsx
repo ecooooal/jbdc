@@ -1,5 +1,4 @@
 import { Image } from "expo-image";
-import { Shirt } from "lucide-react-native";
 import { View } from "react-native";
 import { designStatusLabel } from "@/features/designs";
 import { DesignStatusBadge } from "@/features/designs/react";
@@ -7,9 +6,9 @@ import { useImageUri } from "@/features/images/react";
 import type { LibraryDesign } from "../lib/query";
 import type { CardDensity } from "@/features/settings";
 import { Card } from "@/shared/components/ui/card";
-import { Icon } from "@/shared/components/ui/icon";
 import { Text } from "@/shared/components/ui/text";
 import { cn } from "@/shared/lib/utils";
+import { EmptyCover } from "./empty-cover";
 import { PressHighlight, type PressHighlightHandlers } from "./press-highlight";
 
 function Meta({ value, placeholder }: { value: string | null; placeholder: string }) {
@@ -33,27 +32,14 @@ function MetaStack({ design }: { design: LibraryDesign }) {
   );
 }
 
-/** The design's Cover, or the quiet stand-in an image-less design keeps. */
-function Cover({ design, className }: { design: LibraryDesign; className?: string }) {
-  const uri = useImageUri(design.cover);
-
-  if (!uri) {
-    return (
-      <View
-        testID="cover-placeholder"
-        className={cn("bg-muted items-center justify-center", className)}
-      >
-        <Icon as={Shirt} className="text-muted-foreground size-5 opacity-60" />
-      </View>
-    );
-  }
-
+/** The design's Cover, when it has one. */
+function Cover({ name, uri, className }: { name: string; uri: string; className?: string }) {
   return (
     <View className={cn("bg-muted overflow-hidden", className)}>
       <Image
         testID="library-cover"
         source={{ uri }}
-        accessibilityLabel={`Cover of ${design.name}`}
+        accessibilityLabel={`Cover of ${name}`}
         contentFit="cover"
         style={{ width: "100%", height: "100%" }}
       />
@@ -69,18 +55,38 @@ function cornerClass(density: Exclude<CardDensity, 1>): string {
 /** Density 2 and 4: a cover-first tile. Four per row keeps only the name readable. */
 function Tile({ design, density }: { design: LibraryDesign; density: Exclude<CardDensity, 1> }) {
   const compact = density === 4;
+  const uri = useImageUri(design.cover);
 
   return (
     <Card className={cn("gap-0 overflow-hidden py-0", cornerClass(density))}>
-      <Cover design={design} className={cn("w-full", compact ? "aspect-square" : "aspect-[4/5]")} />
+      {uri ? (
+        <Cover
+          name={design.name}
+          uri={uri}
+          className={cn("w-full", compact ? "aspect-square" : "aspect-[4/5]")}
+        />
+      ) : (
+        <EmptyCover
+          name={design.name}
+          size={compact ? "compact" : "tile"}
+          className={cn("w-full", compact ? "aspect-square" : "aspect-[4/5]")}
+        />
+      )}
       <View className={cn("gap-2", compact ? "p-2" : "p-3")}>
-        <Text
-          role="heading"
-          className={cn("font-medium", compact ? "text-xs leading-4" : "text-base leading-5")}
-          numberOfLines={2}
-        >
-          {design.name}
-        </Text>
+        {uri ? (
+          <Text
+            role="heading"
+            className={cn("font-medium", compact ? "text-xs leading-4" : "text-base leading-5")}
+            numberOfLines={2}
+          >
+            {design.name}
+          </Text>
+        ) : (
+          // The plate names the Design in its frame; this line keeps an empty
+          // tile the height of a photographed neighbour instead of letting the
+          // grid's rows go ragged where covers are missing.
+          <View className={compact ? "h-4" : "h-5"} />
+        )}
         {compact ? (
           <Text variant="muted" className="text-[10px] leading-3" numberOfLines={1}>
             {designStatusLabel(design.status)}

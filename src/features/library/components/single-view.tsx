@@ -1,6 +1,8 @@
 import { useCallback, useState } from "react";
 import { FlatList, View, type NativeScrollEvent, type NativeSyntheticEvent } from "react-native";
+import { useImageUri } from "@/features/images/react";
 import { Text } from "@/shared/components/ui/text";
+import { cn } from "@/shared/lib/utils";
 import type { LibraryDesign } from "../lib/query";
 import type { PressHighlightHandlers } from "./press-highlight";
 import { SingleViewPage } from "./single-view-page";
@@ -31,6 +33,9 @@ export function SingleView({
 }) {
   const [page, setPage] = useState(0);
   const settled = Math.min(page, Math.max(designs.length - 1, 0));
+  // The counter follows the page it counts: over photography it is the one
+  // sanctioned translucent black, and over a plate it is a Kraft pill on paper.
+  const overPhotography = useImageUri(designs[settled]?.cover ?? null) !== null;
   const settle = useCallback(
     (event: NativeSyntheticEvent<NativeScrollEvent>) => {
       const { contentOffset, layoutMeasurement } = event.nativeEvent;
@@ -59,10 +64,19 @@ export function SingleView({
       />
       {designs.length > 0 ? (
         <View
+          testID="single-view-counter"
           pointerEvents="none"
-          className="absolute right-4 top-4 rounded-full bg-black/60 px-3 py-1"
+          className={cn(
+            "absolute right-4 top-4 rounded-full px-3 py-1",
+            overPhotography ? "bg-black/60" : "bg-muted",
+          )}
         >
-          <Text className="text-xs font-semibold text-white">
+          <Text
+            className={cn(
+              "text-xs font-semibold",
+              overPhotography ? "text-white" : "text-foreground",
+            )}
+          >
             {settled + 1} / {designs.length}
           </Text>
         </View>
