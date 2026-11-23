@@ -6,7 +6,7 @@ colors:
   surface: "#F8F6F2"
   surface-secondary: "#F2EBDD"
   foreground: "#292724"
-  foreground-secondary: "#77736C"
+  foreground-secondary: "#6E6A63"
   border: "#E8E5DF"
   wood: "#B38A64"
   wood-foreground: "#292724"
@@ -198,7 +198,7 @@ A warm, low-saturation paper palette whose only saturated voices are two accents
 - **Unbleached Paper** (`surface`, #F8F6F2 / #303030): every resting surface content sits on — cards, tiles, dialogs.
 - **Kraft Layer** (`surface-secondary`, #F2EBDD / #424242): the inset group one step into a surface — form sections, field tables, image placeholders, the fill of a selected stage chip.
 - **Ink Thread** (`foreground`, #292724 / #F0EEE9): primary text — the ink of the ledger.
-- **Faded Thread** (`foreground-secondary`, #77736C / #B5B0A7): secondary text — labels, meta lines, counts, quiet descriptions.
+- **Faded Thread** (`foreground-secondary`, #6E6A63 / #B5B0A7): secondary text — labels, meta lines, counts, quiet descriptions.
 - **Thread Line** (`border`, #E8E5DF / #444444): hairline borders and input strokes.
 
 The dark scheme is the same ledger by lamplight: paper goes near-black, accents lift instead of saturate, and Ink Thread becomes warm off-white. Both schemes are first-class; every screen is designed and checked in both.

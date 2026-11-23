@@ -79,6 +79,8 @@ test("the card renders the Cover from the store", async () => {
 
   await renderCard(design, 2);
 
+  expect(screen.getByRole("heading", { name: "Wool coat" })).toHaveProp("aria-level", 4);
+
   const cover = screen.getByLabelText("Cover of Wool coat");
 
   // expo-image normalizes a source to its list form.

@@ -145,14 +145,26 @@ export function LibraryScreen() {
   return (
     <SafeAreaView style={{ flex: 1 }} className="bg-background" edges={["top", "left", "right"]}>
       <View className="pt-6" style={{ paddingHorizontal: LIBRARY_SIDE_PADDING }}>
-        <View className="z-10 flex-row items-center justify-between gap-3">
+        <View className="z-10 flex-row flex-wrap items-center gap-3">
           <GroupingSelect grouping={grouping} onChange={setGrouping} />
-          <View className="flex-row items-center gap-2">
-            <DensityControl density={density} onChange={setDensity} />
-            <Button size="icon" variant="ghost" disabled accessibilityLabel="Search">
+          <DensityControl density={density} onChange={setDensity} />
+          <View className="ml-auto flex-row items-center gap-2">
+            <Button
+              size="icon"
+              variant="ghost"
+              disabled
+              accessibilityLabel="Search"
+              className="h-12 w-12 sm:h-12 sm:w-12"
+            >
               <Icon as={Search} />
             </Button>
-            <Button size="icon" variant="ghost" disabled accessibilityLabel="Filter">
+            <Button
+              size="icon"
+              variant="ghost"
+              disabled
+              accessibilityLabel="Filter"
+              className="h-12 w-12 sm:h-12 sm:w-12"
+            >
               <Icon as={SlidersHorizontal} />
             </Button>
           </View>
@@ -198,7 +210,9 @@ export function LibraryScreen() {
                     testID={`library-section-${section.collection ?? NO_COLLECTION_KEY}`}
                     className="gap-3"
                   >
-                    <Text variant="h4">{section.collection ?? NO_COLLECTION_LABEL}</Text>
+                    <Text variant="h4" aria-level={3}>
+                      {section.collection ?? NO_COLLECTION_LABEL}
+                    </Text>
                     <SectionGrid
                       designs={section.designs}
                       density={density}

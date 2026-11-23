@@ -17,7 +17,8 @@ const GROUPING_LABELS: Record<Grouping, string> = {
  * The Library's grouping choice, in the header corner where the screen title
  * used to sit. The trigger shows the current grouping and opens the two
  * choices beneath it; picking one hands the choice to the hook, which persists
- * it.
+ * it. The trigger keeps the platform's 48 dp touch height while the type stays
+ * the header's own size.
  */
 export function GroupingSelect({
   grouping,
@@ -35,7 +36,7 @@ export function GroupingSelect({
         if (next) onChange(next);
       }}
     >
-      <SelectTrigger accessibilityLabel="Grouping">
+      <SelectTrigger accessibilityLabel="Grouping" className="h-auto min-h-12 sm:h-auto">
         <SelectValue placeholder={GROUPING_LABELS[grouping]} />
       </SelectTrigger>
       <SelectContent>

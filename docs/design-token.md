@@ -15,7 +15,7 @@
     surfaceSecondary: "#F2EBDD",
 
     foreground: "#292724",
-    foregroundSecondary: "#77736C",
+    foregroundSecondary: "#6E6A63",
 
     border: "#E8E5DF",
 

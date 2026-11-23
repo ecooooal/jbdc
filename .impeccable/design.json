@@ -49,8 +49,8 @@
       "foreground-secondary": {
         "role": "neutral",
         "displayName": "Faded Thread",
-        "canonical": "#77736C",
-        "tonalRamp": ["#33312E", "#4A4743", "#615E5A", "#77736C", "#8E8A83", "#A6A19A", "#BEB9B2", "#D6D1C9"]
+        "canonical": "#6E6A63",
+        "tonalRamp": ["#33312E", "#4A4743", "#615E5A", "#6E6A63", "#8E8A83", "#A6A19A", "#BEB9B2", "#D6D1C9"]
       },
       "border": {
         "role": "neutral",
@@ -129,7 +129,7 @@
       "refersTo": "input",
       "description": "A paper field with a hairline stroke; focus is carried by the stroke and a subtle ring.",
       "html": "<input class=\"ds-input\" placeholder=\"Design name\" />",
-      "css": ".ds-input { box-sizing: border-box; width: 100%; background: #FFFFFF; color: #292724; border: 1px solid #E8E5DF; border-radius: 8px; height: 40px; padding: 0 12px; font: 400 16px/1.5 'DM Sans', system-ui, sans-serif; } .ds-input::placeholder { color: #77736C; } .ds-input:focus-visible { outline: none; border-color: #687C68; box-shadow: 0 0 0 3px rgba(104,124,104,0.25); } .ds-input:disabled { opacity: 0.5; }"
+      "css": ".ds-input { box-sizing: border-box; width: 100%; background: #FFFFFF; color: #292724; border: 1px solid #E8E5DF; border-radius: 8px; height: 40px; padding: 0 12px; font: 400 16px/1.5 'DM Sans', system-ui, sans-serif; } .ds-input::placeholder { color: #6E6A63; } .ds-input:focus-visible { outline: none; border-color: #687C68; box-shadow: 0 0 0 3px rgba(104,124,104,0.25); } .ds-input:disabled { opacity: 0.5; }"
     },
     {
       "name": "Status Badges",
@@ -145,7 +145,7 @@
       "refersTo": "card",
       "description": "A cover-first paper mount: image block, then name, meta, and status pill.",
       "html": "<div class=\"ds-card-tile\"><div class=\"ds-card-cover\"></div><div class=\"ds-card-body\"><div class=\"ds-card-name\">Sunday Afternoon</div><div class=\"ds-card-meta\">Dress · Summer 2026</div><span class=\"ds-badge ds-badge-progress\">In Development</span></div></div>",
-      "css": ".ds-card-tile { display: flex; flex-direction: column; background: #F8F6F2; border: 1px solid #E8E5DF; border-radius: 14px; overflow: hidden; box-shadow: 0 1px 2px rgba(0,0,0,0.05); cursor: pointer; max-width: 220px; } .ds-card-tile:active { transform: scale(0.98); box-shadow: 0 1px 2px rgba(0,0,0,0.05), inset 0 0 0 9999px rgba(41,39,36,0.05); } .ds-card-cover { aspect-ratio: 4/5; background: #F2EBDD; } .ds-card-body { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; padding: 12px; } .ds-card-name { font: 500 16px/1.25 'DM Sans', system-ui, sans-serif; color: #292724; } .ds-card-meta { font: 400 14px/1.4 'DM Sans', system-ui, sans-serif; color: #77736C; } .ds-badge { display: inline-flex; align-items: center; border-radius: 9999px; padding: 2px 8px; font: 500 12px/1.2 'DM Sans', system-ui, sans-serif; } .ds-badge-progress { background: #687C68; color: #FFFFFF; }"
+      "css": ".ds-card-tile { display: flex; flex-direction: column; background: #F8F6F2; border: 1px solid #E8E5DF; border-radius: 14px; overflow: hidden; box-shadow: 0 1px 2px rgba(0,0,0,0.05); cursor: pointer; max-width: 220px; } .ds-card-tile:active { transform: scale(0.98); box-shadow: 0 1px 2px rgba(0,0,0,0.05), inset 0 0 0 9999px rgba(41,39,36,0.05); } .ds-card-cover { aspect-ratio: 4/5; background: #F2EBDD; } .ds-card-body { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; padding: 12px; } .ds-card-name { font: 500 16px/1.25 'DM Sans', system-ui, sans-serif; color: #292724; } .ds-card-meta { font: 400 14px/1.4 'DM Sans', system-ui, sans-serif; color: #6E6A63; } .ds-badge { display: inline-flex; align-items: center; border-radius: 9999px; padding: 2px 8px; font: 500 12px/1.2 'DM Sans', system-ui, sans-serif; } .ds-badge-progress { background: #687C68; color: #FFFFFF; }"
     },
     {
       "name": "Journey Stage Chip",
@@ -153,7 +153,7 @@
       "refersTo": "chip-stage-active",
       "description": "One image stage; selected state reads as active with a sage border on a Kraft fill.",
       "html": "<button class=\"ds-stage-chip ds-stage-chip-selected\"><span class=\"ds-stage-thumb\"></span><span class=\"ds-stage-text\"><span class=\"ds-stage-name\">Prototype</span><span class=\"ds-stage-count\">3 images</span></span></button>",
-      "css": ".ds-stage-chip { display: inline-flex; align-items: center; gap: 8px; border: 1px solid #E8E5DF; border-radius: 9999px; padding: 4px 12px 4px 4px; background: transparent; cursor: pointer; } .ds-stage-chip-selected { border: 1.5px solid #687C68; background: #F2EBDD; } .ds-stage-thumb { width: 32px; height: 32px; border-radius: 9999px; background: #F2EBDD; } .ds-stage-text { display: flex; flex-direction: column; align-items: flex-start; } .ds-stage-name { font: 600 12px/1.2 'DM Sans', system-ui, sans-serif; color: #292724; } .ds-stage-count { font: 400 10px/1.2 'DM Sans', system-ui, sans-serif; color: #77736C; }"
+      "css": ".ds-stage-chip { display: inline-flex; align-items: center; gap: 8px; border: 1px solid #E8E5DF; border-radius: 9999px; padding: 4px 12px 4px 4px; background: transparent; cursor: pointer; } .ds-stage-chip-selected { border: 1.5px solid #687C68; background: #F2EBDD; } .ds-stage-thumb { width: 32px; height: 32px; border-radius: 9999px; background: #F2EBDD; } .ds-stage-text { display: flex; flex-direction: column; align-items: flex-start; } .ds-stage-name { font: 600 12px/1.2 'DM Sans', system-ui, sans-serif; color: #292724; } .ds-stage-count { font: 400 10px/1.2 'DM Sans', system-ui, sans-serif; color: #6E6A63; }"
     },
     {
       "name": "Dashed Add Card",
@@ -161,7 +161,7 @@
       "refersTo": "card",
       "description": "The system's only invitation to attach — a drawn hole at the end of a stage strip.",
       "html": "<button class=\"ds-add-card\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M5 12h14\"/><path d=\"M12 5v14\"/></svg><span>Add</span></button>",
-      "css": ".ds-add-card { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; width: 64px; aspect-ratio: 3/4; background: #F2EBDD; color: #77736C; border: 1.5px dashed #E8E5DF; border-radius: 10px; cursor: pointer; font: 400 10px/1.2 'DM Sans', system-ui, sans-serif; } .ds-add-card:active { opacity: 0.7; }"
+      "css": ".ds-add-card { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; width: 64px; aspect-ratio: 3/4; background: #F2EBDD; color: #6E6A63; border: 1.5px dashed #E8E5DF; border-radius: 10px; cursor: pointer; font: 400 10px/1.2 'DM Sans', system-ui, sans-serif; } .ds-add-card:active { opacity: 0.7; }"
     },
     {
       "name": "Gallery Hero",
@@ -177,7 +177,7 @@
       "refersTo": "card",
       "description": "One History entry: timestamp in faded thread, then the recorded sections as label + lines.",
       "html": "<div class=\"ds-event-card\"><div class=\"ds-event-time\">Nov 23, 2026, 2:04 PM</div><div class=\"ds-event-section\"><div class=\"ds-event-label\">Status</div><div class=\"ds-event-line\">Concept → In Development</div></div></div>",
-      "css": ".ds-event-card { display: flex; flex-direction: column; gap: 8px; background: #FFFFFF; border: 1px solid #E8E5DF; border-radius: 14px; padding: 12px 16px; max-width: 360px; } .ds-event-time { font: 400 14px/1.4 'DM Sans', system-ui, sans-serif; color: #77736C; } .ds-event-section { display: flex; flex-direction: column; gap: 4px; } .ds-event-label { font: 400 14px/1.4 'DM Sans', system-ui, sans-serif; color: #77736C; } .ds-event-line { font: 400 16px/1.5 'DM Sans', system-ui, sans-serif; color: #292724; }"
+      "css": ".ds-event-card { display: flex; flex-direction: column; gap: 8px; background: #FFFFFF; border: 1px solid #E8E5DF; border-radius: 14px; padding: 12px 16px; max-width: 360px; } .ds-event-time { font: 400 14px/1.4 'DM Sans', system-ui, sans-serif; color: #6E6A63; } .ds-event-section { display: flex; flex-direction: column; gap: 4px; } .ds-event-label { font: 400 14px/1.4 'DM Sans', system-ui, sans-serif; color: #6E6A63; } .ds-event-line { font: 400 16px/1.5 'DM Sans', system-ui, sans-serif; color: #292724; }"
     }
   ],
   "narrative": {

@@ -6,7 +6,7 @@ colors:
   surface: "#F8F6F2"
   surface-secondary: "#F2EBDD"
   foreground: "#292724"
-  foreground-secondary: "#77736C"
+  foreground-secondary: "#6E6A63"
   border: "#E8E5DF"
   wood: "#B38A64"
   wood-foreground: "#292724"
