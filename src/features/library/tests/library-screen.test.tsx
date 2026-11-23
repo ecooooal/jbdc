@@ -401,6 +401,30 @@ test("Per collection regroups the density-2 grid under Collection headers", asyn
   expect(unfiled.getByText("No season dress")).toBeTruthy();
 });
 
+test("Per collection reads each Collection heading before its Designs", async () => {
+  seedCollections();
+
+  await renderLibrary();
+  await chooseGrouping("per-collection");
+
+  // The outline the screen reader walks: one Collection, its Designs, the next.
+  const outline = [
+    "Spring",
+    "Spring blouse",
+    "Spring skirt",
+    "Spring dress",
+    "Spring scarf",
+    "Autumn",
+    "Autumn coat",
+    "No collection",
+    "No season dress",
+  ];
+  const headings = screen.getAllByRole("heading");
+
+  expect(headings).toHaveLength(outline.length);
+  outline.forEach((name, index) => expect(headings[index]).toHaveTextContent(name));
+});
+
 test("Per collection keeps its section grids at density 4", async () => {
   seedCollections();
   const user = userEvent.setup();
