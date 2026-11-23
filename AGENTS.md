@@ -57,6 +57,37 @@ See `docs/EXPO-DB.md` when handling the application database
   screen's state or any rendered test. Reducers own decisions; rendered tests
   are for wiring only.
 
+### Frontend skills
+
+Before writing any frontend or UI code, always load the Expo frontend skills:
+`expo-design-system`, `expo-animation`, and `uniwind`. Load `expo-data-fetching`
+when the work fetches or caches data, and `expo-sqlite` when it touches the
+database. They are the stack's manuals; they override habit, not the repo rules
+below.
+
+### Design work (impeccable)
+
+`impeccable` and any design pass are bound by this repo, not only by
+PRODUCT.md/DESIGN.md. Before the skill's playbook, read `CODING_STANDARDS.md`,
+`docs/FRONTEND_STATE.md`, `docs/EXPO-FOLDER-STRUCTURE.md`, `GLOSSARY.md`, and
+the ADRs the surface touches.
+
+- Precedence: this repo's docs win on architecture, tests, imports, and naming;
+  `DESIGN.md` wins on visual decisions; `PRODUCT.md` wins on voice. The skill's
+  references never override the first.
+- Always load the Expo frontend skills above; design work is frontend work.
+- A design decision that changes state lives in the surface reducer
+  (`src/features/<feature>/lib/<surface>-reducer.ts`). Route changes, app
+  backgrounding, and leaving a screen are flush exits, not component `useState`.
+  A component effect may subscribe and dispatch a fact; it never sets state and
+  never decides.
+- Decisions are tested on the reducer; rendered tests cover wiring only. Never
+  cover one rule in both layers.
+- Resolve every colour, type, spacing, and radius through `DESIGN.md` /
+  `src/global.css`; no hardcoded values.
+- `pnpm check` is the exit condition. If the design needs a new rule, stop and
+  file a ticket; do not smuggle it into the diff.
+
 ### Deep-module packages
 
 Packages under `src/features` are deep modules — import only through a package's entry points (its root files); everything in `lib/`/`tests/` is private. 
