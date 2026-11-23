@@ -1,8 +1,8 @@
 import { router } from "expo-router";
-import { Plus } from "lucide-react-native";
+import { Plus, Search, SlidersHorizontal } from "lucide-react-native";
 import { ScrollView, useWindowDimensions, View } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
-import { useCardDensity } from "@/features/settings/react";
+import { useCardDensity, useGrouping } from "@/features/settings/react";
 import { Button } from "@/shared/components/ui/button";
 import { Icon } from "@/shared/components/ui/icon";
 import { Text } from "@/shared/components/ui/text";
@@ -14,6 +14,7 @@ import {
 } from "../lib/grid";
 import { useLibraryDesigns } from "../lib/use-library-designs";
 import { DensityControl } from "./density-control";
+import { GroupingSelect } from "./grouping-select";
 import { LibraryCard } from "./library-card";
 
 /** Splits the designs into the rows the chosen density asks for. */
@@ -35,6 +36,7 @@ function chunk<T>(items: readonly T[], size: number): T[][] {
 export function LibraryScreen() {
   const { designs, error, status } = useLibraryDesigns();
   const { density, setDensity } = useCardDensity();
+  const { grouping, setGrouping } = useGrouping();
   const { width: viewportWidth } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const contentWidth = Math.max(
@@ -48,8 +50,8 @@ export function LibraryScreen() {
   return (
     <SafeAreaView style={{ flex: 1 }} className="bg-background" edges={["top", "left", "right"]}>
       <View className="flex-1 pt-6" style={{ paddingHorizontal: LIBRARY_SIDE_PADDING }}>
-        <View className="flex-row items-center justify-between gap-3">
-          <Text variant="h3">Library</Text>
+        <View className="z-10 flex-row items-center justify-between gap-3">
+          <GroupingSelect grouping={grouping} onChange={setGrouping} />
           <View className="flex-row items-center gap-2">
             <DensityControl density={density} onChange={setDensity} />
             {designs.length > 0 ? (
@@ -62,6 +64,12 @@ export function LibraryScreen() {
                 <Icon as={Plus} />
               </Button>
             ) : null}
+            <Button size="icon" variant="ghost" disabled accessibilityLabel="Search">
+              <Icon as={Search} />
+            </Button>
+            <Button size="icon" variant="ghost" disabled accessibilityLabel="Filter">
+              <Icon as={SlidersHorizontal} />
+            </Button>
           </View>
         </View>
 

@@ -3,3 +3,4 @@
  * through the module's hooks; no screen touches the `settings` table itself.
  */
 export { useCardDensity } from "./lib/use-card-density";
+export { useGrouping } from "./lib/use-grouping";
