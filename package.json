@@ -91,6 +91,7 @@
   },
   "scripts": {
     "start": "expo start",
+    "device": "node scripts/device.mjs",
     "reset-project": "node ./scripts/reset-project.js",
     "android": "expo run:android",
     "ios": "expo run:ios",
