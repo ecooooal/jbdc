@@ -15,13 +15,6 @@ import { PressHighlight, type PressHighlightHandlers } from "./press-highlight";
 /** How strongly the details panel frosts the photography behind it. */
 const PANEL_BLUR_INTENSITY = 50;
 
-/**
- * The room the details panel takes above the bottom safe inset: its top
- * padding, a two-line title, the status row, and the gap between them. A
- * control that must not cover the panel sits above this.
- */
-export const SINGLE_VIEW_PANEL_CLEARANCE = 160;
-
 /** What the BlurView blurs: the page's photography layer. */
 type BlurTarget = RefObject<ComponentRef<typeof View> | null>;
 
@@ -35,8 +28,9 @@ const PANEL_POSITION = { position: "absolute", bottom: 0, left: 0, right: 0 } as
  * a plate there is nothing to frost: the plate already names the Design, so
  * the panel becomes a plain paper caption with a Thread Line above it,
  * carrying only the record — Status and taxonomy — and never running over the
- * plate's frame. Its bottom padding clears the home indicator, and it lets
- * touches through so a swipe can start anywhere on the page.
+ * plate's frame. Its bottom padding clears the home indicator, its record row
+ * stops short of the FAB's corner, and it lets touches through so a swipe can
+ * start anywhere on the page.
  */
 function SingleViewPanel({
   design,
@@ -63,7 +57,7 @@ function SingleViewPanel({
           {design.name}
         </Text>
       ) : null}
-      <View className="flex-row flex-wrap items-center gap-2">
+      <View className="flex-row flex-wrap items-center gap-2 pr-16">
         <DesignStatusBadge status={design.status} />
         {taxonomy ? (
           <Text className="text-muted-foreground font-mono text-sm leading-5">{taxonomy}</Text>

@@ -10,8 +10,14 @@ Target: `src/features/library/components/library-screen.tsx` (the Library screen
 (`2026-11-23T20-18-35Z`) carries the current work: the grid's inverted voice,
 and the 4-up tile. **4-up is dropped (approved):** a 4-up tile at the type floor
 cannot hold the Design's name and the full Status pill. Density is now 1 / 2;
-the typeset pass gives the 2-up tile the Cormorant name, one mono taxonomy
-line, equal-height tiles whose Status pills align, and no four-up lane.
+the typeset pass gives the 2-up tile the Cormorant name, equal-height tiles
+whose Status pills align, and no four-up lane.
+
+**Distill (2026-11-24):** the 2-up tile stops at the Cover, the Cormorant name,
+and the Status pill; the mono taxonomy line moved to the single view, because
+a wrapped line made row heights volatile. The density control draws the layouts
+(one page / two columns) instead of numerals, and the FAB holds one corner at
+every density while the single-view panel reserves it.
 
 ## Evidence base
 

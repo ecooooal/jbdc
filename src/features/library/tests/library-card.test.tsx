@@ -61,13 +61,10 @@ function libraryDesign(name: string): LibraryDesign {
   return design;
 }
 
-async function renderCard(
-  design: LibraryDesign,
-  { omitCollection = false }: { omitCollection?: boolean } = {},
-) {
+async function renderCard(design: LibraryDesign) {
   return render(
     <ImageStoreProvider store={store}>
-      <LibraryCard design={design} omitCollection={omitCollection} press={IDLE_PRESS} />
+      <LibraryCard design={design} press={IDLE_PRESS} />
     </ImageStoreProvider>,
   );
 }
@@ -115,7 +112,7 @@ test("the tile names the Design in the card body, not twice in the plate", async
   expect(screen.getAllByRole("heading")).toHaveLength(1);
 });
 
-test("the tile prints one taxonomy line in the mono face", async () => {
+test("the tile leaves taxonomy to the single view", async () => {
   const category = createCategory(database, { name: "Blouse" }, 1);
   const collection = createCollection(database, { name: "Summer", year: 2026 }, 2);
 
@@ -127,32 +124,9 @@ test("the tile prints one taxonomy line in the mono face", async () => {
 
   await renderCard(libraryDesign("Wool coat"));
 
-  expect(screen.getByText("Blouse · Summer (2026)")).toBeTruthy();
-});
-
-test("a Collection section leaves the repeated Collection out of the tile", async () => {
-  const category = createCategory(database, { name: "Blouse" }, 1);
-  const collection = createCollection(database, { name: "Summer", year: 2026 }, 2);
-
-  createDesign(
-    database,
-    { name: "Wool coat", categoryId: category.id, collectionId: collection.id },
-    500,
-  );
-
-  await renderCard(libraryDesign("Wool coat"), { omitCollection: true });
-
-  expect(screen.getByText("Blouse")).toBeTruthy();
   expect(screen.queryByText("Blouse · Summer (2026)")).toBeNull();
-});
-
-test("an unfiled Design gets no placeholder taxonomy", async () => {
-  createDesign(database, { name: "Early concept" }, 500);
-
-  await renderCard(libraryDesign("Early concept"));
-
-  expect(screen.queryByText("No category")).toBeNull();
-  expect(screen.queryByText("No collection")).toBeNull();
+  expect(screen.queryByText("Blouse")).toBeNull();
+  expect(screen.queryByText("Summer (2026)")).toBeNull();
 });
 
 test("the tile keeps Status in its pill", async () => {

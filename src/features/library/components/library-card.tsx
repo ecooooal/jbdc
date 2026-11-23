@@ -3,7 +3,6 @@ import { View } from "react-native";
 import { DesignStatusBadge } from "@/features/designs/react";
 import { useImageUri } from "@/features/images/react";
 import type { LibraryDesign } from "../lib/query";
-import { taxonomyLine } from "../lib/taxonomy-line";
 import { Card } from "@/shared/components/ui/card";
 import { Text } from "@/shared/components/ui/text";
 import { EmptyCover } from "./empty-cover";
@@ -26,14 +25,15 @@ function Cover({ name, uri }: { name: string; uri: string }) {
 
 /**
  * Two per row: a cover-first tile. The Design's name is the loudest thing in
- * it — the title face, the same voice the single view gives it — over one
- * taxonomy line and the Status pill. The card fills its row's height and the
- * pill sits at the bottom, so a tile with a shorter name or no taxonomy still
- * ends on the same line as its neighbour.
+ * it — the title face, the same voice the single view gives it — over the
+ * Status pill. The grid leaves taxonomy to the single view: a wrapped mono
+ * line made neighbouring tiles taller than their content, so the tile keeps
+ * only what survives a glance. The card fills its row's height and the pill
+ * sits at the bottom, so a tile with a shorter name still ends on the same
+ * line as its neighbour.
  */
-function Tile({ design, omitCollection }: { design: LibraryDesign; omitCollection: boolean }) {
+function Tile({ design }: { design: LibraryDesign }) {
   const uri = useImageUri(design.cover);
-  const taxonomy = taxonomyLine(design, { omitCollection });
 
   return (
     <Card className="flex-1 gap-0 overflow-hidden rounded-xl py-0">
@@ -50,11 +50,6 @@ function Tile({ design, omitCollection }: { design: LibraryDesign; omitCollectio
         >
           {design.name}
         </Text>
-        {taxonomy ? (
-          <Text className="text-muted-foreground font-mono text-xs leading-4" numberOfLines={2}>
-            {taxonomy}
-          </Text>
-        ) : null}
         <View className="flex-1" />
         <View className="self-start">
           <DesignStatusBadge status={design.status} />
@@ -71,12 +66,9 @@ function Tile({ design, omitCollection }: { design: LibraryDesign; omitCollectio
  */
 export function LibraryCard({
   design,
-  omitCollection = false,
   press,
 }: {
   design: LibraryDesign;
-  /** Inside a Collection section the header already names the Collection. */
-  omitCollection?: boolean;
   press: PressHighlightHandlers;
 }) {
   return (
@@ -86,7 +78,7 @@ export function LibraryCard({
       overlayClassName="rounded-xl"
       {...press}
     >
-      <Tile design={design} omitCollection={omitCollection} />
+      <Tile design={design} />
     </PressHighlight>
   );
 }

@@ -10,7 +10,7 @@ import { listLibraryDesigns } from "@/features/library";
 import { LibraryScreen } from "@/features/library/react";
 import type { Grouping } from "@/features/settings";
 import { ThemeChoiceProvider } from "@/features/settings/react";
-import { createCategory, createCollection } from "@/features/taxonomy";
+import { createCollection } from "@/features/taxonomy";
 import { PRESS_HIGHLIGHT_HOLD_MS } from "../lib/library-screen-reducer";
 
 jest.mock("expo-router", () => ({ router: { push: jest.fn() }, useFocusEffect: jest.fn() }));
@@ -401,25 +401,6 @@ test("Per collection regroups the density-2 grid under Collection headers", asyn
   expect(unfiled.getByText("No season dress")).toBeTruthy();
 });
 
-test("a Collection section leaves its Collection out of the tiles' taxonomy", async () => {
-  const category = createCategory(database, { name: "Blouse" }, 1);
-  const collection = createCollection(database, { name: "Summer", year: 2026 }, 2);
-
-  createDesign(
-    database,
-    { name: "Linen dress", categoryId: category.id, collectionId: collection.id },
-    3000,
-  );
-
-  await renderLibrary();
-  await chooseGrouping("per-collection");
-
-  const summer = within(screen.getByTestId("library-section-Summer (2026)"));
-
-  expect(summer.getByText("Blouse")).toBeTruthy();
-  expect(summer.queryByText("Blouse · Summer (2026)")).toBeNull();
-});
-
 test("Per collection reads each Collection heading before its Designs", async () => {
   seedCollections();
 
@@ -452,6 +433,22 @@ test("the density control offers the single view and two designs per row", async
   expect(screen.getByLabelText("Single view")).toBeTruthy();
   expect(screen.getByLabelText("Two designs per row")).toBeTruthy();
   expect(screen.queryByLabelText("Four designs per row")).toBeNull();
+  // The segments draw the layout; no numeral has to be memorised.
+  expect(screen.queryByText("1")).toBeNull();
+  expect(screen.queryByText("2")).toBeNull();
+});
+
+test("the FAB keeps one corner when the density changes", async () => {
+  seedStream();
+  const user = userEvent.setup();
+
+  await renderLibrary();
+
+  const twoUpBottom = screen.getByTestId("library-fab-anchor").props.style.bottom;
+
+  await user.press(screen.getByLabelText("Single view"));
+
+  expect(screen.getByTestId("library-fab-anchor").props.style.bottom).toBe(twoUpBottom);
 });
 
 /** Every density, in the order the header's control names them. */

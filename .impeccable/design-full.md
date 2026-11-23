@@ -319,14 +319,14 @@ The library is uniwind + rn-primitives with shadcn-style slot names; every color
 ### Chips & toggles
 
 - **Journey stage chip:** Pill with a 32px round thumbnail, stage name in Label-small semibold, and a muted count below. Unselected: Thread Line border on the page. Selected: Muslin Sage border on a Kraft fill.
-- **Density control:** Outlined segmented pill group (1 / 2 / 4); the chosen segment takes the wood-tinted selected state.
+- **Density control:** Outlined segmented group drawing the two layouts — one page, or two columns — instead of numerals; the chosen segment takes the wood-tinted selected state.
 
 ### Cards
 
 - **Character:** Paper mounts for photography and records.
 - **Corner style:** 14px (10px for list rows and compact tiles).
 - **Background:** Unbleached Paper with a Thread Line hairline and the whisper shadow.
-- **Structure:** Cover-first tiles — image block on top, 12–16px text block below (name, then meta, then status pill). List row: 64px cover, name, one meta line, trailing badge.
+- **Structure:** Cover-first tiles — image block on top, then the Design's name and the Status pill; the single view carries Category and Collection. List row: 64px cover, name, one meta line, trailing badge.
 - **Press:** Whole card is the button; pressed cards dip slightly and take a faint ink wash, held a beat before Detail opens.
 - **Insets:** Grouped records inside a card sit on a Kraft Layer block (14px radius, 16px padding) — the current bordered rows are the scaffold precursor of this committed pattern.
 

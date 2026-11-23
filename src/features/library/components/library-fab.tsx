@@ -66,7 +66,8 @@ export const FAB_SCROLL_CLEARANCE = 56 + 12;
  * farthest. Add opens the create screen, the theme row flips the app between
  * light and dark and persists the choice, and Settings says "Coming soon" until
  * its screen exists. The expansion rises and fades in inside the quiet motion
- * budget; the button always sits above the single view's details panel.
+ * budget; the button keeps one corner at every density, and the single view's
+ * panel leaves that corner clear.
  *
  * The Library owns whether the actions are open; this component only sends
  * what happened. Any exit shuts them: a tap outside, choosing an action,
@@ -126,6 +127,7 @@ export function LibraryFab({
         />
       ) : null}
       <View
+        testID="library-fab-anchor"
         pointerEvents="box-none"
         className="absolute end-6 start-6 z-30 items-end"
         style={{ bottom }}

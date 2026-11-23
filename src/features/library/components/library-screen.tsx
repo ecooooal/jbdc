@@ -30,7 +30,6 @@ import { LibraryCard } from "./library-card";
 import { FAB_SCROLL_CLEARANCE, LibraryFab } from "./library-fab";
 import type { PressHighlightHandlers } from "./press-highlight";
 import { SingleView } from "./single-view";
-import { SINGLE_VIEW_PANEL_CLEARANCE } from "./single-view-page";
 
 /** The heading of the trailing group for designs in no Collection. */
 const NO_COLLECTION_LABEL = "No collection";
@@ -54,14 +53,11 @@ function SectionGrid({
   designs,
   columns,
   cardWidth,
-  omitCollection,
   pressFor,
 }: {
   designs: readonly LibraryDesign[];
   columns: number;
   cardWidth: number;
-  /** Inside a Collection section the header already names the Collection. */
-  omitCollection: boolean;
   pressFor: (designId: string) => PressHighlightHandlers;
 }) {
   return (
@@ -75,11 +71,7 @@ function SectionGrid({
         >
           {row.map((design) => (
             <View key={design.id} style={{ width: cardWidth }}>
-              <LibraryCard
-                design={design}
-                omitCollection={omitCollection}
-                press={pressFor(design.id)}
-              />
+              <LibraryCard design={design} press={pressFor(design.id)} />
             </View>
           ))}
         </View>
@@ -149,10 +141,9 @@ export function LibraryScreen() {
     onPress: () => dispatch({ type: "card-tapped", designId }),
   });
 
-  // The FAB clears the single view's details panel, which only sits there when
-  // that view is what the screen shows.
-  const overSingleView = density === 1 && status === "ready" && designs.length > 0;
-  const fabBottom = insets.bottom + (overSingleView ? SINGLE_VIEW_PANEL_CLEARANCE : 16);
+  // The FAB keeps one corner at every density, so changing the view never
+  // moves it. The single view's panel leaves that corner clear instead.
+  const fabBottom = insets.bottom + 16;
 
   return (
     <SafeAreaView style={{ flex: 1 }} className="bg-background" edges={["top", "left", "right"]}>
@@ -238,7 +229,6 @@ export function LibraryScreen() {
                         designs={section.designs}
                         columns={columns}
                         cardWidth={cardWidth}
-                        omitCollection
                         pressFor={pressFor}
                       />
                     </View>
@@ -250,7 +240,6 @@ export function LibraryScreen() {
                     designs={arrangement.designs}
                     columns={columns}
                     cardWidth={cardWidth}
-                    omitCollection={false}
                     pressFor={pressFor}
                   />
                 </View>
