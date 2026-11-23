@@ -28,7 +28,7 @@ import { useLibraryDesigns } from "../lib/use-library-designs";
 import { DensityControl } from "./density-control";
 import { GroupingSelect } from "./grouping-select";
 import { LibraryCard } from "./library-card";
-import { LibraryFab } from "./library-fab";
+import { FAB_SCROLL_CLEARANCE, LibraryFab } from "./library-fab";
 import type { PressHighlightHandlers } from "./press-highlight";
 import { SingleView } from "./single-view";
 import { SINGLE_VIEW_PANEL_CLEARANCE } from "./single-view-page";
@@ -185,9 +185,13 @@ export function LibraryScreen() {
         />
       ) : (
         <View className="flex-1" style={{ paddingHorizontal: LIBRARY_SIDE_PADDING }}>
-          <ScrollView className="mt-6 flex-1" showsVerticalScrollIndicator={false}>
+          <ScrollView
+            className="mt-6 flex-1"
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={{ paddingBottom: insets.bottom + FAB_SCROLL_CLEARANCE }}
+          >
             {arrangement.kind === "grouped" ? (
-              <View className="gap-6 pb-8">
+              <View className="gap-6">
                 {arrangement.sections.map((section) => (
                   <View
                     key={section.collection ?? NO_COLLECTION_KEY}
@@ -206,7 +210,7 @@ export function LibraryScreen() {
                 ))}
               </View>
             ) : (
-              <View className="gap-6 pb-8">
+              <View className="gap-6">
                 <SectionGrid
                   designs={arrangement.designs}
                   density={density}

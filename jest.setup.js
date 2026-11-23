@@ -24,6 +24,13 @@ jest.mock("react-native-reanimated", () => {
     default: Animated,
     FadeIn: { reduceMotion: () => ({}) },
     FadeOut: { reduceMotion: () => ({}) },
+    // The FAB's upward expansion sets its duration before asking to respect the
+    // system's reduce-motion setting; the stand-in keeps that chain callable.
+    FadeInUp: {
+      duration: () => ({
+        reduceMotion: () => ({}),
+      }),
+    },
     ReduceMotion: { System: "system" },
     // The Detail's arrival builder is only read when the screen mounts; the
     // stand-in keeps the chain callable without a worklets runtime.

@@ -2,11 +2,12 @@ import { router } from "expo-router";
 import { Ellipsis, Moon, Plus, Settings, Sun, X, type LucideIcon } from "lucide-react-native";
 import { useState } from "react";
 import { View } from "react-native";
-import { FadeIn, ReduceMotion } from "react-native-reanimated";
+import { FadeInUp, ReduceMotion } from "react-native-reanimated";
 import { useAppTheme } from "@/features/settings/react";
 import { Button } from "@/shared/components/ui/button";
 import { Icon } from "@/shared/components/ui/icon";
 import { NativeOnlyAnimatedView } from "@/shared/components/ui/native-only-animated-view";
+import { QUIET_MOTION_DURATION_MS } from "@/shared/lib/motion";
 
 /** One row of the speed-dial: a circular icon button with its spoken name. */
 function FabAction({
@@ -35,12 +36,18 @@ function FabAction({
 }
 
 /**
+ * The room the grid's scroll content leaves below its last row so it scrolls
+ * clear of the FAB: the button's 56px circle and a 12px gap.
+ */
+export const FAB_SCROLL_CLEARANCE = 56 + 12;
+
+/**
  * The Library's one floating button: collapsed, it opens its actions; expanded,
  * it offers add design, the theme toggle, and settings, stacked upward above
  * its corner. Add opens the create screen, the toggle flips the app between
  * light and dark and persists the choice, and settings stays visibly disabled
- * until its screen exists. The expansion fades in inside the quiet motion
- * budget; the button always sits above the single view's details panel.
+ * until its screen exists. The expansion rises and fades in inside the quiet
+ * motion budget; the button always sits above the single view's details panel.
  */
 export function LibraryFab({ bottom }: { bottom: number }) {
   const [open, setOpen] = useState(false);
@@ -56,7 +63,9 @@ export function LibraryFab({ bottom }: { bottom: number }) {
   return (
     <View pointerEvents="box-none" className="absolute right-6 items-end" style={{ bottom }}>
       {open ? (
-        <NativeOnlyAnimatedView entering={FadeIn.reduceMotion(ReduceMotion.System)}>
+        <NativeOnlyAnimatedView
+          entering={FadeInUp.duration(QUIET_MOTION_DURATION_MS).reduceMotion(ReduceMotion.System)}
+        >
           <View className="items-end gap-3">
             <FabAction
               accessibilityLabel="Add design"
