@@ -12,6 +12,17 @@ Capture the base at the start, before any commit that belongs to the ticket: `gi
 
 Call the Skill tool with "tdd" at the reducer and records seams. If no seams are pre-agreed, name up to three in one line in your first response and proceed unless the user redirects.
 
+Load the stack's manual alongside `tdd` — before writing, and again when a step enters territory no earlier step touched:
+
+| The work touches | Load |
+| --- | --- |
+| motion, gestures, or a route transition | `expo-animation` |
+| tokens, a new surface's styling, or a hardcoded colour | `expo-design-system` |
+| fetch, cache, retries, or offline | `expo-data-fetching` |
+| a table, query, or migration | `expo-sqlite` |
+
+`uniwind` is the class-name manual: load it when a `className` decision has no sibling component to copy. `impeccable` stays user-invoked — on every ticket it pulls the design brain two ways.
+
 State the ticket's `## Steps` (in the body or its agent brief) and their commit boundaries in that same first response. Work one step at a time: commit a step before touching the next step's files.
 
 Run typechecking regularly, single test files regularly, and the full test suite once at the end.
