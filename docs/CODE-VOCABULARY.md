@@ -73,3 +73,7 @@ Device-local choices the settings store keeps. The domain glossary owns Library 
 
 **grouping**:
 The Library's ordering choice: *Per design*, the flat, most recently updated first stream, or *Per collection*, designs gathered under their Collection — the freshest Collection first, "No collection" last. Stored behind its own settings key, validated on read, and applied by a pure selector after the live read.
+
+**theme**:
+The Owner's app-wide appearance choice: *light*, *dark*, or *follow-system*, the default until she chooses. Stored behind its own settings key and validated on read, so nothing stored means the system's appearance.
+_Note_: `src/shared/lib/theme.ts` holds the styling engine's palettes and navigation theme objects; this word is the Owner's choice, not those.

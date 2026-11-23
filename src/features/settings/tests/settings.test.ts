@@ -5,8 +5,11 @@ import {
   createSettings,
   DEFAULT_CARD_DENSITY,
   DEFAULT_GROUPING,
+  DEFAULT_THEME_CHOICE,
   GROUPINGS,
   groupingFrom,
+  THEME_CHOICES,
+  themeChoiceFrom,
 } from "../lib/settings";
 
 describe("settings", () => {
@@ -126,6 +129,74 @@ describe("settings", () => {
 
       try {
         expect(createSettings(reopened).grouping()).toBe(grouping);
+      } finally {
+        reopened.close();
+      }
+    } finally {
+      disposeFirst();
+    }
+  });
+
+  test("opens following the system when the owner has not chosen a theme", () => {
+    expect(DEFAULT_THEME_CHOICE).toBe("follow-system");
+    expect(createSettings(database).theme()).toBe("follow-system");
+  });
+
+  test("a new Settings instance reads the chosen theme", () => {
+    createSettings(database).setTheme("dark");
+
+    expect(createSettings(database).theme()).toBe("dark");
+  });
+
+  test("changing the theme replaces the previous one", () => {
+    const settings = createSettings(database);
+
+    settings.setTheme("light");
+    settings.setTheme("dark");
+
+    expect(createSettings(database).theme()).toBe("dark");
+  });
+
+  test("a value that names no theme is not a choice", () => {
+    expect(themeChoiceFrom(undefined)).toBeNull();
+    expect(themeChoiceFrom("sepia")).toBeNull();
+
+    for (const theme of THEME_CHOICES) {
+      expect(themeChoiceFrom(theme)).toBe(theme);
+    }
+  });
+
+  test("the default theme stands when the stored value names none", () => {
+    createSettings(database).setTheme("dark");
+
+    database.db.update(settingsTable).set({ value: "sepia" }).run();
+
+    expect(createSettings(database).theme()).toBe("follow-system");
+  });
+
+  test("grouping and theme keep their own values", () => {
+    const settings = createSettings(database);
+
+    settings.setGrouping("per-collection");
+    settings.setTheme("light");
+
+    const reopened = createSettings(database);
+
+    expect(reopened.grouping()).toBe("per-collection");
+    expect(reopened.theme()).toBe("light");
+  });
+
+  test.each(THEME_CHOICES)("remembers theme %s across launches", (theme) => {
+    const { database: first, path, dispose: disposeFirst } = createTempDatabase();
+
+    try {
+      createSettings(first).setTheme(theme);
+      first.close();
+
+      const reopened = openTestDatabase(path);
+
+      try {
+        expect(createSettings(reopened).theme()).toBe(theme);
       } finally {
         reopened.close();
       }
