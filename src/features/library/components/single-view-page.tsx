@@ -1,12 +1,13 @@
 import { BlurTargetView, BlurView } from "expo-blur";
 import { Image } from "expo-image";
 import { useRef, type ComponentRef, type RefObject } from "react";
-import { Pressable, View } from "react-native";
+import { View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { DesignStatusBadge } from "@/features/designs/react";
 import { useImageUri } from "@/features/images/react";
 import { Text } from "@/shared/components/ui/text";
 import type { LibraryDesign } from "../lib/query";
+import { PressHighlight, type PressHighlightHandlers } from "./press-highlight";
 
 /** How strongly the details panel frosts the photography behind it. */
 const PANEL_BLUR_INTENSITY = 50;
@@ -86,12 +87,12 @@ function SingleViewPanel({
 export function SingleViewPage({
   design,
   width,
-  onPress,
+  press,
 }: {
   design: LibraryDesign;
   /** The page's exact width in dp, so a paged list lines its pages up. */
   width: number;
-  onPress: () => void;
+  press: PressHighlightHandlers;
 }) {
   const uri = useImageUri(design.cover);
   const blurTarget = useRef<ComponentRef<typeof View> | null>(null);
@@ -99,11 +100,10 @@ export function SingleViewPage({
   return (
     <View className="h-full overflow-hidden" style={{ width }}>
       <BlurTargetView ref={blurTarget} style={{ flex: 1 }}>
-        <Pressable
-          role="button"
+        <PressHighlight
           accessibilityLabel={design.name}
-          onPress={onPress}
-          className="bg-muted h-full w-full active:opacity-90"
+          className="bg-muted h-full w-full"
+          {...press}
         >
           {uri ? (
             <Image
@@ -119,7 +119,7 @@ export function SingleViewPage({
               className="border-border h-full w-full items-center justify-center border border-dashed"
             />
           )}
-        </Pressable>
+        </PressHighlight>
       </BlurTargetView>
 
       <SingleViewPanel design={design} blurTarget={blurTarget} overPhotography={uri !== null} />

@@ -94,7 +94,8 @@
       { "name": "overlay-enter", "value": "fade 200ms ease-out", "purpose": "Overlays and dialogs arriving; honors Reduce Motion." },
       { "name": "overlay-exit", "value": "fade 150ms ease-in", "purpose": "Overlays leaving; honors Reduce Motion." },
       { "name": "reveal", "value": "200ms linear", "purpose": "Accordion-style section reveals." },
-      { "name": "press", "value": "instant, never animated", "purpose": "Tonal shift to 90% (buttons) or opacity dip to 70% (cards)." }
+      { "name": "press", "value": "instant, never animated", "purpose": "Tonal shift to 90% (buttons); a Library card dips slightly and takes a faint ink wash, held a beat before its route opens." },
+      { "name": "detail-arrival", "value": "fade + small zoom, 200ms ease-out", "purpose": "The Library's Detail route only: a 0.96 to 1 zoom inside the screen fade; every other route keeps its default transition. Honors Reduce Motion." }
     ]
   },
   "components": [
@@ -144,7 +145,7 @@
       "refersTo": "card",
       "description": "A cover-first paper mount: image block, then name, meta, and status pill.",
       "html": "<div class=\"ds-card-tile\"><div class=\"ds-card-cover\"></div><div class=\"ds-card-body\"><div class=\"ds-card-name\">Sunday Afternoon</div><div class=\"ds-card-meta\">Dress · Summer 2026</div><span class=\"ds-badge ds-badge-progress\">In Development</span></div></div>",
-      "css": ".ds-card-tile { display: flex; flex-direction: column; background: #F8F6F2; border: 1px solid #E8E5DF; border-radius: 14px; overflow: hidden; box-shadow: 0 1px 2px rgba(0,0,0,0.05); cursor: pointer; max-width: 220px; } .ds-card-tile:active { opacity: 0.7; } .ds-card-cover { aspect-ratio: 4/5; background: #F2EBDD; } .ds-card-body { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; padding: 12px; } .ds-card-name { font: 500 16px/1.25 'DM Sans', system-ui, sans-serif; color: #292724; } .ds-card-meta { font: 400 14px/1.4 'DM Sans', system-ui, sans-serif; color: #77736C; } .ds-badge { display: inline-flex; align-items: center; border-radius: 9999px; padding: 2px 8px; font: 500 12px/1.2 'DM Sans', system-ui, sans-serif; } .ds-badge-progress { background: #687C68; color: #FFFFFF; }"
+      "css": ".ds-card-tile { display: flex; flex-direction: column; background: #F8F6F2; border: 1px solid #E8E5DF; border-radius: 14px; overflow: hidden; box-shadow: 0 1px 2px rgba(0,0,0,0.05); cursor: pointer; max-width: 220px; } .ds-card-tile:active { transform: scale(0.98); box-shadow: 0 1px 2px rgba(0,0,0,0.05), inset 0 0 0 9999px rgba(41,39,36,0.05); } .ds-card-cover { aspect-ratio: 4/5; background: #F2EBDD; } .ds-card-body { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; padding: 12px; } .ds-card-name { font: 500 16px/1.25 'DM Sans', system-ui, sans-serif; color: #292724; } .ds-card-meta { font: 400 14px/1.4 'DM Sans', system-ui, sans-serif; color: #77736C; } .ds-badge { display: inline-flex; align-items: center; border-radius: 9999px; padding: 2px 8px; font: 500 12px/1.2 'DM Sans', system-ui, sans-serif; } .ds-badge-progress { background: #687C68; color: #FFFFFF; }"
     },
     {
       "name": "Journey Stage Chip",
@@ -181,7 +182,7 @@
   ],
   "narrative": {
     "northStar": "The Atelier Ledger",
-    "overview": "JBDC is one designer's private catalog of her own clothing designs, and the interface reads as her bound studio notebook: warm paper surfaces, a wood-toned accent for the things that matter, serif titles like specimen labels. The photography is the artwork; the chrome is the furniture around it. The feel is warm, unhurried, precise — a working archive, not a showcase.\n\nThe system is quiet archival. Depth comes from paper tonal steps and hairline borders, never from shadow play; press feedback is a tonal shift, not a bounce; motion is a short fade that honors the system Reduce Motion setting. Color is spent on meaning only: Sanded Wood marks confirmed work and primary actions, Muslin Sage marks work in progress and active selection, Rejection Red marks what did not proceed. Everything else is paper and ink.",
+    "overview": "JBDC is one designer's private catalog of her own clothing designs, and the interface reads as her bound studio notebook: warm paper surfaces, a wood-toned accent for the things that matter, serif titles like specimen labels. The photography is the artwork; the chrome is the furniture around it. The feel is warm, unhurried, precise — a working archive, not a showcase.\n\nThe system is quiet archival. Depth comes from paper tonal steps and hairline borders, never from shadow play; press feedback is a tonal shift, not a bounce; motion is a short fade that honors the system Reduce Motion setting, with one small zoom-fade into a design's Detail. Color is spent on meaning only: Sanded Wood marks confirmed work and primary actions, Muslin Sage marks work in progress and active selection, Rejection Red marks what did not proceed. Everything else is paper and ink.",
     "keyCharacteristics": [
       "Paper tonal hierarchy — Warm Paper page, Unbleached Paper cards, Kraft Layer insets — instead of shadows",
       "Cormorant Garamond titles over DM Sans body; DM Mono for ids, measurements, constants",

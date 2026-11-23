@@ -12,6 +12,15 @@ import { listLibraryDesigns } from "@/features/library";
 import type { LibraryDesign } from "../lib/query";
 import { LibraryCard } from "../components/library-card";
 import type { CardDensity } from "@/features/settings";
+import type { PressHighlightHandlers } from "../components/press-highlight";
+
+/** A card no finger is on, whose tap the test does not read. */
+const IDLE_PRESS: PressHighlightHandlers = {
+  pressed: false,
+  onPressIn: () => {},
+  onPressOut: () => {},
+  onPress: () => {},
+};
 
 let database: ReturnType<typeof createTempDatabase>["database"];
 let dispose: () => void;
@@ -55,7 +64,7 @@ function libraryDesign(name: string): LibraryDesign {
 async function renderCard(design: LibraryDesign, density: Exclude<CardDensity, 1>) {
   return render(
     <ImageStoreProvider store={store}>
-      <LibraryCard design={design} density={density} onPress={() => {}} />
+      <LibraryCard design={design} density={density} press={IDLE_PRESS} />
     </ImageStoreProvider>,
   );
 }

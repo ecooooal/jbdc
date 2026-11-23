@@ -36,7 +36,7 @@ Phone-first studio work: sketching, sample photos, fabric choices, and decisions
 - **Export and Restore.** Export writes a plaintext zip (`archive.json` + `images/`) wherever the Owner chooses; Restore replaces the entire catalog and shows the destructive counts first. Never a merge (ADR-0002). The JSON shape is a public contract.
 - **Security.** No app-level encryption at rest: the OS protects the files, and no copy may claim otherwise (ADR-0001). UUID keys and timestamps everywhere, so a future sync can be added without rewriting foreign keys.
 - **Platforms.** Native iOS and Android only, one shared design language across both; web and desktop are out of scope.
-- **Out of scope** (recorded so it is not quietly assumed later): dashboard and analytics; Marketing Materials and their links to designs (the first post-MVP addition); accounts, sign-in, sync, and encryption at rest; merge-on-restore; full-text search ranking; the grid-to-detail zoom transition (transitions are fades until a polish phase).
+- **Out of scope** (recorded so it is not quietly assumed later): dashboard and analytics; Marketing Materials and their links to designs (the first post-MVP addition); accounts, sign-in, sync, and encryption at rest; merge-on-restore; full-text search ranking.
 
 ## Brand Commitments
 

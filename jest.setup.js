@@ -25,6 +25,13 @@ jest.mock("react-native-reanimated", () => {
     FadeIn: { reduceMotion: () => ({}) },
     FadeOut: { reduceMotion: () => ({}) },
     ReduceMotion: { System: "system" },
+    // The Detail's arrival builder is only read when the screen mounts; the
+    // stand-in keeps the chain callable without a worklets runtime.
+    ZoomIn: {
+      duration: () => ({
+        withInitialValues: () => ({}),
+      }),
+    },
   };
 });
 

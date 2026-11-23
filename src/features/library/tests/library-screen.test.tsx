@@ -1,11 +1,14 @@
-import { fireEvent, render, screen, userEvent, within } from "@testing-library/react-native";
+import { act, fireEvent, render, screen, userEvent, within } from "@testing-library/react-native";
+import { router } from "expo-router";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { DatabaseProvider } from "@/features/database/react";
 import { createSyncSubscribe, createTempDatabase } from "@/features/database/testing";
 import { createDesign } from "@/features/designs";
+import { listLibraryDesigns } from "@/features/library";
 import { LibraryScreen } from "@/features/library/react";
 import type { Grouping } from "@/features/settings";
 import { createCollection } from "@/features/taxonomy";
+import { PRESS_HIGHLIGHT_HOLD_MS } from "../lib/library-screen-reducer";
 
 jest.mock("expo-router", () => ({ router: { push: jest.fn() } }));
 
@@ -21,10 +24,12 @@ let dispose: () => void;
 
 beforeEach(() => {
   ({ database, dispose } = createTempDatabase());
+  jest.clearAllMocks();
 });
 
 afterEach(() => {
   dispose();
+  jest.useRealTimers();
 });
 
 async function renderLibrary() {
@@ -247,4 +252,34 @@ test("Per collection keeps its section grids at density 4", async () => {
   expect(firstRow.getAllByRole("button")).toHaveLength(4);
   expect(firstRow.getByText("Spring blouse")).toBeTruthy();
   expect(firstRow.getByText("Spring scarf")).toBeTruthy();
+});
+
+/** Every density, in the order the header's control names them. */
+const DENSITY_LABELS = ["Two designs per row", "Four designs per row", "Single view"] as const;
+
+test("a tap on a card at every density opens its Detail", async () => {
+  seedStream();
+  const user = userEvent.setup();
+  const freshest = listLibraryDesigns(database).find((design) => design.name === "Freshest dress");
+
+  if (!freshest) throw new Error("No Library design named Freshest dress");
+
+  jest.useFakeTimers();
+  await renderLibrary();
+
+  for (const density of DENSITY_LABELS) {
+    await user.press(screen.getByLabelText(density));
+
+    jest.mocked(router.push).mockClear();
+    await fireEvent(screen.getByRole("button", { name: "Freshest dress" }), "press");
+
+    await act(async () => {
+      jest.advanceTimersByTime(PRESS_HIGHLIGHT_HOLD_MS);
+    });
+
+    expect(router.push).toHaveBeenLastCalledWith({
+      pathname: "/designs/[id]",
+      params: { id: freshest.id },
+    });
+  }
 });
