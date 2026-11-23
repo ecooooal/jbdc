@@ -28,8 +28,10 @@ import { useLibraryDesigns } from "../lib/use-library-designs";
 import { DensityControl } from "./density-control";
 import { GroupingSelect } from "./grouping-select";
 import { LibraryCard } from "./library-card";
+import { LibraryFab } from "./library-fab";
 import type { PressHighlightHandlers } from "./press-highlight";
 import { SingleView } from "./single-view";
+import { SINGLE_VIEW_PANEL_CLEARANCE } from "./single-view-page";
 
 /** The heading of the trailing group for designs in no Collection. */
 const NO_COLLECTION_LABEL = "No collection";
@@ -135,6 +137,11 @@ export function LibraryScreen() {
     onPress: () => dispatch({ type: "card-tapped", designId }),
   });
 
+  // The FAB clears the single view's details panel, which only sits there when
+  // that view is what the screen shows.
+  const overSingleView = density === 1 && status === "ready" && designs.length > 0;
+  const fabBottom = insets.bottom + (overSingleView ? SINGLE_VIEW_PANEL_CLEARANCE : 16);
+
   return (
     <SafeAreaView style={{ flex: 1 }} className="bg-background" edges={["top", "left", "right"]}>
       <View className="pt-6" style={{ paddingHorizontal: LIBRARY_SIDE_PADDING }}>
@@ -222,6 +229,8 @@ export function LibraryScreen() {
           </ScrollView>
         </View>
       )}
+
+      <LibraryFab bottom={fabBottom} />
     </SafeAreaView>
   );
 }
