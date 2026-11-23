@@ -11,9 +11,9 @@ export type LibrarySection = {
 
 /**
  * The Library's arrangement: the chosen grouping applied to the rows its live
- * read produced. Per design is the flat stream, so its designs carry no
- * Collection label a section would claim; per collection gathers them under
- * their Collection instead.
+ * read produced. The Design grouping is the flat stream, so its designs carry
+ * no Collection label a section would claim; the Collection grouping gathers
+ * them under their Collection instead.
  */
 export type LibraryArrangement =
   { kind: "flat"; designs: LibraryDesign[] } | { kind: "grouped"; sections: LibrarySection[] };
@@ -25,11 +25,11 @@ function newest(designs: readonly LibraryDesign[]): number {
 
 /**
  * The Library's grouping rule, over the rows its live read already produces.
- * Per design is the flat, most recently updated first stream, untouched. Per
- * collection gathers the designs under their Collection label, groups ordered
- * by whichever of their designs is freshest, with "No collection" last; an
- * empty Library has no sections at all. The rule is pure, so the screen can
- * render either grouping without the read changing.
+ * The Design grouping is the flat, most recently updated first stream,
+ * untouched. The Collection grouping gathers the designs under their
+ * Collection label, groups ordered by whichever of their designs is freshest,
+ * with "No collection" last; an empty Library has no sections at all. The rule
+ * is pure, so the screen can render either grouping without the read changing.
  */
 export function groupLibraryDesigns(
   designs: readonly LibraryDesign[],

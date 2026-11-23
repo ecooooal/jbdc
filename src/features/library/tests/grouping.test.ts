@@ -14,7 +14,7 @@ function design(name: string, collection: string | null, updatedAt: number): Lib
   };
 }
 
-test("Per design returns the flat updated-first list unchanged", () => {
+test("Design returns the flat updated-first list unchanged", () => {
   const designs = [
     design("Freshest", null, 300),
     design("Middle", "Spring", 200),
@@ -24,7 +24,7 @@ test("Per design returns the flat updated-first list unchanged", () => {
   expect(groupLibraryDesigns(designs, "per-design")).toEqual({ kind: "flat", designs });
 });
 
-test("Per collection orders groups by their most recently updated design", () => {
+test("Collection orders groups by their most recently updated design", () => {
   const designs = [
     design("Spring blouse", "Spring", 400),
     design("Autumn coat", "Autumn", 300),
@@ -41,7 +41,7 @@ test("Per collection orders groups by their most recently updated design", () =>
   });
 });
 
-test("Per collection keeps the freshest named group above a fresher unfiled design", () => {
+test("Collection keeps the freshest named group above a fresher unfiled design", () => {
   const designs = [
     design("Unfiled", null, 500),
     design("Spring blouse", "Spring", 400),

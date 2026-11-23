@@ -56,17 +56,16 @@ test("the empty view names the Library, not the Catalog", async () => {
   expect(screen.queryByText(/catalog/i)).toBeNull();
 });
 
-test("the grouping dropdown replaces the screen title and remembers the choice", async () => {
+test("the grouping dropdown remembers the choice", async () => {
   seedCollections();
   const first = await renderLibrary();
 
-  expect(screen.queryByText("Library")).toBeNull();
-  expect(screen.getByRole("combobox", { name: "Grouping" })).toBeTruthy();
-  expect(screen.getByText("Per design")).toBeTruthy();
+  expect(screen.getByRole("combobox", { name: "Group by" })).toBeTruthy();
+  expect(screen.getByText("Design")).toBeTruthy();
 
   await chooseGrouping("per-collection");
 
-  expect(screen.getByText("Per collection")).toBeTruthy();
+  expect(screen.getByText("Collection")).toBeTruthy();
 
   const spring = within(screen.getByTestId("library-section-Spring"));
 
@@ -77,14 +76,18 @@ test("the grouping dropdown replaces the screen title and remembers the choice",
 
   await renderLibrary();
 
-  expect(screen.getByText("Per collection")).toBeTruthy();
+  expect(screen.getByText("Collection")).toBeTruthy();
 });
 
-test("the search and filter placeholder icons render disabled", async () => {
+test("the search and filter placeholders render disabled and say they are coming", async () => {
   await renderLibrary();
 
-  expect(screen.getByRole("button", { name: "Search" })).toBeDisabled();
-  expect(screen.getByRole("button", { name: "Filter" })).toBeDisabled();
+  for (const name of ["Search", "Filter"]) {
+    const control = screen.getByRole("button", { name });
+
+    expect(control).toBeDisabled();
+    expect(control).toHaveProp("accessibilityHint", "Coming soon");
+  }
 });
 
 test("the header carries no create button; the FAB owns add", async () => {
@@ -277,7 +280,7 @@ async function settlePagerAt(offset: number) {
  * of the heading element.
  */
 function expectPageNames(names: readonly string[]) {
-  const headings = screen.getAllByRole("heading");
+  const headings = within(screen.getByTestId("single-view")).getAllByRole("heading");
 
   expect(headings).toHaveLength(names.length);
   names.forEach((name, index) => {
@@ -357,8 +360,8 @@ function seedCollections() {
 
 /** The labels the picker shows, so the seam hands over what a pick would. */
 const GROUPING_LABELS: Record<Grouping, string> = {
-  "per-design": "Per design",
-  "per-collection": "Per collection",
+  "per-design": "Design",
+  "per-collection": "Collection",
 };
 
 /**
@@ -367,18 +370,18 @@ const GROUPING_LABELS: Record<Grouping, string> = {
  * the test renderer never fires it. Firing the handler is the documented seam.
  */
 async function chooseGrouping(grouping: Grouping) {
-  await fireEvent(screen.getByRole("combobox", { name: "Grouping" }), "valueChange", {
+  await fireEvent(screen.getByRole("combobox", { name: "Group by" }), "valueChange", {
     value: grouping,
     label: GROUPING_LABELS[grouping],
   });
 }
 
-test("Per collection regroups the density-2 grid under Collection headers", async () => {
+test("The Collection grouping regroups the density-2 grid under Collection headers", async () => {
   seedCollections();
 
   await renderLibrary();
 
-  // Per design is today's flat stream: the designs, no Collection headers.
+  // The Design grouping is today's flat stream: the designs, no Collection headers.
   expect(screen.getByText("Spring blouse")).toBeTruthy();
   expect(screen.queryByRole("heading", { name: "Spring" })).toBeNull();
 
@@ -401,7 +404,7 @@ test("Per collection regroups the density-2 grid under Collection headers", asyn
   expect(unfiled.getByText("No season dress")).toBeTruthy();
 });
 
-test("Per collection reads each Collection heading before its Designs", async () => {
+test("The Collection grouping reads each Collection heading before its Designs", async () => {
   seedCollections();
 
   await renderLibrary();

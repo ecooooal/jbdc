@@ -72,7 +72,7 @@ The two images perform bodies' answer when an adapter is missing. The gallery's 
 Device-local choices the settings store keeps. The domain glossary owns Library and Collection; these are the code's names for how the Library arranges itself.
 
 **grouping**:
-The Library's ordering choice: *Per design*, the flat, most recently updated first stream, or *Per collection*, designs gathered under their Collection — the freshest Collection first, "No collection" last. Stored behind its own settings key, validated on read.
+The Library's ordering choice, labelled "Group by" in the header: *Design*, the flat, most recently updated first stream, or *Collection*, designs gathered under their Collection — the freshest Collection first, "No collection" last. Stored behind its own settings key, validated on read.
 
 **single view**:
 The Library at density 1: one Design per page, its Cover filling the frame beneath a details panel, paged horizontally in the grouping's order and bounded at the first and last Design. A Design with no Cover keeps the page's shape with the dashed placeholder, and the panel blurs only photography.

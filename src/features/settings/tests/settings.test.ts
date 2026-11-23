@@ -91,7 +91,7 @@ describe("settings", () => {
     }
   });
 
-  test("opens at Per design when the owner has not chosen a grouping", () => {
+  test("opens at Design when the owner has not chosen a grouping", () => {
     expect(DEFAULT_GROUPING).toBe("per-design");
     expect(createSettings(database).grouping()).toBe("per-design");
   });

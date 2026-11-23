@@ -19,11 +19,19 @@ a wrapped line made row heights volatile. The density control draws the layouts
 (one page / two columns) instead of numerals, and the FAB holds one corner at
 every density while the single-view panel reserves it.
 
+**Clarify (2026-11-24):** the Owner rejected a screen title as noise — the
+Library is the only screen and the app opens on it — so the header keeps its
+controls. The grouping choice gains a visible "Group by" label with "Design" /
+"Collection" as its values, and Search and Filter are drawn as one paired
+control in the density control's segmented shell. Both stay disabled with a
+"Coming soon" hint until their screens exist; the pair holds the right side of
+the single header row.
+
 ## Evidence base
 
 Reviewed on the attached Android phone (1080×2400 @ 440 dpi) running Expo Go, in light and dark, densities 1 / 2 / 4, both groupings, and font scale 1.0 and 1.3. The MIUI "Tools" floating gear in screenshots is OS chrome, not this app.
 
-Current state to leave alone unless a ticket says otherwise: light theme, Per design, density 2, font scale 1.0. The persisted theme choice was changed from follow-system to light during the review; the FAB toggle has no path back to follow-system.
+Current state to leave alone unless a ticket says otherwise: light theme, the Design grouping, density 2, font scale 1.0. The persisted theme choice was changed from follow-system to light during the review; the FAB toggle has no path back to follow-system.
 
 ## Work order
 

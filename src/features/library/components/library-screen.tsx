@@ -81,6 +81,39 @@ function SectionGrid({
 }
 
 /**
+ * Search and filter, drawn as one paired control until their screens exist:
+ * the two actions share the density control's outlined shell, and each says
+ * why it does nothing yet.
+ */
+function SearchFilterActions() {
+  return (
+    <View className="border-input flex-row items-center overflow-hidden rounded-md border opacity-50">
+      <Button
+        size="icon"
+        variant="ghost"
+        disabled
+        accessibilityLabel="Search"
+        accessibilityHint="Coming soon"
+        className="h-12 w-12 rounded-none opacity-100 sm:h-12 sm:w-12"
+      >
+        <Icon as={Search} />
+      </Button>
+      <View className="bg-border h-full w-px" />
+      <Button
+        size="icon"
+        variant="ghost"
+        disabled
+        accessibilityLabel="Filter"
+        accessibilityHint="Coming soon"
+        className="h-12 w-12 rounded-none opacity-100 sm:h-12 sm:w-12"
+      >
+        <Icon as={SlidersHorizontal} />
+      </Button>
+    </View>
+  );
+}
+
+/**
  * The Library screen: at density 1, the single view paging one Design at a
  * time; at 2, the grid of active designs; or the empty state offering create.
  * The chosen density decides between the pager and the grid, and the card
@@ -154,28 +187,11 @@ export function LibraryScreen() {
         importantForAccessibility={state.actionsOpen ? "no-hide-descendants" : "auto"}
       >
         <View className="pt-6" style={{ paddingHorizontal: LIBRARY_SIDE_PADDING }}>
-          <View className="z-10 flex-row flex-wrap items-center gap-3">
+          <View className="z-10 flex-row flex-wrap items-end gap-3">
             <GroupingSelect grouping={grouping} onChange={setGrouping} />
             <DensityControl density={density} onChange={setDensity} />
-            <View className="ml-auto flex-row items-center gap-2">
-              <Button
-                size="icon"
-                variant="ghost"
-                disabled
-                accessibilityLabel="Search"
-                className="h-12 w-12 sm:h-12 sm:w-12"
-              >
-                <Icon as={Search} />
-              </Button>
-              <Button
-                size="icon"
-                variant="ghost"
-                disabled
-                accessibilityLabel="Filter"
-                className="h-12 w-12 sm:h-12 sm:w-12"
-              >
-                <Icon as={SlidersHorizontal} />
-              </Button>
+            <View className="ml-auto">
+              <SearchFilterActions />
             </View>
           </View>
 
