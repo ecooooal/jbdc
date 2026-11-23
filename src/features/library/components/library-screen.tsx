@@ -149,16 +149,6 @@ export function LibraryScreen() {
           <GroupingSelect grouping={grouping} onChange={setGrouping} />
           <View className="flex-row items-center gap-2">
             <DensityControl density={density} onChange={setDensity} />
-            {designs.length > 0 ? (
-              <Button
-                size="icon"
-                variant="outline"
-                accessibilityLabel="Create design"
-                onPress={() => router.push("/designs/new")}
-              >
-                <Icon as={Plus} />
-              </Button>
-            ) : null}
             <Button size="icon" variant="ghost" disabled accessibilityLabel="Search">
               <Icon as={Search} />
             </Button>

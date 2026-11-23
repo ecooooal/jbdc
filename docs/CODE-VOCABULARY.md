@@ -84,4 +84,4 @@ _Note_: `src/shared/lib/theme.ts` holds the styling engine's palettes and naviga
 ## The Library's FAB
 
 **the FAB**:
-The Library's floating action button in the bottom corner, a speed-dial: collapsed it holds its actions shut; expanded it stacks add design, the theme toggle, and the disabled settings action above the corner within the quiet motion budget, clearing the single view's details panel.
+The Library's floating action button in the bottom corner, a speed-dial: collapsed it holds its actions shut; expanded it stacks add design, the theme toggle, and the disabled settings action above the corner within the quiet motion budget, clearing the single view's details panel. It owns add now that the header carries no create button.

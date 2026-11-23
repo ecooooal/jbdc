@@ -86,6 +86,14 @@ test("the search and filter placeholder icons render disabled", async () => {
   expect(screen.getByRole("button", { name: "Filter" })).toBeDisabled();
 });
 
+test("the header carries no create button; the FAB owns add", async () => {
+  seedStream();
+
+  await renderLibrary();
+
+  expect(screen.queryByRole("button", { name: "Create design" })).toBeNull();
+});
+
 test("the FAB expands into add, theme, and settings actions", async () => {
   seedStream();
   const user = userEvent.setup();
