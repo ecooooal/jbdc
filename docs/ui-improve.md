@@ -1,0 +1,66 @@
+# Plan for improving UI
+
+## Library Screen
+- No header
+- single row should now be 1 design per screen and swipable instead of a list
+	- for single view
+		- fills screen with the image
+		- bottom part should be blurred to provide spaces for the details
+- bottom right screen is a FAB containing settings and add design
+
+## Design screen
+- Header
+	- Contains Collection; Category and three dots more actions
+		- More actions contains history only
+		- Below colllection are created and updated
+	- Three dots contains
+		- History 
+		- edit
+	- History and edit should now be a proper icon instead of words
+- On top move the design name block
+	- Name
+	- status
+	- description
+- Image block
+	- image viewer
+		- needs to be smooth
+		- swiping have animation
+	- inside image viewer ui
+		- on top, stage and number of images
+			- when stage gets change it should have morphing animation
+		- on bottom right gives the note function 
+			- notes now are pinned to the images
+			- pressing a pinned note opens up a bottom sheet
+			- a notes button that expand to give the following
+				- add note
+				- see all notes opens up a bottom sheet
+					- see all notes handle a note deletion (requires double tap)
+					- notes aren't editable
+			- hide all pinned notes
+		- on bottom left a scroll wheel of all images
+			- user can use that to navigate through all the images
+			- active images pop ups and give its stage
+	- Image block consumes note block space
+- Note block should now be consumed to the image viewer
+- Stage four buttons block (inspiration, sketch, prototype, final)
+	- one rows four columns UI with equal spaces and card size
+		- active stage should have animation
+	- a single row list of images 
+		- on reveal should have accordion animation
+- Specification and Creative direction tabs block
+	- tables shouldn't have borders 
+	- values are left justified, not right
+
+# Edit design screen
+- All fields should share the same keyboard, currently when keyboard is present, tapping a field re-renders the keyboard
+- Name block
+	- proper spacing 
+	- name block is outline
+	- status, category, and collection are grouped outline and switch to bottom sheet 
+	- description is outline
+- Specification block
+	- pressing a field should have onPress feedback animation
+- Material block
+	- Add material should be a bottom sheet
+	- Adding new material should be a bottom sheet (bottom sheets can stack)
+		- pressing enter on keyboard should submit
