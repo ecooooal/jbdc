@@ -1,6 +1,6 @@
 import { Image } from "expo-image";
 import { Shirt } from "lucide-react-native";
-import { Pressable, View } from "react-native";
+import { View } from "react-native";
 import { designStatusLabel } from "@/features/designs";
 import { DesignStatusBadge } from "@/features/designs/react";
 import { useImageUri } from "@/features/images/react";
@@ -10,6 +10,7 @@ import { Card } from "@/shared/components/ui/card";
 import { Icon } from "@/shared/components/ui/icon";
 import { Text } from "@/shared/components/ui/text";
 import { cn } from "@/shared/lib/utils";
+import { PressHighlight } from "./press-highlight";
 
 function Meta({ value, placeholder }: { value: string | null; placeholder: string }) {
   return value ? (
@@ -97,7 +98,7 @@ function Tile({ design, density }: { design: LibraryDesign; density: Exclude<Car
  * One Design in the Library. The shape follows the owner's chosen density: two
  * is a roomy tile, four is a compact tile that keeps the cover and name
  * legible; density one is the single view and draws no card. The whole card is
- * one button: pressing it opens that Design.
+ * one button: pressing it dips and tints, then opens that Design.
  */
 export function LibraryCard({
   design,
@@ -109,8 +110,12 @@ export function LibraryCard({
   onPress: () => void;
 }) {
   return (
-    <Pressable role="button" onPress={onPress} className="active:opacity-70">
+    <PressHighlight
+      accessibilityLabel={design.name}
+      overlayClassName={density === 4 ? "rounded-lg" : "rounded-xl"}
+      onPress={onPress}
+    >
       <Tile design={design} density={density} />
-    </Pressable>
+    </PressHighlight>
   );
 }

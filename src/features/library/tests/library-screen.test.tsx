@@ -6,6 +6,7 @@ import { createDesign } from "@/features/designs";
 import { LibraryScreen } from "@/features/library/react";
 import type { Grouping } from "@/features/settings";
 import { createCollection } from "@/features/taxonomy";
+import { PRESS_HIGHLIGHT_SCALE } from "../components/press-highlight";
 
 jest.mock("expo-router", () => ({ router: { push: jest.fn() } }));
 
@@ -247,4 +248,37 @@ test("Per collection keeps its section grids at density 4", async () => {
   expect(firstRow.getAllByRole("button")).toHaveLength(4);
   expect(firstRow.getByText("Spring blouse")).toBeTruthy();
   expect(firstRow.getByText("Spring scarf")).toBeTruthy();
+});
+
+/** Every density, in the order the header's control names them. */
+const DENSITY_LABELS = ["Two designs per row", "Four designs per row", "Single view"] as const;
+
+test("every density's tap target dips and tints while pressed", async () => {
+  seedStream();
+  const user = userEvent.setup();
+
+  expect(PRESS_HIGHLIGHT_SCALE).toBeGreaterThan(0.9);
+  expect(PRESS_HIGHLIGHT_SCALE).toBeLessThan(1);
+
+  await renderLibrary();
+
+  for (const density of DENSITY_LABELS) {
+    await user.press(screen.getByLabelText(density));
+
+    const target = screen.getByRole("button", { name: "Freshest dress" });
+    const tint = within(target).getByTestId("press-highlight");
+
+    expect(target).toHaveStyle({ transform: [{ scale: 1 }] });
+    expect(tint).toHaveStyle({ opacity: 0 });
+
+    await fireEvent(target, "pressIn");
+
+    expect(target).toHaveStyle({ transform: [{ scale: PRESS_HIGHLIGHT_SCALE }] });
+    expect(tint).toHaveStyle({ opacity: 1 });
+
+    await fireEvent(target, "pressOut");
+
+    expect(target).toHaveStyle({ transform: [{ scale: 1 }] });
+    expect(tint).toHaveStyle({ opacity: 0 });
+  }
 });
