@@ -43,16 +43,22 @@ checked is not a source.
 - **Subject names the ticket and the skill.** `<type> (#<ticket>): <reason>`,
   e.g. `implement (#14): edit a design's fields without a Save button`. A
   ticket commit is typed by the skill that produced it: `implement` for a step
-  commit, `review` for a repair commit. `git log --oneline` then says whether a
-  commit is feature work or review work without reading the diff. A person
-  fixing a ticket by hand keeps `fix (#<ticket>)`.
-  A change with no ticket names the files it touches instead of inventing a
-  number, comma-separated when there are several, and keeps the content types —
-  `feat`, `fix`, `refactor`, `test`, `docs`, `chore`:
-  `chore (CODING_STANDARDS, AGENTS): …`.
-  The Spec review reads the ticket from the subject, so a commit without one is
-  unreviewable, and `.githooks/commit-msg` rejects a subject that names no
-  change.
+  commit, `review` for a repair commit, and both live on the ticket's
+  `ticket/<number>-<slug>` branch; `.githooks/commit-msg` rejects them
+  elsewhere. `git log --oneline` then says whether a commit is feature work or
+  review work without reading the diff. A person fixing a ticket by hand keeps
+  `fix (#<ticket>)`.
+  A change with no ticket names the files or surfaces it touches instead of
+  inventing a number, comma-separated when there are several, and names the
+  skill when a skill produced it. It keeps the content type — `feat`, `fix`,
+  `refactor`, `test`, `docs`, `chore`:
+  `chore (CODING_STANDARDS, AGENTS): …` or
+  `fix (impeccable, library screen, fab): …`.
+  A closed ticket is not a ticket: follow-up work from a critique, plan, or
+  merged ticket names the skill and surfaces, never the closed number.
+  The Spec review reads the ticket from the subject; a no-ticket commit is
+  reviewed against the plan or critique that produced it. `.githooks/commit-msg`
+  rejects a subject that names no change.
 
 ## Architecture
 

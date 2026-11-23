@@ -1,9 +1,10 @@
 #!/bin/sh
 # Commit-subject guard. Ticket work is typed by the skill that produced it:
 # `implement (#50): …` for a step and `review (#50): …` for a repair, so
-# `git log --oneline` shows feature work from review work without a diff. Work
-# with no ticket names the files it touches and keeps the content type. Every
-# subject names what changed: a bare `fix (#50)` hides the repair.
+# `git log --oneline` shows feature work from review work without a diff. A
+# ticket phase runs on the ticket's branch; work with no ticket names the
+# skill and surfaces it touches and keeps the content type. Every subject
+# names what changed: a bare `fix (#50)` hides the repair.
 set -e
 
 subject=$(head -n 1 "$1")
@@ -15,15 +16,17 @@ esac
 
 fail() {
   cat >&2 <<'EOF'
-Commit subject must read `<type> (<ticket|files>): <what changed>`.
+Commit subject must read `<type> (<ticket|files|surfaces>): <what changed>`.
 
   implement (#50): attach the picked files to the active stage
   review (#50): keep the chosen empty stage across an images read
   chore (CODING_STANDARDS, AGENTS): say where a step's prose lands
+  fix (impeccable, library screen, fab): the FAB's actions shut on every exit
 
 A ticket commit is typed by the skill that produced it: `implement` for a
-step, `review` for a repair. Work with no ticket names its files and keeps
-the content type: feat, fix, refactor, test, docs, chore.
+step, `review` for a repair, on the ticket's branch. Work with no ticket
+names the skill and surfaces it touches and keeps the content type: feat,
+fix, refactor, test, docs, chore.
 EOF
   exit 1
 }
@@ -35,5 +38,30 @@ printf '%s\n' "$subject" |
 case "$subject" in
   implement\ \(* | review\ \(*)
     printf '%s\n' "$subject" | grep -Eq '^(implement|review) \(#[0-9]+\): .+' || fail
+    ;;
+esac
+
+# A ticket phase runs on the ticket's branch. Elsewhere there is no current
+# ticket: `implement (#75)` on a plan branch names closed work as ticket work.
+case "$subject" in
+  implement\ \(* | review\ \(*)
+    # A rebase moves HEAD off its branch; the subject was checked when it landed.
+    if [ -d "$(git rev-parse --git-path rebase-merge)" ] ||
+      [ -d "$(git rev-parse --git-path rebase-apply)" ]; then
+      exit 0
+    fi
+    branch=$(git symbolic-ref --quiet --short HEAD 2>/dev/null || true)
+    case "$branch" in
+      ticket/*) ;;
+      *)
+        cat >&2 <<EOF
+\`implement\` and \`review\` commits belong on a \`ticket/<number>-<slug>\` branch.
+This branch is ${branch:-detached HEAD}; name the skill and surfaces instead:
+
+  fix (impeccable, library screen, fab): the FAB's actions shut on every exit
+EOF
+        exit 1
+        ;;
+    esac
     ;;
 esac
