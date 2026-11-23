@@ -269,6 +269,8 @@ Quiet archival: depth is read from tone, not shadow. The three paper steps (Warm
 
 **The Flat-Archive Rule.** A surface's importance is read from its tone, never from its shadow. If a shadow exists at all it stays ≤ 5% black; glass effects, large blurs, and decorative drop shadows do not enter this system.
 
+**The Single-View Carve-Out.** The single view's details panel is the one surface allowed to blur, and it blurs only the photography directly beneath it. No card, sheet, bar, or control blurs; nothing blurred sits over a paper surface.
+
 ## Shapes
 
 Soft specimen-jar geometry: corners ascend with size — 6px on small controls' details, 8px on buttons and inputs, 10px on dialogs and list cards, 14px on cards, 16px on the hero. Status is always a full pill (9999px). Dashed Thread Line borders are the system's signature for emptiness: an empty stage, an add-image card, a missing cover all show the same dashed frame — a hole is drawn as a hole, never decorated over.
@@ -369,7 +371,7 @@ Centered on a 50% black overlay, Warm Paper content at 10px radius, 24px padding
 ### Don't:
 
 - **Don't** introduce any accent hue beyond wood, sage, and red.
-- **Don't** lift a card with a shadow heavier than the 5% whisper; no glass, no gradients, no blur backdrops.
+- **Don't** lift a card with a shadow heavier than the 5% whisper; no glass, no gradients, no blur backdrops — the single view's details panel may blur only the photography beneath it.
 - **Don't** set a status in anything but a pill — never a rectangle, a banner, or a colored row.
 - **Don't** fill an empty stage with illustration or icon decoration; the dashed frame is the empty state.
 - **Don't** announce a save with a toast or a banner; History is a screen the Owner opens.

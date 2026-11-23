@@ -195,6 +195,7 @@
       { "name": "The Overlay Exception", "body": "Over photography only, chips may use translucent black (rgba(0,0,0,0.6)) with white text. Nowhere else does true black appear in the paper world.", "section": "colors" },
       { "name": "The Two Voices Rule", "body": "Cormorant speaks only for titles — the names of screens, designs, and dialogs. Anything the Owner reads as information is DM Sans; anything read as data is DM Mono. Cormorant body text is forbidden.", "section": "typography" },
       { "name": "The Flat-Archive Rule", "body": "A surface's importance is read from its tone, never from its shadow. If a shadow exists at all it stays ≤ 5% black; glass effects, large blurs, and decorative drop shadows do not enter this system.", "section": "elevation" },
+      { "name": "The Single-View Carve-Out", "body": "The single view's details panel is the one surface allowed to blur, and it blurs only the photography directly beneath it. No card, sheet, bar, or control blurs; nothing blurred sits over a paper surface.", "section": "elevation" },
       { "name": "The Pill Rule", "body": "Pills are for state and selection — badges, stage chips, toggles. Rectangles are for containers and controls. A pill never carries a sentence; a rectangle never carries a status.", "section": "shapes" },
       { "name": "The Quiet Turn Rule", "body": "Motion never announces — it only arrives and leaves, in 200ms or less. Every animation honors the system Reduce Motion setting with a crossfade or an instant cut.", "section": "motion" }
     ],
@@ -209,7 +210,7 @@
     ],
     "donts": [
       "Don't introduce any accent hue beyond wood, sage, and red.",
-      "Don't lift a card with a shadow heavier than the 5% whisper; no glass, no gradients, no blur backdrops.",
+      "Don't lift a card with a shadow heavier than the 5% whisper; no glass, no gradients, no blur backdrops — the single view's details panel may blur only the photography beneath it.",
       "Don't set a status in anything but a pill — never a rectangle, a banner, or a colored row.",
       "Don't fill an empty stage with illustration or icon decoration; the dashed frame is the empty state.",
       "Don't announce a save with a toast or a banner; History is a screen the Owner opens.",
