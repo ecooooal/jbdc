@@ -1,12 +1,14 @@
 # Plan for improving UI
 
 ## Library Screen
-- No header
-- single row should now be 1 design per screen and swipable instead of a list
+- Header
+	- left side contains placeholder of dropdown different view type (per collection or per design)
+	- right sided contains placeholder for Search and filters 
+- single column view should now be 1 design per screen and swipable instead of a list
 	- for single view
 		- fills screen with the image
 		- bottom part should be blurred to provide spaces for the details
-- bottom right screen is a FAB containing settings and add design
+- bottom right screen is a FAB containing settings, add design, and theme button (dark/light mode switch for now).
 
 ## Design screen
 - Header
