@@ -3,9 +3,11 @@ import { DMMono_400Regular } from "@expo-google-fonts/dm-mono";
 import { DMSans_400Regular, DMSans_500Medium, DMSans_700Bold } from "@expo-google-fonts/dm-sans";
 import { PortalHost } from "@rn-primitives/portal";
 import { useFonts } from "expo-font";
+import { NavigationBar } from "expo-navigation-bar";
 import { Stack, ThemeProvider } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
+import * as SystemUI from "expo-system-ui";
 import { useEffect, useState } from "react";
 import { KeyboardProvider } from "react-native-keyboard-controller";
 import { DatabaseProvider } from "@/features/database/react";
@@ -26,10 +28,20 @@ SplashScreen.preventAutoHideAsync().catch(() => {
  */
 function AppNavigator() {
   const { scheme } = useAppTheme();
+  const background = NAV_THEME[scheme].colors.background;
+
+  // The window behind the React tree is what shows through the system bars
+  // and during navigation transitions; it has to be the paper of the chosen
+  // scheme, not the one the app launched under.
+  useEffect(() => {
+    SystemUI.setBackgroundColorAsync(background).catch(() => {});
+  }, [background]);
 
   return (
     <ThemeProvider value={NAV_THEME[scheme]}>
       <StatusBar style={scheme === "dark" ? "light" : "dark"} />
+      {/* The bar is named for its buttons: light buttons over dark paper. */}
+      <NavigationBar style={scheme === "dark" ? "light" : "dark"} />
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="index" />
         <Stack.Screen name="designs/new" options={{ presentation: "modal" }} />
