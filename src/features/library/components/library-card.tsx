@@ -88,7 +88,7 @@ function Tile({ design, density }: { design: LibraryDesign; density: Exclude<Car
           <View className={compact ? "h-4" : "h-5"} />
         )}
         {compact ? (
-          <Text variant="muted" className="text-[10px] leading-3" numberOfLines={1}>
+          <Text variant="muted" className="text-xs leading-4" numberOfLines={1}>
             {designStatusLabel(design.status)}
           </Text>
         ) : (
