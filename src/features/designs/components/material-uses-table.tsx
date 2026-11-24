@@ -1,4 +1,3 @@
-import { Fragment } from "react";
 import { Pressable, View } from "react-native";
 import type { MaterialUse } from "@/features/designs";
 import { Text } from "@/shared/components/ui/text";
@@ -17,11 +16,11 @@ import { materialUseRoleLabel } from "../lib/material-use-role";
 export function MaterialUsesTable({
   uses,
   onUsePress,
-  variant = "edit",
+  variant,
 }: {
   uses: MaterialUse[];
   onUsePress?: (materialUse: MaterialUse) => void;
-  variant?: "edit" | "detail";
+  variant: "edit" | "detail";
 }) {
   const isDetail = variant === "detail";
 
@@ -52,6 +51,7 @@ export function MaterialUsesTable({
         uses.map((materialUse) => {
           const row = (
             <Pressable
+              key={materialUse.id}
               onPress={onUsePress ? () => onUsePress(materialUse) : undefined}
               accessibilityRole={onUsePress ? "button" : undefined}
               accessibilityLabel={
@@ -71,7 +71,7 @@ export function MaterialUsesTable({
             </Pressable>
           );
 
-          if (!isDetail) return <Fragment key={materialUse.id}>{row}</Fragment>;
+          if (!isDetail) return row;
 
           return (
             <View key={materialUse.id}>

@@ -7,7 +7,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { DesignGallery } from "@/features/images/react";
 import { Button } from "@/shared/components/ui/button";
 import { Icon } from "@/shared/components/ui/icon";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/components/ui/tabs";
+import { Tabs, TabsContent } from "@/shared/components/ui/tabs";
 import { Text } from "@/shared/components/ui/text";
 import { DETAIL_ARRIVAL } from "@/shared/lib/motion";
 import {
@@ -20,6 +20,7 @@ import type { DesignDetail } from "../lib/records";
 import { useDesignDetail } from "../lib/use-design-detail";
 import { DesignStatusBadge } from "./design-status-badge";
 import { MaterialUsesTable } from "./material-uses-table";
+import { SectionTabs } from "./section-tabs";
 
 const SHORT_DATE_FORMAT = new Intl.DateTimeFormat(undefined, {
   year: "numeric",
@@ -211,13 +212,7 @@ function DetailSections({ design }: { design: DesignDetail }) {
         if (isDesignSectionTab(value)) setChosen(value);
       }}
     >
-      <TabsList variant="plain">
-        {DESIGN_SECTIONS.map(({ tab: value, label }) => (
-          <TabsTrigger key={value} value={value} variant="plain">
-            <Text>{label}</Text>
-          </TabsTrigger>
-        ))}
-      </TabsList>
+      <SectionTabs />
       {DESIGN_SECTIONS.map(({ tab: value, fields }) => (
         <TabsContent key={value} value={value}>
           <DetailSection design={design} tab={value} fields={fields} />
