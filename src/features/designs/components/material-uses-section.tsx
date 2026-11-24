@@ -32,6 +32,7 @@ export function MaterialUsesSection({
     <View className="gap-2">
       <MaterialUsesTable
         uses={uses}
+        variant="edit"
         onUsePress={
           panel?.kind === "add"
             ? undefined
