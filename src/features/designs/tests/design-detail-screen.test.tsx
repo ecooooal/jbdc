@@ -230,7 +230,9 @@ test("Detail renders the identity block and the recorded Specification read-only
   expect(identityRegion().getByText("Bias cut, cowl neck.")).toBeTruthy();
   expect(screen.queryByText(/No category/)).toBeNull();
   expect(screen.getByText("Specification")).toBeTruthy();
+  expect(screen.getByText("Silhouette")).toBeTruthy();
   expect(screen.getByText("Relaxed A-line")).toBeTruthy();
+  expect(screen.getByText("Measurements")).toBeTruthy();
   expect(screen.getByText("Bust 96 / waist 104")).toBeTruthy();
 });
 
@@ -254,9 +256,14 @@ test("Detail renders recorded Creative direction rows read-only", async () => {
 
   await renderDetail(design.id);
 
+  // Scope to the section: the Status pill also reads Concept.
+  const section = within(screen.getByTestId("detail-section-creativeDirection"));
+
   expect(screen.getByText("Creative direction")).toBeTruthy();
-  expect(screen.getByText("A slow summer day")).toBeTruthy();
-  expect(screen.getByText("Romantic")).toBeTruthy();
+  expect(section.getByText("Concept")).toBeTruthy();
+  expect(section.getByText("A slow summer day")).toBeTruthy();
+  expect(section.getByText("Mood")).toBeTruthy();
+  expect(section.getByText("Romantic")).toBeTruthy();
   expect(screen.queryByText("Not set")).toBeNull();
 });
 

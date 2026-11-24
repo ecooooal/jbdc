@@ -40,12 +40,17 @@ function DetailDate({ label, value }: { label: string; value: string }) {
   );
 }
 
-/** A label and its value. Only rendered when the value exists. */
+/**
+ * A label and its value, left-aligned in two columns. Only rendered when the
+ * value exists.
+ */
 function DetailRow({ label, value }: { label: string; value: string }) {
   return (
-    <View className="flex-row items-start justify-between gap-4 py-2">
-      <Text variant="muted">{label}</Text>
-      <Text className="flex-1 text-right">{value}</Text>
+    <View className="flex-row items-start gap-4 py-3">
+      <Text variant="muted" className="flex-[2]">
+        {label}
+      </Text>
+      <Text className="flex-[3]">{value}</Text>
     </View>
   );
 }
@@ -165,15 +170,18 @@ function DetailSection({
   }
 
   return (
-    <View className="gap-4">
+    <View testID={`detail-section-${tab}`} className="gap-4">
       {filled.length > 0 ? (
-        <View className="border-border rounded-xl border px-4 py-1">
-          {filled.map(({ field, label }) => (
-            <DetailRow key={field} label={label} value={design[field] ?? ""} />
+        <View>
+          {filled.map(({ field, label }, index) => (
+            <View key={field}>
+              {index > 0 ? <View className="bg-border h-hairline" /> : null}
+              <DetailRow label={label} value={design[field] ?? ""} />
+            </View>
           ))}
         </View>
       ) : null}
-      {materialUses.length > 0 ? <MaterialUsesTable uses={materialUses} /> : null}
+      {materialUses.length > 0 ? <MaterialUsesTable uses={materialUses} variant="detail" /> : null}
     </View>
   );
 }
@@ -203,9 +211,9 @@ function DetailSections({ design }: { design: DesignDetail }) {
         if (isDesignSectionTab(value)) setChosen(value);
       }}
     >
-      <TabsList>
+      <TabsList variant="plain">
         {DESIGN_SECTIONS.map(({ tab: value, label }) => (
-          <TabsTrigger key={value} value={value}>
+          <TabsTrigger key={value} value={value} variant="plain">
             <Text>{label}</Text>
           </TabsTrigger>
         ))}
