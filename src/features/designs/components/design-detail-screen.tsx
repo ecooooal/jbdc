@@ -1,11 +1,17 @@
 import { router } from "expo-router";
-import { ChevronLeft } from "lucide-react-native";
+import { ChevronLeft, EllipsisVertical, History as HistoryIcon, Pencil } from "lucide-react-native";
 import { useState } from "react";
 import { ScrollView, View } from "react-native";
 import Animated, { ZoomIn } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { DesignGallery } from "@/features/images/react";
 import { Button } from "@/shared/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/shared/components/ui/dropdown-menu";
 import { Icon } from "@/shared/components/ui/icon";
 import { Tabs, TabsContent } from "@/shared/components/ui/tabs";
 import { Text } from "@/shared/components/ui/text";
@@ -57,6 +63,42 @@ function DetailRow({ label, value }: { label: string; value: string }) {
 }
 
 /**
+ * The header's one action area: a kebab that opens the shared menu with the
+ * Design's History and Edit routes. Each row is an icon and its label. The
+ * native menu renders in a portal, so Jest renders its rows through the
+ * primitive's root instead of opening it.
+ */
+function DetailActions({ designId }: { designId: string }) {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button size="icon" variant="ghost" accessibilityLabel="Design actions">
+          <Icon as={EllipsisVertical} />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuItem
+          textValue="History"
+          onPress={() =>
+            router.push({ pathname: "/designs/[id]/history", params: { id: designId } })
+          }
+        >
+          <Icon as={HistoryIcon} />
+          <Text>History</Text>
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          textValue="Edit"
+          onPress={() => router.push({ pathname: "/designs/[id]/edit", params: { id: designId } })}
+        >
+          <Icon as={Pencil} />
+          <Text>Edit</Text>
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+/**
  * The fixed header, outside the scrolling content: the back control, then the
  * Design's place — Collection in the serif voice, Category under it in the
  * muted voice, and the dates under that in mono — and one action area at the
@@ -86,30 +128,7 @@ function DetailHeader({ design }: { design: DesignDetail | null }) {
         ) : null}
       </View>
 
-      {design ? (
-        <View className="flex-row items-center gap-1">
-          <Button
-            size="sm"
-            variant="ghost"
-            accessibilityLabel="History"
-            onPress={() =>
-              router.push({ pathname: "/designs/[id]/history", params: { id: design.id } })
-            }
-          >
-            <Text>History</Text>
-          </Button>
-          <Button
-            size="sm"
-            variant="ghost"
-            accessibilityLabel="Edit design"
-            onPress={() =>
-              router.push({ pathname: "/designs/[id]/edit", params: { id: design.id } })
-            }
-          >
-            <Text>Edit</Text>
-          </Button>
-        </View>
-      ) : null}
+      {design ? <DetailActions designId={design.id} /> : null}
     </View>
   );
 }

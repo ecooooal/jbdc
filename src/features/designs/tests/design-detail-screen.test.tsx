@@ -1,6 +1,7 @@
 import { act, render, screen, userEvent, within } from "@testing-library/react-native";
 import { eq } from "drizzle-orm";
 import { router } from "expo-router";
+import type { ReactNode } from "react";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { categories, materials } from "@/features/database";
 import { DatabaseProvider } from "@/features/database/react";
@@ -13,6 +14,21 @@ import { createCategory, createCollection } from "@/features/taxonomy";
 jest.mock("expo-router", () => ({
   router: { back: jest.fn(), push: jest.fn() },
 }));
+
+// The native dropdown's portal waits for a trigger measurement Jest never
+// fires. Render its rows inline, inside the real root and items, so the route
+// tests press each row the way the native Select path is tested.
+jest.mock("@/shared/components/ui/dropdown-menu", () => {
+  const actual = jest.requireActual("@/shared/components/ui/dropdown-menu");
+  const React = jest.requireActual<typeof import("react")>("react");
+  const { View } = jest.requireActual<typeof import("react-native")>("react-native");
+
+  return {
+    ...actual,
+    DropdownMenuContent: ({ children }: { children?: ReactNode }) =>
+      React.createElement(View, null, children),
+  };
+});
 
 /** Seeds a recorded use through the visit's one write path. */
 function addMaterialUse(
@@ -63,15 +79,52 @@ function identityRegion() {
   return within(screen.getByTestId("detail-identity"));
 }
 
-test("Detail opens that Design's History", async () => {
+test("the header carries one kebab trigger and no text actions", async () => {
   const design = createDesign(database, { name: "Silk slip dress" });
 
   await renderDetail(design.id);
 
-  await userEvent.press(screen.getByRole("button", { name: "History" }));
+  const header = headerRegion();
+
+  expect(header.getAllByRole("button", { name: "Design actions" })).toHaveLength(1);
+  expect(header.queryByRole("button", { name: "History" })).toBeNull();
+  expect(header.queryByRole("button", { name: "Edit design" })).toBeNull();
+});
+
+test("the kebab holds History and Edit as menu rows", async () => {
+  const design = createDesign(database, { name: "Silk slip dress" });
+
+  await renderDetail(design.id);
+
+  const header = headerRegion();
+
+  expect(header.getAllByRole("menuitem")).toHaveLength(2);
+  expect(header.getByRole("menuitem", { name: "History" })).toBeTruthy();
+  expect(header.getByRole("menuitem", { name: "Edit" })).toBeTruthy();
+});
+
+test("choosing History in the header pushes the History route", async () => {
+  const design = createDesign(database, { name: "Silk slip dress" });
+
+  await renderDetail(design.id);
+
+  await userEvent.press(headerRegion().getByRole("menuitem", { name: "History" }));
 
   expect(router.push).toHaveBeenCalledWith({
     pathname: "/designs/[id]/history",
+    params: { id: design.id },
+  });
+});
+
+test("choosing Edit in the header pushes the Edit route", async () => {
+  const design = createDesign(database, { name: "Silk slip dress" });
+
+  await renderDetail(design.id);
+
+  await userEvent.press(headerRegion().getByRole("menuitem", { name: "Edit" }));
+
+  expect(router.push).toHaveBeenCalledWith({
+    pathname: "/designs/[id]/edit",
     params: { id: design.id },
   });
 });
