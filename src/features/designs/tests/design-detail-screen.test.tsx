@@ -1,4 +1,4 @@
-import { act, render, screen, userEvent } from "@testing-library/react-native";
+import { act, render, screen, userEvent, within } from "@testing-library/react-native";
 import { eq } from "drizzle-orm";
 import { router } from "expo-router";
 import { SafeAreaProvider } from "react-native-safe-area-context";
@@ -8,7 +8,7 @@ import { createSyncSubscribe, createTempDatabase } from "@/features/database/tes
 import { createDesign, writeDesign } from "@/features/designs";
 import { DesignDetailScreen } from "@/features/designs/react";
 import { createMaterial } from "@/features/materials";
-import { createCategory } from "@/features/taxonomy";
+import { createCategory, createCollection } from "@/features/taxonomy";
 
 jest.mock("expo-router", () => ({
   router: { back: jest.fn(), push: jest.fn() },
@@ -53,6 +53,16 @@ async function renderDetail(designId: string) {
   );
 }
 
+/** The fixed header, outside the scrolling content. */
+function headerRegion() {
+  return within(screen.getByTestId("detail-header"));
+}
+
+/** The body's identity block, above the image block. */
+function identityRegion() {
+  return within(screen.getByTestId("detail-identity"));
+}
+
 test("Detail opens that Design's History", async () => {
   const design = createDesign(database, { name: "Silk slip dress" });
 
@@ -66,7 +76,7 @@ test("Detail opens that Design's History", async () => {
   });
 });
 
-test("renaming the Design's Category re-reads Detail", async () => {
+test("renaming the Design's Category re-reads the header", async () => {
   const category = createCategory(database, { name: "Dress" });
   const design = createDesign(database, {
     name: "Silk slip dress",
@@ -75,7 +85,7 @@ test("renaming the Design's Category re-reads Detail", async () => {
 
   await renderDetail(design.id);
 
-  expect(screen.getByText("Dress · No collection")).toBeTruthy();
+  expect(headerRegion().getByText("Dress")).toBeTruthy();
 
   database.db
     .update(categories)
@@ -85,7 +95,7 @@ test("renaming the Design's Category re-reads Detail", async () => {
 
   await act(async () => live.notify("categories"));
 
-  expect(screen.getByText("Knitwear · No collection")).toBeTruthy();
+  expect(headerRegion().getByText("Knitwear")).toBeTruthy();
 });
 
 test("renaming a Material re-reads Detail", async () => {
@@ -109,25 +119,50 @@ test("renaming a Material re-reads Detail", async () => {
   expect(screen.getByText("Merino")).toBeTruthy();
 });
 
-test("Detail renders the hero and the recorded Specification read-only", async () => {
-  const design = createDesign(database, {
-    name: "Silk slip dress",
-    description: "Bias cut, cowl neck.",
-    silhouette: "Relaxed A-line",
-    measurements: "Bust 96 / waist 104",
-  });
+test("the fixed header carries the back control and the Design's place", async () => {
+  const category = createCategory(database, { name: "Dress" });
+  const collection = createCollection(database, { name: "Spring" });
+  const design = createDesign(
+    database,
+    {
+      name: "Silk slip dress",
+      categoryId: category.id,
+      collectionId: collection.id,
+    },
+    Date.UTC(2026, 0, 5, 12),
+  );
+  writeDesign(
+    database,
+    design.id,
+    { fields: { description: "Bias cut, cowl neck." } },
+    Date.UTC(2026, 1, 12, 12),
+  );
 
   await renderDetail(design.id);
 
-  expect(screen.getByText("Silk slip dress")).toBeTruthy();
-  expect(screen.getByText("No category · No collection")).toBeTruthy();
-  expect(screen.getByText("Bias cut, cowl neck.")).toBeTruthy();
-  expect(screen.getByText("Specification")).toBeTruthy();
-  expect(screen.getByText("Relaxed A-line")).toBeTruthy();
-  expect(screen.getByText("Bust 96 / waist 104")).toBeTruthy();
+  expect(headerRegion().getByRole("button", { name: "Back to Library" })).toBeTruthy();
+  expect(headerRegion().getByText("Spring")).toBeTruthy();
+  expect(headerRegion().getByText("Dress")).toBeTruthy();
+  expect(headerRegion().getByText("Created Jan 5, 2026")).toBeTruthy();
+  expect(headerRegion().getByText("Updated Feb 12, 2026")).toBeTruthy();
 });
 
-test("Detail shows Created and Updated as date badges instead of the bottom timestamp box", async () => {
+test("the body opens on the identity block: name, Status pill, and description", async () => {
+  const design = createDesign(
+    database,
+    { name: "Silk slip dress", description: "Bias cut, cowl neck." },
+    Date.UTC(2026, 0, 5, 12),
+  );
+
+  await renderDetail(design.id);
+
+  expect(identityRegion().getByText("Silk slip dress")).toBeTruthy();
+  expect(identityRegion().getByText("Concept")).toBeTruthy();
+  expect(identityRegion().getByText("Bias cut, cowl neck.")).toBeTruthy();
+  expect(identityRegion().queryByText("Created Jan 5, 2026")).toBeNull();
+});
+
+test("the dates live in the header only, once each", async () => {
   const design = createDesign(database, { name: "Silk slip dress" }, Date.UTC(2026, 0, 5, 12));
   writeDesign(
     database,
@@ -138,10 +173,65 @@ test("Detail shows Created and Updated as date badges instead of the bottom time
 
   await renderDetail(design.id);
 
-  expect(screen.getByText("Created Jan 5, 2026")).toBeTruthy();
-  expect(screen.getByText("Updated Feb 12, 2026")).toBeTruthy();
-  expect(screen.queryByText("Created")).toBeNull();
-  expect(screen.queryByText("Updated")).toBeNull();
+  expect(screen.getAllByText("Created Jan 5, 2026")).toHaveLength(1);
+  expect(screen.getAllByText("Updated Feb 12, 2026")).toHaveLength(1);
+});
+
+test("a Design with no Collection omits the Collection line instead of naming it", async () => {
+  const category = createCategory(database, { name: "Dress" });
+  const design = createDesign(database, { name: "Silk slip dress", categoryId: category.id });
+
+  await renderDetail(design.id);
+
+  expect(headerRegion().getByText("Dress")).toBeTruthy();
+  expect(headerRegion().queryByText(/No collection/)).toBeNull();
+});
+
+test("a Design with no Category omits the Category line instead of naming it", async () => {
+  const collection = createCollection(database, { name: "Spring" });
+  const design = createDesign(database, {
+    name: "Silk slip dress",
+    collectionId: collection.id,
+  });
+
+  await renderDetail(design.id);
+
+  expect(headerRegion().getByText("Spring")).toBeTruthy();
+  expect(headerRegion().queryByText(/No category/)).toBeNull();
+});
+
+test("the body carries no joined Category and Collection line", async () => {
+  const category = createCategory(database, { name: "Dress" });
+  const collection = createCollection(database, { name: "Spring" });
+  const design = createDesign(database, {
+    name: "Silk slip dress",
+    categoryId: category.id,
+    collectionId: collection.id,
+  });
+
+  await renderDetail(design.id);
+
+  expect(screen.queryByText("Dress · Spring")).toBeNull();
+  expect(identityRegion().queryByText("Dress")).toBeNull();
+  expect(identityRegion().queryByText("Spring")).toBeNull();
+});
+
+test("Detail renders the identity block and the recorded Specification read-only", async () => {
+  const design = createDesign(database, {
+    name: "Silk slip dress",
+    description: "Bias cut, cowl neck.",
+    silhouette: "Relaxed A-line",
+    measurements: "Bust 96 / waist 104",
+  });
+
+  await renderDetail(design.id);
+
+  expect(identityRegion().getByText("Silk slip dress")).toBeTruthy();
+  expect(identityRegion().getByText("Bias cut, cowl neck.")).toBeTruthy();
+  expect(screen.queryByText(/No category/)).toBeNull();
+  expect(screen.getByText("Specification")).toBeTruthy();
+  expect(screen.getByText("Relaxed A-line")).toBeTruthy();
+  expect(screen.getByText("Bust 96 / waist 104")).toBeTruthy();
 });
 
 test("Detail hides Specification rows the owner has not recorded", async () => {

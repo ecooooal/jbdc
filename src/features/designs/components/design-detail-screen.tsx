@@ -5,7 +5,6 @@ import { ScrollView, View } from "react-native";
 import Animated, { ZoomIn } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { DesignGallery } from "@/features/images/react";
-import { Badge } from "@/shared/components/ui/badge";
 import { Button } from "@/shared/components/ui/button";
 import { Icon } from "@/shared/components/ui/icon";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/components/ui/tabs";
@@ -32,20 +31,6 @@ function formatShortDate(timestamp: number): string {
   return SHORT_DATE_FORMAT.format(timestamp);
 }
 
-/** When the Design was made and last changed, beside its name. */
-function DetailDateBadges({ design }: { design: DesignDetail }) {
-  return (
-    <View className="flex-row flex-wrap items-center gap-2">
-      <Badge variant="outline">
-        <Text>Created {formatShortDate(design.createdAt)}</Text>
-      </Badge>
-      <Badge variant="outline">
-        <Text>Updated {formatShortDate(design.updatedAt)}</Text>
-      </Badge>
-    </View>
-  );
-}
-
 /** A label and its value. Only rendered when the value exists. */
 function DetailRow({ label, value }: { label: string; value: string }) {
   return (
@@ -57,23 +42,78 @@ function DetailRow({ label, value }: { label: string; value: string }) {
 }
 
 /**
- * The hero: the gallery, then the name with its dates, Status,
- * Category · Collection, and description. The designs module owns the text;
- * the images module owns the hero image and its journey.
+ * The fixed header, outside the scrolling content: the back control, then the
+ * Design's place — Collection in the serif voice, Category under it in the
+ * muted voice, and the dates under that in mono — and one action area at the
+ * end. It grows to fit its lines instead of truncating, and an absent
+ * Collection or Category is omitted rather than named.
  */
-function DetailHero({ design }: { design: DesignDetail }) {
+function DetailHeader({ design, designId }: { design: DesignDetail | null; designId: string }) {
   return (
-    <View className="gap-3">
-      <DesignGallery designId={design.id} />
+    <View testID="detail-header" className="flex-row items-start gap-2 px-4 pt-2">
+      <Button
+        size="icon"
+        variant="ghost"
+        accessibilityLabel="Back to Library"
+        onPress={() => router.back()}
+      >
+        <Icon as={ChevronLeft} />
+      </Button>
+
+      <View className="flex-1 gap-1 pb-2">
+        {design?.collection ? <Text variant="h4">{design.collection}</Text> : null}
+        {design?.category ? <Text variant="muted">{design.category}</Text> : null}
+        {design ? (
+          <View className="gap-0.5 pt-1">
+            <Text className="text-muted-foreground font-mono text-sm leading-5">
+              Created {formatShortDate(design.createdAt)}
+            </Text>
+            <Text className="text-muted-foreground font-mono text-sm leading-5">
+              Updated {formatShortDate(design.updatedAt)}
+            </Text>
+          </View>
+        ) : null}
+      </View>
+
+      {design ? (
+        <View className="flex-row items-center gap-1">
+          <Button
+            size="sm"
+            variant="ghost"
+            accessibilityLabel="History"
+            onPress={() =>
+              router.push({ pathname: "/designs/[id]/history", params: { id: designId } })
+            }
+          >
+            <Text>History</Text>
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            accessibilityLabel="Edit design"
+            onPress={() =>
+              router.push({ pathname: "/designs/[id]/edit", params: { id: designId } })
+            }
+          >
+            <Text>Edit</Text>
+          </Button>
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
+/**
+ * The body's opening: the name in the title voice with its Status pill, then
+ * the description. The dates and the taxonomy live in the fixed header; the
+ * image block and the sections follow beneath.
+ */
+function DetailIdentity({ design }: { design: DesignDetail }) {
+  return (
+    <View testID="detail-identity" className="gap-2">
       <View className="flex-row flex-wrap items-center gap-2">
         <Text variant="h3">{design.name}</Text>
-        <DetailDateBadges design={design} />
-      </View>
-      <View className="flex-row items-center gap-2">
         <DesignStatusBadge status={design.status} />
-        <Text variant="muted">
-          {design.category ?? "No category"} · {design.collection ?? "No collection"}
-        </Text>
       </View>
       {design.description ? (
         <Text variant="muted" className="text-base leading-6">
@@ -175,15 +215,18 @@ function DetailSections({ design }: { design: DesignDetail }) {
 }
 
 /**
- * What one Design is right now: its hero, then the sections it has recorded.
- * Name, its dates and Status are always here; the rest appears only when it
- * exists, so an unfinished Design reads as intentional rather than incomplete.
+ * What one Design is right now: its identity, then its images, then the
+ * sections it has recorded. Name and Status are always here; the rest appears
+ * only when it exists, so an unfinished Design reads as intentional rather
+ * than incomplete.
  */
 function DesignDetailContent({ design }: { design: DesignDetail }) {
   return (
     <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
       <View className="gap-6 px-6 pb-12 pt-2">
-        <DetailHero design={design} />
+        <DetailIdentity design={design} />
+
+        <DesignGallery designId={design.id} />
 
         <DetailSections design={design} />
       </View>
@@ -201,9 +244,10 @@ const DETAIL_ZOOM = ZoomIn.duration(DETAIL_ARRIVAL.zoom.duration).withInitialVal
 });
 
 /**
- * Detail for one Design, opened from its Library card. It subscribes to the
- * record, so later edits show here without reopening the screen. Back returns
- * to the Library.
+ * Detail for one Design, opened from its Library card. The header stays fixed
+ * above the scrolling content; the body opens on the identity block and
+ * subscribes to the record, so later edits show here without reopening the
+ * screen. Back returns to the Library.
  */
 export function DesignDetailScreen({ designId }: { designId: string }) {
   const { design, error, status } = useDesignDetail(designId);
@@ -211,40 +255,7 @@ export function DesignDetailScreen({ designId }: { designId: string }) {
   return (
     <Animated.View entering={DETAIL_ZOOM} style={{ flex: 1 }}>
       <SafeAreaView style={{ flex: 1 }} className="bg-background" edges={["top", "left", "right"]}>
-        <View className="flex-row items-center justify-between px-4 pt-2">
-          <Button
-            size="icon"
-            variant="ghost"
-            accessibilityLabel="Back to Library"
-            onPress={() => router.back()}
-          >
-            <Icon as={ChevronLeft} />
-          </Button>
-          {design ? (
-            <View className="flex-row items-center gap-1">
-              <Button
-                size="sm"
-                variant="ghost"
-                accessibilityLabel="History"
-                onPress={() =>
-                  router.push({ pathname: "/designs/[id]/history", params: { id: designId } })
-                }
-              >
-                <Text>History</Text>
-              </Button>
-              <Button
-                size="sm"
-                variant="ghost"
-                accessibilityLabel="Edit design"
-                onPress={() =>
-                  router.push({ pathname: "/designs/[id]/edit", params: { id: designId } })
-                }
-              >
-                <Text>Edit</Text>
-              </Button>
-            </View>
-          ) : null}
-        </View>
+        <DetailHeader design={design} designId={designId} />
 
         {error ? (
           <Text className="text-destructive px-6 pt-4">{error.message}</Text>
