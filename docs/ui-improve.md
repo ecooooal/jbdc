@@ -17,46 +17,42 @@
 
 ## Design screen
 - Header
-	- Contains Collection; Category and three dots more actions
-		- More actions contains history only
-		- Below colllection are created and updated
-	- Three dots contains
-		- History 
-		- edit
-	- History and edit should now be a proper icon instead of words
-- On top move the design name block
-	- Name
-	- status
-	- description
+	- fixed while the page scrolls; when its content needs more room it grows in height, never scrolls
+	- left: back, then Collection in the serif voice, Category beneath it in muted text, and created/updated beneath that in mono; an absent Collection or Category is omitted, not labelled "No …"
+	- right: one kebab menu holding History and Edit, each an icon with its label; the standalone History and Edit text buttons are gone
+- Identity block, above the image
+	- name, then the Status pill, then the description
+	- dates, Category, and Collection live in the header, not here
 - Image block
-	- image viewer
-		- needs to be smooth
-		- swiping have animation
-	- inside image viewer ui
-		- on top, stage and number of images
-			- when stage gets change it should have morphing animation
-		- on bottom right gives the note function 
-			- notes now are pinned to the images
-			- pressing a pinned note opens up a bottom sheet
-			- a notes button that expand to give the following
-				- add note
-				- see all notes opens up a bottom sheet
-					- see all notes handle a note deletion (requires double tap)
-					- notes aren't editable
-			- hide all pinned notes
-		- on bottom left a scroll wheel of all images
-			- user can use that to navigate through all the images
-			- active images pop ups and give its stage
-	- Image block consumes note block space
-- Note block should now be consumed to the image viewer
-- Stage four buttons block (inspiration, sketch, prototype, final)
-	- one rows four columns UI with equal spaces and card size
-		- active stage should have animation
-	- a single row list of images 
-		- on reveal should have accordion animation
-- Specification and Creative direction tabs block
-	- tables shouldn't have borders 
-	- values are left justified, not right
+	- an inline, edge-to-edge pager at 3:4 with square edges and `cover`; it replaces the hero and the note block as the browsing surface, and a tap still opens the full-screen image detail
+	- a swipe walks every image in journey order, across stages, and stops at both ends
+	- top: the stage and its position across the journey, `Sketch · 7 / 19`; the stage word morphs when a swipe crosses into another stage
+	- bottom-left: a filmstrip of every image in journey order; the active thumb lifts and names its stage, and pressing a thumb selects it
+	- bottom-right: the notes button, carrying the current image's note count; it expands upward into Add note and See all notes (n); there is no hide action
+	- note markers: a numbered index on the image's right edge, oldest first, at most four with a `+N` marker for the rest; they are always visible; pressing one opens its note sheet; deleting a note renumbers the rest
+	- no images: the dashed frame at the same size, with the counter, filmstrip, markers, and notes button hidden
+- Notes
+	- a note is read-only everywhere; deletion is the two-step delete, one armed row at a time, cleared by closing the sheet or arming another
+	- note sheet: the note's full text and created date, read-only, no delete
+	- see-all sheet: every note on the current image, oldest first, with the two-step delete
+	- add-note sheet: keyboard-aware, bound to the current image; changing the image drops the draft; only a stored note closes it
+	- a tap on the image opens the image detail: full-screen, black photography surface, one image, the four kind pills (the only edit), Remove behind its one question, and the notes list read-only with the two-step delete; no add, no pager, no filmstrip
+	- the sheets are `ModalBottomSheet`s (ADR-0006); no sheet opens over the image detail
+- Stage block
+	- four equal cards in one row, each the stage label and its image count; an empty stage reads zero
+	- the active card takes the Kraft tone and a short tone/scale animation; pressing a stage selects its oldest image and opens its row; pressing the active stage again closes the row
+	- the active card follows the pager, so a swipe across a stage boundary moves the tone; the row keeps its open or closed state
+	- the open stage's row is a single horizontal line of its images, oldest first, with the plus card at the end; the plus attaches to that stage; the row opens and closes on the shared accordion timing
+	- the old rail chips and their per-stage thumbs go
+- Specification and Creative direction
+	- no outer border and no header fill; one hairline between rows
+	- labels muted and left; values left in a second column
+	- Material uses gets the same treatment; Edit keeps its tables as they are
+- Motion and empty states
+	- stage/count change: a cross-fade with a small vertical shift, 160–200ms
+	- stage row: `LinearTransition` 200ms; active card tone/scale 150ms; note markers 150ms
+	- paging uses the platform's paging; no spring, no overshoot, nothing announces
+	- "Nothing recorded yet" stays as it is
 
 # Edit design screen
 - All fields should share the same keyboard, currently when keyboard is present, tapping a field re-renders the keyboard

@@ -22,13 +22,13 @@ What a reducer's result asks a runner to perform, carried beside the state it re
 **runner**:
 The one hook, `useReducerRunner` at `src/shared/hooks/use-reducer-runner.ts`, behind the visit, the gallery and the viewer. It owns the state, the latest ref, the state-then-latest ordering, and the effect loop; each surface keeps only its perform body, which performs the effect and folds the ending. It carries no policy: reviewing a write's behaviour means reading the surface's perform body and the fold.
 
-## The images gallery
+## The Design screen's images
 
-The Detail screen's images component, its parts, and its writes.
+The Detail screen's image block, its parts, and its writes.
 
-**the gallery**:
-The images component on the Design Detail screen: the hero, the note block, the journey rail, and the viewer.
-_Note_: the Library entry's _Avoid_ on "gallery" bars calling that screen by this word; this word is the component.
+**the image block**:
+The images component on the Design Detail screen: the inline pager, its chrome, the stage block, and the image detail it opens.
+_Note_: the Library entry's _Avoid_ on "gallery" bars calling that screen by this word.
 
 **the journey**:
 One design's images grouped by kind, in process order — inspiration, sketch, prototype, final — oldest first within each.
@@ -37,35 +37,53 @@ One design's images grouped by kind, in process order — inspiration, sketch, p
 One kind's group in the journey: the images that share a kind.
 _Note_: the Status entry's _Avoid_ on "stage" is about a design's standing, not this grouping.
 
-**the rail**:
-The journey rail: the stage row with each stage's images, and the plus card.
+**the pager**:
+The image block's swipe surface: one image at a time, full-bleed at 3:4 with `cover`, walking the journey in order and stopping at either end.
 
-**the hero**:
-The large showing of the current image, with its position and count in the stage and the swipe that walks the journey.
+**the filmstrip**:
+The image block's bottom row of every image in journey order. The active thumb lifts and names its stage; pressing another selects it.
 
-**the plus card**:
-The rail's add-images card. A press opens the picker and attaches what comes back to the stage the gallery is on.
+**the notes button**:
+The image block's bottom-right control, carrying the current image's note count; it expands into the notes menu.
+
+**the notes menu**:
+The two actions the notes button expands into: Add note, and See all notes with the current count. There is no hide action.
+
+**the note marker**:
+The numbered index control on an image's right edge, one per note, oldest first, capped at four with a `+N` marker for the rest. An index, never a spatial anchor; pressing one opens its note sheet. Deleting a note renumbers the rest.
+
+**the note sheet**:
+One note read on its own: full text and created date, read-only, no delete.
+
+**the see-all sheet**:
+Every note on the current image, oldest first, with the two-step delete.
+
+**the two-step delete**:
+The one destructive rule for a note: the first press arms the row ("Tap again to delete"), the second removes it. One row is armed at a time; closing the sheet or arming another disarms it. No timer, no dialog, no undo.
 
 **the composer**:
-The in-place note editor under the hero: the draft textarea with Save and Cancel, bound to the image it was opened on. Only a stored note closes it.
+The add-note sheet: the draft textarea with Save and Cancel, bound to the image it was opened on. Only a stored note closes it; changing the image drops it.
 
-**the note block**:
-The current image's commentary beneath the hero: the notes list, its expansion control, and the composer when open.
+**the image detail**:
+The full-screen view a tap on the image opens: one image on the black photography surface, the four kind pills that reclassify it, Remove behind its one question, and the notes list read-only with the two-step delete. No add and no pager.
 
-**the viewer**:
-The full-screen image view, whose own reducer owns reclassification, the one remove question, and whether the last removal landed.
+**the stage block**:
+The four equal stage cards and the open stage's single image row, with the plus card at the row's end.
+
+**the plus card**:
+The stage row's add-images card. A press opens the picker and attaches what comes back to the stage the row is showing.
 
 **the picker**:
 The system image-file chooser, as a port. It answers picked files, a backed-out cancel, or a denied permission — three endings, only one worth telling the owner about.
 
 **the live read**:
-The reactive database read that re-runs whenever the tables it watches change. A write lands through it; the rail and the note block never copy rows.
+The reactive database read that re-runs whenever the tables it watches change. A write lands through it; the image block and the notes never copy rows.
 
 **the write path**:
 The images module's one function for every image write — attach, reclassify, remove, add-note, remove-note. It answers each change kind with only the endings that change can produce — an attach cannot answer with a note's refusal — and answers a failed copy or a missing store as one ending. A failed copy, a missing store, and a store that cannot release a file never throw.
 
 **the missing-adapters guard**:
-The two images perform bodies' answer when an adapter is missing. The gallery's perform body, with no image store or picker available, cannot attempt an attach and says nothing on the rail; the viewer's perform body hands its possibly-null store to the write path, so a removal without one answers `store-failed`.
+The two images perform bodies' answer when an adapter is missing. The image block's perform body, with no image store or picker available, cannot attempt an attach and says nothing on the stage row; the image detail's performer hands its possibly-null store to the write path, so a removal without one answers `store-failed`.
 
 ## The Library's preferences
 
