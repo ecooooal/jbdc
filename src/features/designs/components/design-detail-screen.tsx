@@ -83,14 +83,14 @@ function DetailActions({ designId }: { designId: string }) {
             router.push({ pathname: "/designs/[id]/history", params: { id: designId } })
           }
         >
-          <Icon as={HistoryIcon} />
+          <Icon as={HistoryIcon} className="size-4" />
           <Text>History</Text>
         </DropdownMenuItem>
         <DropdownMenuItem
           textValue="Edit"
           onPress={() => router.push({ pathname: "/designs/[id]/edit", params: { id: designId } })}
         >
-          <Icon as={Pencil} />
+          <Icon as={Pencil} className="size-4" />
           <Text>Edit</Text>
         </DropdownMenuItem>
       </DropdownMenuContent>

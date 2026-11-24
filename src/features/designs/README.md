@@ -49,9 +49,11 @@ is worth an Event.
 ## Screens and pieces
 
 - `components/edit-design-screen.tsx`, `components/design-detail-screen.tsx` — the two screens.
+- `components/section-tabs.tsx` — Detail's plain section switcher: labels on the shared Tabs root, the active one marked by its text and border; Edit keeps its filled bar.
 - `components/new-design-form.tsx` — create: name, Category, Collection.
 - `components/field-rows.tsx` — one section's read-first rows; `form-field.tsx` is a single labelled input.
 - `components/taxonomy-select.tsx` — Category/Collection picker with None; `material-use-role-select.tsx` — role chips.
 - `components/inline-creation-panel.tsx` — create a Category, Collection, or Material without leaving the form.
 - `components/material-uses-table.tsx` — the read-only rows Detail and Edit share.
+- `components/material-uses-section.tsx` — Edit's Materials block: the uses table, then `Add material`, or the visit's one open add/edit panel.
 - `components/design-status-badge.tsx` — a Status badge. The hero image and its journey belong to the `images` module's gallery; Detail composes `DesignGallery` above its text.
