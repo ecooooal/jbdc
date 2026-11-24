@@ -31,6 +31,15 @@ function formatShortDate(timestamp: number): string {
   return SHORT_DATE_FORMAT.format(timestamp);
 }
 
+/** One date line: its label and short date in the mono voice. */
+function DetailDate({ label, value }: { label: string; value: string }) {
+  return (
+    <Text className="text-muted-foreground font-mono text-sm leading-5">
+      {label} {value}
+    </Text>
+  );
+}
+
 /** A label and its value. Only rendered when the value exists. */
 function DetailRow({ label, value }: { label: string; value: string }) {
   return (
@@ -48,7 +57,7 @@ function DetailRow({ label, value }: { label: string; value: string }) {
  * end. It grows to fit its lines instead of truncating, and an absent
  * Collection or Category is omitted rather than named.
  */
-function DetailHeader({ design, designId }: { design: DesignDetail | null; designId: string }) {
+function DetailHeader({ design }: { design: DesignDetail | null }) {
   return (
     <View testID="detail-header" className="flex-row items-start gap-2 px-4 pt-2">
       <Button
@@ -64,13 +73,9 @@ function DetailHeader({ design, designId }: { design: DesignDetail | null; desig
         {design?.collection ? <Text variant="h4">{design.collection}</Text> : null}
         {design?.category ? <Text variant="muted">{design.category}</Text> : null}
         {design ? (
-          <View className="gap-0.5 pt-1">
-            <Text className="text-muted-foreground font-mono text-sm leading-5">
-              Created {formatShortDate(design.createdAt)}
-            </Text>
-            <Text className="text-muted-foreground font-mono text-sm leading-5">
-              Updated {formatShortDate(design.updatedAt)}
-            </Text>
+          <View className="gap-1 pt-1">
+            <DetailDate label="Created" value={formatShortDate(design.createdAt)} />
+            <DetailDate label="Updated" value={formatShortDate(design.updatedAt)} />
           </View>
         ) : null}
       </View>
@@ -82,7 +87,7 @@ function DetailHeader({ design, designId }: { design: DesignDetail | null; desig
             variant="ghost"
             accessibilityLabel="History"
             onPress={() =>
-              router.push({ pathname: "/designs/[id]/history", params: { id: designId } })
+              router.push({ pathname: "/designs/[id]/history", params: { id: design.id } })
             }
           >
             <Text>History</Text>
@@ -92,7 +97,7 @@ function DetailHeader({ design, designId }: { design: DesignDetail | null; desig
             variant="ghost"
             accessibilityLabel="Edit design"
             onPress={() =>
-              router.push({ pathname: "/designs/[id]/edit", params: { id: designId } })
+              router.push({ pathname: "/designs/[id]/edit", params: { id: design.id } })
             }
           >
             <Text>Edit</Text>
@@ -105,8 +110,8 @@ function DetailHeader({ design, designId }: { design: DesignDetail | null; desig
 
 /**
  * The body's opening: the name in the title voice with its Status pill, then
- * the description. The dates and the taxonomy live in the fixed header; the
- * image block and the sections follow beneath.
+ * the description. The dates and the Category and Collection live in the fixed
+ * header; the image block and the sections follow beneath.
  */
 function DetailIdentity({ design }: { design: DesignDetail }) {
   return (
@@ -255,7 +260,7 @@ export function DesignDetailScreen({ designId }: { designId: string }) {
   return (
     <Animated.View entering={DETAIL_ZOOM} style={{ flex: 1 }}>
       <SafeAreaView style={{ flex: 1 }} className="bg-background" edges={["top", "left", "right"]}>
-        <DetailHeader design={design} designId={designId} />
+        <DetailHeader design={design} />
 
         {error ? (
           <Text className="text-destructive px-6 pt-4">{error.message}</Text>
