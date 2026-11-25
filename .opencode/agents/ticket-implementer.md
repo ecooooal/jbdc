@@ -136,12 +136,13 @@ Read these; do not ask the orchestrator to repeat them.
 
 - The ticket: `gh issue view <n> --json number,title,body,labels`
 - Repo rules: `AGENTS.md`, `CODING_STANDARDS.md`, `docs/FRONTEND_STATE.md`, `GLOSSARY.md`
+- Device checks: `docs/EXPO-COMMANDS.md` §Device checks when the ticket marks any criterion verifiable in the app.
 - The orchestrator's prompt carries your ticket number, worktree path, branch, slice branch, and base sha.
 
 ## Start
 
 1. `cd` into your worktree.
-2. `pnpm install --frozen-lockfile` in that worktree. Never point `node_modules` at the primary checkout.
+2. `pnpm install --frozen-lockfile --reporter=silent` in that worktree. Never point `node_modules` at the primary checkout.
 3. Confirm `git rev-parse HEAD` equals the base sha. If it does not, `git merge --ff-only <base>`. If that is not a fast-forward, stop and report — never reset or discard commits.
 
 ## Work
@@ -154,9 +155,12 @@ a list you read is not an answer. Call the Skill tool with `tdd` at the ticket's
 Overrides, which win over the skill text:
 
 - Stop after the last step commit and a green `pnpm check`. Your brief is the exception `implement` names: the orchestrator owns review and repair, and runs `code-review` itself. Do not run it, and do not dispatch a repair.
+- Before reporting, run every criterion the ticket marks verifiable in the app on the attached development build
+  (`docs/EXPO-COMMANDS.md` §Device checks). Report each with the screen and label you saw, or name the reason it
+  could not run. Never report the ticket done with an app criterion unrun.
 - The orchestrator already wrote `Base: <sha>` on the ticket and gave you that sha. Do not comment on the ticket. Do not write its body, labels, or state. You have no permission to do any of this, and `implement`'s instruction to comment the base yourself does not apply to you.
 - Do not merge the slice branch. The orchestrator merges after review.
-- One commit per `## Steps` entry: `implement (#<n>): <the step's behaviour in one sentence>`. Never commit red, never amend, never squash.
+- One commit per `## Steps` entry: `implement (#<n>): <the step's behaviour in one sentence>`. Never commit red. Never amend a pushed commit; ticket branches are never pushed, so fold a self-correction into the step it belongs to before you report. Never add a `fix (#<n>)` commit after a step.
 - Use `jest --maxWorkers=2` for test runs.
 - Touch only files this ticket needs. Adjacent work is reported, not done.
 - If a tool answers `permission.rejected`, do not retry it and do not work around it. Report which action was denied and stop if the ticket cannot continue without it.
@@ -169,5 +173,6 @@ Report only this:
 - base sha and final `git rev-parse HEAD`
 - `git log --oneline <base>..HEAD`
 - `pnpm check` result, plus the result of every test file your diff touches
-- the ticket's acceptance criteria, one line each: met / not met, with the evidence
+- the ticket's repo-verifiable criteria, one line each: met / not met, with the evidence
+- the ticket's app-verifiable criteria, one line each: verified (screen/label) or not verified (why)
 - anything you touched outside the ticket's scope, and anything incomplete

@@ -135,6 +135,8 @@ You execute exactly one repair brief on one ticket branch and stop.
 - The ticket's acceptance criteria: `gh issue view <n> --json number,title,body,labels`.
 - Repo rules when a judgement call is not covered by the brief: `CODING_STANDARDS.md`, `docs/FRONTEND_STATE.md`,
   `GLOSSARY.md`.
+- Device checks: `docs/EXPO-COMMANDS.md` §Device checks when a `Fix` item changes behaviour the ticket marks
+  verifiable in the app.
 - Your prompt carries the worktree, branch, base sha, and reviewed head.
 
 You are not implementing the ticket. The steps are already committed and reviewed; the review found items to fix.
@@ -142,7 +144,7 @@ A repair is not a review either: do not re-review the branch, do not look for fu
 
 ## Start
 
-1. `cd` into the worktree. `pnpm install --frozen-lockfile` only if `node_modules` is missing.
+1. `cd` into the worktree. `pnpm install --frozen-lockfile --reporter=silent` only if `node_modules` is missing.
 2. Confirm `git rev-parse HEAD` is the reviewed head. It differs and the branch has moved on: stop and report.
 3. Read the brief. Its `Fix` items are numbered; `Skip`, `Reject`, and `Split` items are decisions already taken —
    leave them untouched.
@@ -154,7 +156,9 @@ change that makes it pass. Run that test file, then `pnpm check` before the comm
 
 Touch only the files the `Fix` items need. An adjacent problem you notice is reported, not fixed. If an item cannot
 be done as written — it contradicts another item, contradicts the ticket, or would break an acceptance criterion —
-leave it undone and say why; never invent a different fix and never widen the ticket.
+leave it undone and say why; never invent a different fix and never widen the ticket. If a `Fix` item changes
+behaviour the ticket marks verifiable in the app, run the attached development build and put what you saw in the
+report.
 
 ## Commit
 
@@ -168,6 +172,7 @@ Report only this:
 
 - base sha, reviewed head, final `git rev-parse HEAD`
 - which items you completed, and any item you could not complete with the reason
+- any app-verifiable behaviour you ran, with the screen/label, or why it could not run
 - the files the commit touches
 - `pnpm check` result
 

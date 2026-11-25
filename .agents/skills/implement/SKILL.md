@@ -17,6 +17,7 @@ Load the stack's manual alongside `tdd` — before writing, and again when a ste
 | The work touches | Load |
 | --- | --- |
 | motion, gestures, or a route transition | `expo-animation` |
+| an acceptance criterion the ticket marks verifiable in the app | `docs/EXPO-COMMANDS.md` (§Device checks) |
 | tokens, a new surface's styling, or a hardcoded colour | `expo-design-system` |
 | fetch, cache, retries, or offline | `expo-data-fetching` |
 | a table, query, or migration | `expo-sqlite` |
@@ -31,7 +32,7 @@ Run typechecking regularly, single test files regularly, and the full test suite
 
 Commit when a step is green, not when a test is green. The ticket's `## Steps` list is the commit list: up to four, inside out. No `## Steps` section in the body or its agent brief means stop and report — never invent boundaries at commit time. Inside a step the loop is unchanged: red, green, refactor, repeat, no commit.
 
-A step is green when three things pass: the step's test files, every test file its diff touches, and `pnpm typecheck && pnpm lint`. Then commit once, `implement (#<n>): <the step's behaviour in one sentence>`, holding that step's tests, its code, and any prose the step describes — the comment, the glossary line, the ADR line.
+A step is green when four things pass: the step's test files, every test file its diff touches, `pnpm typecheck && pnpm lint`, and — when the ticket lists criteria verifiable in the app — a run on the attached development build (`docs/EXPO-COMMANDS.md` §Device checks). Record each app criterion with the screen and label you saw; name anything the device cannot verify and why. Then commit once, `implement (#<n>): <the step's behaviour in one sentence>`, holding that step's tests, its code, and any prose the step describes — the comment, the glossary line, the ADR line.
 
 Run `pnpm check` once, at the end of the ticket.
 

@@ -11,6 +11,9 @@ strongest chat model available. The division of labour: the orchestrator supplie
 frontier checks, review aggregation, repair briefs, verdicts — while the ticket agents run a
 cheap model of your choosing and only execute steps.
 
+Tool note: `shell`, `read`, `write`, `edit`, and `subagent` are top-level tools — call them directly.
+`execute` hosts only the `opencode` tools.
+
 ## Constants
 
 - The integration branch is the branch checked out in `/home/echo/workspace/jbdc`, resolved by the slice gate below. Never commit to it yourself; it only receives merges.
@@ -20,7 +23,8 @@ cheap model of your choosing and only execute steps.
 - Implementer model: omit the `model` parameter by default — `ticket-implementer` and `ticket-repairer` both pin
   `opencode/hy4-flash-free`. When `$ARGUMENTS` contains the word `deepseek`, pass
   `model: opencode-go/deepseek-v4.1-flash#max` on every dispatch and repair. The token is a switch, not a
-  ticket number; strip it before the frontier loop.
+  ticket number; strip it before the frontier loop. Review axis subagents inherit this session's model; the
+  switch names the ticket dispatches, not a separate reviewer model.
 - The model a subagent ran is a recorded fact, read back in §8: `session_v2.model` in
   `~/.local/share/opencode/opencode.db` carries the `variant`, and `session_v2.tokens_reasoning` carries what
   the effort spent. `~/.local/share/opencode/log` holds shell events only and cannot answer it.
@@ -51,6 +55,9 @@ gh issue view <n> --json number,title,state,body,labels,blockedBy \
 The body rides along in the same response: it feeds the step count (§4.1) and the path estimate (§2b), so read it from here instead of fetching the ticket again.
 
 Skip, and report, any ticket that is closed, lacks `ready-for-agent`, has an open blocker, or lacks `## Steps`.
+A blocker whose work is already in the slice counts as satisfied while its issue is open: check
+`git -C /home/echo/workspace/jbdc log --oneline <slice> --grep "(#<m>)"`. Merge, not closure, is the dispatch
+dependency; the user closes the issue (§8). Report the still-open numbers under §8.
 Wave order: dispatch the 2 you can, merge, then take the next 2. #36 only after #35 merges; #41 only after #40.
 
 ## 2. Per ticket, before dispatch (run after the 2b gate)
@@ -59,7 +66,7 @@ Wave order: dispatch the 2 you can, merge, then take the next 2. #36 only after 
 git -C /home/echo/workspace/jbdc rev-parse <slice>
 gh issue comment <n> --body "Base: <that sha>"
 git -C /home/echo/workspace/jbdc worktree add /home/echo/workspace/wt/<n> -b ticket/<n>-<slug> <that sha>
-cd /home/echo/workspace/wt/<n> && pnpm install --frozen-lockfile
+cd /home/echo/workspace/wt/<n> && pnpm install --frozen-lockfile --reporter=silent
 ```
 
 The Base comment is mandatory and comes before any commit on the branch: it anchors the review diff,
@@ -121,7 +128,11 @@ Do not paste skills into the prompt.
 3. Aggregate the two reports, read the diff yourself, and rule. The reports inform the verdict, they are not it: anything outside the ticket's scope in the diff is a finding, not a bonus.
 4. Record which model dispatched the ticket: repair reuses it, and the report names it.
 
-Verdict: merge, or repair.
+Verdict: merge, repair, or `device-pending`.
+
+A ticket whose app-verifiable criteria the implementer did not run is `device-pending`. `pnpm check` green settles
+the repo criteria, not the app ones. A device-pending ticket may merge for the chain, but §8 must name every unrun
+criterion; never report it as done.
 
 ## 5. Merge
 
@@ -132,6 +143,8 @@ cd /home/echo/workspace/jbdc && pnpm check
 git -C /home/echo/workspace/jbdc worktree remove /home/echo/workspace/wt/<n>
 ```
 
+Before the merge, read the implementer's app-criteria lines. A `device-pending` merge is allowed only with those
+criteria named in §8; the user runs the build before closing the ticket.
 If the merge conflicts, send the ticket back with the conflict paths; do not resolve it inside the subagent.
 If `pnpm check` fails on the merged tree, the ticket is not green — revert the merge, report, move on.
 
@@ -141,7 +154,10 @@ At most one repair round per ticket, one fresh `ticket-repairer` on the same bra
 the ticket was dispatched with (§4). The repairer reads the brief as **raw Markdown** through `gh`, so write it
 to be scanned as text: a heading per section, one row per finding, no run-on paragraph.
 
-Comment this, filled in:
+Write the brief to `/tmp/opencode/repair-<n>.md`, fill the `Reviewed at` line from
+`git -C /home/echo/workspace/wt/<n> rev-parse HEAD` — paste the command's output, never a SHA typed from memory —
+and post it with `gh issue comment <n> --body-file /tmp/opencode/repair-<n>.md`. Never put a brief in `--body`;
+apostrophes and backticks break the shell string.
 
 ````
 ## Repair brief — #<n>
@@ -175,7 +191,11 @@ the code should take, not only the file it lives in: a row that says "read `view
 `view.stage ?? state.kind`. Name the value whose fallback is dead, so the repairer deletes it instead of
 keeping it as a guard.
 
-Then re-review the delta the same way — load `code-review` §6 here, start only the axis that reported a hard violation, against `git diff <reviewed-head>..ticket/<n>-<slug>`. Cosmetic findings need no second review; the repairer checks those itself.
+Then re-review the delta the same way — load `code-review` §6 here, start only the axis that reported a hard
+violation, against `git diff <reviewed-head>..ticket/<n>-<slug>`. Cosmetic findings need no second review; the
+repairer checks those itself. The delta review judges the brief's `Fix` items and any new hard breach those items
+introduced. A finding outside the brief is recorded in §8 as a residual; it does not reopen repair. A still-broken
+`Fix` item marks the ticket stalled — report it; do not dispatch a second repair.
 
 ## 7. Stalls
 
@@ -189,6 +209,8 @@ marks the ticket stalled: leave the branch, report, move on. Never attempt a thi
 ## 8. Report
 
 Per ticket: verdict, base sha, SHA range, commit list, model as recorded, AC status, findings, merge result.
+If you rewrote a ticket branch's history, name the pre-rewrite head, the reason, and the tree check in that
+ticket's row.
 
 Read the models back once, across the whole wave:
 
@@ -196,8 +218,10 @@ Read the models back once, across the whole wave:
 sqlite3 -column ~/.local/share/opencode/opencode.db \
   "select substr(title,1,34) as session, model->>'$.variant' as variant,
           tokens_reasoning as reasoning, tokens_output as output
-     from session_v2 where model->>'$.providerID'='opencode-go'
-     order by time_created desc limit 20;"
+     from session_v2
+    where model->>'$.providerID'='opencode-go'
+      and (title like 'Implement ticket%' or title like 'Repair ticket%')
+    order by time_created desc limit 20;"
 ```
 
 A requested `#max` answers as `variant = max` with reasoning tokens above zero. A null variant means the
