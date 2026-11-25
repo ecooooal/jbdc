@@ -16,8 +16,9 @@ import { NotesList } from "./notes-list";
  * The image detail, full-screen on the black photography surface, with the two
  * things the owner does here: one pill per kind reclassifies it, and Remove
  * hides behind its one question before the image and its notes go. The notes
- * list is the same read-only list as see-all, with the same two-step delete;
- * its presses go to the gallery reducer, which owns the one arming rule. The
+ * list is the same read-only list as the notes sheet, with the same two-step
+ * delete; its presses go to the gallery reducer, which owns the one arming
+ * rule. The
  * image detail is the whole screen, so the pager's swipe and the rail wait
  * behind it. The image keeps a bounded area and everything beneath it scrolls,
  * so a long note never pushes the controls out of reach. A removal that did

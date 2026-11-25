@@ -12,9 +12,9 @@ import { formatNoteDate } from "../lib/note-date";
  * created date. The trash control follows the two-step delete, so its first
  * press only arms the row — "Tap again to delete" — and the second dispatches
  * the removal. The rule lives in the gallery reducer; this list only renders
- * the armed id it is given. The see-all sheet and the image detail share it,
- * and `overPhotography` gives the image detail's black surface white ink and
- * white hairlines instead of the paper palette.
+ * the armed id it is given. The notes sheet and the image detail share it, and
+ * `overPhotography` gives the image detail's black surface white ink and white
+ * hairlines instead of the paper palette.
  */
 export function NotesList({
   notes,

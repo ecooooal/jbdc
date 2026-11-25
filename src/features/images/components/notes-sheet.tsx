@@ -1,0 +1,148 @@
+import { Plus } from "lucide-react-native";
+import type { ReactNode } from "react";
+import { useEffect, useRef } from "react";
+import { ScrollView, useWindowDimensions, View, type ScrollViewInstance } from "react-native";
+import { useReanimatedKeyboardAnimation } from "react-native-keyboard-controller";
+import Animated, { useAnimatedStyle } from "react-native-reanimated";
+import { Sheet } from "@/shared/components/sheet";
+import { Button } from "@/shared/components/ui/button";
+import { Icon } from "@/shared/components/ui/icon";
+import { Text } from "@/shared/components/ui/text";
+import { Textarea } from "@/shared/components/ui/textarea";
+import type { GalleryFact, ImageNoteComposer } from "../lib/gallery-reducer";
+import { IMAGE_NOTE_MAX_LENGTH } from "../lib/image-notes";
+import type { ImageNote } from "../lib/images";
+import { NotesList } from "./notes-list";
+
+/**
+ * The current image's notes in one paper sheet: the count and Close stay at the
+ * top, Add note expands the inline composer beneath them, and every note reads
+ * below, oldest first, with the two-step delete. Only the list scrolls, so the
+ * header and the composer never leave the screen. The draft, the open state,
+ * and the armed row live in the gallery reducer; a stored note collapses the
+ * composer while the sheet stays open, and closing the sheet drops the draft
+ * and disarms the row.
+ */
+export function NotesSheet({
+  open,
+  notes,
+  composer,
+  armedNoteId,
+  send,
+}: {
+  open: boolean;
+  notes: readonly ImageNote[];
+  composer: ImageNoteComposer | null;
+  armedNoteId: string | null;
+  send: (fact: GalleryFact) => void;
+}) {
+  const list = useRef<ScrollViewInstance>(null);
+  const previousCount = useRef(notes.length);
+  const { height: windowHeight } = useWindowDimensions();
+
+  // A stored note arrives through the live read while the sheet is open; move
+  // the list to it so the owner sees what she just wrote without closing the
+  // sheet. Opening the sheet starts at the oldest note, so only a growing list
+  // moves it.
+  useEffect(() => {
+    if (notes.length > previousCount.current) {
+      list.current?.scrollToEnd({ animated: true });
+    }
+
+    previousCount.current = notes.length;
+  }, [notes.length]);
+
+  return (
+    <Sheet open={open} onClose={() => send({ type: "notes-sheet-closed" })}>
+      {open ? (
+        <KeyboardPadding>
+          <View testID="notes-sheet" className="gap-3 px-4 pb-4 pt-3">
+            <View className="flex-row items-center justify-between gap-3">
+              <Text className="font-serif text-lg font-semibold leading-tight">
+                {`Notes (${notes.length})`}
+              </Text>
+              <Button
+                size="sm"
+                variant="ghost"
+                accessibilityLabel="Close notes"
+                onPress={() => send({ type: "notes-sheet-closed" })}
+              >
+                <Text>Close</Text>
+              </Button>
+            </View>
+
+            {composer ? (
+              <View className="gap-3">
+                <Textarea
+                  accessibilityLabel="New note"
+                  placeholder="What did you decide here, and why?"
+                  numberOfLines={3}
+                  maxLength={IMAGE_NOTE_MAX_LENGTH}
+                  value={composer.draft}
+                  onChangeText={(draft) => send({ type: "image-note-draft-changed", draft })}
+                  autoFocus
+                />
+                <View className="flex-row justify-end gap-2">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    accessibilityLabel="Cancel note"
+                    onPress={() => send({ type: "image-note-composer-closed" })}
+                  >
+                    <Text>Cancel</Text>
+                  </Button>
+                  <Button
+                    size="sm"
+                    accessibilityLabel="Save note"
+                    disabled={composer.draft.trim().length === 0}
+                    onPress={() => send({ type: "image-note-save-pressed" })}
+                  >
+                    <Text>Save note</Text>
+                  </Button>
+                </View>
+              </View>
+            ) : (
+              <Button
+                variant="ghost"
+                className="justify-start px-0"
+                accessibilityLabel="Add note"
+                onPress={() => send({ type: "image-note-composer-opened" })}
+              >
+                <Icon as={Plus} className="text-muted-foreground size-4" />
+                <Text>Add note</Text>
+              </Button>
+            )}
+
+            <ScrollView
+              ref={list}
+              accessibilityLabel="Notes"
+              showsVerticalScrollIndicator={false}
+              style={{ maxHeight: Math.round(windowHeight * 0.5) }}
+            >
+              <NotesList
+                notes={notes}
+                armedNoteId={armedNoteId}
+                onDeletePress={(noteId) => send({ type: "image-note-delete-pressed", noteId })}
+              />
+            </ScrollView>
+          </View>
+        </KeyboardPadding>
+      ) : null}
+    </Sheet>
+  );
+}
+
+/**
+ * Lifts the sheet's content by the keyboard's height, so a content detent grows
+ * exactly as much as the keyboard covers. The padding runs on the UI thread
+ * with the keyboard's own animation; the sheet follows the measured content
+ * without adding a second animation of its own.
+ */
+function KeyboardPadding({ children }: { children: ReactNode }) {
+  const { height } = useReanimatedKeyboardAnimation();
+  const padding = useAnimatedStyle(() => ({
+    paddingBottom: Math.max(-height.get(), 0),
+  }));
+
+  return <Animated.View style={padding}>{children}</Animated.View>;
+}

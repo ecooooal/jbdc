@@ -5,8 +5,6 @@ import {
   createInitialGalleryState,
   galleryReducer,
   journeyView,
-  notesIndexView,
-  notesMenuView,
   stageCardsView,
   stageRowView,
   writeOutcome,
@@ -121,18 +119,12 @@ export function useGallery(designId: string) {
     dispatch({ type: "images-read", stages, cover });
   }, [dispatch, stages, cover]);
 
-  // The notes belong to the current image and stay in the live read; the rows,
-  // their index, and the sheet's note derive on every read without being copied
-  // into the reducer.
+  // The notes belong to the current image and stay in the live read; the rows
+  // derive on every read without being copied into the reducer.
   const notes = useMemo(
     () => imageNotesOf(data.imageNotes, state.imageId),
     [data.imageNotes, state.imageId],
   );
-  const notesIndex = useMemo(() => notesIndexView(notes), [notes]);
-  const notesMenu = useMemo(() => notesMenuView(notes), [notes]);
-  const sheetNote = state.noteSheetId
-    ? (notes.find((note) => note.id === state.noteSheetId) ?? null)
-    : null;
 
   const send = useCallback(
     (fact: GalleryFact) => dispatch(eventOf(fact, stages)),
@@ -148,9 +140,6 @@ export function useGallery(designId: string) {
     stageCards: stageCardsView(stages, state).cards,
     stageRow: stageRowView(stages, state),
     notes,
-    notesIndex,
-    notesMenu,
-    sheetNote,
     send,
     error,
     status,

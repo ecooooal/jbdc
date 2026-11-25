@@ -1,6 +1,6 @@
 import { createReducerTester } from "@/shared/testing/reducer-tester";
 import { createInitialGalleryState, galleryReducer, writeOutcome } from "../lib/gallery-reducer";
-import { DESIGN_ID, journey, noNoteUI, onImage, stage } from "./gallery-reducer-fixtures";
+import { DESIGN_ID, journey, noNoteUI, onImage } from "./gallery-reducer-fixtures";
 
 /** A tester on a gallery already looking at one image. */
 function testerAt(state = onImage("s1")) {
@@ -43,14 +43,12 @@ describe("the note composer", () => {
     expect(tester.getEffects()).toEqual([]);
   });
 
-  test("drops a half-written note when the current image changes", () => {
+  test("ignores a draft change while the composer is collapsed", () => {
     const tester = testerAt();
 
-    tester.send({ type: "image-note-composer-opened" });
     tester.send({ type: "image-note-draft-changed", draft: "Widened the shoulder." });
-    tester.send({ type: "hero-swiped", direction: "next", stages: journey() });
 
-    expect(tester.getState()).toEqual({ ...onImage("s2"), ...noNoteUI });
+    expect(tester.getState()).toEqual(onImage("s1"));
     expect(tester.getEffects()).toEqual([]);
   });
 
@@ -68,46 +66,15 @@ describe("the note composer", () => {
     expect(tester.getEffects()).toEqual([]);
   });
 
-  test("a read that keeps the image keeps the draft; one that moves it drops it", () => {
-    const tester = testerAt();
-
-    tester.send({ type: "image-note-composer-opened" });
-    tester.send({ type: "image-note-draft-changed", draft: "Widened the shoulder." });
-    tester.send({
-      type: "images-read",
-      stages: [
-        stage("inspiration"),
-        stage("sketch", "s1", "s2"),
-        stage("prototype"),
-        stage("final"),
-      ],
-      cover: "s2",
-    });
-
-    expect(tester.getState().imageNoteComposer).toEqual({
-      imageId: "s1",
-      draft: "Widened the shoulder.",
-    });
-
-    tester.send({
-      type: "images-read",
-      stages: [stage("inspiration"), stage("sketch", "s2"), stage("prototype"), stage("final")],
-      cover: "s2",
-    });
-
-    expect(tester.getState()).toEqual({ ...onImage("s2"), ...noNoteUI });
-    expect(tester.getEffects()).toEqual([]);
-  });
-
-  test("closes once the note lands", () => {
-    const tester = testerAt();
+  test("closes once the note lands and leaves the sheet open", () => {
+    const tester = testerAt({ ...onImage("s1"), notesSheetOpen: true });
 
     tester.send({ type: "image-note-composer-opened" });
     tester.send({ type: "image-note-draft-changed", draft: "Widened the shoulder." });
     tester.send({ type: "image-note-save-pressed" });
     tester.send({ type: "image-note-added", imageId: "s1" });
 
-    expect(tester.getState()).toEqual({ ...onImage("s1"), ...noNoteUI });
+    expect(tester.getState()).toEqual({ ...onImage("s1"), ...noNoteUI, notesSheetOpen: true });
     expect(tester.getEffects()).toEqual([
       {
         type: "add-image-note",

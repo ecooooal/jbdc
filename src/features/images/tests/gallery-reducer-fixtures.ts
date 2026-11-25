@@ -54,9 +54,7 @@ export function send(state: GalleryState, ...events: GalleryEvent[]): GalleryRes
 export const noNoteUI = {
   stageRowOpen: true,
   imageNoteComposer: null,
-  notesMenuOpen: false,
-  noteSheetId: null,
-  allNotesOpen: false,
+  notesSheetOpen: false,
   armedNoteId: null,
 };
 

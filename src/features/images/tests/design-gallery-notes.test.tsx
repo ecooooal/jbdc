@@ -40,18 +40,12 @@ async function settleNotes() {
   await act(async () => live.notify("image_notes"));
 }
 
-test("a marker opens its note sheet with the note's text and created date", async () => {
-  await galleryWithNotes(1);
+/** The notes sheet the pill opens. */
+async function openNotesSheet(count: number) {
+  await userEvent.press(screen.getByRole("button", { name: `Notes (${count})` }));
 
-  await userEvent.press(screen.getByRole("button", { name: "Note 1" }));
-
-  const sheet = within(screen.getByTestId("note-sheet"));
-
-  expect(sheet.getByText("First pass was fitted.")).toBeTruthy();
-  expect(sheet.getByText("Jan 1, 1970")).toBeTruthy();
-  expect(sheet.queryByRole("button", { name: "Delete note 1" })).toBeNull();
-  expect(screen.queryByLabelText("Image detail")).toBeNull();
-});
+  return within(screen.getByTestId("notes-sheet"));
+}
 
 test("the notes button carries the current image's note count", async () => {
   await galleryWithNotes(3);
@@ -59,27 +53,10 @@ test("the notes button carries the current image's note count", async () => {
   expect(screen.getByRole("button", { name: "Notes (3)" })).toBeTruthy();
 });
 
-test("the menu offers Add note and See all notes, and Add note opens the composer", async () => {
+test("the notes button opens one sheet with every note and its date", async () => {
   await galleryWithNotes(2);
 
-  await userEvent.press(screen.getByRole("button", { name: "Notes (2)" }));
-
-  expect(screen.getByRole("button", { name: "Add note" })).toBeTruthy();
-  expect(screen.getByRole("button", { name: "See all notes (2)" })).toBeTruthy();
-  expect(screen.queryByRole("button", { name: /hide/i })).toBeNull();
-
-  await userEvent.press(screen.getByRole("button", { name: "Add note" }));
-
-  expect(screen.getByLabelText("New note")).toBeTruthy();
-});
-
-test("See all notes opens the sheet with every note", async () => {
-  await galleryWithNotes(2);
-
-  await userEvent.press(screen.getByRole("button", { name: "Notes (2)" }));
-  await userEvent.press(screen.getByRole("button", { name: "See all notes (2)" }));
-
-  const sheet = within(screen.getByTestId("see-all-notes"));
+  const sheet = await openNotesSheet(2);
 
   expect(sheet.getByText("Notes (2)")).toBeTruthy();
   expect(sheet.getByText("First pass was fitted.")).toBeTruthy();
@@ -87,145 +64,119 @@ test("See all notes opens the sheet with every note", async () => {
   expect(sheet.getAllByText("Jan 1, 1970")).toHaveLength(2);
 });
 
-test("opening the image detail closes the notes menu", async () => {
+test("the Add note row expands the inline composer", async () => {
   await galleryWithNotes(1);
 
-  await userEvent.press(screen.getByRole("button", { name: "Notes (1)" }));
-  expect(screen.getByRole("button", { name: "See all notes (1)" })).toBeTruthy();
+  const sheet = await openNotesSheet(1);
 
-  await userEvent.press(screen.getByRole("button", { name: "Open Sketch image 1 of 1" }));
+  expect(sheet.getByRole("button", { name: "Add note" })).toBeTruthy();
+  expect(sheet.queryByLabelText("New note")).toBeNull();
 
-  expect(screen.getByLabelText("Image detail")).toBeTruthy();
-  expect(screen.queryByRole("button", { name: "See all notes (1)" })).toBeNull();
-  expect(screen.queryByRole("button", { name: "Add note" })).toBeNull();
+  await userEvent.press(sheet.getByRole("button", { name: "Add note" }));
+
+  expect(sheet.getByLabelText("New note")).toBeTruthy();
 });
 
-/** Opens the image detail on the gallery's only image, with the detail as the scope. */
-async function openImageDetailNotes() {
-  await userEvent.press(screen.getByRole("button", { name: "Open Sketch image 1 of 1" }));
-
-  return within(screen.getByLabelText("Image detail"));
-}
-
-test("the image detail lists the image's notes read-only, with their created dates", async () => {
-  await galleryWithNotes(2);
-
-  const detail = await openImageDetailNotes();
-
-  expect(detail.getByText("First pass was fitted.")).toBeTruthy();
-  expect(detail.getByText("Widened the shoulder.")).toBeTruthy();
-  expect(detail.getAllByText("Jan 1, 1970")).toHaveLength(2);
-  expect(detail.getByRole("button", { name: "Delete note 1" })).toBeTruthy();
-});
-
-test("one press on the image detail's trash control arms; a second deletes", async () => {
-  const design = await galleryWithNotes(2);
-
-  const detail = await openImageDetailNotes();
-
-  await userEvent.press(detail.getByRole("button", { name: "Delete note 1" }));
-  await settleNotes();
-
-  expect(detail.getByText("Tap again to delete")).toBeTruthy();
-  expect(listDesignImageNotes(database, design.id)).toHaveLength(2);
-
-  await userEvent.press(detail.getByRole("button", { name: "Delete note 1" }));
-  await settleNotes();
-
-  expect(listDesignImageNotes(database, design.id)).toHaveLength(1);
-  expect(detail.queryByText("First pass was fitted.")).toBeNull();
-  expect(detail.getByText("Widened the shoulder.")).toBeTruthy();
-});
-
-test("closing and reopening the image detail disarms the trash, so the next press only arms", async () => {
-  const design = await galleryWithNotes(2);
-
-  let detail = await openImageDetailNotes();
-
-  await userEvent.press(detail.getByRole("button", { name: "Delete note 1" }));
-  expect(detail.getByText("Tap again to delete")).toBeTruthy();
-
-  await userEvent.press(detail.getByRole("button", { name: "Close image detail" }));
-
-  expect(screen.queryByLabelText("Image detail")).toBeNull();
-
-  detail = await openImageDetailNotes();
-
-  expect(detail.queryByText("Tap again to delete")).toBeNull();
-
-  await userEvent.press(detail.getByRole("button", { name: "Delete note 1" }));
-
-  expect(listDesignImageNotes(database, design.id)).toHaveLength(2);
-  expect(detail.getByText("Tap again to delete")).toBeTruthy();
-});
-
-test("the image detail has no Add note control", async () => {
+test("Save note is disabled while the draft is empty", async () => {
   await galleryWithNotes(1);
 
-  const detail = await openImageDetailNotes();
+  const sheet = await openNotesSheet(1);
 
-  expect(detail.queryByRole("button", { name: "Add note" })).toBeNull();
-  expect(detail.queryByLabelText("New note")).toBeNull();
+  await userEvent.press(sheet.getByRole("button", { name: "Add note" }));
+
+  expect(sheet.getByRole("button", { name: "Save note" })).toBeDisabled();
+
+  await userEvent.type(sheet.getByLabelText("New note"), "   ");
+
+  expect(sheet.getByRole("button", { name: "Save note" })).toBeDisabled();
+
+  await userEvent.type(sheet.getByLabelText("New note"), "Widened the shoulder.");
+
+  expect(sheet.getByRole("button", { name: "Save note" })).toBeEnabled();
 });
 
-test("the retired inline note controls are absent", async () => {
-  await galleryWithNotes(3);
+test("Save stores the note and leaves the sheet open with the note listed", async () => {
+  const design = await galleryWithNotes(0);
 
-  expect(screen.queryByText("No notes yet. Add what you decided here, and why.")).toBeNull();
-  expect(screen.queryByRole("button", { name: /^Show all \d+ notes$/ })).toBeNull();
-  expect(screen.queryByRole("button", { name: "Show fewer notes" })).toBeNull();
-  expect(screen.queryByText("First pass was fitted.")).toBeNull();
+  const sheet = await openNotesSheet(0);
+
+  await userEvent.press(sheet.getByRole("button", { name: "Add note" }));
+  await userEvent.type(sheet.getByLabelText("New note"), "Widened the shoulder.");
+  await userEvent.press(sheet.getByRole("button", { name: "Save note" }));
+  await settleNotes();
+
+  expect(listDesignImageNotes(database, design.id)).toEqual([
+    expect.objectContaining({ text: "Widened the shoulder." }),
+  ]);
+
+  const stillOpen = within(screen.getByTestId("notes-sheet"));
+
+  expect(stillOpen.getByText("Notes (1)")).toBeTruthy();
+  expect(stillOpen.getByText("Widened the shoulder.")).toBeTruthy();
+  expect(stillOpen.queryByLabelText("New note")).toBeNull();
+  expect(screen.getByRole("button", { name: "Notes (1)" })).toBeTruthy();
 });
 
-test("the overflow marker opens see-all with every note, oldest first", async () => {
-  await galleryWithNotes(6);
+test("Cancel collapses the composer without writing a note", async () => {
+  const design = await galleryWithNotes(0);
 
-  await userEvent.press(screen.getByRole("button", { name: "Show 2 more notes" }));
+  const sheet = await openNotesSheet(0);
 
-  const sheet = within(screen.getByTestId("see-all-notes"));
+  await userEvent.press(sheet.getByRole("button", { name: "Add note" }));
+  await userEvent.type(sheet.getByLabelText("New note"), "Widened the shoulder.");
+  await userEvent.press(sheet.getByRole("button", { name: "Cancel note" }));
 
-  expect(sheet.getByText("Notes (6)")).toBeTruthy();
-  for (const text of NOTE_TEXTS) {
-    expect(sheet.getByText(text)).toBeTruthy();
-  }
+  expect(sheet.queryByLabelText("New note")).toBeNull();
+  expect(sheet.getByRole("button", { name: "Add note" })).toBeTruthy();
+  expect(listDesignImageNotes(database, design.id)).toEqual([]);
 });
 
-test("one press on see-all's trash control arms without deleting; a second deletes", async () => {
-  const design = await galleryWithNotes(5);
+test("one press on a note's trash control arms it; a second deletes it", async () => {
+  const design = await galleryWithNotes(2);
 
-  await userEvent.press(screen.getByRole("button", { name: "Show 1 more note" }));
-
-  const sheet = within(screen.getByTestId("see-all-notes"));
+  const sheet = await openNotesSheet(2);
 
   await userEvent.press(sheet.getByRole("button", { name: "Delete note 1" }));
   await settleNotes();
 
   expect(sheet.getByText("Tap again to delete")).toBeTruthy();
-  expect(listDesignImageNotes(database, design.id)).toHaveLength(5);
+  expect(listDesignImageNotes(database, design.id)).toHaveLength(2);
 
   await userEvent.press(sheet.getByRole("button", { name: "Delete note 1" }));
   await settleNotes();
 
-  expect(listDesignImageNotes(database, design.id)).toHaveLength(4);
+  expect(listDesignImageNotes(database, design.id)).toHaveLength(1);
   expect(sheet.queryByText("First pass was fitted.")).toBeNull();
+  expect(sheet.getByText("Widened the shoulder.")).toBeTruthy();
 });
 
-test("deleting a note renumbers the remaining markers", async () => {
-  const design = await galleryWithNotes(5);
+test("the photograph carries no numbered markers and no notes menu", async () => {
+  await galleryWithNotes(3);
 
-  await userEvent.press(screen.getByRole("button", { name: "Show 1 more note" }));
+  expect(screen.queryByRole("button", { name: "Note 1" })).toBeNull();
+  expect(screen.queryByRole("button", { name: "Note 2" })).toBeNull();
+  expect(screen.queryByRole("button", { name: "Show 2 more notes" })).toBeNull();
+  expect(screen.queryByRole("button", { name: "See all notes (3)" })).toBeNull();
+  expect(screen.queryByRole("button", { name: "Add note" })).toBeNull();
+  expect(screen.queryByText("First pass was fitted.")).toBeNull();
+});
 
-  const sheet = within(screen.getByTestId("see-all-notes"));
+/** Opens the image detail on the gallery's only image, with the detail as the scope. */
+async function openImageDetail() {
+  await userEvent.press(screen.getByRole("button", { name: "Open Sketch image 1 of 1" }));
 
-  await userEvent.press(sheet.getByRole("button", { name: "Delete note 1" }));
-  await userEvent.press(sheet.getByRole("button", { name: "Delete note 1" }));
-  await settleNotes();
+  return within(screen.getByLabelText("Image detail"));
+}
 
-  await userEvent.press(sheet.getByRole("button", { name: "Close all notes" }));
+test("the image detail keeps the image's notes and has no Add note", async () => {
+  await galleryWithNotes(2);
 
-  expect(listDesignImageNotes(database, design.id)).toHaveLength(4);
-  for (const number of [1, 2, 3, 4]) {
-    expect(screen.getByRole("button", { name: `Note ${number}` })).toBeTruthy();
-  }
-  expect(screen.queryByRole("button", { name: /more note/ })).toBeNull();
+  const detail = await openImageDetail();
+
+  expect(detail.getByText("First pass was fitted.")).toBeTruthy();
+  expect(detail.getByText("Widened the shoulder.")).toBeTruthy();
+  expect(detail.getAllByText("Jan 1, 1970")).toHaveLength(2);
+  expect(detail.getByRole("button", { name: "Delete note 1" })).toBeTruthy();
+  expect(detail.queryByRole("button", { name: "Add note" })).toBeNull();
+  expect(detail.queryByLabelText("New note")).toBeNull();
 });

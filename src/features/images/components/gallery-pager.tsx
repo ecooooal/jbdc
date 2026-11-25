@@ -14,16 +14,10 @@ import type { ImageKind } from "@/features/database";
 import { Icon } from "@/shared/components/ui/icon";
 import { Text } from "@/shared/components/ui/text";
 import { QUIET_MOTION_DURATION_MS } from "@/shared/lib/motion";
-import type { JourneyView, NotesIndexView, NotesMenuView } from "../lib/gallery-reducer";
-import {
-  imageKindLabel,
-  type Image as StoredImage,
-  type ImageNote,
-  type ImageStage,
-} from "../lib/images";
+import type { JourneyView } from "../lib/gallery-reducer";
+import { imageKindLabel, type Image as StoredImage, type ImageStage } from "../lib/images";
 import { useImageUri } from "../lib/image-store-context";
 import { GalleryFilmstrip } from "./gallery-filmstrip";
-import { GalleryNoteMarkers } from "./gallery-note-markers";
 import { GalleryNotesButton } from "./gallery-notes-button";
 
 /** The page a settled horizontal offset lands on, kept inside the journey it has. */
@@ -124,31 +118,23 @@ function PagerImage({
 }
 
 /**
- * The notes chrome the pager carries: the note markers' index down the image's
- * right edge, the notes menu and its open state, and the presses each sends
- * back. Every piece is a reducer derivation or a fact, so the chrome holds no
- * state of its own.
+ * The notes button's inputs: the current image's count and the one press that
+ * opens the notes sheet. It holds no state of its own.
  */
-type NotesChrome = {
-  index: NotesIndexView<ImageNote>;
-  menu: NotesMenuView;
-  menuOpen: boolean;
-  onButtonPress: () => void;
-  onNotePress: (noteId: string) => void;
-  onAddNotePress: () => void;
-  onSeeAllPress: () => void;
+type NotesButton = {
+  count: number;
+  onPress: () => void;
 };
 
 /**
  * The pager: every image in the live journey, edge to edge at 3:4, square
  * edged, walking in order and bounded at both ends. The top chrome says where
  * the pager is; the filmstrip over the bottom edge jumps it elsewhere, and the
- * current image's note markers run down its right edge. A settle dispatches the
- * image it landed on, and a tap opens the image detail. With no image selected
- * the dashed frame keeps the pager's shape: an empty stage the owner chose
- * keeps the filmstrip over it, while a journey with no images shows neither
- * filmstrip, counter, nor markers. The counter and markers appear only over a
- * selected image.
+ * notes button sits beside it. A settle dispatches the image it landed on, and
+ * a tap opens the image detail. With no image selected the dashed frame keeps
+ * the pager's shape: an empty stage the owner chose keeps the filmstrip over
+ * it, while a journey with no images shows neither filmstrip, counter, nor
+ * notes button. The counter and notes button appear only over a selected image.
  */
 export function GalleryPager({
   journey,
@@ -158,7 +144,7 @@ export function GalleryPager({
   onImagePressed,
 }: {
   journey: JourneyView<ImageStage>;
-  notes: NotesChrome;
+  notes: NotesButton;
   onPageSettled: (imageId: string) => void;
   onImageSelected: (imageId: string) => void;
   onImagePressed: (imageId: string) => void;
@@ -232,27 +218,13 @@ export function GalleryPager({
         <JourneyCounter journey={journey} stage={journey.stage} />
       ) : null}
 
-      {journey.image ? (
-        <GalleryNoteMarkers
-          view={notes.index}
-          onNotePress={notes.onNotePress}
-          onOverflowPress={notes.onSeeAllPress}
-        />
-      ) : null}
-
       {journey.count > 0 ? (
         <View className="absolute inset-x-0 bottom-0 flex-row items-end gap-2 pb-3 pl-3 pr-3">
           <View className="flex-1">
             <GalleryFilmstrip journey={journey} onSelect={onImageSelected} />
           </View>
           {journey.image ? (
-            <GalleryNotesButton
-              view={notes.menu}
-              open={notes.menuOpen}
-              onPress={notes.onButtonPress}
-              onAddNotePress={notes.onAddNotePress}
-              onSeeAllPress={notes.onSeeAllPress}
-            />
+            <GalleryNotesButton count={notes.count} onPress={notes.onPress} />
           ) : null}
         </View>
       ) : null}
