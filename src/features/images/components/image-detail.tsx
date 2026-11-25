@@ -8,18 +8,19 @@ import { Text } from "@/shared/components/ui/text";
 import { cn } from "@/shared/lib/utils";
 import { imageKindLabel, type Image as StoredImage, type ImageNote } from "../lib/images";
 import { useImageUri } from "../lib/image-store-context";
-import type { ViewerEvent } from "../lib/viewer-reducer";
+import type { ImageDetailEvent } from "../lib/image-detail-reducer";
 
 /**
- * The image full-screen, with the two things the owner does here: one pill per
- * kind reclassifies it, and Remove hides behind its one question before the
- * image and its notes go. The notes are read-only; the block under the hero is
- * where they are written. The viewer is the whole screen, so the hero's swipe
- * and the rail wait behind it. The image keeps a bounded area and everything
- * beneath it scrolls, so a long note never pushes the controls out of reach.
- * A removal that did not land leaves the image open and says so beside Remove.
+ * The image detail, full-screen, with the two things the owner does here: one
+ * pill per kind reclassifies it, and Remove hides behind its one question
+ * before the image and its notes go. The notes are read-only; the block under
+ * the hero is where they are written. The image detail is the whole screen, so
+ * the hero's swipe and the rail wait behind it. The image keeps a bounded area
+ * and everything beneath it scrolls, so a long note never pushes the controls
+ * out of reach. A removal that did not land leaves the image open and says so
+ * beside Remove.
  */
-export function ImageViewer({
+export function ImageDetail({
   image,
   notes,
   confirmingRemoval,
@@ -30,21 +31,21 @@ export function ImageViewer({
   notes: readonly ImageNote[];
   confirmingRemoval: boolean;
   removeFailed: boolean;
-  send: (event: ViewerEvent) => void;
+  send: (event: ImageDetailEvent) => void;
 }) {
   const uri = useImageUri(image);
   const label = imageKindLabel(image.kind);
 
   return (
-    <Modal visible animationType="fade" onRequestClose={() => send({ type: "viewer-closed" })}>
-      <View className="flex-1 bg-black" accessibilityLabel="Image viewer" accessibilityViewIsModal>
+    <Modal visible animationType="fade" onRequestClose={() => send({ type: "detail-closed" })}>
+      <View className="flex-1 bg-black" accessibilityLabel="Image detail" accessibilityViewIsModal>
         <View className="flex-row items-center justify-between px-4 pt-12">
           <Text className="text-sm font-semibold text-white">{label}</Text>
           <Button
             size="icon"
             variant="ghost"
-            accessibilityLabel="Close viewer"
-            onPress={() => send({ type: "viewer-closed" })}
+            accessibilityLabel="Close image detail"
+            onPress={() => send({ type: "detail-closed" })}
           >
             <Icon as={X} className="size-5 text-white" />
           </Button>

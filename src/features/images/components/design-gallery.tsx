@@ -2,10 +2,10 @@ import { View } from "react-native";
 import { Text } from "@/shared/components/ui/text";
 import { imageNotesOf } from "../lib/image-notes";
 import { useGallery } from "../lib/use-gallery";
-import { useImageViewer } from "../lib/use-image-viewer";
+import { useImageDetail } from "../lib/use-image-detail";
 import { GalleryHero } from "./gallery-hero";
+import { ImageDetail } from "./image-detail";
 import { ImageNoteBlock } from "./image-note-block";
-import { ImageViewer } from "./image-viewer";
 import { JourneyRail } from "./journey-rail";
 
 /**
@@ -14,16 +14,16 @@ import { JourneyRail } from "./journey-rail";
  * The images and notes live read feeds the gallery reducer, so a write
  * anywhere re-runs this without a manual refresh. The plus card attaches to
  * the active stage, so the stage the owner picked is the kind the picked files
- * get. A tap on the hero opens the full-screen viewer, whose own reducer owns
+ * get. A tap on the hero opens the image detail, whose own reducer owns
  * reclassification and the one remove question. The designs module composes it
  * above Detail's hero text.
  */
 export function DesignGallery({ designId }: { designId: string }) {
   const { state, stages, images, imageNotes, view, noteView, send, error, status } =
     useGallery(designId);
-  const viewer = useImageViewer(designId);
-  const viewed = viewer.state.imageId
-    ? (images.find((image) => image.id === viewer.state.imageId) ?? null)
+  const detail = useImageDetail(designId);
+  const detailImage = detail.state.imageId
+    ? (images.find((image) => image.id === detail.state.imageId) ?? null)
     : null;
 
   if (error) {
@@ -41,7 +41,7 @@ export function DesignGallery({ designId }: { designId: string }) {
         count={view.count}
         onSwipe={(direction) => send({ type: "hero-swiped", direction })}
         onImagePress={() => {
-          if (view.image) viewer.send({ type: "image-opened", imageId: view.image.id });
+          if (view.image) detail.send({ type: "image-opened", imageId: view.image.id });
         }}
       />
 
@@ -59,13 +59,13 @@ export function DesignGallery({ designId }: { designId: string }) {
         onAddPress={(kind) => send({ type: "attach-pressed", kind })}
       />
 
-      {viewed ? (
-        <ImageViewer
-          image={viewed}
-          notes={imageNotesOf(imageNotes, viewed.id)}
-          confirmingRemoval={viewer.state.confirmingRemoval}
-          removeFailed={viewer.state.removeFailed}
-          send={viewer.send}
+      {detailImage ? (
+        <ImageDetail
+          image={detailImage}
+          notes={imageNotesOf(imageNotes, detailImage.id)}
+          confirmingRemoval={detail.state.confirmingRemoval}
+          removeFailed={detail.state.removeFailed}
+          send={detail.send}
         />
       ) : null}
     </View>

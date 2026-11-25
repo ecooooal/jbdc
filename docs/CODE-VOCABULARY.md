@@ -20,15 +20,18 @@ How an attempt concluded. An attach ends in the picker's answer or the write pat
 What a reducer's result asks a runner to perform, carried beside the state it returns. The reducer declares; the runner performs.
 
 **runner**:
-The one hook, `useReducerRunner` at `src/shared/hooks/use-reducer-runner.ts`, behind the visit, the gallery and the viewer. It owns the state, the latest ref, the state-then-latest ordering, and the effect loop; each surface keeps only its perform body, which performs the effect and folds the ending. It carries no policy: reviewing a write's behaviour means reading the surface's perform body and the fold.
+The one hook, `useReducerRunner` at `src/shared/hooks/use-reducer-runner.ts`, behind the visit, the gallery and the image detail. It owns the state, the latest ref, the state-then-latest ordering, and the effect loop; each surface keeps only its perform body, which performs the effect and folds the ending. It carries no policy: reviewing a write's behaviour means reading the surface's perform body and the fold.
 
 ## The Design screen's images
 
-The Detail screen's image block, its parts, and its writes.
+The Design screen's gallery, its parts, and its writes.
 
-**the image block**:
+**the gallery**:
 The images component on the Design Detail screen: the inline pager, its chrome, the stage block, and the image detail it opens.
 _Note_: the Library entry's _Avoid_ on "gallery" bars calling that screen by this word.
+
+**the image block**:
+The Design screen's region that holds the gallery, between the identity and the recorded sections.
 
 **the journey**:
 One design's images grouped by kind, in process order — inspiration, sketch, prototype, final — oldest first within each.
@@ -38,13 +41,13 @@ One kind's group in the journey: the images that share a kind.
 _Note_: the Status entry's _Avoid_ on "stage" is about a design's standing, not this grouping.
 
 **the pager**:
-The image block's swipe surface: one image at a time, full-bleed at 3:4 with `cover`, walking the journey in order and stopping at either end.
+The gallery's swipe surface: one image at a time, full-bleed at 3:4 with `cover`, walking the journey in order and stopping at either end.
 
 **the filmstrip**:
-The image block's bottom row of every image in journey order. The active thumb lifts and names its stage; pressing another selects it.
+The gallery's bottom row of every image in journey order. The active thumb lifts and names its stage; pressing another selects it.
 
 **the notes button**:
-The image block's bottom-right control, carrying the current image's note count; it expands into the notes menu.
+The gallery's bottom-right control, carrying the current image's note count; it expands into the notes menu.
 
 **the notes menu**:
 The two actions the notes button expands into: Add note, and See all notes with the current count. There is no hide action.
@@ -77,13 +80,13 @@ The stage row's add-images card. A press opens the picker and attaches what come
 The system image-file chooser, as a port. It answers picked files, a backed-out cancel, or a denied permission — three endings, only one worth telling the owner about.
 
 **the live read**:
-The reactive database read that re-runs whenever the tables it watches change. A write lands through it; the image block and the notes never copy rows.
+The reactive database read that re-runs whenever the tables it watches change. A write lands through it; the gallery and the notes never copy rows.
 
 **the write path**:
 The images module's one function for every image write — attach, reclassify, remove, add-note, remove-note. It answers each change kind with only the endings that change can produce — an attach cannot answer with a note's refusal — and answers a failed copy or a missing store as one ending. A failed copy, a missing store, and a store that cannot release a file never throw.
 
 **the missing-adapters guard**:
-The two images perform bodies' answer when an adapter is missing. The image block's perform body, with no image store or picker available, cannot attempt an attach and says nothing on the stage row; the image detail's performer hands its possibly-null store to the write path, so a removal without one answers `store-failed`.
+The two images perform bodies' answer when an adapter is missing. The gallery's perform body, with no image store or picker available, cannot attempt an attach and says nothing on the stage row; the image detail's performer hands its possibly-null store to the write path, so a removal without one answers `store-failed`.
 
 ## The Library's preferences
 

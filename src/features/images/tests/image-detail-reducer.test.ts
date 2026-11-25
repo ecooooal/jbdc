@@ -1,29 +1,29 @@
 import { createReducerTester } from "@/shared/testing/reducer-tester";
 import {
-  createInitialViewerState,
+  createInitialImageDetailState,
   removeImageOutcome,
-  viewerReducer,
-  type ViewerEvent,
-} from "../lib/viewer-reducer";
+  imageDetailReducer,
+  type ImageDetailEvent,
+} from "../lib/image-detail-reducer";
 
-/** The Design every viewer fixture belongs to. */
+/** The Design every image detail fixture belongs to. */
 const DESIGN_ID = "design-silk-slip";
 
-/** Drives the viewer reducer with the sequence of events and answers what settled. */
-function viewer(...events: ViewerEvent[]) {
-  const tester = createReducerTester(viewerReducer, createInitialViewerState(DESIGN_ID));
+/** Drives the image detail reducer with the sequence of events and answers what settled. */
+function imageDetail(...events: ImageDetailEvent[]) {
+  const tester = createReducerTester(imageDetailReducer, createInitialImageDetailState(DESIGN_ID));
 
   for (const event of events) tester.send(event);
 
   return tester;
 }
 
-/** A viewer the owner has opened on one image. */
+/** An image detail the owner has opened on one image. */
 function opened(imageId = "image-1") {
-  return viewer({ type: "image-opened", imageId });
+  return imageDetail({ type: "image-opened", imageId });
 }
 
-describe("opening the viewer", () => {
+describe("opening the image detail", () => {
   test("opens on the image the owner tapped, with nothing asked", () => {
     const tester = opened();
 
@@ -40,15 +40,15 @@ describe("opening the viewer", () => {
     const tester = opened();
 
     tester.send({ type: "remove-pressed" });
-    tester.send({ type: "viewer-closed" });
+    tester.send({ type: "detail-closed" });
 
-    expect(tester.getState()).toEqual(createInitialViewerState(DESIGN_ID));
+    expect(tester.getState()).toEqual(createInitialImageDetailState(DESIGN_ID));
     expect(tester.getEffects()).toEqual([]);
   });
 });
 
-describe("reclassifying in the viewer", () => {
-  test("a kind press declares one reclassify and the viewer stays open on the image", () => {
+describe("reclassifying in the image detail", () => {
+  test("a kind press declares one reclassify and the image detail stays open on the image", () => {
     const tester = opened();
 
     tester.send({ type: "kind-pressed", kind: "final" });
@@ -64,12 +64,12 @@ describe("reclassifying in the viewer", () => {
     ]);
   });
 
-  test("a closed viewer reclassifies nothing", () => {
-    const tester = viewer({ type: "kind-pressed", kind: "sketch" });
+  test("a closed image detail reclassifies nothing", () => {
+    const tester = imageDetail({ type: "kind-pressed", kind: "sketch" });
 
-    // The viewer still knows its Design while it is closed, so a later open
+    // The image detail still knows its Design while it is closed, so a later open
     // names the same one without the hook reading anything.
-    expect(tester.getState()).toEqual(createInitialViewerState(DESIGN_ID));
+    expect(tester.getState()).toEqual(createInitialImageDetailState(DESIGN_ID));
     expect(tester.getEffects()).toEqual([]);
   });
 });
@@ -106,14 +106,14 @@ describe("removing an image", () => {
     ]);
   });
 
-  test("a stored removal closes the viewer", () => {
+  test("a stored removal closes the image detail", () => {
     const tester = opened();
 
     tester.send({ type: "remove-pressed" });
     tester.send({ type: "remove-confirmed" });
     tester.send({ type: "remove-stored", imageId: "image-1" });
 
-    expect(tester.getState()).toEqual(createInitialViewerState(DESIGN_ID));
+    expect(tester.getState()).toEqual(createInitialImageDetailState(DESIGN_ID));
     expect(tester.getEffects()).toEqual([
       { type: "remove-image", designId: DESIGN_ID, imageId: "image-1" },
     ]);
@@ -211,7 +211,7 @@ describe("removing an image", () => {
 });
 
 describe("a removal's ending", () => {
-  test("a stored removal closes the viewer", () => {
+  test("a stored removal closes the image detail", () => {
     expect(removeImageOutcome("image-1", { kind: "stored", images: [], event: null })).toEqual([
       { type: "remove-stored", imageId: "image-1" },
     ]);

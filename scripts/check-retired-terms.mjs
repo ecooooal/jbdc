@@ -29,6 +29,54 @@ const RETIRED = [
     phrase: "chooses 1, 2, or 4 designs per row",
     replacement: "chooses the Library's density",
   },
+  {
+    phrase: "ImageViewer",
+    replacement: "ImageDetail",
+  },
+  {
+    phrase: "useImageViewer",
+    replacement: "useImageDetail",
+  },
+  {
+    phrase: "viewer-reducer",
+    replacement: "image-detail-reducer",
+  },
+  {
+    phrase: "viewerReducer",
+    replacement: "imageDetailReducer",
+  },
+  {
+    phrase: "createInitialViewerState",
+    replacement: "createInitialImageDetailState",
+  },
+  {
+    phrase: "ViewerState",
+    replacement: "ImageDetailState",
+  },
+  {
+    phrase: "ViewerEvent",
+    replacement: "ImageDetailEvent",
+  },
+  {
+    phrase: "ViewerEffect",
+    replacement: "ImageDetailEffect",
+  },
+  {
+    phrase: "ViewerResult",
+    replacement: "ImageDetailResult",
+  },
+  {
+    phrase: "viewer-closed",
+    replacement: "detail-closed",
+  },
+  {
+    phrase: "Image viewer",
+    replacement: "Image detail",
+  },
+  {
+    phrase: "Close viewer",
+    replacement: "Close image detail",
+  },
 ];
 
 /** Where prose and code are scanned; root-level Markdown is added below. */

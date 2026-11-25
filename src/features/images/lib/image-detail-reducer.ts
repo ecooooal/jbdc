@@ -2,14 +2,14 @@ import type { ImageKind } from "@/features/database";
 import type { ImageRemoveResult } from "./records";
 
 /**
- * The full-screen viewer's decisions: which image it is open on — null when it
- * is closed — whether Remove has asked its one question, and whether the last
+ * The image detail's decisions: which image it is open on — null when it is
+ * closed — whether Remove has asked its one question, and whether the last
  * removal answered that it did not land. The Design rides here so the effects
  * name it, exactly as the gallery's do; the image's kind is not copied, because
  * the live read supplies it and the pills derive from it.
  */
-export type ViewerState = {
-  /** The Design whose image the viewer shows; every effect names it. */
+export type ImageDetailState = {
+  /** The Design whose image the image detail shows; every effect names it. */
   designId: string;
   imageId: string | null;
   confirmingRemoval: boolean;
@@ -17,10 +17,10 @@ export type ViewerState = {
   removeFailed: boolean;
 };
 
-/** What the owner did in the viewer, and what a write answered it. */
-export type ViewerEvent =
+/** What the owner did in the image detail, and what a write answered it. */
+export type ImageDetailEvent =
   | { type: "image-opened"; imageId: string }
-  | { type: "viewer-closed" }
+  | { type: "detail-closed" }
   | { type: "kind-pressed"; kind: ImageKind }
   | { type: "remove-pressed" }
   | { type: "remove-cancelled" }
@@ -28,35 +28,35 @@ export type ViewerEvent =
   | { type: "remove-stored"; imageId: string }
   | { type: "remove-failed"; imageId: string };
 
-/** The writes the viewer asks for, as data for its thin runner. */
-export type ViewerEffect =
+/** The writes the image detail asks for, as data for its thin runner. */
+export type ImageDetailEffect =
   | { type: "reclassify-image"; designId: string; imageId: string; to: ImageKind }
   | { type: "remove-image"; designId: string; imageId: string };
 
-/** What one viewer event settled and the writes it asked for. */
-export type ViewerResult = {
-  state: ViewerState;
-  effects: ViewerEffect[];
+/** What one image detail event settled and the writes it asked for. */
+export type ImageDetailResult = {
+  state: ImageDetailState;
+  effects: ImageDetailEffect[];
 };
 
 /** Before the owner taps an image there is nothing to show. */
-export function createInitialViewerState(designId: string): ViewerState {
+export function createInitialImageDetailState(designId: string): ImageDetailState {
   return { designId, imageId: null, confirmingRemoval: false, removeFailed: false };
 }
 
 /**
- * What one removal's ending owes the viewer: a stored removal closes it, while
- * every other ending keeps the image open and says the removal did not land.
- * The fold is total over the write path's own answers, which never throw.
+ * What one removal's ending owes the image detail: a stored removal closes it,
+ * while every other ending keeps the image open and says the removal did not
+ * land. The fold is total over the write path's own answers, which never throw.
  */
-export function removeImageOutcome(imageId: string, ending: ImageRemoveResult): ViewerEvent[] {
+export function removeImageOutcome(imageId: string, ending: ImageRemoveResult): ImageDetailEvent[] {
   return ending.kind === "stored"
     ? [{ type: "remove-stored", imageId }]
     : [{ type: "remove-failed", imageId }];
 }
 
 /**
- * The viewer's decisions. It opens on the tapped image and closes back to
+ * The image detail's decisions. It opens on the tapped image and closes back to
  * nothing while keeping the Design its effects name. A kind pill declares one
  * reclassification of the open image; the write path treats the same kind again
  * as no change. Remove asks once: the press raises the question and only a
@@ -66,7 +66,10 @@ export function removeImageOutcome(imageId: string, ending: ImageRemoveResult): 
  * while a failure keeps it and says so, so a failed removal never looks like a
  * successful one.
  */
-export function viewerReducer(state: ViewerState, event: ViewerEvent): ViewerResult {
+export function imageDetailReducer(
+  state: ImageDetailState,
+  event: ImageDetailEvent,
+): ImageDetailResult {
   switch (event.type) {
     case "image-opened":
       return {
@@ -79,8 +82,8 @@ export function viewerReducer(state: ViewerState, event: ViewerEvent): ViewerRes
         effects: [],
       };
 
-    case "viewer-closed":
-      return { state: createInitialViewerState(state.designId), effects: [] };
+    case "detail-closed":
+      return { state: createInitialImageDetailState(state.designId), effects: [] };
 
     case "kind-pressed":
       return state.imageId
@@ -117,7 +120,7 @@ export function viewerReducer(state: ViewerState, event: ViewerEvent): ViewerRes
 
     case "remove-stored":
       return state.imageId === event.imageId
-        ? { state: createInitialViewerState(state.designId), effects: [] }
+        ? { state: createInitialImageDetailState(state.designId), effects: [] }
         : { state, effects: [] };
 
     case "remove-failed":
