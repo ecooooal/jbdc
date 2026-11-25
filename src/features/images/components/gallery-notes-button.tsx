@@ -13,7 +13,7 @@ export function GalleryNotesButton({ count, onPress }: { count: number; onPress:
     <Button
       variant="ghost"
       size="sm"
-      className="active:bg-black/70 rounded-full bg-black/60 px-3"
+      className="active:bg-black/70 border-white/15 rounded-full border bg-black/60 px-3"
       accessibilityLabel={`Notes (${count})`}
       onPress={onPress}
     >

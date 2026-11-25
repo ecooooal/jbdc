@@ -1,5 +1,4 @@
 import { Image } from "expo-image";
-import { ImageIcon } from "lucide-react-native";
 import { useEffect, useRef } from "react";
 import {
   FlatList,
@@ -11,9 +10,9 @@ import {
 } from "react-native";
 import Animated, { FadeInDown, FadeOut, ReduceMotion } from "react-native-reanimated";
 import type { ImageKind } from "@/features/database";
-import { Icon } from "@/shared/components/ui/icon";
 import { Text } from "@/shared/components/ui/text";
 import { QUIET_MOTION_DURATION_MS } from "@/shared/lib/motion";
+import { cn } from "@/shared/lib/utils";
 import type { JourneyView } from "../lib/gallery-reducer";
 import { imageKindLabel, type Image as StoredImage, type ImageStage } from "../lib/images";
 import { useImageUri } from "../lib/image-store-context";
@@ -51,7 +50,8 @@ function StageWord({ kind }: { kind: ImageKind }) {
  * The journey counter over the photography: the current stage and the image's
  * position across the whole journey, read as one line — `Sketch · 7 / 19` — and
  * spoken as `Sketch image 7 of 19`, the same numbers the pager's pages and the
- * stage row's thumbs carry.
+ * stage row's thumbs carry. The hairline keeps the pill readable as a pill over
+ * a near-black image.
  */
 function JourneyCounter({
   journey,
@@ -67,7 +67,7 @@ function JourneyCounter({
       testID="gallery-journey-counter"
       accessible
       accessibilityLabel={`${label} image ${journey.position} of ${journey.count}`}
-      className="absolute left-3 top-3 flex-row items-center rounded-full bg-black/60 px-3 py-1"
+      className="border-white/15 absolute left-3 top-3 flex-row items-center rounded-full border bg-black/60 px-3 py-1"
     >
       <StageWord key={stage} kind={stage} />
       <Text className="text-xs text-white">{` · ${journey.position} / ${journey.count}`}</Text>
@@ -75,7 +75,11 @@ function JourneyCounter({
   );
 }
 
-/** One pager page: the stored image, full-bleed, opening the image detail on a tap. */
+/**
+ * One pager page: the stored image, fitted whole on the black stage so a
+ * screenshot or a whiteboard keeps every edge, opening the image detail on a
+ * tap. A page whose file has no URI keeps the dashed frame, never a glyph.
+ */
 function PagerImage({
   image,
   position,
@@ -104,17 +108,30 @@ function PagerImage({
     >
       {uri ? (
         <Image
+          testID="gallery-page-image"
           source={{ uri }}
           accessible={false}
-          contentFit="cover"
+          contentFit="contain"
           style={{ width: "100%", height: "100%" }}
         />
       ) : (
-        <View className="bg-muted h-full w-full items-center justify-center">
-          <Icon as={ImageIcon} className="text-muted-foreground size-8 opacity-50" />
-        </View>
+        <View className="border-white/40 h-full w-full border border-dashed" />
       )}
     </Pressable>
+  );
+}
+
+/** The pager's shape with no image to show: the dashed frame and one line saying why. */
+function PagerPlaceholder({ copy }: { copy: string }) {
+  return (
+    <View
+      testID="gallery-pager-placeholder"
+      className="border-muted-foreground h-full w-full items-center justify-center border border-dashed px-6"
+    >
+      <Text variant="muted" className="text-center">
+        {copy}
+      </Text>
+    </View>
   );
 }
 
@@ -128,21 +145,27 @@ type NotesButton = {
 };
 
 /**
- * The pager: every image in the live journey, edge to edge at 3:4, square
- * edged, walking in order and bounded at both ends. The top chrome says where
- * the pager is; the notes button sits at the bottom right. A settle dispatches
- * the image it landed on, and a tap opens the image detail. With no image
- * selected the dashed frame keeps the pager's shape; a journey with no images
- * shows neither counter nor notes button. The counter and notes button appear
- * only over a selected image.
+ * The pager: every image in the live journey on a 3:4 stage, edge to edge and
+ * square edged, walking in order and bounded at both ends. The image is fitted
+ * whole on photography black, so a 3:4 photograph fills the stage and a
+ * screenshot or whiteboard keeps its edges; the stage is a Kraft mount only
+ * with nothing to show. The top chrome says where the pager is; the notes
+ * button sits at the bottom right. A settle dispatches the image it landed on,
+ * and a tap opens the image detail. With no image selected the dashed frame
+ * keeps the pager's shape and names the state; a journey with no images shows
+ * neither counter nor notes button. The counter and notes button appear only
+ * over a selected image.
  */
 export function GalleryPager({
   journey,
+  stageKind,
   notes,
   onPageSettled,
   onImagePressed,
 }: {
   journey: JourneyView<ImageStage>;
+  /** The stage the gallery is on, named when that stage holds no image yet. */
+  stageKind: ImageKind;
   notes: NotesButton;
   onPageSettled: (imageId: string) => void;
   onImagePressed: (imageId: string) => void;
@@ -155,6 +178,8 @@ export function GalleryPager({
   const selectedIndex = selectedId
     ? journey.images.findIndex((image) => image.id === selectedId)
     : -1;
+  const emptyCopy =
+    journey.count === 0 ? "No photography yet" : `No ${imageKindLabel(stageKind)} images yet`;
 
   // The reducer owns the selection; the list follows it. A stage press, a
   // stage-row thumb, or a reclassification moves the selection, and the pager
@@ -175,7 +200,7 @@ export function GalleryPager({
 
   return (
     <View
-      className="bg-muted -mx-6 overflow-hidden"
+      className={cn("-mx-6 overflow-hidden", journey.image ? "bg-black" : "bg-muted")}
       style={{ width: pageWidth, height: pageHeight }}
     >
       {journey.image ? (
@@ -206,10 +231,7 @@ export function GalleryPager({
           )}
         />
       ) : (
-        <View
-          testID="gallery-pager-placeholder"
-          className="border-muted-foreground h-full w-full items-center justify-center border border-dashed"
-        />
+        <PagerPlaceholder copy={emptyCopy} />
       )}
 
       {journey.image && journey.stage ? (

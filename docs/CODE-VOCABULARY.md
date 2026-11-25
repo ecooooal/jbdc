@@ -46,7 +46,7 @@ One kind's group in the journey: the images that share a kind.
 _Note_: the Status entry's _Avoid_ on "stage" is about a design's standing, not this grouping.
 
 **the pager**:
-The gallery's swipe surface: one image at a time, full-bleed at 3:4 with `cover`, walking the journey in order and stopping at either end.
+The gallery's swipe surface: one image at a time on a full-bleed 3:4 stage, the image fitted whole on photography black, walking the journey in order and stopping at either end.
 
 **the notes button**:
 The gallery's bottom-right control, carrying the current image's note count; one press opens the notes sheet.

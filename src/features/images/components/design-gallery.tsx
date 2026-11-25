@@ -47,6 +47,7 @@ export function DesignGallery({ designId }: { designId: string }) {
     <View className="gap-3" accessibilityLabel="Design journey">
       <GalleryPager
         journey={journey}
+        stageKind={state.kind}
         notes={{
           count: notes.length,
           onPress: () => send({ type: "notes-button-pressed" }),

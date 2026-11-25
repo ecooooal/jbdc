@@ -230,7 +230,7 @@ The palette is live in `src/global.css`; Cormorant Garamond 600, DM Sans 400/500
 - Cormorant Garamond titles over DM Sans body; DM Mono for dates, ids, measurements, constants
 - Two accents with fixed meanings: Sanded Wood (confirmed/primary/selection), Muslin Sage (in-development/active); red is rejection and destruction only
 - Hairline Thread Line borders everywhere; dashed frames are the signature for empty attach points and missing covers
-- Photography leads at fixed ratios: a 3:4 edge-to-edge journey pager, 4:5 Library covers, 3:4 journey thumbs
+- Photography leads on fixed stages: a 3:4 edge-to-edge journey pager that fits the whole image, 4:5 Library covers, 3:4 journey thumbs
 - Fades ≤ 200ms, honoring Reduce Motion; nothing bounces or loops
 
 ## Colors
@@ -340,7 +340,7 @@ Quiet archival: depth is read from tone, not shadow. The three paper steps (Warm
 
 Soft specimen-jar geometry: corners ascend with size — 6px on small details, 8px on buttons and inputs, 10px on compact thumbs, tabs, and segmented controls, 14px on cards, sections, dialogs, and menus, 16px on the top corners of a paper sheet. Status is always a full pill (9999px). Dashed borders are the system's signature for emptiness: an empty stage, an add-image card, a missing cover, and the pager with no image all show the same dashed frame — a hole is drawn as a hole, never decorated over. The empty cover's dash uses Faded Thread (4.5:1 on Kraft) rather than the Thread Line hairline so the state is readable; the add card and empty stage use the quieter Thread Line.
 
-Photography keeps fixed ratios: 4:5 for Library covers on tiles, 3:4 for the full-bleed journey pager and for journey thumbs, and the image detail fits the whole image inside a bounded stage rather than cropping it. The layout never stretches to the image.
+Photography keeps a fixed stage: 4:5 for Library covers on tiles, 3:4 for the full-bleed journey pager and for journey thumbs, and the image detail fits the whole image inside a bounded stage. On the pager the stage is fixed and the image is fitted whole inside it — a 3:4 image fills the stage edge to edge, while a taller or wider reference keeps every edge on photography black. The layout never stretches to the image.
 
 ### Named Rules
 
@@ -418,7 +418,7 @@ One equal-width card per image stage — inspiration, sketch, prototype, final �
 
 ### The gallery pager (signature)
 
-The Detail's visual home: every image in the live journey, full-bleed at 3:4, square-edged, walking in order and bounded at both ends. The journey counter sits top-left as a translucent-black pill — the stage name in 12px semibold white, then `· 7 / 19`; the stage word cross-fades as a swipe crosses into another stage. The notes button sits at the bottom right as a translucent-black pill with a notebook glyph and the count; it opens the notes sheet. The stage block beneath the pager is the thumbnail navigation: the active stage's row lists its images oldest first and ends in the dashed add-card. With no image selected, the dashed frame keeps the pager's shape; a journey with no images shows neither counter nor notes button.
+The Detail's visual home: a 3:4 stage, full-bleed and square-edged, walking every image in order and bounded at both ends. The stage is photography black when it holds an image, and the image is fitted whole on it — a 3:4 photograph fills the stage, while a screenshot, receipt or whiteboard keeps its edges on black. The journey counter sits top-left as a translucent-black pill with a 15% white hairline — the stage name in 12px semibold white, then `· 7 / 19`; the stage word cross-fades as a swipe crosses into another stage. The notes button sits at the bottom right as a matching pill with a notebook glyph and the count; it opens the notes sheet. The stage block beneath the pager is the thumbnail navigation: the active stage's row lists its images oldest first and ends in the dashed add-card. With no image selected, the stage becomes a Kraft mount with the dashed frame: `No photography yet` when the journey is empty, `No {Stage} images yet` when the chosen stage is; a journey with no images shows neither counter nor notes button.
 
 ### Paper sheets (signature)
 
@@ -434,7 +434,7 @@ One 56px Sanded Wood circle with a 24px glyph in the corner at every density. Op
 
 ### Empty covers
 
-One dashed frame for every missing Cover, drawn on a Kraft Layer mount and inset so it never touches the card or page edge. The frame uses Faded Thread for contrast. A single-view page sets the Design's name inside it in the display face and says "No photography yet"; a tile keeps the name in the card body and says "No cover" at the 12px floor. No glyph, no illustration.
+One dashed frame for every missing Cover, drawn on a Kraft Layer mount and inset so it never touches the card or page edge. The frame uses Faded Thread for contrast. A single-view page sets the Design's name inside it in the display face and says "No photography yet"; a tile keeps the name in the card body and says "No cover" at the 12px floor. The pager's own frame says "No photography yet", or "No {Stage} images yet" for an empty chosen stage, and carries no Design name — the identity block above already names it. No glyph, no illustration.
 
 ## Do's and Don'ts
 

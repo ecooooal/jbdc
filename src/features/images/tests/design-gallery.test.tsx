@@ -289,12 +289,22 @@ test("a pager settle selects the page it landed on", async () => {
   expect(counterName()).toBe("Inspiration image 1 of 2");
 });
 
+test("the pager fits the whole image inside its stage", async () => {
+  const design = galleryDesign("Wool coat");
+
+  await attach(design.id, "sketch", "sketch bytes", 1000);
+  await renderGallery(design.id);
+
+  expect(screen.getAllByTestId("gallery-page-image")[0].props.contentFit).toBe("contain");
+});
+
 test("a design with no images keeps the dashed frame and no chrome", async () => {
   const design = galleryDesign("Early concept");
 
   await renderGallery(design.id);
 
   expect(screen.getByTestId("gallery-pager-placeholder")).toBeTruthy();
+  expect(screen.getByText("No photography yet")).toBeTruthy();
   expect(screen.queryByTestId("gallery-journey-counter")).toBeNull();
   expect(screen.queryByLabelText("Notes (0)")).toBeNull();
 });
@@ -309,6 +319,7 @@ test("an empty stage on a design with images keeps the dashed frame and drops th
   await userEvent.press(screen.getByRole("button", { name: "Prototype" }));
 
   expect(screen.getByTestId("gallery-pager-placeholder")).toBeTruthy();
+  expect(screen.getByText("No Prototype images yet")).toBeTruthy();
   expect(screen.queryByTestId("gallery-journey-counter")).toBeNull();
   expect(screen.queryByLabelText("Notes (0)")).toBeNull();
 });
