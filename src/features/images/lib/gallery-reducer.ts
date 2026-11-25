@@ -370,13 +370,13 @@ export function stageCardsView(
   stages: readonly GalleryStage[],
   state: GalleryState,
 ): StageCardsView {
-  const activeKind = locationOf(stages, state.imageId)?.kind ?? state.kind;
+  const active = galleryView(stages, state).stage;
 
   return {
     cards: stages.map((stage) => ({
       kind: stage.kind,
       count: stage.images.length,
-      active: stage.kind === activeKind,
+      active: stage.kind === active?.kind,
     })),
   };
 }

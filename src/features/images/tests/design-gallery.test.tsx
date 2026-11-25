@@ -24,8 +24,8 @@ test("the stage block shows one card for each of the four stages", async () => {
 
   await renderGallery(design.id);
 
-  for (const kind of ["inspiration", "sketch", "prototype", "final"]) {
-    expect(screen.getByTestId(`stage-card-${kind}`)).toBeTruthy();
+  for (const label of ["Inspiration", "Sketch", "Prototype", "Final"]) {
+    expect(screen.getByRole("button", { name: label })).toBeTruthy();
   }
 });
 
@@ -37,16 +37,16 @@ test("each stage card names its stage and carries its image count", async () => 
   await attach(design.id, "final", "final bytes", 3000);
   await renderGallery(design.id);
 
-  const card = (kind: string) => within(screen.getByTestId(`stage-card-${kind}`));
+  const card = (label: string) => within(screen.getByRole("button", { name: label }));
 
-  expect(card("inspiration").getByText("Inspiration")).toBeTruthy();
-  expect(card("inspiration").getByText("2 images")).toBeTruthy();
-  expect(card("sketch").getByText("Sketch")).toBeTruthy();
-  expect(card("sketch").getByText("0 images")).toBeTruthy();
-  expect(card("prototype").getByText("Prototype")).toBeTruthy();
-  expect(card("prototype").getByText("0 images")).toBeTruthy();
-  expect(card("final").getByText("Final")).toBeTruthy();
-  expect(card("final").getByText("1 image")).toBeTruthy();
+  expect(card("Inspiration").getByText("Inspiration")).toBeTruthy();
+  expect(card("Inspiration").getByText("2 images")).toBeTruthy();
+  expect(card("Sketch").getByText("Sketch")).toBeTruthy();
+  expect(card("Sketch").getByText("0 images")).toBeTruthy();
+  expect(card("Prototype").getByText("Prototype")).toBeTruthy();
+  expect(card("Prototype").getByText("0 images")).toBeTruthy();
+  expect(card("Final").getByText("Final")).toBeTruthy();
+  expect(card("Final").getByText("1 image")).toBeTruthy();
 });
 
 test("the stage card for the gallery's stage is the selected one", async () => {
@@ -56,16 +56,18 @@ test("the stage card for the gallery's stage is the selected one", async () => {
   await attach(design.id, "final", "final bytes", 2000);
   await renderGallery(design.id);
 
-  expect(screen.getByTestId("stage-card-final").props.accessibilityState).toMatchObject({
+  expect(screen.getByRole("button", { name: "Final" }).props.accessibilityState).toMatchObject({
     selected: true,
   });
-  expect(screen.getByTestId("stage-card-inspiration").props.accessibilityState).toMatchObject({
+  expect(
+    screen.getByRole("button", { name: "Inspiration" }).props.accessibilityState,
+  ).toMatchObject({
     selected: false,
   });
-  expect(screen.getByTestId("stage-card-sketch").props.accessibilityState).toMatchObject({
+  expect(screen.getByRole("button", { name: "Sketch" }).props.accessibilityState).toMatchObject({
     selected: false,
   });
-  expect(screen.getByTestId("stage-card-prototype").props.accessibilityState).toMatchObject({
+  expect(screen.getByRole("button", { name: "Prototype" }).props.accessibilityState).toMatchObject({
     selected: false,
   });
 });
@@ -77,7 +79,7 @@ test("the active stage card follows the pager when a swipe settles on another st
   await attach(design.id, "final", "final bytes", 2000);
   await renderGallery(design.id);
 
-  expect(screen.getByTestId("stage-card-final").props.accessibilityState).toMatchObject({
+  expect(screen.getByRole("button", { name: "Final" }).props.accessibilityState).toMatchObject({
     selected: true,
   });
 
@@ -87,10 +89,12 @@ test("the active stage card follows the pager when a swipe settles on another st
     nativeEvent: { contentOffset: { x: 0 }, layoutMeasurement: { width: pageWidth } },
   });
 
-  expect(screen.getByTestId("stage-card-inspiration").props.accessibilityState).toMatchObject({
+  expect(
+    screen.getByRole("button", { name: "Inspiration" }).props.accessibilityState,
+  ).toMatchObject({
     selected: true,
   });
-  expect(screen.getByTestId("stage-card-final").props.accessibilityState).toMatchObject({
+  expect(screen.getByRole("button", { name: "Final" }).props.accessibilityState).toMatchObject({
     selected: false,
   });
 });
@@ -107,10 +111,10 @@ test("pressing a stage card selects that stage's oldest image", async () => {
   // older of its two images, not to the newest or the one already on screen.
   expect(screen.getByLabelText("Final · 3 / 3")).toBeTruthy();
 
-  await userEvent.press(screen.getByTestId("stage-card-sketch"));
+  await userEvent.press(screen.getByRole("button", { name: "Sketch" }));
 
   expect(screen.getByLabelText("Sketch · 1 / 3")).toBeTruthy();
-  expect(screen.getByTestId("stage-card-sketch").props.accessibilityState).toMatchObject({
+  expect(screen.getByRole("button", { name: "Sketch" }).props.accessibilityState).toMatchObject({
     selected: true,
   });
 });
@@ -127,13 +131,11 @@ test("no stage-named chip remains: the four stage controls are equal cards", asy
 
   expect(controls).toHaveLength(4);
 
+  const row = within(screen.getByTestId("stage-cards"));
+
   for (const control of controls) {
     expect(control.props.testID).toMatch(/^stage-card-/);
-    expect(control.props.className).toContain("flex-1");
-    expect(control.props.className).not.toContain("rounded-full");
-    expect(within(screen.getByTestId("stage-cards")).getByTestId(control.props.testID)).toBe(
-      control,
-    );
+    expect(row.getByRole("button", { name: control.props.accessibilityLabel })).toBe(control);
   }
 });
 

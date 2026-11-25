@@ -29,7 +29,7 @@ function countLabel(count: number): string {
  * that stays visual — the four cards keep their equal columns in the row. The
  * change is 150 ms and reduced motion resolves it on the spot.
  */
-function StageCardTile({ card, onPress }: { card: StageCard; onPress: () => void }) {
+function StageCardButton({ card, onPress }: { card: StageCard; onPress: () => void }) {
   const label = imageKindLabel(card.kind);
   const progress = useSharedValue(card.active ? 1 : 0);
 
@@ -58,7 +58,7 @@ function StageCardTile({ card, onPress }: { card: StageCard; onPress: () => void
     >
       <Animated.View
         style={lift}
-        className="border-border bg-card min-h-14 justify-center gap-0.5 rounded-lg border px-2 py-2"
+        className="border-border bg-card min-h-14 justify-center gap-1 rounded-lg border px-2 py-2"
       >
         <Animated.View
           pointerEvents="none"
@@ -141,7 +141,7 @@ export function JourneyRail({
     <View className="gap-2">
       <View testID="stage-cards" className="flex-row gap-2">
         {cards.map((card) => (
-          <StageCardTile key={card.kind} card={card} onPress={() => onStagePress(card.kind)} />
+          <StageCardButton key={card.kind} card={card} onPress={() => onStagePress(card.kind)} />
         ))}
       </View>
 
