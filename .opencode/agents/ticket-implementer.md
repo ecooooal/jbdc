@@ -136,7 +136,8 @@ Read these; do not ask the orchestrator to repeat them.
 
 - The ticket: `gh issue view <n> --json number,title,body,labels`
 - Repo rules: `AGENTS.md`, `CODING_STANDARDS.md`, `docs/FRONTEND_STATE.md`, `GLOSSARY.md`
-- Device checks: `docs/EXPO-COMMANDS.md` §Device checks when the ticket marks any criterion verifiable in the app.
+- App criteria: the user verifies them on a device. You do not run the app, the emulator, `adb`, Metro, or the
+  installed build.
 - The orchestrator's prompt carries your ticket number, worktree path, branch, slice branch, and base sha.
 
 ## Start
@@ -155,9 +156,9 @@ a list you read is not an answer. Call the Skill tool with `tdd` at the ticket's
 Overrides, which win over the skill text:
 
 - Stop after the last step commit and a green `pnpm check`. Your brief is the exception `implement` names: the orchestrator owns review and repair, and runs `code-review` itself. Do not run it, and do not dispatch a repair.
-- Before reporting, run every criterion the ticket marks verifiable in the app on the attached development build
-  (`docs/EXPO-COMMANDS.md` §Device checks). Report each with the screen and label you saw, or name the reason it
-  could not run. Never report the ticket done with an app criterion unrun.
+- Never run a criterion the ticket marks verifiable in the app, and never touch the device, emulator, `adb`, Metro,
+  or the installed build. Report each app criterion as `device-pending`; the user runs the build before closing the
+  ticket. Repo-verifiable criteria are yours.
 - The orchestrator already wrote `Base: <sha>` on the ticket and gave you that sha. Do not comment on the ticket. Do not write its body, labels, or state. You have no permission to do any of this, and `implement`'s instruction to comment the base yourself does not apply to you.
 - Do not merge the slice branch. The orchestrator merges after review.
 - One commit per `## Steps` entry: `implement (#<n>): <the step's behaviour in one sentence>`. Never commit red. Never amend a pushed commit; ticket branches are never pushed, so fold a self-correction into the step it belongs to before you report. Never add a `fix (#<n>)` commit after a step.
@@ -174,5 +175,5 @@ Report only this:
 - `git log --oneline <base>..HEAD`
 - `pnpm check` result, plus the result of every test file your diff touches
 - the ticket's repo-verifiable criteria, one line each: met / not met, with the evidence
-- the ticket's app-verifiable criteria, one line each: verified (screen/label) or not verified (why)
+- the ticket's app-verifiable criteria, one line each: `device-pending` (never run on a device)
 - anything you touched outside the ticket's scope, and anything incomplete
