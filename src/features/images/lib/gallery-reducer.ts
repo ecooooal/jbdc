@@ -349,6 +349,38 @@ export function journeyView<Stage extends GalleryStage>(
   };
 }
 
+/** One card in the stage block: its stage, its image count, and whether it is active. */
+export type StageCard = {
+  kind: ImageKind;
+  count: number;
+  active: boolean;
+};
+
+/** The stage block's four cards, in journey order. */
+export type StageCardsView = {
+  cards: StageCard[];
+};
+
+/**
+ * The four stage cards: every stage with the number of images it holds, and the
+ * one the gallery is on marked active. The active card follows the current
+ * image and holds the empty stage the owner chose; it never reads the Cover.
+ */
+export function stageCardsView(
+  stages: readonly GalleryStage[],
+  state: GalleryState,
+): StageCardsView {
+  const activeKind = locationOf(stages, state.imageId)?.kind ?? state.kind;
+
+  return {
+    cards: stages.map((stage) => ({
+      kind: stage.kind,
+      count: stage.images.length,
+      active: stage.kind === activeKind,
+    })),
+  };
+}
+
 /**
  * The notes menu as the button expands it: the count it carries and the two
  * rows it offers. There is no row that only hides the notes; pressing the
