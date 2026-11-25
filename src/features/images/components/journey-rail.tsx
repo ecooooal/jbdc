@@ -52,7 +52,7 @@ function AddImageCard({ label, onPress }: { label: string; onPress: () => void }
  * The journey rail: one chip per stage, all four always, each naming what it
  * holds. The active stage opens its images oldest to newest on the second row,
  * so the rail stays a stable spine and an empty stage shows where work is
- * missing. A thumb selects the hero's image; the plus card at the end attaches
+ * missing. A thumb selects the pager's image; the plus card at the end attaches
  * to the active stage it names, so its label and its write read from one
  * derivation. When the last attach did not land, one line says so and the rail
  * otherwise stays as it was.

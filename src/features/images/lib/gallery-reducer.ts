@@ -289,8 +289,10 @@ function step(
 }
 
 /**
- * The stage the gallery is on: the one the rail shows and the pager's stage.
- * A pure derivation, so the component never repeats the selection rule.
+ * The stage the rail shows: the live stage for the gallery's chosen kind. The
+ * pager's stage is not this one — it derives from the selected image through
+ * `journeyView`. A pure derivation, so the component never repeats the
+ * selection rule.
  */
 export function galleryView<Stage extends GalleryStage>(
   stages: readonly Stage[],

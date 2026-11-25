@@ -14,8 +14,8 @@ import type { ImageDetailEvent } from "../lib/image-detail-reducer";
  * The image detail, full-screen, with the two things the owner does here: one
  * pill per kind reclassifies it, and Remove hides behind its one question
  * before the image and its notes go. The notes are read-only; the block under
- * the hero is where they are written. The image detail is the whole screen, so
- * the hero's swipe and the rail wait behind it. The image keeps a bounded area
+ * the pager is where they are written. The image detail is the whole screen, so
+ * the pager's swipe and the rail wait behind it. The image keeps a bounded area
  * and everything beneath it scrolls, so a long note never pushes the controls
  * out of reach. A removal that did not land leaves the image open and says so
  * beside Remove.

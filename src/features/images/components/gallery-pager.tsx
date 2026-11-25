@@ -121,8 +121,9 @@ function PagerImage({
  * edged, walking in order and bounded at both ends. The top chrome says where
  * the pager is; the filmstrip over the bottom edge jumps it elsewhere. A settle
  * dispatches the image it landed on, and a tap opens the image detail. With no
- * image selected — no images at all, or an empty stage the owner chose — the
- * dashed frame keeps the pager's shape and the chrome is absent.
+ * image selected the dashed frame keeps the pager's shape: an empty stage the
+ * owner chose keeps the filmstrip over it, while a journey with no images shows
+ * neither filmstrip nor counter. The counter appears only over a selected image.
  */
 export function GalleryPager({
   journey,
@@ -161,55 +162,54 @@ export function GalleryPager({
     if (image) onPageSettled(image.id);
   };
 
-  if (!journey.image || !journey.stage) {
-    return (
-      <View
-        testID="gallery-pager-placeholder"
-        className="bg-muted border-muted-foreground -mx-6 items-center justify-center border border-dashed"
-        style={{ width: pageWidth, height: pageHeight }}
-      >
-        <Icon as={ImageIcon} className="text-muted-foreground size-8 opacity-50" />
-      </View>
-    );
-  }
-
   return (
     <View
       className="bg-muted -mx-6 overflow-hidden"
       style={{ width: pageWidth, height: pageHeight }}
     >
-      <FlatList
-        ref={list}
-        testID="gallery-pager"
-        data={journey.images}
-        horizontal
-        pagingEnabled
-        bounces={false}
-        overScrollMode="never"
-        showsHorizontalScrollIndicator={false}
-        style={{ flex: 1 }}
-        keyExtractor={(image) => image.id}
-        getItemLayout={(_, index) => ({ length: pageWidth, offset: pageWidth * index, index })}
-        initialScrollIndex={selectedIndex >= 0 ? selectedIndex : undefined}
-        onMomentumScrollEnd={settle}
-        onScrollEndDrag={settle}
-        renderItem={({ item, index }) => (
-          <PagerImage
-            image={item}
-            position={index + 1}
-            count={journey.count}
-            width={pageWidth}
-            height={pageHeight}
-            onPress={() => onImagePressed(item.id)}
-          />
-        )}
-      />
+      {journey.image ? (
+        <FlatList
+          ref={list}
+          testID="gallery-pager"
+          data={journey.images}
+          horizontal
+          pagingEnabled
+          bounces={false}
+          overScrollMode="never"
+          showsHorizontalScrollIndicator={false}
+          style={{ flex: 1 }}
+          keyExtractor={(image) => image.id}
+          getItemLayout={(_, index) => ({ length: pageWidth, offset: pageWidth * index, index })}
+          initialScrollIndex={selectedIndex >= 0 ? selectedIndex : undefined}
+          onMomentumScrollEnd={settle}
+          onScrollEndDrag={settle}
+          renderItem={({ item, index }) => (
+            <PagerImage
+              image={item}
+              position={index + 1}
+              count={journey.count}
+              width={pageWidth}
+              height={pageHeight}
+              onPress={() => onImagePressed(item.id)}
+            />
+          )}
+        />
+      ) : (
+        <View
+          testID="gallery-pager-placeholder"
+          className="border-muted-foreground h-full w-full items-center justify-center border border-dashed"
+        />
+      )}
 
-      <JourneyCounter journey={journey} stage={journey.stage} />
+      {journey.image && journey.stage ? (
+        <JourneyCounter journey={journey} stage={journey.stage} />
+      ) : null}
 
-      <View className="absolute inset-x-0 bottom-0">
-        <GalleryFilmstrip journey={journey} onSelect={onImageSelected} />
-      </View>
+      {journey.count > 0 ? (
+        <View className="absolute inset-x-0 bottom-0">
+          <GalleryFilmstrip journey={journey} onSelect={onImageSelected} />
+        </View>
+      ) : null}
     </View>
   );
 }

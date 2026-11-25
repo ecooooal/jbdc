@@ -169,6 +169,20 @@ test("a design with no images keeps the dashed frame and no chrome", async () =>
   expect(screen.queryByTestId("gallery-filmstrip")).toBeNull();
 });
 
+test("an empty stage on a design with images keeps the filmstrip and drops the counter", async () => {
+  const design = createDesign(database, { name: "Wool coat" });
+
+  await attach(design.id, "sketch", "sketch bytes", 1000);
+  await attach(design.id, "final", "final bytes", 2000);
+  await renderGallery(design.id);
+
+  await userEvent.press(screen.getByRole("button", { name: "Prototype" }));
+
+  expect(screen.getByTestId("gallery-pager-placeholder")).toBeTruthy();
+  expect(screen.getByTestId("gallery-filmstrip")).toBeTruthy();
+  expect(screen.queryByTestId("gallery-journey-counter")).toBeNull();
+});
+
 test("the plus card attaches the picked files to the stage the owner chose", async () => {
   const design = createDesign(database, { name: "Wool coat" });
   const frontPath = join(sourceDirectory, "front.jpg");
