@@ -195,13 +195,6 @@ components:
     rounded: "{rounded.full}"
     height: "36px"
     padding: "0 12px"
-  notes-marker:
-    backgroundColor: "{colors.overlay}"
-    textColor: "{colors.overlay-foreground}"
-    typography: "{typography.label-sm}"
-    rounded: "{rounded.full}"
-    height: "28px"
-    width: "28px"
   fab:
     backgroundColor: "{colors.wood}"
     textColor: "{colors.wood-foreground}"
@@ -259,7 +252,7 @@ A warm, low-saturation paper palette whose only saturated voices are two accents
 ### Neutral
 
 - **Warm Paper** (`background`, #FFFFFF light / #242424 dark): the page behind everything. Pure white in light mode is deliberate: it is the mat the archive sits on, not a SaaS canvas.
-- **Unbleached Paper** (`surface`, #F8F6F2 / #303030): every resting surface content sits on — cards, tiles, sheets, the notes menu.
+- **Unbleached Paper** (`surface`, #F8F6F2 / #303030): every resting surface content sits on — cards, tiles, sheets.
 - **Kraft Layer** (`surface-secondary`, #F2EBDD / #424242): the inset group one step into a surface — form sections, field tables, image placeholders, the fill of a selected stage chip.
 - **Ink Thread** (`foreground`, #292724 / #F0EEE9): primary text — the ink of the ledger.
 - **Faded Thread** (`foreground-secondary`, #6E6A63 / #B5B0A7): secondary text — labels, meta lines, counts, quiet descriptions, placeholders.
@@ -310,7 +303,7 @@ The code's shadcn-style slot names resolve to this palette:
 - **Body** (DM Sans, 400, 16px, 1.5): descriptions, recorded values, notes, prose.
 - **Body-small** (DM Sans, 400, 14px, 1.4): meta lines, secondary copy, muted values.
 - **Label** (DM Sans, 500, 14px, 1.4): field labels, button text, stage names, materials.
-- **Label-small** (DM Sans, 500, 12px, 1.2): badges, chips, counts, micro-labels, note markers.
+- **Label-small** (DM Sans, 500, 12px, 1.2): badges, chips, counts, micro-labels.
 - **Mono** (DM Mono, 400, 14px, 1.4): dates, ids, measurements, constants — anything read as data rather than prose.
 - **Mono-small** (DM Mono, 400, 12px, 1.2): note dates and other micro-data.
 
@@ -330,7 +323,7 @@ Forms and recorded sections group into inset blocks — one tonal step (Kraft La
 
 ## Elevation & Depth
 
-Quiet archival: depth is read from tone, not shadow. The three paper steps (Warm Paper → Unbleached Paper → Kraft Layer) plus Thread Line hairlines carry all hierarchy. Shadows are a 5% black whisper — `0 1px 3px 0 rgba(0,0,0,0.05), 0 1px 2px -1px rgba(0,0,0,0.05)` on resting cards, buttons, inputs, selects, and the notes menu; the centered dialog alone lifts further (`0 10px 15px -3px rgba(0,0,0,0.05), 0 4px 6px -4px rgba(0,0,0,0.05)`). Nothing floats to demand attention.
+Quiet archival: depth is read from tone, not shadow. The three paper steps (Warm Paper → Unbleached Paper → Kraft Layer) plus Thread Line hairlines carry all hierarchy. Shadows are a 5% black whisper — `0 1px 3px 0 rgba(0,0,0,0.05), 0 1px 2px -1px rgba(0,0,0,0.05)` on resting cards, buttons, inputs, and selects; the centered dialog alone lifts further (`0 10px 15px -3px rgba(0,0,0,0.05), 0 4px 6px -4px rgba(0,0,0,0.05)`). Nothing floats to demand attention.
 
 ### Shadow Vocabulary
 
@@ -351,7 +344,7 @@ Photography keeps fixed ratios: 4:5 for Library covers on tiles, 3:4 for the ful
 
 ### Named Rules
 
-**The Pill Rule.** Pills are for state and selection — badges, stage chips, counters, note markers, toggles. Rectangles are for containers and controls. A pill never carries a sentence; a rectangle never carries a status.
+**The Pill Rule.** Pills are for state and selection — badges, stage chips, counters, toggles. Rectangles are for containers and controls. A pill never carries a sentence; a rectangle never carries a status.
 
 ## Motion & Micro-interaction
 
@@ -413,7 +406,6 @@ The library is uniwind + rn-primitives with shadcn-style slot names; every color
 ### Selects, menus, and dialogs
 
 - **Select trigger:** The input's paper, stroke, 8px radius, and 40px height, with a 16px Faded Thread chevron. The popup is Unbleached Paper with a Thread Line hairline, 8px radius, and a 5% shadow.
-- **Notes menu:** A 224px-wide paper popover at 14px radius with a Thread Line border, opening upward from the notes button. Rows are 12px/16px, icon 16px in Faded Thread, separated by hairlines, pressed to Kraft.
 - **Dialogs:** Centered on a 50% black overlay, Warm Paper content at 10px radius, 24px padding, a Thread Line border, the dialog shadow, and a ghost close X top-right; fading in 200ms, out 150ms.
 
 ### History
@@ -426,11 +418,11 @@ One chip per image stage — inspiration, sketch, prototype, final — all four 
 
 ### The gallery pager (signature)
 
-The Detail's visual home: every image in the live journey, full-bleed at 3:4, square-edged, walking in order and bounded at both ends. The journey counter sits top-left as a translucent-black pill — the stage name in 12px semibold white, then `· 7 / 19`. The current image's notes run down the right edge as 28px translucent-black numbered markers, four at most plus a `+N` overflow. The filmstrip crosses the bottom edge: 48×64 thumbs at 10px radius, the active one lifted 4px with a 2px Sanded Wood border and its stage name on a black pill. The notes button sits at the bottom right as a translucent-black pill with a notebook glyph and the count; it opens the paper notes menu. With no image selected, the dashed frame keeps the pager's shape, and a journey with no images shows neither filmstrip, counter, nor markers.
+The Detail's visual home: every image in the live journey, full-bleed at 3:4, square-edged, walking in order and bounded at both ends. The journey counter sits top-left as a translucent-black pill — the stage name in 12px semibold white, then `· 7 / 19`. The filmstrip crosses the bottom edge: 48×64 thumbs at 10px radius, the active one lifted 4px with a 2px Sanded Wood border and its stage name on a black pill. The notes button sits at the bottom right as a translucent-black pill with a notebook glyph and the count; it opens the notes sheet. With no image selected, the dashed frame keeps the pager's shape, and a journey with no images shows neither filmstrip, counter, nor notes button.
 
 ### Paper sheets (signature)
 
-Add note, one note, and see-all notes open as bottom sheets: Unbleached Paper, 16px top corners only, a content detent that follows its measured height, and no paper card floating above the page. Add note is keyboard-aware and keeps its draft through a refusal; the note and see-all sheets are read-only lists with the same two-step delete. Note dates are Mono-small in Faded Thread, note text Body in Ink Thread, and the armed line is 12px Rejection Red.
+The current image's notes open in one bottom sheet: Unbleached Paper, 16px top corners only, a content detent that follows its measured height, and no paper card floating above the page. The header carries `Notes (n)` and a ghost Close; Add note expands the inline composer beneath it. The composer is keyboard-aware, keeps its draft through a refusal, and disables Save while the draft is empty; only the list below scrolls, so the header and composer never leave the screen. Notes read oldest first with the same two-step delete. Note dates are Mono-small in Faded Thread, note text Body in Ink Thread, and the armed line is 12px Rejection Red.
 
 ### The image detail (signature)
 

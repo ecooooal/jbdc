@@ -150,7 +150,7 @@ test("one press on a note's trash control arms it; a second deletes it", async (
   expect(sheet.getByText("Widened the shoulder.")).toBeTruthy();
 });
 
-test("the photograph carries no numbered markers and no notes menu", async () => {
+test("the photograph carries no numbered markers and no menu over it", async () => {
   await galleryWithNotes(3);
 
   expect(screen.queryByRole("button", { name: "Note 1" })).toBeNull();

@@ -12,8 +12,8 @@ import { useResolveClassNames } from "uniwind";
  * the open state says what closing means.
  *
  * The content detent follows its measured content immediately, because a sheet
- * that animates its own content (the add-note sheet's keyboard padding) would
- * otherwise lag behind the height it measures.
+ * that animates its own content (the notes sheet's composer keyboard padding)
+ * would otherwise lag behind the height it measures.
  */
 export function Sheet({
   open,

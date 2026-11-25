@@ -87,7 +87,31 @@ const RETIRED = [
   },
   {
     phrase: "note block",
-    replacement: "the notes list, the notes button, or the all-notes sheet",
+    replacement: "the notes list, the notes button, or the notes sheet",
+  },
+  {
+    phrase: "notes menu",
+    replacement: "the notes sheet",
+  },
+  {
+    phrase: "note marker",
+    replacement: "the notes sheet",
+  },
+  {
+    phrase: "note sheet",
+    replacement: "the notes sheet",
+  },
+  {
+    phrase: "see-all",
+    replacement: "the notes sheet",
+  },
+  {
+    phrase: "add-note sheet",
+    replacement: "the notes sheet's composer",
+  },
+  {
+    phrase: "all-notes sheet",
+    replacement: "the notes sheet",
   },
 ];
 

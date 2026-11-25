@@ -52,28 +52,19 @@ The gallery's swipe surface: one image at a time, full-bleed at 3:4 with `cover`
 The gallery's bottom row of every image in journey order. The active thumb lifts and names its stage; pressing another selects it.
 
 **the notes button**:
-The gallery's bottom-right control, carrying the current image's note count; it expands into the notes menu.
+The gallery's bottom-right control, carrying the current image's note count; one press opens the notes sheet.
 
-**the notes menu**:
-The two actions the notes button expands into: Add note, and See all notes with the current count. There is no hide action.
-
-**the note marker**:
-The numbered index control on an image's right edge, one per note, oldest first, capped at four with a `+N` marker for the rest. An index, never a spatial anchor; pressing one opens its note sheet. Deleting a note renumbers the rest.
-
-**the note sheet**:
-One note read on its own: full text and created date, read-only, no delete.
-
-**the see-all sheet**:
-Every note on the current image, oldest first, with the two-step delete.
+**the notes sheet**:
+The current image's notes in one sheet: the count and Close at the top, Add note expanding the inline composer, and every note below, oldest first, with the two-step delete. Only the list scrolls; the header and composer stay above it.
 
 **the two-step delete**:
-The one destructive rule for a note: the first press arms the row ("Tap again to delete"), the second removes it. One row is armed at a time; closing the sheet or the image detail, or arming another, disarms it. No timer, no dialog, no undo.
+The one destructive rule for a note: the first press arms the row ("Tap again to delete"), the second removes it. One row is armed at a time; closing the notes sheet or the image detail, or arming another, disarms it. No timer, no dialog, no undo.
 
 **the composer**:
-The add-note sheet: the draft textarea with Save and Cancel, bound to the image it was opened on. Only a stored note closes it; changing the image drops it.
+The notes sheet's inline composer: the draft textarea with Save and Cancel, bound to the image it was opened on. Save is disabled while the trimmed draft is empty; only a stored note collapses it, leaving the sheet open; changing the image drops it.
 
 **the image detail**:
-The full-screen view a tap on the image opens: one image on the black photography surface, the four kind pills that reclassify it, Remove behind its one question, and the notes list read-only with the two-step delete. No add and no pager.
+The full-screen view a tap on the image opens: one image on the black photography surface, the four kind pills that reclassify it, Remove behind its one question, and the notes list read-only with the two-step delete. No add, no pager, and no sheet opens over it.
 
 **the stage block**:
 The four equal stage cards and the open stage's single image row, with the plus card at the row's end.

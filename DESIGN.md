@@ -195,13 +195,6 @@ components:
     rounded: "{rounded.full}"
     height: "36px"
     padding: "0 12px"
-  notes-marker:
-    backgroundColor: "{colors.overlay}"
-    textColor: "{colors.overlay-foreground}"
-    typography: "{typography.label-sm}"
-    rounded: "{rounded.full}"
-    height: "28px"
-    width: "28px"
   fab:
     backgroundColor: "{colors.wood}"
     textColor: "{colors.wood-foreground}"
@@ -232,7 +225,7 @@ Rules:
 - The Two Voices Rule. Cormorant speaks only for titles — the names of screens, designs, and dialogs.
 - The Flat-Archive Rule. A surface's importance is read from its tone, never from its shadow.
 - The Single-View Carve-Out. The single view's details panel is the one surface that blurs — only the photography beneath it; no card, sheet, bar, or control blurs.
-- The Pill Rule. Pills are for state and selection — badges, stage chips, counters, note markers, toggles.
+- The Pill Rule. Pills are for state and selection — badges, stage chips, counters, toggles.
 - The Quiet Turn Rule. Motion never announces — it only arrives and leaves, in 200ms or less.
 Elevation:
 - Whisper: 0 1px 3px 0 rgba(0,0,0,0.05), 0 1px 2px -1px rgba(0,0,0,0.05)

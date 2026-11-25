@@ -28,16 +28,14 @@
 	- a swipe walks every image in journey order, across stages, and stops at both ends
 	- top: the stage and its position across the journey, `Sketch · 7 / 19`; the stage word morphs when a swipe crosses into another stage
 	- bottom-left: a filmstrip of every image in journey order; the active thumb lifts and names its stage, and pressing a thumb selects it
-	- bottom-right: the notes button, carrying the current image's note count; it expands upward into Add note and See all notes (n); there is no hide action
-	- note markers: a numbered index on the image's right edge, oldest first, at most four with a `+N` marker for the rest; they are always visible; pressing one opens its note sheet; deleting a note renumbers the rest
-	- no images: the dashed frame at the same size, with the counter, filmstrip, markers, and notes button hidden
+	- bottom-right: the notes button, carrying the current image's note count; it opens the notes sheet
+	- no images: the dashed frame at the same size, with the counter, filmstrip, and notes button hidden
 - Notes
-	- a note is read-only everywhere; deletion is the two-step delete, one armed row at a time, cleared by closing the sheet or arming another
-	- note sheet: the note's full text and created date, read-only, no delete
-	- see-all sheet: every note on the current image, oldest first, with the two-step delete
-	- add-note sheet: keyboard-aware, bound to the current image; changing the image drops the draft; only a stored note closes it
+	- a note is read-only everywhere; deletion is the two-step delete, one armed row at a time, cleared by closing the notes sheet or arming another
+	- the notes sheet: the current image's notes, oldest first; Add note expands the inline composer at the top, only the list scrolls, and a stored note stays in the sheet
+	- the composer is keyboard-aware, bound to the current image; changing the image drops the draft; only a stored note collapses it
 	- a tap on the image opens the image detail: full-screen, black photography surface, one image, the four kind pills (the only edit), Remove behind its one question, and the notes list read-only with the two-step delete; no add, no pager, no filmstrip
-	- the sheets are `ModalBottomSheet`s (ADR-0006); no sheet opens over the image detail
+	- the notes sheet is a `ModalBottomSheet` (ADR-0006); no sheet opens over the image detail
 - Stage block
 	- four equal cards in one row, each the stage label and its image count; an empty stage reads zero
 	- the active card takes the Kraft tone and a short tone/scale animation; pressing a stage selects its oldest image and opens its row; pressing the active stage again closes the row
@@ -50,7 +48,7 @@
 	- Material uses gets the same treatment; Edit keeps its tables as they are
 - Motion and empty states
 	- stage/count change: a cross-fade with a small vertical shift, 160–200ms
-	- stage row: `LinearTransition` 200ms; active card tone/scale 150ms; note markers 150ms
+	- stage row: `LinearTransition` 200ms; active card tone/scale 150ms
 	- paging uses the platform's paging; no spring, no overshoot, nothing announces
 	- "Nothing recorded yet" stays as it is
 
