@@ -40,4 +40,8 @@ pnpm device shot /tmp/opencode/screen.png
 pnpm device state                  # resumed activity, font scale, density
 ```
 
+A worktree's code needs its own build: run `pnpm android` in that worktree (it installs over the same app id),
+then `pnpm device state` confirms it. For a JS-only change, start Metro in the worktree (`pnpm start`) and reuse
+the installed build. Rebuild the main checkout when you return to it.
+
 Set `ANDROID_SERIAL` when more than one device is attached.

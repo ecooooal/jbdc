@@ -68,6 +68,16 @@ const elementShapeAssertion = {
     "Assert the rendered text with toHaveTextContent; element.props.children reads the element's shape, not its behaviour.",
 };
 
+// Radii resolve through DESIGN.md / src/global.css (AGENTS.md), never as a
+// numeric literal in a style object. The token path keeps the sheet and every
+// later surface on the same scale.
+const numericRadius = {
+  selector:
+    "Property[key.name=/^border(Top|Bottom)?(Left|Right)?Radius$/] > Literal[raw=/^\\d+(\\.\\d+)?$/]",
+  message:
+    "Resolve radii through DESIGN.md / src/global.css (AGENTS.md); a numeric radius is a hardcoded token.",
+};
+
 module.exports = defineConfig([
   expoConfig,
   {
@@ -77,6 +87,7 @@ module.exports = defineConfig([
     files: ["**/*.{ts,tsx}"],
     rules: {
       "no-restricted-imports": restrictedImports(),
+      "no-restricted-syntax": ["error", numericRadius],
     },
   },
   {

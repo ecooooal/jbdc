@@ -168,7 +168,7 @@ test("the image detail has no Add note control", async () => {
   expect(detail.queryByLabelText("New note")).toBeNull();
 });
 
-test("the old note block's controls are absent", async () => {
+test("the retired inline note controls are absent", async () => {
   await galleryWithNotes(3);
 
   expect(screen.queryByText("No notes yet. Add what you decided here, and why.")).toBeNull();

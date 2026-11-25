@@ -65,3 +65,25 @@ EOF
     esac
     ;;
 esac
+
+# A ticket step is one commit. A `fix (#<n>)` after an `implement (#<n>)` on
+# the same ticket branch is a self-correction that belongs inside the step.
+case "$subject" in
+  fix\ \(*)
+    branch=$(git symbolic-ref --quiet --short HEAD 2>/dev/null || true)
+    case "$branch" in
+      ticket/*)
+        ticket=${branch#ticket/}
+        ticket=${ticket%%-*}
+        case "$subject" in
+          "fix (#$ticket):"*)
+            if git log --format=%s -n 50 | grep -Eq "^implement \(#$ticket\): "; then
+              printf 'fix (#%s) after implement (#%s) is a step correction.\nAmend it into the step commit; do not add a fix tail.\n' "$ticket" "$ticket" >&2
+              exit 1
+            fi
+            ;;
+        esac
+        ;;
+    esac
+    ;;
+esac

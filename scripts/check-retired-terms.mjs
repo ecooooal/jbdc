@@ -81,6 +81,14 @@ const RETIRED = [
     phrase: "Close viewer",
     replacement: "Close image detail",
   },
+  {
+    phrase: "onPhotography",
+    replacement: "overPhotography",
+  },
+  {
+    phrase: "note block",
+    replacement: "the notes list, the notes button, or the all-notes sheet",
+  },
 ];
 
 /** Where prose and code are scanned; root-level Markdown is added below. */
@@ -90,13 +98,16 @@ const SCANNED_FILE = /\.(?:ts|tsx|md)$/;
 /** The architecture map is a disposable working artifact, never shipped. */
 const SKIPPED_DIRS = new Set(["node_modules", "architecture-reviews"]);
 
+/** Historical plan docs describe an intent at a point in time; current prose is the guard's scope. */
+const SKIPPED_FILES = new Set(["docs/ui-improve.md"]);
+
 function* filesUnder(directory) {
   for (const entry of readdirSync(directory, { withFileTypes: true })) {
     if (SKIPPED_DIRS.has(entry.name)) continue;
 
     const full = join(directory, entry.name);
     if (entry.isDirectory()) yield* filesUnder(full);
-    else if (SCANNED_FILE.test(entry.name)) yield full;
+    else if (SCANNED_FILE.test(entry.name) && !SKIPPED_FILES.has(relative(ROOT, full))) yield full;
   }
 }
 

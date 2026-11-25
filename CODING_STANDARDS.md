@@ -47,7 +47,9 @@ checked is not a source.
   `ticket/<number>-<slug>` branch; `.githooks/commit-msg` rejects them
   elsewhere. `git log --oneline` then says whether a commit is feature work or
   review work without reading the diff. A person fixing a ticket by hand keeps
-  `fix (#<ticket>)`.
+  `fix (#<ticket>)`; on a ticket branch, a `fix (#<ticket>)` after its step
+  commit is a step correction — fold it into the step, or `.githooks/commit-msg`
+  rejects the tail.
   A change with no ticket names the files or surfaces it touches instead of
   inventing a number, comma-separated when there are several, and names the
   skill when a skill produced it. It keeps the content type — `feat`, `fix`,
