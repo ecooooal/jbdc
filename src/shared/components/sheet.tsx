@@ -1,6 +1,7 @@
-import { ModalBottomSheet } from "@swmansion/react-native-bottom-sheet";
+import { ModalBottomSheet, type SurfaceStyle } from "@swmansion/react-native-bottom-sheet";
 import type { ReactNode } from "react";
 import { StyleSheet, View } from "react-native";
+import { useResolveClassNames } from "uniwind";
 
 /**
  * The sheet wrapper: the one place the app configures a modal bottom sheet. It
@@ -23,6 +24,11 @@ export function Sheet({
   onClose: () => void;
   children?: ReactNode;
 }) {
+  // DESIGN.md rounded.2xl, the corner a paper sheet takes. The class resolves
+  // to the same numeric radii React Native styles use; the host's surface
+  // contract narrows away React Native's wider `DimensionValue` typing.
+  const surfaceStyle = useResolveClassNames("rounded-t-2xl") as SurfaceStyle;
+
   return (
     <ModalBottomSheet
       detents={[0, "content"]}
@@ -33,8 +39,7 @@ export function Sheet({
       }}
       animateContentHeight={false}
       surface={<View style={StyleSheet.absoluteFill} className="bg-card" />}
-      // DESIGN.md rounded.2xl, the corner a paper sheet takes.
-      surfaceStyle={{ borderTopLeftRadius: 16, borderTopRightRadius: 16 }}
+      surfaceStyle={surfaceStyle}
     >
       {children}
     </ModalBottomSheet>

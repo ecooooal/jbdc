@@ -7,21 +7,25 @@ import { Sheet } from "./sheet";
 // request (scrim, screen reader, Android Back) and a drag to the closed detent.
 jest.mock("@swmansion/react-native-bottom-sheet", () => {
   const React = jest.requireActual<typeof import("react")>("react");
-  const { Pressable, View } = jest.requireActual<typeof import("react-native")>("react-native");
+  const { Pressable, Text, View } =
+    jest.requireActual<typeof import("react-native")>("react-native");
 
   return {
     ModalBottomSheet: ({
       children,
+      index,
       onCloseRequest,
       onIndexChange,
     }: {
       children?: import("react").ReactNode;
+      index?: number;
       onCloseRequest?: () => void;
       onIndexChange?: (index: number) => void;
     }) =>
       React.createElement(
         View,
         null,
+        React.createElement(Text, null, `Index ${index}`),
         children,
         React.createElement(Pressable, {
           accessibilityLabel: "Request close",
@@ -43,6 +47,26 @@ test("the sheet wrapper renders its children", async () => {
   );
 
   expect(screen.getByText("Widened the shoulder.")).toBeTruthy();
+});
+
+test("the open wrapper sits at the content detent", async () => {
+  await render(
+    <Sheet open onClose={jest.fn()}>
+      <Text>Widened the shoulder.</Text>
+    </Sheet>,
+  );
+
+  expect(screen.getByText("Index 1")).toBeTruthy();
+});
+
+test("the closed wrapper sits at the closed detent", async () => {
+  await render(
+    <Sheet open={false} onClose={jest.fn()}>
+      <Text>Widened the shoulder.</Text>
+    </Sheet>,
+  );
+
+  expect(screen.getByText("Index 0")).toBeTruthy();
 });
 
 test("a close request asks the surface to close", async () => {
