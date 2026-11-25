@@ -196,11 +196,11 @@ test("the fixed header carries the back control and the Design's place", async (
   expect(headerRegion().getByRole("button", { name: "Back to Library" })).toBeTruthy();
   expect(headerRegion().getByText("Spring")).toBeTruthy();
   expect(headerRegion().getByText("Dress")).toBeTruthy();
-  expect(headerRegion().getByText("Created Jan 5, 2026")).toBeTruthy();
-  expect(headerRegion().getByText("Updated Feb 12, 2026")).toBeTruthy();
+  expect(headerRegion().queryByText("Created Jan 5, 2026")).toBeNull();
+  expect(headerRegion().queryByText("Updated Feb 12, 2026")).toBeNull();
 });
 
-test("the body opens on the identity block: name, Status pill, and description", async () => {
+test("the body opens on the identity block: name, Status pill, dates, and description", async () => {
   const design = createDesign(
     database,
     { name: "Silk slip dress", description: "Bias cut, cowl neck." },
@@ -211,11 +211,12 @@ test("the body opens on the identity block: name, Status pill, and description",
 
   expect(identityRegion().getByText("Silk slip dress")).toBeTruthy();
   expect(identityRegion().getByText("Concept")).toBeTruthy();
+  expect(identityRegion().getByText("Created Jan 5, 2026")).toBeTruthy();
+  expect(identityRegion().getByText("Updated Jan 5, 2026")).toBeTruthy();
   expect(identityRegion().getByText("Bias cut, cowl neck.")).toBeTruthy();
-  expect(identityRegion().queryByText("Created Jan 5, 2026")).toBeNull();
 });
 
-test("the dates live in the header only, once each", async () => {
+test("the dates appear once each", async () => {
   const design = createDesign(database, { name: "Silk slip dress" }, Date.UTC(2026, 0, 5, 12));
   writeDesign(
     database,

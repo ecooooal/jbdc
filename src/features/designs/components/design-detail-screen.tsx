@@ -41,7 +41,7 @@ function formatShortDate(timestamp: number): string {
 /** One date line: its label and short date in the mono voice. */
 function DetailDate({ label, value }: { label: string; value: string }) {
   return (
-    <Text className="text-muted-foreground font-mono text-sm leading-5">
+    <Text className="text-muted-foreground font-mono text-xs leading-4">
       {label} {value}
     </Text>
   );
@@ -100,10 +100,11 @@ function DetailActions({ designId }: { designId: string }) {
 
 /**
  * The fixed header, outside the scrolling content: the back control, then the
- * Design's place — Collection in the serif voice, Category under it in the
- * muted voice, and the dates under that in mono — and one action area at the
- * end. It grows to fit its lines instead of truncating, and an absent
- * Collection or Category is omitted rather than named.
+ * Design's place — Collection in the serif voice and Category under it in the
+ * muted voice — and one action area at the end. The record's dates belong with
+ * the name in the body, so the header stays a quiet place line. It grows to fit
+ * its lines instead of truncating, and an absent Collection or Category is
+ * omitted rather than named.
  */
 function DetailHeader({ design }: { design: DesignDetail | null }) {
   return (
@@ -118,14 +119,12 @@ function DetailHeader({ design }: { design: DesignDetail | null }) {
       </Button>
 
       <View className="flex-1 gap-1 pb-2">
-        {design?.collection ? <Text variant="h4">{design.collection}</Text> : null}
-        {design?.category ? <Text variant="muted">{design.category}</Text> : null}
-        {design ? (
-          <View className="gap-1 pt-1">
-            <DetailDate label="Created" value={formatShortDate(design.createdAt)} />
-            <DetailDate label="Updated" value={formatShortDate(design.updatedAt)} />
-          </View>
+        {design?.collection ? (
+          <Text variant="h4" className="leading-tight">
+            {design.collection}
+          </Text>
         ) : null}
+        {design?.category ? <Text variant="muted">{design.category}</Text> : null}
       </View>
 
       {design ? <DetailActions designId={design.id} /> : null}
@@ -135,15 +134,24 @@ function DetailHeader({ design }: { design: DesignDetail | null }) {
 
 /**
  * The body's opening: the name in the title voice with its Status pill, then
- * the description. The dates and the Category and Collection live in the fixed
- * header; the image block and the sections follow beneath.
+ * the record's created and updated dates as a mono stack beside the name, then
+ * the description. The Category and Collection live in the fixed header; the
+ * image block and the sections follow beneath.
  */
 function DetailIdentity({ design }: { design: DesignDetail }) {
   return (
     <View testID="detail-identity" className="gap-2">
-      <View className="flex-row flex-wrap items-center gap-2">
-        <Text variant="h3">{design.name}</Text>
-        <DesignStatusBadge status={design.status} />
+      <View className="flex-row items-start justify-between gap-3">
+        <View className="flex-1 flex-row flex-wrap items-center gap-2">
+          <Text variant="h3" className="leading-tight">
+            {design.name}
+          </Text>
+          <DesignStatusBadge status={design.status} />
+        </View>
+        <View className="shrink-0 items-end pt-1">
+          <DetailDate label="Created" value={formatShortDate(design.createdAt)} />
+          <DetailDate label="Updated" value={formatShortDate(design.updatedAt)} />
+        </View>
       </View>
       {design.description ? (
         <Text variant="muted" className="text-base leading-6">
