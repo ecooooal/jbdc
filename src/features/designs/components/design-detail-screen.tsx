@@ -103,8 +103,8 @@ function DetailActions({ designId }: { designId: string }) {
  * Design's place — Collection in the serif voice and Category under it in the
  * muted voice — and one action area at the end. The record's dates belong with
  * the name in the body, so the header stays a quiet place line. It grows to fit
- * its lines instead of truncating, and an absent Collection or Category is
- * omitted rather than named.
+ * its lines instead of truncating. An absent Collection or Category is named
+ * ("No collection", "No category") so the header never reads as a gap.
  */
 function DetailHeader({ design }: { design: DesignDetail | null }) {
   return (
@@ -119,12 +119,14 @@ function DetailHeader({ design }: { design: DesignDetail | null }) {
       </Button>
 
       <View className="flex-1 gap-1 pb-2">
-        {design?.collection ? (
-          <Text variant="h4" className="leading-tight">
-            {design.collection}
-          </Text>
+        {design ? (
+          <>
+            <Text variant="h4" className="leading-tight">
+              {design.collection ?? "No collection"}
+            </Text>
+            <Text variant="muted">{design.category ?? "No category"}</Text>
+          </>
         ) : null}
-        {design?.category ? <Text variant="muted">{design.category}</Text> : null}
       </View>
 
       {design ? <DetailActions designId={design.id} /> : null}

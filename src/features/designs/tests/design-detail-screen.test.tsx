@@ -231,17 +231,17 @@ test("the dates appear once each", async () => {
   expect(screen.getAllByText("Updated Feb 12, 2026")).toHaveLength(1);
 });
 
-test("a Design with no Collection omits the Collection line instead of naming it", async () => {
+test("a Design with no Collection names it instead of leaving the line blank", async () => {
   const category = createCategory(database, { name: "Dress" });
   const design = createDesign(database, { name: "Silk slip dress", categoryId: category.id });
 
   await renderDetail(design.id);
 
+  expect(headerRegion().getByText("No collection")).toBeTruthy();
   expect(headerRegion().getByText("Dress")).toBeTruthy();
-  expect(headerRegion().queryByText(/No collection/)).toBeNull();
 });
 
-test("a Design with no Category omits the Category line instead of naming it", async () => {
+test("a Design with no Category names it instead of leaving the line blank", async () => {
   const collection = createCollection(database, { name: "Spring" });
   const design = createDesign(database, {
     name: "Silk slip dress",
@@ -251,7 +251,16 @@ test("a Design with no Category omits the Category line instead of naming it", a
   await renderDetail(design.id);
 
   expect(headerRegion().getByText("Spring")).toBeTruthy();
-  expect(headerRegion().queryByText(/No category/)).toBeNull();
+  expect(headerRegion().getByText("No category")).toBeTruthy();
+});
+
+test("a Design with neither Collection nor Category names both", async () => {
+  const design = createDesign(database, { name: "Silk slip dress" });
+
+  await renderDetail(design.id);
+
+  expect(headerRegion().getByText("No collection")).toBeTruthy();
+  expect(headerRegion().getByText("No category")).toBeTruthy();
 });
 
 test("the body carries no joined Category and Collection line", async () => {
@@ -282,7 +291,7 @@ test("Detail renders the identity block and the recorded Specification read-only
 
   expect(identityRegion().getByText("Silk slip dress")).toBeTruthy();
   expect(identityRegion().getByText("Bias cut, cowl neck.")).toBeTruthy();
-  expect(screen.queryByText(/No category/)).toBeNull();
+  expect(identityRegion().queryByText(/No category/)).toBeNull();
   expect(screen.getByText("Specification")).toBeTruthy();
   expect(screen.getByText("Silhouette")).toBeTruthy();
   expect(screen.getByText("Relaxed A-line")).toBeTruthy();
