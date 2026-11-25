@@ -25,6 +25,19 @@ jest.mock("react-native-reanimated", () => {
     // The sheet's keyboard padding is worked out in a style worklet; running
     // the factory once against the stand-in's zero keyboard keeps it callable.
     useAnimatedStyle: (factory) => factory(),
+    // The stage card's 150 ms tone and lift share one value; the stand-in keeps
+    // the get/set surface and resolves each timing to its target value.
+    useSharedValue: (initial) => {
+      let current = initial;
+
+      return {
+        get: () => current,
+        set: (next) => {
+          current = typeof next === "function" ? next(current) : next;
+        },
+      };
+    },
+    withTiming: (toValue) => toValue,
     FadeIn: { reduceMotion: () => ({}) },
     // The FAB's upward expansion sets its duration before asking to respect the
     // system's reduce-motion setting; the stand-in keeps that chain callable.

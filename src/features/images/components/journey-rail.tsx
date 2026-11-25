@@ -1,15 +1,77 @@
 import { Image } from "expo-image";
 import { Plus } from "lucide-react-native";
+import { useEffect } from "react";
 import { Pressable, ScrollView, View } from "react-native";
+import Animated, {
+  ReduceMotion,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from "react-native-reanimated";
 import type { ImageKind } from "@/features/database";
 import { Icon } from "@/shared/components/ui/icon";
 import { Text } from "@/shared/components/ui/text";
 import { cn } from "@/shared/lib/utils";
+import type { StageCard } from "../lib/gallery-reducer";
 import { imageKindLabel, type Image as StoredImage, type ImageStage } from "../lib/images";
 import { useImageUri } from "../lib/image-store-context";
 
+/** The stage card's turn: the active tone and lift change in one quiet 150 ms. */
+const STAGE_CARD_MOTION_MS = 150;
+
 function countLabel(count: number): string {
   return `${count} image${count === 1 ? "" : "s"}`;
+}
+
+/**
+ * One stage card: its stage label and image count, at the app's type floor. The
+ * active card takes the Kraft tone through a fading inset and a small scale
+ * that stays visual — the four cards keep their equal columns in the row. The
+ * change is 150 ms and reduced motion resolves it on the spot.
+ */
+function StageCardTile({ card, onPress }: { card: StageCard; onPress: () => void }) {
+  const label = imageKindLabel(card.kind);
+  const progress = useSharedValue(card.active ? 1 : 0);
+
+  useEffect(() => {
+    progress.set(
+      withTiming(card.active ? 1 : 0, {
+        duration: STAGE_CARD_MOTION_MS,
+        reduceMotion: ReduceMotion.System,
+      }),
+    );
+  }, [card.active, progress]);
+
+  const lift = useAnimatedStyle(() => ({
+    transform: [{ scale: 1 + progress.get() * 0.03 }],
+  }));
+  const tone = useAnimatedStyle(() => ({ opacity: progress.get() }));
+
+  return (
+    <Pressable
+      role="button"
+      accessibilityLabel={label}
+      accessibilityState={{ selected: card.active }}
+      onPress={onPress}
+      testID={`stage-card-${card.kind}`}
+      className="flex-1"
+    >
+      <Animated.View
+        style={lift}
+        className="border-border bg-card min-h-14 justify-center gap-0.5 rounded-lg border px-2 py-2"
+      >
+        <Animated.View
+          pointerEvents="none"
+          style={tone}
+          className="bg-accent absolute inset-0 rounded-lg"
+        />
+        <Text className="text-xs font-semibold">{label}</Text>
+        <Text variant="muted" className="text-xs">
+          {countLabel(card.count)}
+        </Text>
+      </Animated.View>
+    </Pressable>
+  );
 }
 
 /** A stored image, or the quiet placeholder a stage with none keeps. */
@@ -49,16 +111,17 @@ function AddImageCard({ label, onPress }: { label: string; onPress: () => void }
 }
 
 /**
- * The journey rail: one chip per stage, all four always, each naming what it
- * holds. The active stage opens its images oldest to newest on the second row,
- * so the rail stays a stable spine and an empty stage shows where work is
- * missing. A thumb selects the pager's image; the plus card at the end attaches
- * to the active stage it names, so its label and its write read from one
- * derivation. When the last attach did not land, one line says so and the rail
- * otherwise stays as it was.
+ * The stage block: one stable row of four equal cards, each naming its stage
+ * and how many images it holds, with the card the gallery is on taking the
+ * Kraft tone. The active stage opens its images oldest to newest on the second
+ * row, so the cards stay a stable spine and an empty stage reads zero. A thumb
+ * selects the pager's image; the plus card at the end attaches to the active
+ * stage it names, so its label and its write read from one derivation. When the
+ * last attach did not land, one line says so and the row otherwise stays as it
+ * was.
  */
 export function JourneyRail({
-  stages,
+  cards,
   active,
   selectedId,
   attachFailed,
@@ -66,7 +129,7 @@ export function JourneyRail({
   onImagePress,
   onAddPress,
 }: {
-  stages: readonly ImageStage[];
+  cards: readonly StageCard[];
   active: ImageStage | null;
   selectedId: string | null;
   attachFailed: boolean;
@@ -74,37 +137,12 @@ export function JourneyRail({
   onImagePress: (imageId: string) => void;
   onAddPress: (kind: ImageKind) => void;
 }) {
-  const activeKind = active?.kind ?? null;
-
   return (
     <View className="gap-2">
-      <View className="flex-row flex-wrap gap-2">
-        {stages.map((stage) => {
-          const selected = stage.kind === activeKind;
-          const label = imageKindLabel(stage.kind);
-
-          return (
-            <Pressable
-              key={stage.kind}
-              role="button"
-              accessibilityLabel={label}
-              accessibilityState={{ selected }}
-              onPress={() => onStagePress(stage.kind)}
-              className={cn(
-                "border-border flex-row items-center gap-2 rounded-full border py-1 pl-1 pr-3",
-                selected && "border-primary bg-accent",
-              )}
-            >
-              <StageImage image={stage.images[0] ?? null} className="size-8 rounded-full" />
-              <View>
-                <Text className="text-xs font-semibold">{label}</Text>
-                <Text variant="muted" className="text-[10px] leading-3">
-                  {countLabel(stage.images.length)}
-                </Text>
-              </View>
-            </Pressable>
-          );
-        })}
+      <View testID="stage-cards" className="flex-row gap-2">
+        {cards.map((card) => (
+          <StageCardTile key={card.kind} card={card} onPress={() => onStagePress(card.kind)} />
+        ))}
       </View>
 
       {attachFailed ? (

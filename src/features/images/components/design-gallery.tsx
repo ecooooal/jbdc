@@ -14,10 +14,11 @@ import { SeeAllNotesSheet } from "./see-all-notes-sheet";
 /**
  * One Design's visual home: the pager walking every image in journey order with
  * the filmstrip, the note markers down the image's right edge, and the notes
- * button at the bottom right; then the journey rail with the active stage's
- * images. The images and notes live read feeds the gallery reducer, so a write
- * anywhere re-runs this without a manual refresh. The plus card attaches to the
- * active stage, so the stage the owner picked is the kind the picked files get.
+ * button at the bottom right; then the stage block's four equal cards and the
+ * active stage's images. The images and notes live read feeds the gallery
+ * reducer, so a write anywhere re-runs this without a manual refresh. The plus
+ * card attaches to the active stage, so the stage the owner picked is the kind
+ * the picked files get.
  * Add note opens the composer sheet, a marker opens one note's read-only sheet,
  * and See all notes opens the list; each sheet's open state stays in the
  * gallery reducer. A tap on a page closes the menu and opens the image detail,
@@ -27,11 +28,11 @@ import { SeeAllNotesSheet } from "./see-all-notes-sheet";
 export function DesignGallery({ designId }: { designId: string }) {
   const {
     state,
-    stages,
     images,
     imageNotes,
     view,
     journey,
+    stageCards,
     notes,
     notesIndex,
     notesMenu,
@@ -90,7 +91,7 @@ export function DesignGallery({ designId }: { designId: string }) {
       />
 
       <JourneyRail
-        stages={stages}
+        cards={stageCards}
         active={view.stage}
         selectedId={journey.image?.id ?? null}
         attachFailed={state.attachFailed}
