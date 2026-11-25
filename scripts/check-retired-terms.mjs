@@ -38,6 +38,10 @@ const RETIRED = [
     replacement: "useImageDetail",
   },
   {
+    phrase: "image-viewer",
+    replacement: "image-detail",
+  },
+  {
     phrase: "viewer-reducer",
     replacement: "image-detail-reducer",
   },
