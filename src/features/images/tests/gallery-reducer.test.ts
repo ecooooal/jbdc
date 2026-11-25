@@ -247,9 +247,11 @@ describe("the stage row", () => {
       stages: journey(),
       cover: "f2",
     });
+    const closed = settle(opened, { type: "stage-pressed", kind: "final", stages: journey() });
 
+    expect(closed.stageRowOpen).toBe(false);
     expect(
-      settle(opened, { type: "stage-pressed", kind: "sketch", stages: journey() }),
+      settle(closed, { type: "stage-pressed", kind: "sketch", stages: journey() }),
     ).toMatchObject({ kind: "sketch", imageId: "s1", stageRowOpen: true });
   });
 

@@ -397,7 +397,7 @@ export type StageRowView<Stage extends GalleryStage = GalleryStage> = {
 
 /**
  * The row under the four cards: the active stage's images in journey order and
- * the image the pager shows. The component owns whether the row is open; this
+ * the image the pager shows. The reducer owns whether the row is open; this
  * view names what it would list, so the component never repeats the selection
  * rule.
  */
@@ -516,16 +516,17 @@ function imageSelected(
  * order, within a stage and then across the next filled one, stopping at either
  * end, and leaves the row open or closed as it was. A pager
  * settle selects the image it landed on, by the same rule as a thumb press. An
- * attach that failed is a flag the rail reads until the owner tries again or
- * presses a stage, and it never moves the selection. The note composer opens on
- * the current image, closes when the note lands, and is dropped when the owner
- * moves on. The notes button expands a menu with Add note and See all; a marker
- * opens one note's read-only sheet and closes the menu; see-all opens the list
- * and closes it too. A delete press only arms its row, and a second press on
- * the same row declares exactly one removal; closing the image detail disarms
- * it, so a return visit never deletes on its first press. The result carries
- * the writes the event declares: the plus press declares its pick, the notes'
- * own presses declare their writes, and every other event declares none.
+ * attach that failed is a flag the stage block reads until the owner tries
+ * again or presses a stage, and it never moves the selection. The note composer
+ * opens on the current image, closes when the note lands, and is dropped when
+ * the owner moves on. The notes button expands a menu with Add note and See
+ * all; a marker opens one note's read-only sheet and closes the menu; see-all
+ * opens the list and closes it too. A delete press only arms its row, and a
+ * second press on the same row declares exactly one removal; closing the image
+ * detail disarms it, so a return visit never deletes on its first press. The
+ * result carries the writes the event declares: the plus press declares its
+ * pick, the notes' own presses declare their writes, and every other event
+ * declares none.
  */
 export function galleryReducer(state: GalleryState, event: GalleryEvent): GalleryResult {
   switch (event.type) {

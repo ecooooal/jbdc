@@ -153,7 +153,7 @@ export function JourneyRail({
   const label = kind ? imageKindLabel(kind) : null;
 
   return (
-    <View className="gap-2">
+    <View>
       <View testID="stage-cards" className="flex-row gap-2">
         {cards.map((card) => (
           <StageCardButton key={card.kind} card={card} onPress={() => onStagePress(card.kind)} />
@@ -161,46 +161,48 @@ export function JourneyRail({
       </View>
 
       {attachFailed ? (
-        <Text className="text-destructive" role="alert">
+        <Text className="text-destructive mt-2" role="alert">
           The images could not be added.
         </Text>
       ) : null}
 
       <Animated.View layout={STAGE_ROW_LAYOUT} className="native:overflow-hidden">
         {rowOpen && kind && label ? (
-          <ScrollView
-            testID="stage-row"
-            horizontal
-            bounces={false}
-            overScrollMode="never"
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ gap: 8 }}
-            accessibilityLabel={`${label} images, oldest first`}
-          >
-            {row.images.map((image, index) => {
-              const selected = image.id === row.selectedId;
+          <View className="pt-2">
+            <ScrollView
+              testID="stage-row"
+              horizontal
+              bounces={false}
+              overScrollMode="never"
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ gap: 8 }}
+              accessibilityLabel={`${label} images, oldest first`}
+            >
+              {row.images.map((image, index) => {
+                const selected = image.id === row.selectedId;
 
-              return (
-                <Pressable
-                  key={image.id}
-                  role="button"
-                  accessibilityLabel={`${label} image ${index + 1}`}
-                  accessibilityState={{ selected }}
-                  onPress={() => onImagePress(image.id)}
-                >
-                  <StageImage
-                    image={image}
-                    className={cn(
-                      "aspect-[3/4] w-16 rounded-lg border-2",
-                      selected ? "border-primary" : "border-transparent",
-                    )}
-                  />
-                </Pressable>
-              );
-            })}
+                return (
+                  <Pressable
+                    key={image.id}
+                    role="button"
+                    accessibilityLabel={`${label} image ${index + 1}`}
+                    accessibilityState={{ selected }}
+                    onPress={() => onImagePress(image.id)}
+                  >
+                    <StageImage
+                      image={image}
+                      className={cn(
+                        "aspect-[3/4] w-16 rounded-lg border-2",
+                        selected ? "border-primary" : "border-transparent",
+                      )}
+                    />
+                  </Pressable>
+                );
+              })}
 
-            <AddImageCard label={label} onPress={() => onAddPress(kind)} />
-          </ScrollView>
+              <AddImageCard label={label} onPress={() => onAddPress(kind)} />
+            </ScrollView>
+          </View>
         ) : null}
       </Animated.View>
     </View>
