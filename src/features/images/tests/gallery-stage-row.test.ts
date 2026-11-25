@@ -13,6 +13,14 @@ describe("the stage row view", () => {
     expect(stageRowView(journey(), onImage("s2")).selectedId).toBe("s2");
   });
 
+  test("places each image in the journey, not in its stage", () => {
+    const view = stageRowView(journey(), onImage("s2"));
+
+    // The journey is i1, i2, s1, s2, f1, f2: the sketch stage starts third.
+    expect(view.positions).toEqual([3, 4]);
+    expect(view.count).toBe(6);
+  });
+
   test("an empty stage's row lists no images", () => {
     const chosen = galleryReducer(onImage("s2"), {
       type: "stage-pressed",
@@ -23,6 +31,8 @@ describe("the stage row view", () => {
     expect(stageRowView(journey(), chosen)).toEqual({
       kind: "prototype",
       images: [],
+      positions: [],
+      count: 6,
       selectedId: null,
     });
   });

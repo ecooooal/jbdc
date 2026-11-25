@@ -19,6 +19,11 @@ import {
 
 setupDesignGalleryFixtures();
 
+/** The journey counter's accessible name: the one line the pager reads over the photography. */
+function counterName(): string {
+  return screen.getByTestId("gallery-journey-counter").props.accessibilityLabel;
+}
+
 test("the stage block shows one card for each of the four stages", async () => {
   const design = galleryDesign("Early concept");
 
@@ -109,11 +114,11 @@ test("pressing a stage card selects that stage's oldest image", async () => {
 
   // The Cover is the Final image; pressing Sketch must move the pager to the
   // older of its two images, not to the newest or the one already on screen.
-  expect(screen.getByLabelText("Final · 3 / 3")).toBeTruthy();
+  expect(counterName()).toBe("Final image 3 of 3");
 
   await userEvent.press(screen.getByRole("button", { name: "Sketch" }));
 
-  expect(screen.getByLabelText("Sketch · 1 / 3")).toBeTruthy();
+  expect(counterName()).toBe("Sketch image 1 of 3");
   expect(screen.getByRole("button", { name: "Sketch" }).props.accessibilityState).toMatchObject({
     selected: true,
   });
@@ -135,7 +140,7 @@ test("the stage row opens on a stage press", async () => {
 
   const row = within(screen.getByTestId("stage-row"));
 
-  expect(row.getByRole("button", { name: "Sketch image 1" })).toBeTruthy();
+  expect(row.getByRole("button", { name: "Sketch image 1 of 2" })).toBeTruthy();
 });
 
 test("pressing the active stage closes its row", async () => {
@@ -161,8 +166,8 @@ test("the plus card is the stage row's last item", async () => {
   const controls = within(screen.getByTestId("stage-row")).getAllByRole("button");
 
   expect(controls.map((control) => control.props.accessibilityLabel)).toEqual([
-    "Final image 1",
-    "Final image 2",
+    "Final image 1 of 2",
+    "Final image 2 of 2",
     "Add images to Final",
   ]);
 });
@@ -176,16 +181,16 @@ test("the selected image is marked in the stage row", async () => {
 
   const row = within(screen.getByTestId("stage-row"));
 
-  expect(row.getByRole("button", { name: "Final image 2" }).props.accessibilityState).toMatchObject(
-    {
-      selected: true,
-    },
-  );
-  expect(row.getByRole("button", { name: "Final image 1" }).props.accessibilityState).toMatchObject(
-    {
-      selected: false,
-    },
-  );
+  expect(
+    row.getByRole("button", { name: "Final image 2 of 2" }).props.accessibilityState,
+  ).toMatchObject({
+    selected: true,
+  });
+  expect(
+    row.getByRole("button", { name: "Final image 1 of 2" }).props.accessibilityState,
+  ).toMatchObject({
+    selected: false,
+  });
 });
 
 test("pressing a stage-row thumb moves the pager to that image", async () => {
@@ -197,11 +202,29 @@ test("pressing a stage-row thumb moves the pager to that image", async () => {
 
   // The Cover is the newest Final; the row lists the stage oldest first, so the
   // first thumb is the image the pager must walk back to.
-  expect(screen.getByLabelText("Final · 2 / 2")).toBeTruthy();
+  expect(counterName()).toBe("Final image 2 of 2");
 
-  await userEvent.press(screen.getByRole("button", { name: "Final image 1" }));
+  await userEvent.press(screen.getByRole("button", { name: "Final image 1 of 2" }));
 
-  expect(screen.getByLabelText("Final · 1 / 2")).toBeTruthy();
+  expect(counterName()).toBe("Final image 1 of 2");
+});
+
+test("the stage row numbers its thumbs across the journey, not within the stage", async () => {
+  const design = galleryDesign("Wool coat");
+
+  await attach(design.id, "sketch", "first sketch", 1000);
+  await attach(design.id, "sketch", "second sketch", 2000);
+  await attach(design.id, "final", "final bytes", 3000);
+  await renderGallery(design.id);
+
+  // Final holds one image and it is the journey's third, so the row reads the
+  // same number the counter will read once that thumb is pressed.
+  await userEvent.press(
+    within(screen.getByTestId("stage-row")).getByRole("button", { name: "Final image 3 of 3" }),
+  );
+
+  expect(counterName()).toBe("Final image 3 of 3");
+  expect(screen.queryByRole("button", { name: "Final image 1 of 1" })).toBeNull();
 });
 
 test("an empty stage's row shows only the plus card", async () => {
@@ -245,7 +268,7 @@ test("the journey counter names the stage and the position across the journey", 
   await attach(design.id, "final", "final bytes", 2000);
   await renderGallery(design.id);
 
-  expect(screen.getByLabelText("Final · 2 / 2")).toBeTruthy();
+  expect(counterName()).toBe("Final image 2 of 2");
 });
 
 test("a pager settle selects the page it landed on", async () => {
@@ -255,7 +278,7 @@ test("a pager settle selects the page it landed on", async () => {
   await attach(design.id, "final", "final bytes", 2000);
   await renderGallery(design.id);
 
-  expect(screen.getByLabelText("Final · 2 / 2")).toBeTruthy();
+  expect(counterName()).toBe("Final image 2 of 2");
 
   const pageWidth = Dimensions.get("window").width;
 
@@ -263,7 +286,7 @@ test("a pager settle selects the page it landed on", async () => {
     nativeEvent: { contentOffset: { x: 0 }, layoutMeasurement: { width: pageWidth } },
   });
 
-  expect(screen.getByLabelText("Inspiration · 1 / 2")).toBeTruthy();
+  expect(counterName()).toBe("Inspiration image 1 of 2");
 });
 
 test("a design with no images keeps the dashed frame and no chrome", async () => {
@@ -312,8 +335,8 @@ test("the plus card attaches the picked files to the stage the owner chose", asy
   await act(async () => live.notify("images"));
 
   expect(picker.pick).toHaveBeenCalledWith();
-  expect(screen.getByRole("button", { name: "Sketch image 1" })).toBeTruthy();
-  expect(screen.getByRole("button", { name: "Sketch image 2" })).toBeTruthy();
+  expect(screen.getByRole("button", { name: "Sketch image 1 of 2" })).toBeTruthy();
+  expect(screen.getByRole("button", { name: "Sketch image 2 of 2" })).toBeTruthy();
   expect(listDesignImages(database, design.id).map((image) => image.kind)).toEqual([
     "sketch",
     "sketch",
@@ -339,7 +362,7 @@ test("a copy that fails leaves the stage unchanged and says so", async () => {
   await act(async () => {});
 
   expect(screen.getByText("The images could not be added.")).toBeTruthy();
-  expect(screen.queryByRole("button", { name: "Final image 1" })).toBeNull();
+  expect(screen.queryByRole("button", { name: "Final image 1 of 1" })).toBeNull();
   expect(listDesignImages(database, design.id)).toEqual([]);
 });
 

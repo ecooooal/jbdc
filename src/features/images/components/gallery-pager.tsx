@@ -49,7 +49,9 @@ function StageWord({ kind }: { kind: ImageKind }) {
 
 /**
  * The journey counter over the photography: the current stage and the image's
- * position across the whole journey, read as one line — `Sketch · 7 / 19`.
+ * position across the whole journey, read as one line — `Sketch · 7 / 19` — and
+ * spoken as `Sketch image 7 of 19`, the same numbers the pager's pages and the
+ * stage row's thumbs carry.
  */
 function JourneyCounter({
   journey,
@@ -64,7 +66,7 @@ function JourneyCounter({
     <View
       testID="gallery-journey-counter"
       accessible
-      accessibilityLabel={`${label} · ${journey.position} / ${journey.count}`}
+      accessibilityLabel={`${label} image ${journey.position} of ${journey.count}`}
       className="absolute left-3 top-3 flex-row items-center rounded-full bg-black/60 px-3 py-1"
     >
       <StageWord key={stage} kind={stage} />

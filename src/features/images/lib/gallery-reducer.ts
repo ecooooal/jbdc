@@ -378,28 +378,43 @@ export function stageCardsView(
   };
 }
 
-/** The active stage's row: its stage, its images oldest first, and the image the pager shows. */
+/**
+ * The active stage's row: its stage, its images oldest first, where each one
+ * sits in the journey, and the image the pager shows.
+ */
 export type StageRowView<Stage extends GalleryStage = GalleryStage> = {
   kind: ImageKind | null;
   images: Stage["images"];
+  /** Each image's 1-based position across the whole journey, in `images` order. */
+  positions: number[];
+  /** Every image in the journey: the positions' denominator, the counter's count. */
+  count: number;
   selectedId: string | null;
 };
 
 /**
- * The row under the four cards: the active stage's images in journey order and
- * the image the pager shows. The reducer owns whether the row is open; this
- * view names what it would list, so the component never repeats the selection
- * rule.
+ * The row under the four cards: the active stage's images in journey order, the
+ * image the pager shows, and where each of those images sits in the whole
+ * journey. The positions read from the same flat journey the counter and the
+ * pager count, so a stage never numbers its images in a system of its own. The
+ * reducer owns whether the row is open; this view names what it would list, so
+ * the component never repeats the selection rule.
  */
 export function stageRowView<Stage extends GalleryStage>(
   stages: readonly Stage[],
   state: GalleryState,
 ): StageRowView<Stage> {
   const stage = galleryView(stages, state).stage;
+  const journey = journeyView(stages, state);
+  const images = stage?.images ?? [];
 
   return {
     kind: stage?.kind ?? null,
-    images: stage?.images ?? [],
+    images,
+    positions: images.map(
+      (image) => journey.images.findIndex((candidate) => candidate.id === image.id) + 1,
+    ),
+    count: journey.count,
     selectedId: state.imageId,
   };
 }

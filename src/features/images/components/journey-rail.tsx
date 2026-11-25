@@ -129,7 +129,9 @@ function AddImageCard({ label, onPress }: { label: string; onPress: () => void }
  * pressing the active card closes it and choosing another stage opens it.
  * The row is one horizontal line that scrolls and stops at its ends, and it
  * collapses on the shared accordion's linear layout transition. A thumb
- * selects the pager's image; the plus card attaches
+ * selects the pager's image and is named by that image's place in the whole
+ * journey — `Final image 3 of 6` — so the row counts in the counter's numbers
+ * instead of a stage-local one; the plus card attaches
  * to the stage the row shows, so its label and its write read from one
  * derivation. When the last attach did not land, one line says so and the
  * block otherwise stays as it was.
@@ -187,7 +189,7 @@ export function JourneyRail({
                   <Pressable
                     key={image.id}
                     role="button"
-                    accessibilityLabel={`${label} image ${index + 1}`}
+                    accessibilityLabel={`${label} image ${row.positions[index]} of ${row.count}`}
                     accessibilityState={{ selected }}
                     onPress={() => onImagePress(image.id)}
                   >
