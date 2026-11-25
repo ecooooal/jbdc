@@ -2,6 +2,7 @@ import { CormorantGaramond_600SemiBold } from "@expo-google-fonts/cormorant-gara
 import { DMMono_400Regular } from "@expo-google-fonts/dm-mono";
 import { DMSans_400Regular, DMSans_500Medium, DMSans_700Bold } from "@expo-google-fonts/dm-sans";
 import { PortalHost } from "@rn-primitives/portal";
+import { BottomSheetProvider } from "@swmansion/react-native-bottom-sheet";
 import { useFonts } from "expo-font";
 import { NavigationBar } from "expo-navigation-bar";
 import { Stack, ThemeProvider } from "expo-router";
@@ -94,7 +95,9 @@ export default function RootLayout() {
         <ImageStoreProvider store={imageStore}>
           <ImagePickerProvider picker={imagePicker}>
             <KeyboardProvider>
-              <AppNavigator />
+              <BottomSheetProvider>
+                <AppNavigator />
+              </BottomSheetProvider>
             </KeyboardProvider>
           </ImagePickerProvider>
         </ImageStoreProvider>

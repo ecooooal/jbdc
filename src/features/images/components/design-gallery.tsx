@@ -3,6 +3,7 @@ import { Text } from "@/shared/components/ui/text";
 import { imageNotesOf } from "../lib/image-notes";
 import { useGallery } from "../lib/use-gallery";
 import { useImageDetail } from "../lib/use-image-detail";
+import { AddNoteSheet } from "./add-note-sheet";
 import { GalleryHero } from "./gallery-hero";
 import { ImageDetail } from "./image-detail";
 import { ImageNoteBlock } from "./image-note-block";
@@ -14,9 +15,10 @@ import { JourneyRail } from "./journey-rail";
  * The images and notes live read feeds the gallery reducer, so a write
  * anywhere re-runs this without a manual refresh. The plus card attaches to
  * the active stage, so the stage the owner picked is the kind the picked files
- * get. A tap on the hero opens the image detail, whose own reducer owns
- * reclassification and the one remove question. The designs module composes it
- * above Detail's hero text.
+ * get. Add note opens the composer sheet, whose draft and open state stay in
+ * the gallery reducer. A tap on the hero opens the image detail, whose own
+ * reducer owns reclassification and the one remove question. The designs module
+ * composes it above Detail's hero text.
  */
 export function DesignGallery({ designId }: { designId: string }) {
   const { state, stages, images, imageNotes, view, noteView, send, error, status } =
@@ -45,9 +47,9 @@ export function DesignGallery({ designId }: { designId: string }) {
         }}
       />
 
-      {view.image ? (
-        <ImageNoteBlock view={noteView} composer={state.imageNoteComposer} send={send} />
-      ) : null}
+      {view.image ? <ImageNoteBlock view={noteView} send={send} /> : null}
+
+      <AddNoteSheet composer={state.imageNoteComposer} send={send} />
 
       <JourneyRail
         stages={stages}

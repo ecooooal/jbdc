@@ -150,7 +150,33 @@ async function addNote(designId: string, text: string, now: number) {
   await writeImages(database, store, designId, { kind: "add-note", imageId: image.id, text }, now);
 }
 
-test("a note written under the hero is stored beside the current image", async () => {
+test("Add note opens the composer", async () => {
+  const design = createDesign(database, { name: "Wool coat" });
+
+  await attach(design.id, "sketch", "sketch bytes", 1000);
+  await renderGallery(design.id);
+
+  expect(screen.queryByLabelText("New note")).toBeNull();
+  await userEvent.press(screen.getByRole("button", { name: "Add note" }));
+
+  expect(screen.getByLabelText("New note")).toBeTruthy();
+});
+
+test("Cancel closes the composer without writing a note", async () => {
+  const design = createDesign(database, { name: "Wool coat" });
+
+  await attach(design.id, "sketch", "sketch bytes", 1000);
+  await renderGallery(design.id);
+
+  await userEvent.press(screen.getByRole("button", { name: "Add note" }));
+  await userEvent.type(screen.getByLabelText("New note"), "Widened the shoulder.");
+  await userEvent.press(screen.getByRole("button", { name: "Cancel note" }));
+
+  expect(screen.queryByLabelText("New note")).toBeNull();
+  expect(listDesignImageNotes(database, design.id)).toEqual([]);
+});
+
+test("a note written in the composer is stored beside the current image", async () => {
   const design = createDesign(database, { name: "Wool coat" });
 
   await attach(design.id, "sketch", "sketch bytes", 1000);

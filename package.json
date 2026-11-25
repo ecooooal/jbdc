@@ -31,6 +31,7 @@
     "@rn-primitives/toggle": "^1.5.2",
     "@rn-primitives/toggle-group": "^1.5.2",
     "@rn-primitives/tooltip": "^1.5.2",
+    "@swmansion/react-native-bottom-sheet": "1.1.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "drizzle-orm": "1.0.0-rc.5",

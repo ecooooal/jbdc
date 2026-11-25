@@ -22,6 +22,11 @@ What a reducer's result asks a runner to perform, carried beside the state it re
 **runner**:
 The one hook, `useReducerRunner` at `src/shared/hooks/use-reducer-runner.ts`, behind the visit, the gallery and the image detail. It owns the state, the latest ref, the state-then-latest ordering, and the effect loop; each surface keeps only its perform body, which performs the effect and folds the ending. It carries no policy: reviewing a write's behaviour means reading the surface's perform body and the fold.
 
+## The sheets
+
+**the sheet wrapper**:
+`Sheet` at `src/shared/components/sheet.tsx`: the one place the app configures a modal bottom sheet — a closed detent, a content detent, the paper surface, and the close fact. It carries no rules and no state; the surface that owns the open state says what a close means. A drag to the closed detent, the scrim, a screen reader's dismiss, or Android's Back all report through it.
+
 ## The Design screen's images
 
 The Design screen's gallery, its parts, and its writes.
