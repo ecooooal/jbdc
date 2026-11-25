@@ -38,7 +38,7 @@
 	- the notes sheet is a `ModalBottomSheet` (ADR-0006); no sheet opens over the image detail
 - Stage block
 	- four equal cards in one row, each the stage label and its image count; an empty stage reads zero
-	- the active card takes the Kraft tone and a short tone/scale animation; pressing a stage selects its oldest image and opens its row; pressing the active stage again closes the row
+	- the active card takes the Kraft tone, a Wood border, and a short tone/scale animation; pressing a stage selects its oldest image and opens its row; pressing the active stage again closes the row
 	- the active card follows the pager, so a swipe across a stage boundary moves the tone; the row keeps its open or closed state
 	- the open stage's row is a single horizontal line of its images, oldest first, with the plus card at the end; the plus attaches to that stage; the row opens and closes on the shared accordion timing
 	- the old rail chips and their per-stage thumbs go

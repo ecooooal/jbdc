@@ -35,9 +35,10 @@ function countLabel(count: number): string {
 
 /**
  * One stage card: its stage label and image count, at the app's type floor. The
- * active card takes the Kraft tone through a fading inset and a small scale
- * that stays visual — the four cards keep their equal columns in the row. The
- * change is 150 ms and reduced motion resolves it on the spot.
+ * active card takes the Kraft tone and the Wood selection border through a
+ * fading inset, plus a small scale that stays visual — the four cards keep
+ * their equal columns in the row. The change is 150 ms and reduced motion
+ * resolves it on the spot.
  */
 function StageCardButton({ card, onPress }: { card: StageCard; onPress: () => void }) {
   const label = imageKindLabel(card.kind);
@@ -73,7 +74,7 @@ function StageCardButton({ card, onPress }: { card: StageCard; onPress: () => vo
         <Animated.View
           pointerEvents="none"
           style={tone}
-          className="bg-accent absolute inset-0 rounded-lg"
+          className="bg-accent border-primary absolute inset-0 rounded-lg border-2"
         />
         <Text className="text-xs font-semibold">{label}</Text>
         <Text variant="muted" className="text-xs">
@@ -123,11 +124,12 @@ function AddImageCard({ label, onPress }: { label: string; onPress: () => void }
 /**
  * The stage block: one stable row of four equal cards, each naming its stage
  * and how many images it holds, with the card the gallery is on taking the
- * Kraft tone. The active stage's row sits beneath them, its images oldest
- * first and the plus card at the end; pressing the active card closes it and
- * choosing another stage opens it. The row is one horizontal line that scrolls
- * and stops at its ends, and it collapses on the shared accordion's linear
- * layout transition. A thumb selects the pager's image; the plus card attaches
+ * Kraft tone and the Wood selection border. The active stage's row sits
+ * beneath them, its images oldest first and the plus card at the end;
+ * pressing the active card closes it and choosing another stage opens it.
+ * The row is one horizontal line that scrolls and stops at its ends, and it
+ * collapses on the shared accordion's linear layout transition. A thumb
+ * selects the pager's image; the plus card attaches
  * to the stage the row shows, so its label and its write read from one
  * derivation. When the last attach did not land, one line says so and the
  * block otherwise stays as it was.

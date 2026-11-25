@@ -414,7 +414,7 @@ The library is uniwind + rn-primitives with shadcn-style slot names; every color
 
 ### The journey rail (signature)
 
-One equal-width card per image stage — inspiration, sketch, prototype, final — all four always visible, each carrying its stage label and its image count, so an empty stage shows exactly where work is missing. The active card takes the Kraft Layer tone and a small scale; the active stage's row sits beneath it as one horizontal line of 3:4 thumbs (10px radius; the selected one carries a 2px Sanded Wood border) ending in the dashed add-card. Pressing another stage starts its row at its oldest image; pressing the active stage closes the row.
+One equal-width card per image stage — inspiration, sketch, prototype, final — all four always visible, each carrying its stage label and its image count, so an empty stage shows exactly where work is missing. The active card takes the Kraft Layer tone, a 2px Sanded Wood selection border, and a small scale; the active stage's row sits beneath it as one horizontal line of 3:4 thumbs (10px radius; the selected one carries a 2px Sanded Wood border) ending in the dashed add-card. Pressing another stage starts its row at its oldest image; pressing the active stage closes the row.
 
 ### The gallery pager (signature)
 
