@@ -38,10 +38,10 @@ export type ImageNoteComposer = {
 };
 
 /**
- * The gallery's decisions: which stage the rail's second row shows, which image
- * the pager shows, whether the last attach failed, the note composer, and the
- * notes chrome — the menu, the note sheet, see-all, and the armed delete row.
- * The selections are ids; the live list derives the rows.
+ * The gallery's decisions: which stage the stage block shows, whether its row
+ * is open, which image the pager shows, whether the last attach failed, the
+ * note composer, and the notes chrome — the menu, the note sheet, see-all, and
+ * the armed delete row. The selections are ids; the live list derives the rows.
  */
 export type GalleryState = {
   /** The Design this gallery shows; every effect names it. */
@@ -50,12 +50,18 @@ export type GalleryState = {
   imageId: string | null;
   /**
    * The stage the owner chose while it was empty, still waiting for its first
-   * image. It keeps the rail there while the Cover would pull it elsewhere; any
+   * image. It keeps the block there while the Cover would pull it elsewhere; any
    * selection, or a read that fills it, clears it.
    */
   awaitingKind: ImageKind | null;
   /**
-   * The last attach did not land. The stage is exactly as it was, so the rail
+   * Whether the active stage's image row is open. It starts open; only a stage
+   * press turns it, because a swipe or a read moves the active card without
+   * changing whether the row is open.
+   */
+  stageRowOpen: boolean;
+  /**
+   * The last attach did not land. The stage is exactly as it was, so the block
    * says the images could not be added rather than a failed write reading as a
    * cancel; a new attach press or a stage press clears it.
    */
@@ -249,6 +255,7 @@ export function createInitialGalleryState(designId: string): GalleryState {
     kind: "final",
     imageId: null,
     awaitingKind: null,
+    stageRowOpen: true,
     attachFailed: false,
     imageNoteComposer: null,
     notesMenuOpen: false,
@@ -381,6 +388,32 @@ export function stageCardsView(
   };
 }
 
+/** The active stage's row: its stage, its images oldest first, and the image the pager shows. */
+export type StageRowView<Stage extends GalleryStage = GalleryStage> = {
+  kind: ImageKind | null;
+  images: Stage["images"];
+  selectedId: string | null;
+};
+
+/**
+ * The row under the four cards: the active stage's images in journey order and
+ * the image the pager shows. The component owns whether the row is open; this
+ * view names what it would list, so the component never repeats the selection
+ * rule.
+ */
+export function stageRowView<Stage extends GalleryStage>(
+  stages: readonly Stage[],
+  state: GalleryState,
+): StageRowView<Stage> {
+  const stage = galleryView(stages, state).stage;
+
+  return {
+    kind: stage?.kind ?? null,
+    images: stage?.images ?? [],
+    selectedId: state.imageId,
+  };
+}
+
 /**
  * The notes menu as the button expands it: the count it carries and the two
  * rows it offers. There is no row that only hides the notes; pressing the
@@ -478,8 +511,10 @@ function imageSelected(
  * selected image while it exists — moving it to the stage its reclassification
  * gave it — and falls back to the Cover when it is gone. An empty stage the
  * owner chose stays chosen until its first image arrives. A stage press starts
- * that stage at its oldest image; a swipe walks the journey in order, within a
- * stage and then across the next filled one, stopping at either end. A pager
+ * that stage at its oldest image and opens its row, while pressing the active
+ * stage toggles the row and keeps its image; a swipe walks the journey in
+ * order, within a stage and then across the next filled one, stopping at either
+ * end, and leaves the row open or closed as it was. A pager
  * settle selects the image it landed on, by the same rule as a thumb press. An
  * attach that failed is a flag the rail reads until the owner tries again or
  * presses a stage, and it never moves the selection. The note composer opens on
@@ -522,12 +557,20 @@ export function galleryReducer(state: GalleryState, event: GalleryEvent): Galler
     }
 
     case "stage-pressed": {
+      // The active card is the same stage the gallery is on. Pressing it
+      // toggles the row and leaves the selection alone; pressing another stage
+      // selects its oldest image and opens the row.
+      if (galleryView(event.stages, state).stage?.kind === event.kind) {
+        return only({ ...state, stageRowOpen: !state.stageRowOpen, attachFailed: false });
+      }
+
       const stage = event.stages.find((candidate) => candidate.kind === event.kind);
       const first = stage?.images[0] ?? null;
 
       return only({
         ...selected(state, event.kind, first?.id ?? null),
         awaitingKind: first ? null : event.kind,
+        stageRowOpen: true,
         attachFailed: false,
       });
     }
