@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-11-23T11:52:52Z",
+  "generatedAt": "2026-11-25T20:01:47Z",
   "title": "Design System: JBDC — The Atelier Ledger",
   "extensions": {
     "colorMeta": {
@@ -75,27 +75,56 @@
         "displayName": "White on Red",
         "canonical": "#FFFFFF",
         "tonalRamp": ["#1C1B19", "#333230", "#4C4A47", "#666362", "#807C78", "#9B968F", "#B5B0A7", "#FFFFFF"]
+      },
+      "photography": {
+        "role": "neutral",
+        "displayName": "Photography Black",
+        "canonical": "#000000",
+        "tonalRamp": ["#000000", "#1A1A1A", "#333333", "#4D4D4D", "#666666", "#808080", "#999999", "#B3B3B3"]
+      },
+      "photography-ink": {
+        "role": "neutral",
+        "displayName": "Photography Ink",
+        "canonical": "#FFFFFF",
+        "tonalRamp": ["#1C1B19", "#333230", "#4C4A47", "#666362", "#807C78", "#9B968F", "#B5B0A7", "#FFFFFF"]
+      },
+      "overlay": {
+        "role": "neutral",
+        "displayName": "Photography Overlay",
+        "canonical": "rgba(0, 0, 0, 0.60)",
+        "tonalRamp": ["#000000", "#1A1A1A", "#333333", "#4D4D4D", "#666666", "#808080", "#999999", "#B3B3B3"]
+      },
+      "overlay-foreground": {
+        "role": "neutral",
+        "displayName": "Overlay Ink",
+        "canonical": "#FFFFFF",
+        "tonalRamp": ["#1C1B19", "#333230", "#4C4A47", "#666362", "#807C78", "#9B968F", "#B5B0A7", "#FFFFFF"]
       }
     },
     "typographyMeta": {
-      "title": { "displayName": "Title", "purpose": "Screen titles and a design's name — the moments the ledger names something." },
-      "title-sm": { "displayName": "Title small", "purpose": "Dialog and sheet titles." },
-      "body": { "displayName": "Body", "purpose": "Descriptions, recorded values, prose." },
-      "body-sm": { "displayName": "Body small", "purpose": "Meta lines, secondary copy." },
+      "display": { "displayName": "Display", "purpose": "A Design's name on the single-view empty plate." },
+      "title": { "displayName": "Title", "purpose": "Screen titles and a Design's name on Detail and Library tiles." },
+      "subtitle": { "displayName": "Subtitle", "purpose": "Detail Collection, empty-state headings, second-order titles." },
+      "title-sm": { "displayName": "Title small", "purpose": "Sheet and dialog titles." },
+      "body": { "displayName": "Body", "purpose": "Descriptions, recorded values, notes, prose." },
+      "body-sm": { "displayName": "Body small", "purpose": "Meta lines, secondary copy, muted values." },
       "label": { "displayName": "Label", "purpose": "Field labels, button text, stage names, materials." },
-      "label-sm": { "displayName": "Label small", "purpose": "Badges, chips, counts, micro-labels." },
-      "mono": { "displayName": "Mono", "purpose": "Ids, measurements, constants — data, not prose." }
+      "label-sm": { "displayName": "Label small", "purpose": "Badges, chips, counters, note markers." },
+      "mono": { "displayName": "Mono", "purpose": "Dates, ids, measurements, constants — data, not prose." },
+      "mono-sm": { "displayName": "Mono small", "purpose": "Note dates and other micro-data." }
     },
     "shadows": [
-      { "name": "whisper", "value": "0 1px 2px rgba(0,0,0,0.05)", "purpose": "Resting cards, buttons, inputs — barely there." },
-      { "name": "dialog", "value": "0 10px 24px rgba(0,0,0,0.05)", "purpose": "The centered dialog, the deepest point in the system." }
+      { "name": "whisper", "value": "0 1px 3px 0 rgba(0,0,0,0.05), 0 1px 2px -1px rgba(0,0,0,0.05)", "purpose": "Resting cards, buttons, inputs, selects, and the FAB's paper action rows — barely there." },
+      { "name": "dialog", "value": "0 10px 15px -3px rgba(0,0,0,0.05), 0 4px 6px -4px rgba(0,0,0,0.05)", "purpose": "The centered dialog, the deepest point in the system." }
     ],
     "motion": [
-      { "name": "overlay-enter", "value": "fade 200ms ease-out", "purpose": "Overlays and dialogs arriving; honors Reduce Motion." },
+      { "name": "overlay-enter", "value": "fade 200ms ease-out", "purpose": "Overlays, dialogs, and menus arriving; honors Reduce Motion." },
       { "name": "overlay-exit", "value": "fade 150ms ease-in", "purpose": "Overlays leaving; honors Reduce Motion." },
       { "name": "reveal", "value": "200ms linear", "purpose": "Accordion-style section reveals." },
-      { "name": "press", "value": "instant, never animated", "purpose": "Tonal shift to 90% (buttons); a Library card dips slightly and takes a faint ink wash, held a beat before its route opens." },
-      { "name": "detail-arrival", "value": "fade + small zoom, 200ms ease-out", "purpose": "The Library's Detail route only: a 0.96 to 1 zoom inside the screen fade; every other route keeps its default transition. Honors Reduce Motion." }
+      { "name": "press", "value": "instant tonal shift; card 0.98 dip + 5% ink wash held 120ms", "purpose": "The press itself never animates; the held beat lets the Owner see it before the route opens." },
+      { "name": "detail-arrival", "value": "fade + 0.96 to 1 zoom, 200ms ease-out", "purpose": "The Library's Detail route only; every other route keeps its default transition. Honors Reduce Motion." },
+      { "name": "stage-word", "value": "200ms fade with a 6px downward settle", "purpose": "The journey counter's stage name when the pager crosses into another stage. Honors Reduce Motion." },
+      { "name": "fab-rise", "value": "fade + rise 200ms ease-out", "purpose": "The Library FAB's paper action rows opening. Honors Reduce Motion." }
     ]
   },
   "components": [
@@ -104,107 +133,107 @@
       "kind": "button",
       "refersTo": "button-primary",
       "description": "The single wood-toned action on a screen.",
-      "html": "<button class=\"ds-btn-primary\">Create a design</button>",
-      "css": ".ds-btn-primary { display: inline-flex; align-items: center; justify-content: center; gap: 8px; background: #B38A64; color: #292724; border: none; border-radius: 8px; height: 40px; padding: 0 16px; font: 500 14px/1.4 'DM Sans', system-ui, sans-serif; cursor: pointer; } .ds-btn-primary:active { background: rgba(179,138,100,0.9); } .ds-btn-primary:focus-visible { outline: 2px solid #687C68; outline-offset: 2px; } .ds-btn-primary:disabled { opacity: 0.5; }"
+      "html": "<button class='ds-btn-primary'>Create a design</button>",
+      "css": ".ds-btn-primary { display:inline-flex; align-items:center; justify-content:center; gap:8px; height:40px; padding:0 16px; border:0; border-radius:8px; background:#B38A64; color:#292724; font:500 14px/1.4 'DM Sans',sans-serif; box-shadow:0 1px 3px 0 rgba(0,0,0,0.05), 0 1px 2px -1px rgba(0,0,0,0.05); cursor:pointer; } .ds-btn-primary:active { background:rgba(179,138,100,0.9); } .ds-btn-primary:focus-visible { outline:2px solid #687C68; outline-offset:2px; } .ds-btn-primary:disabled { opacity:0.5; }"
     },
     {
       "name": "Outline Button",
       "kind": "button",
       "refersTo": "button-outline",
       "description": "A quiet secondary action with a hairline border.",
-      "html": "<button class=\"ds-btn-outline\">Add material</button>",
-      "css": ".ds-btn-outline { display: inline-flex; align-items: center; justify-content: center; gap: 8px; background: #FFFFFF; color: #292724; border: 1px solid #E8E5DF; border-radius: 8px; height: 40px; padding: 0 16px; font: 500 14px/1.4 'DM Sans', system-ui, sans-serif; cursor: pointer; } .ds-btn-outline:active { background: #F2EBDD; } .ds-btn-outline:focus-visible { outline: 2px solid #687C68; outline-offset: 2px; }"
+      "html": "<button class='ds-btn-outline'>Add material</button>",
+      "css": ".ds-btn-outline { display:inline-flex; align-items:center; justify-content:center; gap:8px; height:40px; padding:0 16px; border:1px solid #E8E5DF; border-radius:8px; background:#FFFFFF; color:#292724; font:500 14px/1.4 'DM Sans',sans-serif; box-shadow:0 1px 3px 0 rgba(0,0,0,0.05), 0 1px 2px -1px rgba(0,0,0,0.05); cursor:pointer; } .ds-btn-outline:active { background:#F2EBDD; } .ds-btn-outline:focus-visible { outline:2px solid #687C68; outline-offset:2px; }"
     },
     {
       "name": "Ghost Icon Button",
       "kind": "button",
       "refersTo": "button-icon",
       "description": "Back and header actions; transparent until pressed.",
-      "html": "<button class=\"ds-btn-ghost\" aria-label=\"Back\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m15 18-6-6 6-6\"/></svg></button>",
-      "css": ".ds-btn-ghost { display: inline-flex; align-items: center; justify-content: center; background: transparent; color: #292724; border: none; border-radius: 8px; height: 40px; width: 40px; cursor: pointer; } .ds-btn-ghost:active { background: #F2EBDD; } .ds-btn-ghost:focus-visible { outline: 2px solid #687C68; outline-offset: 2px; }"
+      "html": "<button class='ds-btn-ghost' aria-label='Back'><svg width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='m15 18-6-6 6-6'/></svg></button>",
+      "css": ".ds-btn-ghost { display:inline-flex; align-items:center; justify-content:center; width:40px; height:40px; border:0; border-radius:8px; background:transparent; color:#292724; cursor:pointer; } .ds-btn-ghost:active { background:#F2EBDD; } .ds-btn-ghost:focus-visible { outline:2px solid #687C68; outline-offset:2px; }"
     },
     {
       "name": "Input",
       "kind": "input",
       "refersTo": "input",
       "description": "A paper field with a hairline stroke; focus is carried by the stroke and a subtle ring.",
-      "html": "<input class=\"ds-input\" placeholder=\"Design name\" />",
-      "css": ".ds-input { box-sizing: border-box; width: 100%; background: #FFFFFF; color: #292724; border: 1px solid #E8E5DF; border-radius: 8px; height: 40px; padding: 0 12px; font: 400 16px/1.5 'DM Sans', system-ui, sans-serif; } .ds-input::placeholder { color: #6E6A63; } .ds-input:focus-visible { outline: none; border-color: #687C68; box-shadow: 0 0 0 3px rgba(104,124,104,0.25); } .ds-input:disabled { opacity: 0.5; }"
+      "html": "<input class='ds-input' placeholder='Design name' />",
+      "css": ".ds-input { box-sizing:border-box; width:100%; height:40px; padding:0 12px; border:1px solid #E8E5DF; border-radius:8px; background:#FFFFFF; color:#292724; font:400 16px/1.5 'DM Sans',sans-serif; box-shadow:0 1px 3px 0 rgba(0,0,0,0.05), 0 1px 2px -1px rgba(0,0,0,0.05); } .ds-input::placeholder { color:#6E6A63; } .ds-input:focus-visible { outline:none; border-color:#687C68; box-shadow:0 0 0 3px rgba(104,124,104,0.25); } .ds-input:disabled { opacity:0.5; }"
     },
     {
       "name": "Status Badges",
       "kind": "chip",
       "refersTo": "badge-confirmed",
-      "description": "The state vocabulary as pills: confirmed (wood), in progress (sage), rejected (red), neutral (hairline).",
-      "html": "<span class=\"ds-badge ds-badge-confirmed\">Approved</span> <span class=\"ds-badge ds-badge-progress\">In Development</span> <span class=\"ds-badge ds-badge-rejected\">Rejected</span> <span class=\"ds-badge ds-badge-neutral\">Concept</span>",
-      "css": ".ds-badge { display: inline-flex; align-items: center; border-radius: 9999px; padding: 2px 8px; font: 500 12px/1.2 'DM Sans', system-ui, sans-serif; } .ds-badge-confirmed { background: #B38A64; color: #292724; } .ds-badge-progress { background: #687C68; color: #FFFFFF; } .ds-badge-rejected { background: #B94B45; color: #FFFFFF; } .ds-badge-neutral { background: #FFFFFF; color: #292724; border: 1px solid #E8E5DF; }"
+      "description": "The state vocabulary as pills: approved (wood), in development (sage), rejected (red), concept or archived (hairline).",
+      "html": "<span class='ds-badge ds-badge-wood'>Approved</span> <span class='ds-badge ds-badge-sage'>In Development</span> <span class='ds-badge ds-badge-red'>Rejected</span> <span class='ds-badge ds-badge-outline'>Concept</span>",
+      "css": ".ds-badge { display:inline-flex; align-items:center; border:1px solid #E8E5DF; border-radius:9999px; padding:2px 8px; font:500 12px/1.2 'DM Sans',sans-serif; } .ds-badge-wood { background:#B38A64; border-color:transparent; color:#292724; } .ds-badge-sage { background:#687C68; border-color:transparent; color:#FFFFFF; } .ds-badge-red { background:#B94B45; border-color:transparent; color:#FFFFFF; } .ds-badge-outline { background:#FFFFFF; color:#292724; }"
     },
     {
       "name": "Library Tile Card",
       "kind": "card",
-      "refersTo": "card",
-      "description": "A cover-first paper mount: image block, then name, meta, and status pill.",
-      "html": "<div class=\"ds-card-tile\"><div class=\"ds-card-cover\"></div><div class=\"ds-card-body\"><div class=\"ds-card-name\">Sunday Afternoon</div><div class=\"ds-card-meta\">Dress · Summer 2026</div><span class=\"ds-badge ds-badge-progress\">In Development</span></div></div>",
-      "css": ".ds-card-tile { display: flex; flex-direction: column; background: #F8F6F2; border: 1px solid #E8E5DF; border-radius: 14px; overflow: hidden; box-shadow: 0 1px 2px rgba(0,0,0,0.05); cursor: pointer; max-width: 220px; } .ds-card-tile:active { transform: scale(0.98); box-shadow: 0 1px 2px rgba(0,0,0,0.05), inset 0 0 0 9999px rgba(41,39,36,0.05); } .ds-card-cover { aspect-ratio: 4/5; background: #F2EBDD; } .ds-card-body { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; padding: 12px; } .ds-card-name { font: 500 16px/1.25 'DM Sans', system-ui, sans-serif; color: #292724; } .ds-card-meta { font: 400 14px/1.4 'DM Sans', system-ui, sans-serif; color: #6E6A63; } .ds-badge { display: inline-flex; align-items: center; border-radius: 9999px; padding: 2px 8px; font: 500 12px/1.2 'DM Sans', system-ui, sans-serif; } .ds-badge-progress { background: #687C68; color: #FFFFFF; }"
+      "refersTo": "card-tile",
+      "description": "A cover-first paper mount: 4:5 cover, then the name in the title face and the status pill at the bottom.",
+      "html": "<div class='ds-tile'><div class='ds-tile-cover'><span class='ds-tile-cover-label'>4:5 cover</span></div><div class='ds-tile-body'><div class='ds-tile-name'>Sunday Afternoon</div><span class='ds-badge ds-badge-sage'>In Development</span></div></div>",
+      "css": ".ds-tile { display:flex; flex-direction:column; width:220px; overflow:hidden; border:1px solid #E8E5DF; border-radius:14px; background:#F8F6F2; box-shadow:0 1px 3px 0 rgba(0,0,0,0.05), 0 1px 2px -1px rgba(0,0,0,0.05); cursor:pointer; transition:transform 120ms ease; } .ds-tile:active { transform:scale(0.98); box-shadow:0 1px 3px 0 rgba(0,0,0,0.05), 0 1px 2px -1px rgba(0,0,0,0.05), inset 0 0 0 9999px rgba(41,39,36,0.05); } .ds-tile-cover { display:flex; align-items:flex-end; justify-content:flex-end; aspect-ratio:4/5; padding:8px; background:#E7DDCC; } .ds-tile-cover-label { color:#6E6A63; font:500 10px/1 'DM Sans',sans-serif; } .ds-tile-body { display:flex; flex-direction:column; gap:8px; padding:12px; } .ds-tile-name { color:#292724; font:600 24px/1.17 'Cormorant Garamond',Georgia,serif; letter-spacing:-0.025em; } .ds-badge { display:inline-flex; align-items:center; border:1px solid #E8E5DF; border-radius:9999px; padding:2px 8px; font:500 12px/1.2 'DM Sans',sans-serif; } .ds-badge-sage { background:#687C68; border-color:transparent; color:#FFFFFF; }"
     },
     {
-      "name": "Journey Stage Chip",
+      "name": "Journey Rail",
       "kind": "chip",
       "refersTo": "chip-stage-active",
-      "description": "One image stage; selected state reads as active with a sage border on a Kraft fill.",
-      "html": "<button class=\"ds-stage-chip ds-stage-chip-selected\"><span class=\"ds-stage-thumb\"></span><span class=\"ds-stage-text\"><span class=\"ds-stage-name\">Prototype</span><span class=\"ds-stage-count\">3 images</span></span></button>",
-      "css": ".ds-stage-chip { display: inline-flex; align-items: center; gap: 8px; border: 1px solid #E8E5DF; border-radius: 9999px; padding: 4px 12px 4px 4px; background: transparent; cursor: pointer; } .ds-stage-chip-selected { border: 1.5px solid #687C68; background: #F2EBDD; } .ds-stage-thumb { width: 32px; height: 32px; border-radius: 9999px; background: #F2EBDD; } .ds-stage-text { display: flex; flex-direction: column; align-items: flex-start; } .ds-stage-name { font: 600 12px/1.2 'DM Sans', system-ui, sans-serif; color: #292724; } .ds-stage-count { font: 400 10px/1.2 'DM Sans', system-ui, sans-serif; color: #6E6A63; }"
+      "description": "The four stage chips and the active stage's strip: selected chip and thumb carry Sanded Wood, and the strip ends in the dashed add card.",
+      "html": "<div class='ds-rail'><div class='ds-rail-chips'><span class='ds-stage ds-stage-active'><span class='ds-stage-thumb'></span><span class='ds-stage-text'><span class='ds-stage-name'>Prototype</span><span class='ds-stage-count'>3 images</span></span></span><span class='ds-stage'><span class='ds-stage-thumb ds-stage-thumb-empty'></span><span class='ds-stage-text'><span class='ds-stage-name'>Final</span><span class='ds-stage-count'>0 images</span></span></span></div><div class='ds-rail-strip'><div class='ds-strip-thumb ds-strip-active'></div><div class='ds-strip-thumb'></div><button class='ds-add-card' aria-label='Add images to Prototype'><svg width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M5 12h14'/><path d='M12 5v14'/></svg><span>Add</span></button></div></div>",
+      "css": ".ds-rail { display:flex; flex-direction:column; gap:8px; width:320px; padding:16px; background:#FFFFFF; font-family:'DM Sans',sans-serif; } .ds-rail-chips { display:flex; flex-wrap:wrap; gap:8px; } .ds-stage { display:inline-flex; align-items:center; gap:8px; border:1px solid #E8E5DF; border-radius:9999px; padding:4px 12px 4px 4px; background:#FFFFFF; } .ds-stage-active { border-color:#B38A64; background:#F2EBDD; } .ds-stage-thumb { width:32px; height:32px; border-radius:9999px; background:#E7DDCC; } .ds-stage-thumb-empty { border:1px dashed #E8E5DF; background:#F2EBDD; } .ds-stage-text { display:flex; flex-direction:column; } .ds-stage-name { color:#292724; font:600 12px/1.2 'DM Sans',sans-serif; } .ds-stage-count { color:#6E6A63; font:400 10px/1.2 'DM Sans',sans-serif; } .ds-rail-strip { display:flex; align-items:flex-end; gap:8px; padding-top:8px; } .ds-strip-thumb { width:48px; height:64px; border:2px solid transparent; border-radius:10px; background:#E7DDCC; } .ds-strip-active { border-color:#B38A64; } .ds-add-card { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; width:64px; height:85px; padding:0; border:1px dashed #E8E5DF; border-radius:10px; background:#F2EBDD; color:#6E6A63; font:400 10px/1.2 'DM Sans',sans-serif; cursor:pointer; } .ds-add-card:active { opacity:0.7; }"
     },
     {
-      "name": "Dashed Add Card",
+      "name": "Gallery Pager",
       "kind": "custom",
-      "refersTo": "card",
-      "description": "The system's only invitation to attach — a drawn hole at the end of a stage strip.",
-      "html": "<button class=\"ds-add-card\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M5 12h14\"/><path d=\"M12 5v14\"/></svg><span>Add</span></button>",
-      "css": ".ds-add-card { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; width: 64px; aspect-ratio: 3/4; background: #F2EBDD; color: #6E6A63; border: 1.5px dashed #E8E5DF; border-radius: 10px; cursor: pointer; font: 400 10px/1.2 'DM Sans', system-ui, sans-serif; } .ds-add-card:active { opacity: 0.7; }"
+      "description": "The full-bleed 3:4 journey pager with counter, note markers, filmstrip, and notes button — persistent chrome in translucent-black pills.",
+      "html": "<div class='ds-pager'><div class='ds-pager-page'><div class='ds-pager-photo'><svg viewBox='0 0 320 427' preserveAspectRatio='xMidYMid slice' role='img' aria-label='Prototype photograph'><rect width='320' height='427' fill='#6F675C'/><circle cx='160' cy='74' r='14' fill='#D9C3AB'/><path d='M160 90l58 48-22 26-18-12v140h-36V152l-18 12-22-26z' fill='#D9C3AB'/><path d='M60 360h200' stroke='#8A8072' stroke-width='2'/></svg></div><span class='ds-pager-counter'><b>Sketch</b> · 7 / 19</span><span class='ds-note-marker ds-note-1'>1</span><span class='ds-note-marker ds-note-2'>2</span><span class='ds-note-marker ds-note-more'>+3</span><div class='ds-filmstrip'><div class='ds-film-thumb'></div><div class='ds-film-thumb ds-film-active'><span class='ds-film-label'>Sketch</span></div><div class='ds-film-thumb'></div></div><button class='ds-notes-button' aria-label='Notes (2)'><svg width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M4 4h16v16H4z'/><path d='M8 8h8M8 12h8M8 16h5'/></svg><span>2</span></button></div></div>",
+      "css": ".ds-pager { width:320px; font-family:'DM Sans',sans-serif; } .ds-pager-page { position:relative; width:320px; aspect-ratio:3/4; overflow:hidden; background:#000000; } .ds-pager-photo { position:absolute; inset:0; } .ds-pager-photo svg { display:block; width:100%; height:100%; } .ds-pager-counter { position:absolute; top:12px; left:12px; display:inline-flex; gap:2px; align-items:center; border-radius:9999px; background:rgba(0,0,0,0.6); color:#FFFFFF; padding:4px 12px; font:400 12px/1.2 'DM Sans',sans-serif; } .ds-pager-counter b { font-weight:600; } .ds-note-marker { position:absolute; right:8px; display:flex; align-items:center; justify-content:center; width:28px; height:28px; border-radius:9999px; background:rgba(0,0,0,0.6); color:#FFFFFF; font:600 12px/1.2 'DM Sans',sans-serif; } .ds-note-1 { top:56px; } .ds-note-2 { top:92px; } .ds-note-more { top:128px; width:auto; min-width:28px; padding:0 6px; } .ds-filmstrip { position:absolute; left:12px; right:64px; bottom:12px; display:flex; align-items:flex-end; gap:8px; } .ds-film-thumb { width:48px; height:64px; border:2px solid transparent; border-radius:10px; background:#8A8072; } .ds-film-active { border-color:#B38A64; transform:translateY(-4px); } .ds-film-label { position:absolute; left:50%; bottom:calc(100% + 4px); transform:translateX(-50%); border-radius:9999px; background:rgba(0,0,0,0.6); color:#FFFFFF; padding:2px 8px; font:600 12px/1.2 'DM Sans',sans-serif; white-space:nowrap; } .ds-notes-button { position:absolute; right:12px; bottom:12px; display:inline-flex; align-items:center; gap:6px; height:36px; padding:0 12px; border:0; border-radius:9999px; background:rgba(0,0,0,0.6); color:#FFFFFF; font:600 12px/1.2 'DM Sans',sans-serif; cursor:pointer; } .ds-notes-button:active { background:rgba(0,0,0,0.7); }"
     },
     {
-      "name": "Gallery Hero",
+      "name": "Paper Sheet",
       "kind": "custom",
-      "refersTo": "hero",
-      "description": "The 4:5 record image with stage and count pinned as translucent-black pills.",
-      "html": "<div class=\"ds-hero\"><div class=\"ds-hero-img\"></div><span class=\"ds-hero-chip ds-hero-left\">Prototype</span><span class=\"ds-hero-chip ds-hero-right\">1 / 3</span></div>",
-      "css": ".ds-hero { position: relative; max-width: 320px; aspect-ratio: 4/5; min-height: 300px; background: #F2EBDD; border-radius: 16px; overflow: hidden; } .ds-hero-img { width: 100%; height: 100%; background: linear-gradient(135deg, #C9B79B, #F2EBDD); } .ds-hero-chip { position: absolute; top: 12px; background: rgba(0,0,0,0.6); color: #FFFFFF; border-radius: 9999px; padding: 4px 12px; font: 400 12px/1.2 'DM Sans', system-ui, sans-serif; } .ds-hero-left { left: 12px; font-weight: 600; } .ds-hero-right { right: 12px; }"
+      "refersTo": "sheet",
+      "description": "A notes sheet: Unbleached Paper, 16px top corners only, mono dates, body notes, and the two-step delete's armed line.",
+      "html": "<div class='ds-sheet'><div class='ds-sheet-handle'></div><div class='ds-sheet-head'><h2 class='ds-sheet-title'>Notes (2)</h2><button class='ds-sheet-close'>Close</button></div><div class='ds-sheet-list'><div class='ds-sheet-note'><div class='ds-sheet-date'>Nov 24, 2026</div><div class='ds-sheet-row'><p class='ds-sheet-text'>The bias hangs better in the heavier silk; keep this length.</p><button class='ds-sheet-trash' aria-label='Delete note'><svg width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M3 6h18'/><path d='M8 6V4h8v2'/><path d='M19 6l-1 14H6L5 6'/><path d='M10 11v6M14 11v6'/></svg></button></div></div><div class='ds-sheet-note'><div class='ds-sheet-date'>Nov 23, 2026</div><div class='ds-sheet-row'><p class='ds-sheet-text'>Pinned the shoulder twice; the second pass reads cleaner.</p><button class='ds-sheet-trash ds-sheet-trash-armed' aria-label='Delete note'><svg width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M3 6h18'/><path d='M8 6V4h8v2'/><path d='M19 6l-1 14H6L5 6'/><path d='M10 11v6M14 11v6'/></svg></button></div><div class='ds-sheet-warning'>Tap again to delete</div></div></div></div>",
+      "css": ".ds-sheet { width:360px; padding:8px 0 16px; border-radius:16px 16px 0 0; background:#F8F6F2; color:#292724; font-family:'DM Sans',sans-serif; } .ds-sheet-handle { width:36px; height:4px; margin:0 auto 10px; border-radius:9999px; background:#E8E5DF; } .ds-sheet-head { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:0 16px 8px; } .ds-sheet-title { margin:0; font:600 18px/1.25 'Cormorant Garamond',Georgia,serif; } .ds-sheet-close { padding:6px 8px; border:0; border-radius:8px; background:transparent; color:#292724; font:500 14px/1.4 'DM Sans',sans-serif; cursor:pointer; } .ds-sheet-close:active { background:#F2EBDD; } .ds-sheet-note { padding:12px 16px; border-top:1px solid #E8E5DF; } .ds-sheet-note:first-child { border-top:0; } .ds-sheet-date { margin-bottom:6px; color:#6E6A63; font:400 12px/1.2 'DM Mono',monospace; } .ds-sheet-row { display:flex; align-items:flex-start; gap:8px; } .ds-sheet-text { flex:1; margin:0; font:400 16px/1.5 'DM Sans',sans-serif; } .ds-sheet-trash { display:inline-flex; align-items:center; justify-content:center; width:40px; height:40px; border:0; border-radius:8px; background:transparent; color:#6E6A63; cursor:pointer; } .ds-sheet-trash:active { background:#F2EBDD; } .ds-sheet-trash-armed { color:#B94B45; } .ds-sheet-warning { margin-top:4px; color:#B94B45; font:500 12px/1.2 'DM Sans',sans-serif; }"
     },
     {
-      "name": "Event Card",
-      "kind": "card",
-      "refersTo": "card",
-      "description": "One History entry: timestamp in faded thread, then the recorded sections as label + lines.",
-      "html": "<div class=\"ds-event-card\"><div class=\"ds-event-time\">Nov 23, 2026, 2:04 PM</div><div class=\"ds-event-section\"><div class=\"ds-event-label\">Status</div><div class=\"ds-event-line\">Concept → In Development</div></div></div>",
-      "css": ".ds-event-card { display: flex; flex-direction: column; gap: 8px; background: #FFFFFF; border: 1px solid #E8E5DF; border-radius: 14px; padding: 12px 16px; max-width: 360px; } .ds-event-time { font: 400 14px/1.4 'DM Sans', system-ui, sans-serif; color: #6E6A63; } .ds-event-section { display: flex; flex-direction: column; gap: 4px; } .ds-event-label { font: 400 14px/1.4 'DM Sans', system-ui, sans-serif; color: #6E6A63; } .ds-event-line { font: 400 16px/1.5 'DM Sans', system-ui, sans-serif; color: #292724; }"
+      "name": "Image Detail",
+      "kind": "custom",
+      "refersTo": "image-detail",
+      "description": "The full-screen black photography surface: white ink, translucent-white strokes and fills, classification pills, and the one remove question.",
+      "html": "<div class='ds-detail'><div class='ds-detail-head'><span class='ds-detail-stage'>Prototype</span><button class='ds-detail-close' aria-label='Close'><svg width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M18 6 6 18M6 6l12 12'/></svg></button></div><div class='ds-detail-image'><svg viewBox='0 0 320 200' preserveAspectRatio='xMidYMid meet' role='img' aria-label='Prototype photograph'><rect width='320' height='200' fill='#3A3733'/><circle cx='160' cy='44' r='10' fill='#D9C3AB'/><path d='M160 56l44 34-16 20-14-9v67h-28v-67l-14 9-16-20z' fill='#D9C3AB'/></svg></div><div class='ds-detail-body'><div class='ds-kind-row'><span class='ds-kind ds-kind-selected'>Prototype</span><span class='ds-kind'>Sketch</span><span class='ds-kind'>Inspiration</span><span class='ds-kind'>Final</span></div><div class='ds-detail-notes'><h2 class='ds-detail-title'>Notes (1)</h2><div class='ds-detail-note'><div class='ds-detail-date'>Nov 24, 2026</div><div class='ds-detail-row'><p class='ds-detail-text'>The bias hangs better in the heavier silk; keep this length.</p><button class='ds-detail-trash' aria-label='Delete note'><svg width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M3 6h18'/><path d='M8 6V4h8v2'/><path d='M19 6l-1 14H6L5 6'/><path d='M10 11v6M14 11v6'/></svg></button></div></div></div><div class='ds-detail-destructive'><button class='ds-remove'>Remove image</button></div></div></div>",
+      "css": ".ds-detail { width:360px; background:#000000; color:#FFFFFF; font-family:'DM Sans',sans-serif; } .ds-detail-head { display:flex; align-items:center; justify-content:space-between; padding:8px 16px; } .ds-detail-stage { color:rgba(255,255,255,0.7); font:600 12px/1.2 'DM Sans',sans-serif; } .ds-detail-close { display:inline-flex; align-items:center; justify-content:center; width:40px; height:40px; border:0; border-radius:8px; background:transparent; color:#FFFFFF; cursor:pointer; } .ds-detail-close:active { background:rgba(255,255,255,0.1); } .ds-detail-image { display:flex; align-items:center; justify-content:center; height:200px; padding:0 8px; } .ds-detail-image svg { width:100%; height:100%; } .ds-detail-body { display:flex; flex-direction:column; gap:16px; padding:0 24px 24px; } .ds-kind-row { display:flex; flex-wrap:wrap; gap:8px; } .ds-kind { padding:4px 12px; border:1px solid rgba(255,255,255,0.4); border-radius:9999px; color:#FFFFFF; font:600 12px/1.2 'DM Sans',sans-serif; } .ds-kind-selected { border-color:#FFFFFF; background:#FFFFFF; color:#000000; } .ds-detail-notes { display:flex; flex-direction:column; gap:8px; } .ds-detail-title { margin:0; font:600 18px/1.25 'Cormorant Garamond',Georgia,serif; } .ds-detail-note { padding-top:12px; border-top:1px solid rgba(255,255,255,0.15); } .ds-detail-date { margin-bottom:4px; color:rgba(255,255,255,0.6); font:400 12px/1.2 'DM Mono',monospace; } .ds-detail-row { display:flex; align-items:flex-start; gap:8px; } .ds-detail-text { flex:1; margin:0; font:400 16px/1.5 'DM Sans',sans-serif; } .ds-detail-trash { width:40px; height:40px; border:0; border-radius:8px; background:transparent; color:rgba(255,255,255,0.6); cursor:pointer; } .ds-detail-trash:active { background:rgba(255,255,255,0.1); } .ds-detail-destructive { padding-top:16px; border-top:1px solid rgba(255,255,255,0.15); } .ds-remove { height:36px; padding:0 12px; border:0; border-radius:8px; background:#B94B45; color:#FFFFFF; font:500 14px/1.4 'DM Sans',sans-serif; cursor:pointer; } .ds-remove:active { background:rgba(185,75,69,0.9); }"
     }
   ],
   "narrative": {
     "northStar": "The Atelier Ledger",
-    "overview": "JBDC is one designer's private catalog of her own clothing designs, and the interface reads as her bound studio notebook: warm paper surfaces, a wood-toned accent for the things that matter, serif titles like specimen labels. The photography is the artwork; the chrome is the furniture around it. The feel is warm, unhurried, precise — a working archive, not a showcase.\n\nThe system is quiet archival. Depth comes from paper tonal steps and hairline borders, never from shadow play; press feedback is a tonal shift, not a bounce; motion is a short fade that honors the system Reduce Motion setting, with one small zoom-fade into a design's Detail. Color is spent on meaning only: Sanded Wood marks confirmed work and primary actions, Muslin Sage marks work in progress and active selection, Rejection Red marks what did not proceed. Everything else is paper and ink.",
+    "overview": "JBDC is one designer's private catalog of her own clothing designs, and the interface reads as her bound studio notebook: warm paper surfaces, a wood-toned accent for the things that matter, serif titles like specimen labels. The photography is the artwork; the chrome is the furniture around it. The feel is warm, unhurried, precise — a working archive, not a showcase.\n\nThe system is quiet archival. Depth comes from paper tonal steps and hairline borders, never from shadow play; press feedback is a tonal shift, not a bounce; motion is a short fade that honors the system Reduce Motion setting, with one small zoom-fade into a design's Detail. Color is spent on meaning only: Sanded Wood marks confirmed work and primary actions, Muslin Sage marks work in progress and active selection, Rejection Red marks what did not proceed. Everything else is paper and ink.\n\nPhotography has its own surface: a full-bleed black stage where the image runs edge to edge and every control becomes a translucent-black pill with white ink. The paper world never floats over a photograph; the only thing allowed to blur is the single view's details panel, and it blurs only the cover beneath it.",
     "keyCharacteristics": [
       "Paper tonal hierarchy — Warm Paper page, Unbleached Paper cards, Kraft Layer insets — instead of shadows",
-      "Cormorant Garamond titles over DM Sans body; DM Mono for ids, measurements, constants",
-      "Two accents with fixed meanings: Sanded Wood (confirmed/primary), Muslin Sage (in-progress/active); red is rejection only",
-      "Hairline Thread Line borders everywhere; dashed borders are the signature for empty attach points",
-      "Photography leads at fixed ratios: 4:5 hero, 3:4 thumbs, square compact covers",
+      "Cormorant Garamond titles over DM Sans body; DM Mono for dates, ids, measurements, constants",
+      "Two accents with fixed meanings: Sanded Wood (confirmed/primary/selection), Muslin Sage (in-development/active); red is rejection and destruction only",
+      "Hairline Thread Line borders everywhere; dashed frames are the signature for empty attach points and missing covers",
+      "Photography leads at fixed ratios: a 3:4 edge-to-edge journey pager, 4:5 Library covers, 3:4 journey and filmstrip thumbs",
       "Fades ≤ 200ms, honoring Reduce Motion; nothing bounces or loops"
     ],
     "rules": [
-      { "name": "The Ink-and-Paper Rule", "body": "Color is state, not decoration. Wood = confirmed and primary, Sage = in-progress and active, Red = rejection and destruction. No third accent hue ever enters the system; everything else is paper and ink.", "section": "colors" },
-      { "name": "The Overlay Exception", "body": "Over photography only, chips may use translucent black (rgba(0,0,0,0.6)) with white text. Nowhere else does true black appear in the paper world.", "section": "colors" },
+      { "name": "The Ink-and-Paper Rule", "body": "Color is state, not decoration. Wood = confirmed, primary, and selection; Sage = in-progress, active, and focus; Red = rejection and destruction. No third accent hue ever enters the system; everything else is paper and ink.", "section": "colors" },
+      { "name": "The Overlay Exception", "body": "Over photography, persistent chrome is a translucent-black pill (rgba(0,0,0,0.6)) with white text; muted text runs at 60% white, hairlines at 15%, fills at 10%, and unselected strokes at 40%. A menu or sheet the Owner deliberately opens may be paper; chrome that merely sits on the image may not. Nowhere else does true black appear inside the paper world.", "section": "colors" },
       { "name": "The Two Voices Rule", "body": "Cormorant speaks only for titles — the names of screens, designs, and dialogs. Anything the Owner reads as information is DM Sans; anything read as data is DM Mono. Cormorant body text is forbidden.", "section": "typography" },
       { "name": "The Flat-Archive Rule", "body": "A surface's importance is read from its tone, never from its shadow. If a shadow exists at all it stays ≤ 5% black; glass effects, large blurs, and decorative drop shadows do not enter this system.", "section": "elevation" },
-      { "name": "The Single-View Carve-Out", "body": "The single view's details panel is the one surface allowed to blur, and it blurs only the photography directly beneath it. No card, sheet, bar, or control blurs; nothing blurred sits over a paper surface.", "section": "elevation" },
-      { "name": "The Pill Rule", "body": "Pills are for state and selection — badges, stage chips, toggles. Rectangles are for containers and controls. A pill never carries a sentence; a rectangle never carries a status.", "section": "shapes" },
+      { "name": "The Single-View Carve-Out", "body": "The single view's details panel is the one surface allowed to blur, and it blurs only the photography directly beneath it — a frost at intensity 50 over a 60% paper panel. No card, sheet, bar, menu, or control blurs; nothing blurred sits over a paper surface.", "section": "elevation" },
+      { "name": "The Pill Rule", "body": "Pills are for state and selection — badges, stage chips, counters, note markers, toggles. Rectangles are for containers and controls. A pill never carries a sentence; a rectangle never carries a status.", "section": "shapes" },
       { "name": "The Quiet Turn Rule", "body": "Motion never announces — it only arrives and leaves, in 200ms or less. Every animation honors the system Reduce Motion setting with a crossfade or an instant cut.", "section": "motion" }
     ],
     "dos": [
       "Do resolve every color through the slot table in Colors — wood is primary, sage is secondary, Kraft is muted/accent.",
       "Do separate with Thread Line hairlines and group with Kraft Layer insets; let tone carry the hierarchy.",
-      "Do mark every empty attach point with the dashed frame — an empty stage, a missing cover, an add action.",
-      "Do keep Cormorant for titles only, DM Sans for information, DM Mono for ids and measurements.",
+      "Do mark every empty attach point with the dashed frame — an empty stage, a missing cover, an add action — and use Faded Thread when the frame must be read against Kraft.",
+      "Do keep Cormorant for titles only, DM Sans for information, DM Mono for dates, ids, and measurements.",
+      "Do put persistent chrome over photography in translucent-black pills with white ink, and keep persistent paper chrome off the photograph.",
       "Do use fades of 200ms or less that honor the system Reduce Motion setting.",
       "Do lay out inside safe-area insets and end every scroll in 48px of breathing room.",
       "Do write empty and error states plainly, in sentence case, with one action — and name terminology from GLOSSARY.md."
@@ -214,9 +243,10 @@
       "Don't lift a card with a shadow heavier than the 5% whisper; no glass, no gradients, no blur backdrops — the single view's details panel may blur only the photography beneath it.",
       "Don't set a status in anything but a pill — never a rectangle, a banner, or a colored row.",
       "Don't fill an empty stage with illustration or icon decoration; the dashed frame is the empty state.",
+      "Don't place persistent paper chrome on a photograph; use the translucent-black pill. Only a menu or sheet the Owner opens may be paper over an image.",
       "Don't announce a save with a toast or a banner; History is a screen the Owner opens.",
       "Don't animate an entrance longer than 200ms, or with a spring that bounces.",
-      "Don't use true black or pure white inside the paper world; the only blacks live over photography."
+      "Don't add a second pure white or a true black to the paper world; Warm Paper is its one white, and the only black lives over photography."
     ]
   }
 }

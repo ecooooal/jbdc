@@ -14,6 +14,10 @@ colors:
   green-foreground: "#FFFFFF"
   destructive: "#B94B45"
   destructive-foreground: "#FFFFFF"
+  photography: "#000000"
+  photography-ink: "#FFFFFF"
+  overlay: "rgba(0, 0, 0, 0.60)"
+  overlay-foreground: "#FFFFFF"
   dark:
     background: "#242424"
     surface: "#303030"
@@ -28,17 +32,29 @@ colors:
     destructive: "#E27770"
     destructive-foreground: "#242424"
 typography:
+  display:
+    fontFamily: "Cormorant Garamond, Georgia, serif"
+    fontSize: "30px"
+    fontWeight: 600
+    lineHeight: 1.25
+    letterSpacing: "-0.025em"
   title:
     fontFamily: "Cormorant Garamond, Georgia, serif"
     fontSize: "24px"
     fontWeight: 600
     lineHeight: 1.25
-    letterSpacing: "-0.01em"
+    letterSpacing: "-0.025em"
+  subtitle:
+    fontFamily: "Cormorant Garamond, Georgia, serif"
+    fontSize: "20px"
+    fontWeight: 600
+    lineHeight: 1.25
+    letterSpacing: "-0.025em"
   title-sm:
     fontFamily: "Cormorant Garamond, Georgia, serif"
     fontSize: "18px"
     fontWeight: 600
-    lineHeight: 1.2
+    lineHeight: 1.25
   body:
     fontFamily: "DM Sans, -apple-system, Roboto, sans-serif"
     fontSize: "16px"
@@ -64,6 +80,11 @@ typography:
     fontSize: "14px"
     fontWeight: 400
     lineHeight: 1.4
+  mono-sm:
+    fontFamily: "DM Mono, SFMono-Regular, monospace"
+    fontSize: "12px"
+    fontWeight: 400
+    lineHeight: 1.2
 rounded:
   sm: "6px"
   md: "8px"
@@ -77,6 +98,7 @@ spacing:
   md: "12px"
   lg: "16px"
   xl: "24px"
+  2xl: "48px"
   grid-gap: "12px"
   screen-margin: "24px"
 components:
@@ -87,6 +109,13 @@ components:
     rounded: "{rounded.md}"
     height: "40px"
     padding: "0 16px"
+  button-primary-sm:
+    backgroundColor: "{colors.wood}"
+    textColor: "{colors.wood-foreground}"
+    typography: "{typography.label}"
+    rounded: "{rounded.md}"
+    height: "36px"
+    padding: "0 12px"
   button-outline:
     backgroundColor: "{colors.background}"
     textColor: "{colors.foreground}"
@@ -115,6 +144,10 @@ components:
     backgroundColor: "{colors.surface}"
     rounded: "{rounded.xl}"
     padding: "24px"
+  card-tile:
+    backgroundColor: "{colors.surface}"
+    rounded: "{rounded.xl}"
+    padding: "0"
   card-inset:
     backgroundColor: "{colors.surface-secondary}"
     rounded: "{rounded.xl}"
@@ -143,16 +176,45 @@ components:
     typography: "{typography.label-sm}"
     rounded: "{rounded.full}"
     padding: "2px 8px"
+  chip-stage:
+    backgroundColor: "{colors.background}"
+    textColor: "{colors.foreground}"
+    typography: "{typography.label-sm}"
+    rounded: "{rounded.full}"
+    padding: "4px 12px 4px 4px"
   chip-stage-active:
     backgroundColor: "{colors.surface-secondary}"
     textColor: "{colors.foreground}"
     typography: "{typography.label-sm}"
     rounded: "{rounded.full}"
-    padding: "4px 12px"
-  hero:
-    backgroundColor: "{colors.surface-secondary}"
+    padding: "4px 12px 4px 4px"
+  notes-button:
+    backgroundColor: "{colors.overlay}"
+    textColor: "{colors.overlay-foreground}"
+    typography: "{typography.label-sm}"
+    rounded: "{rounded.full}"
+    height: "36px"
+    padding: "0 12px"
+  notes-marker:
+    backgroundColor: "{colors.overlay}"
+    textColor: "{colors.overlay-foreground}"
+    typography: "{typography.label-sm}"
+    rounded: "{rounded.full}"
+    height: "28px"
+    width: "28px"
+  fab:
+    backgroundColor: "{colors.wood}"
+    textColor: "{colors.wood-foreground}"
+    rounded: "{rounded.full}"
+    height: "56px"
+    width: "56px"
+  sheet:
+    backgroundColor: "{colors.surface}"
+    textColor: "{colors.foreground}"
     rounded: "{rounded.2xl}"
-    height: "300px"
+  image-detail:
+    backgroundColor: "{colors.photography}"
+    textColor: "{colors.photography-ink}"
 ---
 
 # Design System: JBDC — The Atelier Ledger
@@ -165,41 +227,47 @@ JBDC is one designer's private catalog of her own clothing designs, and the inte
 
 The system is quiet archival. Depth comes from paper tonal steps and hairline borders, never from shadow play; press feedback is a tonal shift, not a bounce; motion is a short fade that honors the system Reduce Motion setting, with one small zoom-fade into a design's Detail. Color is spent on meaning only: Sanded Wood marks confirmed work and primary actions, Muslin Sage marks work in progress and active selection, Rejection Red marks what did not proceed. Everything else is paper and ink.
 
-The normative token source is `docs/design-token.md` (committed 2026-11-23). **Wiring status:** the component library in code is uniwind + rn-primitives (shadcn-style slot names), but `src/global.css` still carries the scaffold palette and the three typefaces are not yet bundled. New screens follow this document; converging `global.css` and loading the fonts is a separate wiring chore, not a design decision.
+Photography has its own surface: a full-bleed black stage where the image runs edge to edge and every control becomes a translucent-black pill with white ink. The paper world never floats over a photograph; the only thing allowed to blur is the single view's details panel, and it blurs only the cover beneath it.
+
+The palette is live in `src/global.css`; Cormorant Garamond 600, DM Sans 400/500/700, and DM Mono 400 are bundled at the root. `docs/design-token.md` records the core paper and accent values.
 
 **Key Characteristics:**
 
 - Paper tonal hierarchy — Warm Paper page, Unbleached Paper cards, Kraft Layer insets — instead of shadows
-- Cormorant Garamond titles over DM Sans body; DM Mono for ids, measurements, constants
-- Two accents with fixed meanings: Sanded Wood (confirmed/primary), Muslin Sage (in-progress/active); red is rejection only
-- Hairline Thread Line borders everywhere; dashed borders are the signature for empty attach points
-- Photography leads at fixed ratios: 4:5 hero, 3:4 thumbs, square compact covers
+- Cormorant Garamond titles over DM Sans body; DM Mono for dates, ids, measurements, constants
+- Two accents with fixed meanings: Sanded Wood (confirmed/primary/selection), Muslin Sage (in-development/active); red is rejection and destruction only
+- Hairline Thread Line borders everywhere; dashed frames are the signature for empty attach points and missing covers
+- Photography leads at fixed ratios: a 3:4 edge-to-edge journey pager, 4:5 Library covers, 3:4 journey and filmstrip thumbs
 - Fades ≤ 200ms, honoring Reduce Motion; nothing bounces or loops
 
 ## Colors
 
-A warm, low-saturation paper palette whose only saturated voices are two accents with fixed meanings.
+A warm, low-saturation paper palette whose only saturated voices are two accents with fixed meanings, plus a black photography surface with its own white-ink chrome.
 
 ### Primary
 
-- **Sanded Wood** (`wood`, #B38A64 light / #D1B18A dark): the single primary accent. Primary actions, the Approved and Produced status badge, and selection borders (the picked journey thumb, the active stage chip's edge). Ink Thread text sits on it in both modes. Rare by design — well under 10% of any screen.
+- **Sanded Wood** (`wood`, #B38A64 light / #D1B18A dark): the single primary accent. Primary actions, the Approved and Produced status badge, the selected journey chip's and thumb's border, and selection marks. Ink Thread text sits on it in both modes. Rare by design — well under 10% of any screen.
 
 ### Secondary
 
-- **Muslin Sage** (`green`, #687C68 light / #A4B69A dark): work in progress and active state. The In Development status badge, the border of the selected stage chip, and active/selected marks. White text on it in light mode, ink in dark.
+- **Muslin Sage** (`green`, #687C68 light / #A4B69A dark): work in progress and active state. The In Development status badge and the focus ring; active and selected marks where wood is not already the selection. White text on it in light mode, ink in dark.
 
 ### Tertiary
 
-- **Rejection Red** (`destructive`, #B94B45 light / #E27770 dark): rejection and destruction only — the Rejected status badge, destructive actions, error text. Never decoration.
+- **Rejection Red** (`destructive`, #B94B45 light / #E27770 dark): rejection and destruction only — the Rejected status badge, destructive actions, armed delete rows, and error text. Never decoration.
 
 ### Neutral
 
 - **Warm Paper** (`background`, #FFFFFF light / #242424 dark): the page behind everything. Pure white in light mode is deliberate: it is the mat the archive sits on, not a SaaS canvas.
-- **Unbleached Paper** (`surface`, #F8F6F2 / #303030): every resting surface content sits on — cards, tiles, dialogs.
+- **Unbleached Paper** (`surface`, #F8F6F2 / #303030): every resting surface content sits on — cards, tiles, sheets, the notes menu.
 - **Kraft Layer** (`surface-secondary`, #F2EBDD / #424242): the inset group one step into a surface — form sections, field tables, image placeholders, the fill of a selected stage chip.
 - **Ink Thread** (`foreground`, #292724 / #F0EEE9): primary text — the ink of the ledger.
-- **Faded Thread** (`foreground-secondary`, #6E6A63 / #B5B0A7): secondary text — labels, meta lines, counts, quiet descriptions.
-- **Thread Line** (`border`, #E8E5DF / #444444): hairline borders and input strokes.
+- **Faded Thread** (`foreground-secondary`, #6E6A63 / #B5B0A7): secondary text — labels, meta lines, counts, quiet descriptions, placeholders.
+- **Thread Line** (`border`, #E8E5DF / #444444): hairline borders, row dividers, and input strokes.
+- **Photography Black** (`photography`, #000000): the full-screen image detail and the ground beneath a full-bleed image. It exists only on the photography surface.
+- **Photography Ink** (`photography-ink`, #FFFFFF): white text and glyphs on the black surface.
+- **Photography Overlay** (`overlay`, rgba(0, 0, 0, 0.60)): the translucent pill behind stage, position, note, and notes-count chrome over an image.
+- **Overlay Ink** (`overlay-foreground`, #FFFFFF): text on a photography overlay pill.
 
 The dark scheme is the same ledger by lamplight: paper goes near-black, accents lift instead of saturate, and Ink Thread becomes warm off-white. Both schemes are first-class; every screen is designed and checked in both.
 
@@ -221,28 +289,30 @@ The code's shadcn-style slot names resolve to this palette:
 
 ### Named Rules
 
-**The Ink-and-Paper Rule.** Color is state, not decoration. Wood = confirmed and primary, Sage = in-progress and active, Red = rejection and destruction. No third accent hue ever enters the system; everything else is paper and ink.
+**The Ink-and-Paper Rule.** Color is state, not decoration. Wood = confirmed, primary, and selection; Sage = in-progress, active, and focus; Red = rejection and destruction. No third accent hue ever enters the system; everything else is paper and ink.
 
-**The Overlay Exception.** Over photography only, chips may use translucent black (`rgba(0,0,0,0.6)`) with white text. Nowhere else does true black appear in the paper world.
+**The Overlay Exception.** Over photography, persistent chrome is a translucent-black pill (`rgba(0,0,0,0.6)`) with white text; muted text runs at 60% white, hairlines at 15%, fills at 10%, and unselected strokes at 40%. A menu or sheet the Owner deliberately opens may be paper; chrome that merely sits on the image may not. Nowhere else does true black appear inside the paper world.
 
 ## Typography
 
-**Display/Title Font:** Cormorant Garamond (with Georgia, serif)
-**Body Font:** DM Sans (with system sans)
-**Label Font:** DM Sans, medium weight
-**Mono Font:** DM Mono (with system monospace)
+**Display/Title Font:** Cormorant Garamond, 600 only (with Georgia, serif)
+**Body Font:** DM Sans, 400 / 500 / 700 (with system sans)
+**Mono Font:** DM Mono, 400 (with system monospace)
 
 **Character:** A serif that speaks only when something is named; a humanist sans that does all the reading work; a mono that keeps the record honest. Titles read like specimen labels in a ledger; body copy stays quiet and unstyled so the images dominate.
 
 ### Hierarchy
 
-- **Title** (Cormorant Garamond, 600, 24px, 1.25, −0.01em): screen titles and a design's name — the moments the ledger names something.
-- **Title-small** (Cormorant Garamond, 600, 18px, 1.2): dialog and sheet titles.
-- **Body** (DM Sans, 400, 16px, 1.5): descriptions, recorded values, prose.
-- **Body-small** (DM Sans, 400, 14px, 1.4): meta lines, secondary copy.
+- **Display** (Cormorant, 600, 30px, 1.25, −0.025em): the Design's name on the single-view empty plate — the page's content when there is no cover.
+- **Title** (Cormorant, 600, 24px, 1.25, −0.025em): screen titles, a Design's name on Detail and on a Library tile.
+- **Subtitle** (Cormorant, 600, 20px, 1.25, −0.025em): the Detail header's Collection, empty-state headings, and other second-order titles.
+- **Title-small** (Cormorant, 600, 18px, 1.25): sheet and dialog titles.
+- **Body** (DM Sans, 400, 16px, 1.5): descriptions, recorded values, notes, prose.
+- **Body-small** (DM Sans, 400, 14px, 1.4): meta lines, secondary copy, muted values.
 - **Label** (DM Sans, 500, 14px, 1.4): field labels, button text, stage names, materials.
-- **Label-small** (DM Sans, 500, 12px, 1.2): badges, chips, counts, micro-labels.
-- **Mono** (DM Mono, 400, 14px, 1.4): ids, measurements, constants — anything read as data rather than prose.
+- **Label-small** (DM Sans, 500, 12px, 1.2): badges, chips, counts, micro-labels, note markers.
+- **Mono** (DM Mono, 400, 14px, 1.4): dates, ids, measurements, constants — anything read as data rather than prose.
+- **Mono-small** (DM Mono, 400, 12px, 1.2): note dates and other micro-data.
 
 ### Named Rules
 
@@ -252,38 +322,40 @@ The code's shadcn-style slot names resolve to this palette:
 
 Portrait, phone-first, native stack navigation with OS headers hidden — every screen owns its header: serif title left, icon controls right, back is a ghost chevron. Content lives inside safe-area insets on every screen, with a 24px side margin, 24px section rhythm, 16px list rhythm, and 48px of breathing room at the end of every scroll.
 
-The Library grid is density-driven, not breakpoint-driven: the Owner chooses the Library's density (persisted) — the single view at 1, or two designs per row — and the card width derives from the current viewport, so rotation reflows card width without ever breaking the column count. There are no media breakpoints in the system; density is a user decision, not a width decision. Four-up is not offered: a tile that narrow cannot hold the Design's name and Status pill at the type floor.
+The Library grid is density-driven, not breakpoint-driven: the Owner chooses the Library's density (persisted) — the single view at 1, or two designs per row — and the card width derives from the current viewport, so rotation reflows card width without ever breaking the column count. There are no Library breakpoints; density is a user decision, not a width decision. Four-up is not offered: a tile that narrow cannot hold the Design's name and Status pill at the type floor.
 
-Forms and recorded sections group into inset blocks — one tonal step (Kraft Layer) or a hairline border inside the card — so a half-filled design reads as intentional rather than incomplete: empty sections simply say "Nothing recorded yet."
+Grouping is the Owner's second arrangement decision: the Library shows one flat stream, or sections under their Collection labels with a 12px gap between tiles and a 24px gap between sections. The single view walks the same ordered list. The floating action button keeps its corner at every density; the single view's panel leaves that corner clear, and the grid reserves 68px (56px button + 12px gap) below its last row.
+
+Forms and recorded sections group into inset blocks — one tonal step (Kraft Layer) or a hairline border inside the card — so a half-filled design reads as intentional rather than incomplete: empty sections simply say "Nothing recorded yet." The create form and Edit open as full screens; the create form is a modal presentation, and each form ends in 48px of breathing room above the keyboard.
 
 ## Elevation & Depth
 
-Quiet archival: depth is read from tone, not shadow. The three paper steps (Warm Paper → Unbleached Paper → Kraft Layer) plus Thread Line hairlines carry all hierarchy. Shadows are a 5% black whisper — `0 1px 2px rgba(0,0,0,0.05)` on resting cards, buttons, and inputs; the centered dialog alone lifts further (a large soft shadow, still 5% black). Nothing floats to demand attention.
+Quiet archival: depth is read from tone, not shadow. The three paper steps (Warm Paper → Unbleached Paper → Kraft Layer) plus Thread Line hairlines carry all hierarchy. Shadows are a 5% black whisper — `0 1px 3px 0 rgba(0,0,0,0.05), 0 1px 2px -1px rgba(0,0,0,0.05)` on resting cards, buttons, inputs, selects, and the notes menu; the centered dialog alone lifts further (`0 10px 15px -3px rgba(0,0,0,0.05), 0 4px 6px -4px rgba(0,0,0,0.05)`). Nothing floats to demand attention.
 
 ### Shadow Vocabulary
 
-- **Whisper** (`0 1px 2px rgba(0,0,0,0.05)`): resting cards, buttons, inputs — barely there.
-- **Dialog** (large soft shadow at 5% black): the centered dialog, the deepest point in the system.
+- **Whisper** (`0 1px 3px 0 rgba(0,0,0,0.05), 0 1px 2px -1px rgba(0,0,0,0.05)`): resting cards, buttons, inputs, selects, and the FAB's paper action rows — barely there.
+- **Dialog** (`0 10px 15px -3px rgba(0,0,0,0.05), 0 4px 6px -4px rgba(0,0,0,0.05)`): the centered dialog, the deepest point in the system.
 
 ### Named Rules
 
 **The Flat-Archive Rule.** A surface's importance is read from its tone, never from its shadow. If a shadow exists at all it stays ≤ 5% black; glass effects, large blurs, and decorative drop shadows do not enter this system.
 
-**The Single-View Carve-Out.** The single view's details panel is the one surface allowed to blur, and it blurs only the photography directly beneath it. No card, sheet, bar, or control blurs; nothing blurred sits over a paper surface.
+**The Single-View Carve-Out.** The single view's details panel is the one surface allowed to blur, and it blurs only the photography directly beneath it — a frost at intensity 50 over a 60% paper panel. No card, sheet, bar, menu, or control blurs; nothing blurred sits over a paper surface.
 
 ## Shapes
 
-Soft specimen-jar geometry: corners ascend with size — 6px on small controls' details, 8px on buttons and inputs, 10px on dialogs and list cards, 14px on cards, 16px on the hero. Status is always a full pill (9999px). Dashed Thread Line borders are the system's signature for emptiness: an empty stage, an add-image card, a missing cover all show the same dashed frame — a hole is drawn as a hole, never decorated over.
+Soft specimen-jar geometry: corners ascend with size — 6px on small details, 8px on buttons and inputs, 10px on compact thumbs, tabs, and segmented controls, 14px on cards, sections, dialogs, and menus, 16px on the top corners of a paper sheet. Status is always a full pill (9999px). Dashed borders are the system's signature for emptiness: an empty stage, an add-image card, a missing cover, and the pager with no image all show the same dashed frame — a hole is drawn as a hole, never decorated over. The empty cover's dash uses Faded Thread (4.5:1 on Kraft) rather than the Thread Line hairline so the state is readable; the add card and empty stage use the quieter Thread Line.
 
-Photography keeps fixed ratios: 4:5 for the hero, 3:4 for journey thumbs and add cards, square for compact covers. The image crops to the frame; the layout never stretches to the image.
+Photography keeps fixed ratios: 4:5 for Library covers on tiles, 3:4 for the full-bleed journey pager and for journey/filmstrip thumbs, and the image detail fits the whole image inside a bounded stage rather than cropping it. The layout never stretches to the image.
 
 ### Named Rules
 
-**The Pill Rule.** Pills are for state and selection — badges, stage chips, toggles. Rectangles are for containers and controls. A pill never carries a sentence; a rectangle never carries a status.
+**The Pill Rule.** Pills are for state and selection — badges, stage chips, counters, note markers, toggles. Rectangles are for containers and controls. A pill never carries a sentence; a rectangle never carries a status.
 
 ## Motion & Micro-interaction
 
-Motion is quiet and decelerating: overlays fade in over 200ms and out over 150ms (Reanimated, honoring the system Reduce Motion setting); accordion-style reveals take 200ms; press feedback is an instant tonal shift (a button darkens to 90%, a Library card dips slightly and takes a faint ink wash) held for a beat so the Owner sees it before the route opens — the press itself never animates. Nothing bounces, nothing loops, nothing moves for decoration. Screen-to-screen transitions are plain fades, except the Library's Detail arrival: a small zoom-fade inside the same budget, on that route only.
+Motion is quiet and decelerating: overlays fade in over 200ms and out over 150ms (Reanimated, honoring the system Reduce Motion setting); accordion-style reveals take 200ms; press feedback is an instant tonal shift (a button darkens to 90%) or, on a Library card, a 0.98 dip with a 5% ink wash held for 120ms before the route opens — the press itself never animates. The FAB's speed-dial rows rise and fade in inside the same 200ms budget. The journey counter's stage word cross-fades with a 6px downward settle when the pager crosses into another stage. Nothing bounces, nothing loops, nothing moves for decoration. Screen-to-screen transitions are plain fades, except the Library's Detail arrival: a 0.96 to 1 zoom inside the same 200ms fade, on that route only.
 
 ### Named Rules
 
@@ -293,10 +365,11 @@ Motion is quiet and decelerating: overlays fade in over 200ms and out over 150ms
 
 - **Tone of voice:** Frank, first-person, precise — the Owner's own voice, as recorded in PRODUCT.md. No exclamation marks, no marketing warmth, no filler.
 - **Capitalization:** Sentence case everywhere — titles, buttons, labels, statuses.
-- **Terminology:** `GLOSSARY.md` is canonical and binding (Design, Specification, Creative Direction, History, Status, Material use, Library, Owner). A term not in it is not a term; its avoid-lists apply (never "photo" for an Image, never "user" for the Owner).
-- **Button and action labels:** Verb phrases naming the outcome — "Create a design", "Add images to Prototype". Never "OK", "Submit", or "Done" alone.
-- **Empty, loading, and error states:** One quiet line plus one action — "The library is empty" / "Designs you add will appear here."; "Nothing recorded yet."; "Nothing has changed yet." Errors are plain and name what failed, in Rejection Red: "The images could not be added."
-- **Numbers, dates, and units:** Short dates via the system formatter ("Nov 23, 2026"); History entries add hour and minute. Saves are never announced — no toasts, no banners; History is a screen the Owner opens.
+- **Terminology:** `GLOSSARY.md` is canonical and binding (Design, Specification, Creative Direction, History, Status, Material use, Library, Owner, Image note). A term not in it is not a term; its avoid-lists apply (never "photo" for an Image, never "user" for the Owner).
+- **Button and action labels:** Verb phrases naming the outcome — "Create a design", "Add images to Prototype", "Save note". Never "OK", "Submit", or "Done" alone.
+- **Empty, loading, and error states:** One quiet line plus one action — "The library is empty" / "Designs you add will appear here."; "Nothing recorded yet."; "Nothing has changed yet." Errors are plain and name what failed, in Rejection Red: "The images could not be added." / "The image could not be removed."
+- **Destruction:** Notes delete in two steps: the first press arms the row with "Tap again to delete" in Rejection Red, the second deletes. An image asks its one question — "Remove this image and its notes?" — with Keep and Remove.
+- **Numbers, dates, and units:** Short dates via the system formatter ("Nov 23, 2026"); History entries add hour and minute; note dates use the mono face. Saves are never announced — no toasts, no banners; History is a screen the Owner opens.
 
 ## Components
 
@@ -305,56 +378,71 @@ The library is uniwind + rn-primitives with shadcn-style slot names; every color
 ### Buttons
 
 - **Character:** Calm, workmanlike, never loud.
-- **Shape:** Rounded rectangle (8px), 40px tall, 8px internal gap, icon 20px.
+- **Shape:** Rounded rectangle (8px), 40px tall, 8px internal gap, icon 20px; the small size is 36px tall and the large size 44px.
 - **Primary:** Sanded Wood fill with Ink Thread text, 16px horizontal padding.
 - **Press:** Instant tonal shift — primary darkens to 90%. Disabled is 50% opacity.
-- **Outline / Ghost / Icon:** Thread Line border on Warm Paper; ghost and icon variants are transparent until pressed, when they take the Kraft tint.
+- **Outline / Ghost / Icon:** Thread Line border on Warm Paper; ghost and icon variants are transparent until pressed, when they take the Kraft tint. Icon buttons are 40×40. Destructive is Rejection Red with white text.
 
 ### Status badges
 
 - **Character:** The system's state vocabulary, worn as a pill.
-- **Shape:** Full pill, 2px 8px padding, Label-small type.
-- **Variants:** Confirmed (Sanded Wood + ink), In progress (Muslin Sage + white), Rejected (Rejection Red + white), Neutral (transparent, Thread Line border, ink — Concept, Archived, and date chips).
+- **Shape:** Full pill, 2px 8px padding, Label-small type, 1px hairline border by default.
+- **Variants:** Approved and Produced (Sanded Wood + ink), In Development (Muslin Sage + white in light, ink in dark), Rejected (Rejection Red + white), Concept and Archived (Warm Paper + Ink Thread + Thread Line border).
 
 ### Chips & toggles
 
-- **Journey stage chip:** Pill with a 32px round thumbnail, stage name in Label-small semibold, and a muted count below. Unselected: Thread Line border on the page. Selected: Muslin Sage border on a Kraft fill.
-- **Density control:** Outlined segmented group drawing the two layouts — one page, or two columns — instead of numerals; the chosen segment takes the wood-tinted selected state.
+- **Journey stage chip:** Pill with a 32px round thumbnail, stage name in Label-small semibold, and a muted 10px count below. Unselected: Thread Line border on the page. Selected: Sanded Wood border on a Kraft fill.
+- **Density control:** Outlined segmented group drawing the two layouts — one page, or two columns — instead of numerals; the chosen segment takes the Kraft selected state. Every segment keeps a 48dp touch target while its glyph stays 20px.
+- **Section tabs:** Detail uses a plain row of labels; the active tab is marked by Ink Thread text and a Thread Line border. Edit uses the filled Kraft trough with the selected segment raised on Warm Paper.
 
 ### Cards
 
 - **Character:** Paper mounts for photography and records.
-- **Corner style:** 14px (10px for list rows and compact tiles).
+- **Corner style:** 14px (10px for compact thumbs and rows).
 - **Background:** Unbleached Paper with a Thread Line hairline and the whisper shadow.
-- **Structure:** Cover-first tiles — image block on top, then the Design's name and the Status pill; the single view carries Category and Collection. List row: 64px cover, name, one meta line, trailing badge.
-- **Press:** Whole card is the button; pressed cards dip slightly and take a faint ink wash, held a beat before Detail opens.
-- **Insets:** Grouped records inside a card sit on a Kraft Layer block (14px radius, 16px padding) — the current bordered rows are the scaffold precursor of this committed pattern.
+- **Structure:** Cover-first tiles — a 4:5 image block on top, then the Design's name in the title face and the Status pill at the bottom; the grid leaves taxonomy to the single view. List rows may carry a 64px cover, name, one meta line, and a trailing badge.
+- **Press:** Whole card is the button; pressed cards dip to 0.98 and take a 5% ink wash, held 120ms before Detail opens.
+- **Insets:** Grouped records inside a card sit on a Kraft Layer block (14px radius, 16px padding) or behind a hairline border.
 
 ### Inputs / Fields
 
-- **Style:** Thread Line stroke on Warm Paper, 8px radius, 40px tall, DM Sans body type; placeholder at Faded Thread.
-- **Focus:** The stroke and a subtle ring carry focus; no glow.
-- **Disabled:** 50% opacity.
+- **Style:** Thread Line stroke on Warm Paper, 8px radius, 40px tall, DM Sans body type; placeholder at Faded Thread, 50% on native.
+- **Focus:** On web, the stroke shifts to Sage with a 3px 25% Sage ring; native fields carry no glow.
+- **Disabled:** 50% opacity. Errors sit beneath the field in Rejection Red, 14px.
+
+### Selects, menus, and dialogs
+
+- **Select trigger:** The input's paper, stroke, 8px radius, and 40px height, with a 16px Faded Thread chevron. The popup is Unbleached Paper with a Thread Line hairline, 8px radius, and a 5% shadow.
+- **Notes menu:** A 224px-wide paper popover at 14px radius with a Thread Line border, opening upward from the notes button. Rows are 12px/16px, icon 16px in Faded Thread, separated by hairlines, pressed to Kraft.
+- **Dialogs:** Centered on a 50% black overlay, Warm Paper content at 10px radius, 24px padding, a Thread Line border, the dialog shadow, and a ghost close X top-right; fading in 200ms, out 150ms.
+
+### History
+
+- **Event cards:** One History entry: Thread Line hairline box (14px radius, 16px/12px padding) with the timestamp in Faded Thread, then the recorded sections as label + lines. Read-only by construction; a correction is a new card.
 
 ### The journey rail (signature)
 
 One chip per image stage — inspiration, sketch, prototype, final — all four always visible, each carrying its newest thumb and its count, so an empty stage shows exactly where work is missing. The active stage opens a horizontal strip of 3:4 thumbs (10px radius; the selected one carries a 2px Sanded Wood border) ending in the dashed add-card.
 
-### The gallery hero (signature)
+### The gallery pager (signature)
 
-A 4:5 image block at 16px radius on the Kraft Layer, with the stage name (semibold) pinned top-left and the position count top-right, both as translucent-black pills with white text. A tap opens full-screen; a swipe changes the image on release.
+The Detail's visual home: every image in the live journey, full-bleed at 3:4, square-edged, walking in order and bounded at both ends. The journey counter sits top-left as a translucent-black pill — the stage name in 12px semibold white, then `· 7 / 19`. The current image's notes run down the right edge as 28px translucent-black numbered markers, four at most plus a `+N` overflow. The filmstrip crosses the bottom edge: 48×64 thumbs at 10px radius, the active one lifted 4px with a 2px Sanded Wood border and its stage name on a black pill. The notes button sits at the bottom right as a translucent-black pill with a notebook glyph and the count; it opens the paper notes menu. With no image selected, the dashed frame keeps the pager's shape, and a journey with no images shows neither filmstrip, counter, nor markers.
 
-### The dashed add-card (signature)
+### Paper sheets (signature)
 
-3:4, 64px wide, Thread Line dashed border on Kraft, a plus icon and a 10px "Add" label. The system's only invitation to attach — every stage that can accept images ends in one.
+Add note, one note, and see-all notes open as bottom sheets: Unbleached Paper, 16px top corners only, a content detent that follows its measured height, and no paper card floating above the page. Add note is keyboard-aware and keeps its draft through a refusal; the note and see-all sheets are read-only lists with the same two-step delete. Note dates are Mono-small in Faded Thread, note text Body in Ink Thread, and the armed line is 12px Rejection Red.
 
-### Event cards
+### The image detail (signature)
 
-One History entry: Thread Line hairline box (14px radius, 16px padding) with the timestamp in Faded Thread, then the recorded sections as label + lines. Read-only by construction; a correction is a new card.
+A full-screen black photography surface with white ink. The stage label sits top-left at 12px semibold 70% white, with a ghost close control opposite. The image is fit whole inside a bounded half-screen stage. Classification is one pill per kind: the selected pill is white with black text; the rest are 40% white strokes that fill to 10% white when pressed. Notes read on the black surface with 60% white dates and 15% white hairlines. Remove asks its one question in a 14px white/10 block; a failed removal says so in Rejection Red beside the control. No paper surface enters this screen.
 
-### Dialogs
+### The Library's floating action
 
-Centered on a 50% black overlay, Warm Paper content at 10px radius, 24px padding, the dialog shadow, a ghost close X top-right; fading in 200ms, out 150ms.
+One 56px Sanded Wood circle with a 24px glyph in the corner at every density. Opened, it stacks named paper rows above it — Settings (disabled, "Coming soon" pill), the light/dark theme flip, and Add design — each a 48dp-minimum row at 10px radius with a Thread Line border and the 5% whisper. The rows rise and fade in inside the quiet budget; a tap outside, an action, leaving the route, backgrounding the app, or Android Back shuts them.
+
+### Empty covers
+
+One dashed frame for every missing Cover, drawn on a Kraft Layer mount and inset so it never touches the card or page edge. The frame uses Faded Thread for contrast. A single-view page sets the Design's name inside it in the display face and says "No photography yet"; a tile keeps the name in the card body and says "No cover" at the 12px floor. No glyph, no illustration.
 
 ## Do's and Don'ts
 
@@ -362,8 +450,9 @@ Centered on a 50% black overlay, Warm Paper content at 10px radius, 24px padding
 
 - **Do** resolve every color through the slot table in Colors — wood is `primary`, sage is `secondary`, Kraft is `muted`/`accent`.
 - **Do** separate with Thread Line hairlines and group with Kraft Layer insets; let tone carry the hierarchy.
-- **Do** mark every empty attach point with the dashed frame — an empty stage, a missing cover, an add action.
-- **Do** keep Cormorant for titles only, DM Sans for information, DM Mono for ids and measurements.
+- **Do** mark every empty attach point with the dashed frame — an empty stage, a missing cover, an add action — and use Faded Thread when the frame must be read against Kraft.
+- **Do** keep Cormorant for titles only, DM Sans for information, DM Mono for dates, ids, and measurements.
+- **Do** put persistent chrome over photography in translucent-black pills with white ink, and keep persistent paper chrome off the photograph.
 - **Do** use fades of 200ms or less that honor the system Reduce Motion setting.
 - **Do** lay out inside safe-area insets and end every scroll in 48px of breathing room.
 - **Do** write empty and error states plainly, in sentence case, with one action — and name terminology from `GLOSSARY.md`.
@@ -374,6 +463,7 @@ Centered on a 50% black overlay, Warm Paper content at 10px radius, 24px padding
 - **Don't** lift a card with a shadow heavier than the 5% whisper; no glass, no gradients, no blur backdrops — the single view's details panel may blur only the photography beneath it.
 - **Don't** set a status in anything but a pill — never a rectangle, a banner, or a colored row.
 - **Don't** fill an empty stage with illustration or icon decoration; the dashed frame is the empty state.
+- **Don't** place persistent paper chrome on a photograph; use the translucent-black pill. Only a menu or sheet the Owner opens may be paper over an image.
 - **Don't** announce a save with a toast or a banner; History is a screen the Owner opens.
 - **Don't** animate an entrance longer than 200ms, or with a spring that bounces.
-- **Don't** use true black or pure white inside the paper world; the only blacks live over photography.
+- **Don't** add a second pure white or a true black to the paper world; Warm Paper is its one white, and the only black lives over photography.
