@@ -12,10 +12,12 @@ Any edit to frontend code starts by loading these skills with the `skill` tool, 
 
 A frontend file is any `.tsx` under `src/`, any `.ts` under `src/app/` or a `components/` folder, and any `.css` under `src/`. Tests under `tests/` are not UI edits. The gate is enforced by `.opencode/plugins/frontend-skill-gate/`: a frontend edit is denied until all three skills have loaded in the session. If a skill fails to load, stop and report it; do not edit around the gate.
 
-Then, in order:
+After the three skills, read by change class:
 
-1. Read `CODING_STANDARDS.md`, `docs/FRONTEND_STATE.md`, `docs/EXPO-FOLDER-STRUCTURE.md`, `GLOSSARY.md`, and the ADRs the surface touches.
-2. Read the plan or ticket. For a design pass, also read `DESIGN.md` (visual decisions) and `PRODUCT.md` (voice).
+- **Token-only** — a class or token value on an existing component, with no state, copy, layout, or new file: the critique or ticket, the target component, and `impeccable design-lookup <component>`. Skip `CODING_STANDARDS.md`, `docs/FRONTEND_STATE.md`, `docs/EXPO-FOLDER-STRUCTURE.md`, `GLOSSARY.md`, and the ADRs.
+- **Structure, state, copy, or new surface**: read `docs/FRONTEND_STATE.md`, `docs/EXPO-FOLDER-STRUCTURE.md`, `GLOSSARY.md`, the ADRs the surface touches, and the plan or ticket; for a design pass, `DESIGN.md` and `PRODUCT.md`.
+
+A design pass commits its own diff when `pnpm check` passes, as `fix (impeccable, <surfaces>): <what>`.
 
 `expo-data-fetching` and `expo-sqlite` are not part of this gate yet; load them when the work fetches or caches data, or touches the database. `pnpm check` is the exit condition.
 
