@@ -2,15 +2,22 @@
 
 This is an Expo/React Native mobile application. Prioritize mobile-first patterns, performance, and cross-platform compatibility.
 
-## Before any UI or design edit
+## Frontend Skill Gate
 
-Do these first, in order:
+Any edit to frontend code starts by loading these skills with the `skill` tool, all three, before the first edit:
 
-1. Load the Expo frontend skills: `expo-design-system`, `expo-animation`, `uniwind`. Load `expo-data-fetching` when the work fetches or caches data, and `expo-sqlite` when it touches the database.
-2. Read `CODING_STANDARDS.md`, `docs/FRONTEND_STATE.md`, `docs/EXPO-FOLDER-STRUCTURE.md`, `GLOSSARY.md`, and the ADRs the surface touches.
-3. Read the plan or ticket. For a design pass, also read `DESIGN.md` (visual decisions) and `PRODUCT.md` (voice).
+- `expo-design-system`
+- `expo-animation`
+- `uniwind`
 
-`pnpm check` is the exit condition.
+A frontend file is any `.tsx` under `src/`, any `.ts` under `src/app/` or a `components/` folder, and any `.css` under `src/`. Tests under `tests/` are not UI edits. The gate is enforced by `.opencode/plugins/frontend-skill-gate/`: a frontend edit is denied until all three skills have loaded in the session. If a skill fails to load, stop and report it; do not edit around the gate.
+
+Then, in order:
+
+1. Read `CODING_STANDARDS.md`, `docs/FRONTEND_STATE.md`, `docs/EXPO-FOLDER-STRUCTURE.md`, `GLOSSARY.md`, and the ADRs the surface touches.
+2. Read the plan or ticket. For a design pass, also read `DESIGN.md` (visual decisions) and `PRODUCT.md` (voice).
+
+`expo-data-fetching` and `expo-sqlite` are not part of this gate yet; load them when the work fetches or caches data, or touches the database. `pnpm check` is the exit condition.
 
 ## Expo has changed — do not trust your training data
 

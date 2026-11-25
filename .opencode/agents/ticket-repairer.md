@@ -151,6 +151,9 @@ A repair is not a review either: do not re-review the branch, do not look for fu
 
 ## Work
 
+Before the first frontend edit, call the Skill tool with `expo-design-system`, `expo-animation`, and `uniwind`.
+The repo's Frontend Skill Gate denies a frontend edit until all three have loaded.
+
 One item at a time, in the brief's order. Where an item names a behaviour, add the failing test first, then the
 change that makes it pass. Run that test file, then `pnpm check` before the commit.
 

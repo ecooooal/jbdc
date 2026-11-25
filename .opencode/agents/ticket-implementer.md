@@ -148,6 +148,9 @@ Read these; do not ask the orchestrator to repeat them.
 
 ## Work
 
+Before the first frontend edit, call the Skill tool with `expo-design-system`, `expo-animation`, and `uniwind`.
+The repo's Frontend Skill Gate denies a frontend edit until all three have loaded.
+
 Call the Skill tool with `implement` and follow it, with the overrides below. `implement` is user-invoked, so it
 may be missing from your skill list — invoke it by id anyway; the Skill tool resolves it, and "not installed" from
 a list you read is not an answer. Call the Skill tool with `tdd` at the ticket's reducer and records seams, as
