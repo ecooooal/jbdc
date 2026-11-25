@@ -95,9 +95,11 @@ export function DesignGallery({ designId }: { designId: string }) {
         <ImageDetail
           image={detailImage}
           notes={imageNotesOf(imageNotes, detailImage.id)}
+          armedNoteId={state.armedNoteId}
           confirmingRemoval={detail.state.confirmingRemoval}
           removeFailed={detail.state.removeFailed}
           send={detail.send}
+          onNoteDeletePress={(noteId) => send({ type: "image-note-delete-pressed", noteId })}
         />
       ) : null}
     </View>

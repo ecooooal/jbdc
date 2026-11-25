@@ -12,19 +12,28 @@ import { formatNoteDate } from "../lib/note-date";
  * created date. The trash control follows the two-step delete, so its first
  * press only arms the row — "Tap again to delete" — and the second dispatches
  * the removal. The rule lives in the gallery reducer; this list only renders
- * the armed id it is given. The see-all sheet and the image detail share it.
+ * the armed id it is given. The see-all sheet and the image detail share it,
+ * and `onPhotography` gives the image detail's black surface white ink and
+ * white hairlines instead of the paper palette.
  */
 export function NotesList({
   notes,
   armedNoteId,
   onDeletePress,
+  onPhotography = false,
 }: {
   notes: readonly ImageNote[];
   armedNoteId: string | null;
   onDeletePress: (noteId: string) => void;
+  /** True when the list sits on the image detail's black photography surface. */
+  onPhotography?: boolean;
 }) {
   if (notes.length === 0) {
-    return <Text variant="muted">No notes on this image.</Text>;
+    return (
+      <Text variant="muted" className={cn(onPhotography && "text-white/60")}>
+        No notes on this image.
+      </Text>
+    );
   }
 
   return (
@@ -33,15 +42,26 @@ export function NotesList({
         const armed = note.id === armedNoteId;
 
         return (
-          <View key={note.id} className={cn("gap-1 py-3", index > 0 && "border-border border-t")}>
-            <Text variant="muted" className="font-mono text-xs">
+          <View
+            key={note.id}
+            className={cn(
+              "gap-1 py-3",
+              index > 0 && "border-t",
+              index > 0 && (onPhotography ? "border-white/15" : "border-border"),
+            )}
+          >
+            <Text
+              variant="muted"
+              className={cn("font-mono text-xs", onPhotography && "text-white/60")}
+            >
               {formatNoteDate(note.createdAt)}
             </Text>
             <View className="flex-row items-start gap-2">
-              <Text className="flex-1">{note.text}</Text>
+              <Text className={cn("flex-1", onPhotography && "text-white")}>{note.text}</Text>
               <Button
                 size="icon"
                 variant="ghost"
+                className={cn(onPhotography && "active:bg-white/10")}
                 accessibilityLabel={`Delete note ${index + 1}`}
                 accessibilityHint={
                   armed ? "Deletes this note" : "Press twice in a row to delete this note"
@@ -50,7 +70,14 @@ export function NotesList({
               >
                 <Icon
                   as={Trash2}
-                  className={cn("size-4", armed ? "text-destructive" : "text-muted-foreground")}
+                  className={cn(
+                    "size-4",
+                    armed
+                      ? "text-destructive"
+                      : onPhotography
+                        ? "text-white/60"
+                        : "text-muted-foreground",
+                  )}
                 />
               </Button>
             </View>

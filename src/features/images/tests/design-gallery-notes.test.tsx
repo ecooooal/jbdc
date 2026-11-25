@@ -100,6 +100,52 @@ test("opening the image detail closes the notes menu", async () => {
   expect(screen.queryByRole("button", { name: "Add note" })).toBeNull();
 });
 
+/** Opens the image detail on the gallery's only image, with the detail as the scope. */
+async function openImageDetailNotes() {
+  await userEvent.press(screen.getByRole("button", { name: "Open Sketch image 1 of 1" }));
+
+  return within(screen.getByLabelText("Image detail"));
+}
+
+test("the image detail lists the image's notes read-only, with their created dates", async () => {
+  await galleryWithNotes(2);
+
+  const detail = await openImageDetailNotes();
+
+  expect(detail.getByText("First pass was fitted.")).toBeTruthy();
+  expect(detail.getByText("Widened the shoulder.")).toBeTruthy();
+  expect(detail.getAllByText("Jan 1, 1970")).toHaveLength(2);
+  expect(detail.getByRole("button", { name: "Delete note 1" })).toBeTruthy();
+});
+
+test("one press on the image detail's trash control arms; a second deletes", async () => {
+  const design = await galleryWithNotes(2);
+
+  const detail = await openImageDetailNotes();
+
+  await userEvent.press(detail.getByRole("button", { name: "Delete note 1" }));
+  await settleNotes();
+
+  expect(detail.getByText("Tap again to delete")).toBeTruthy();
+  expect(listDesignImageNotes(database, design.id)).toHaveLength(2);
+
+  await userEvent.press(detail.getByRole("button", { name: "Delete note 1" }));
+  await settleNotes();
+
+  expect(listDesignImageNotes(database, design.id)).toHaveLength(1);
+  expect(detail.queryByText("First pass was fitted.")).toBeNull();
+  expect(detail.getByText("Widened the shoulder.")).toBeTruthy();
+});
+
+test("the image detail has no Add note control", async () => {
+  await galleryWithNotes(1);
+
+  const detail = await openImageDetailNotes();
+
+  expect(detail.queryByRole("button", { name: "Add note" })).toBeNull();
+  expect(detail.queryByLabelText("New note")).toBeNull();
+});
+
 test("the old note block's controls are absent", async () => {
   await galleryWithNotes(3);
 
