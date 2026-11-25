@@ -14,10 +14,16 @@ import type { ImageKind } from "@/features/database";
 import { Icon } from "@/shared/components/ui/icon";
 import { Text } from "@/shared/components/ui/text";
 import { QUIET_MOTION_DURATION_MS } from "@/shared/lib/motion";
-import type { JourneyView } from "../lib/gallery-reducer";
-import { imageKindLabel, type Image as StoredImage, type ImageStage } from "../lib/images";
+import type { JourneyView, NotesIndexView } from "../lib/gallery-reducer";
+import {
+  imageKindLabel,
+  type Image as StoredImage,
+  type ImageNote,
+  type ImageStage,
+} from "../lib/images";
 import { useImageUri } from "../lib/image-store-context";
 import { GalleryFilmstrip } from "./gallery-filmstrip";
+import { GalleryNoteMarkers } from "./gallery-note-markers";
 
 /** The page a settled horizontal offset lands on, kept inside the journey it has. */
 function settledPage(offsetX: number, pageWidth: number, count: number): number {
@@ -119,19 +125,27 @@ function PagerImage({
 /**
  * The pager: every image in the live journey, edge to edge at 3:4, square
  * edged, walking in order and bounded at both ends. The top chrome says where
- * the pager is; the filmstrip over the bottom edge jumps it elsewhere. A settle
- * dispatches the image it landed on, and a tap opens the image detail. With no
- * image selected the dashed frame keeps the pager's shape: an empty stage the
- * owner chose keeps the filmstrip over it, while a journey with no images shows
- * neither filmstrip nor counter. The counter appears only over a selected image.
+ * the pager is; the filmstrip over the bottom edge jumps it elsewhere, and the
+ * current image's note markers run down its right edge. A settle dispatches the
+ * image it landed on, and a tap opens the image detail. With no image selected
+ * the dashed frame keeps the pager's shape: an empty stage the owner chose
+ * keeps the filmstrip over it, while a journey with no images shows neither
+ * filmstrip, counter, nor markers. The counter and markers appear only over a
+ * selected image.
  */
 export function GalleryPager({
   journey,
+  notes,
   onPageSettled,
   onImageSelected,
   onImagePressed,
 }: {
   journey: JourneyView<ImageStage>;
+  notes: {
+    index: NotesIndexView<ImageNote>;
+    onNotePress: (noteId: string) => void;
+    onSeeAllPress: () => void;
+  };
   onPageSettled: (imageId: string) => void;
   onImageSelected: (imageId: string) => void;
   onImagePressed: (imageId: string) => void;
@@ -203,6 +217,14 @@ export function GalleryPager({
 
       {journey.image && journey.stage ? (
         <JourneyCounter journey={journey} stage={journey.stage} />
+      ) : null}
+
+      {journey.image ? (
+        <GalleryNoteMarkers
+          view={notes.index}
+          onNotePress={notes.onNotePress}
+          onOverflowPress={notes.onSeeAllPress}
+        />
       ) : null}
 
       {journey.count > 0 ? (

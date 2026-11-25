@@ -7,6 +7,7 @@ import {
   galleryView,
   imageNoteBlockView,
   journeyView,
+  notesIndexView,
   writeOutcome,
   type GalleryEffect,
   type GalleryEvent,
@@ -119,12 +120,21 @@ export function useGallery(designId: string) {
     dispatch({ type: "images-read", stages, cover });
   }, [dispatch, stages, cover]);
 
-  // The note block shows the current image's commentary; the rows stay in the
-  // live read, so a write re-runs this without copying them into the reducer.
-  const noteView = useMemo(
-    () => imageNoteBlockView(imageNotesOf(data.imageNotes, state.imageId), state),
-    [data.imageNotes, state],
+  // The notes belong to the current image and stay in the live read; the rows,
+  // their index, and the sheet's note derive on every read without being copied
+  // into the reducer.
+  const notes = useMemo(
+    () => imageNotesOf(data.imageNotes, state.imageId),
+    [data.imageNotes, state.imageId],
   );
+  const notesIndex = useMemo(() => notesIndexView(notes), [notes]);
+  const sheetNote = state.noteSheetId
+    ? (notes.find((note) => note.id === state.noteSheetId) ?? null)
+    : null;
+
+  // The old note block still shows the current image's commentary until the
+  // notes button replaces it.
+  const noteView = useMemo(() => imageNoteBlockView(notes, state), [notes, state]);
 
   const send = useCallback(
     (fact: GalleryFact) => dispatch(eventOf(fact, stages)),
@@ -139,6 +149,9 @@ export function useGallery(designId: string) {
     view: galleryView(stages, state),
     journey: journeyView(stages, state),
     noteView,
+    notes,
+    notesIndex,
+    sheetNote,
     send,
     error,
     status,

@@ -8,6 +8,8 @@ import { GalleryPager } from "./gallery-pager";
 import { ImageDetail } from "./image-detail";
 import { ImageNoteBlock } from "./image-note-block";
 import { JourneyRail } from "./journey-rail";
+import { NoteSheet } from "./note-sheet";
+import { SeeAllNotesSheet } from "./see-all-notes-sheet";
 
 /**
  * One Design's visual home: the pager walking every image in journey order,
@@ -21,8 +23,21 @@ import { JourneyRail } from "./journey-rail";
  * designs module composes it above Detail's identity block.
  */
 export function DesignGallery({ designId }: { designId: string }) {
-  const { state, stages, images, imageNotes, view, journey, noteView, send, error, status } =
-    useGallery(designId);
+  const {
+    state,
+    stages,
+    images,
+    imageNotes,
+    view,
+    journey,
+    noteView,
+    notes,
+    notesIndex,
+    sheetNote,
+    send,
+    error,
+    status,
+  } = useGallery(designId);
   const detail = useImageDetail(designId);
   const detailImage = detail.state.imageId
     ? (images.find((image) => image.id === detail.state.imageId) ?? null)
@@ -38,6 +53,11 @@ export function DesignGallery({ designId }: { designId: string }) {
     <View className="gap-3" accessibilityLabel="Design journey">
       <GalleryPager
         journey={journey}
+        notes={{
+          index: notesIndex,
+          onNotePress: (noteId) => send({ type: "note-marker-pressed", noteId }),
+          onSeeAllPress: () => send({ type: "see-all-notes-opened" }),
+        }}
         onPageSettled={(imageId) => send({ type: "page-settled", imageId })}
         onImageSelected={(imageId) => send({ type: "image-pressed", imageId })}
         onImagePressed={(imageId) => detail.send({ type: "image-opened", imageId })}
@@ -46,6 +66,14 @@ export function DesignGallery({ designId }: { designId: string }) {
       {journey.image ? <ImageNoteBlock view={noteView} send={send} /> : null}
 
       <AddNoteSheet composer={state.imageNoteComposer} send={send} />
+      <NoteSheet note={sheetNote} onClose={() => send({ type: "note-sheet-closed" })} />
+      <SeeAllNotesSheet
+        open={state.allNotesOpen}
+        notes={notes}
+        armedNoteId={state.armedNoteId}
+        onDeletePress={(noteId) => send({ type: "image-note-delete-pressed", noteId })}
+        onClose={() => send({ type: "see-all-notes-closed" })}
+      />
 
       <JourneyRail
         stages={stages}

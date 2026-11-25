@@ -1,71 +1,26 @@
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
 import { eq } from "drizzle-orm";
 import { Dimensions } from "react-native";
-import { act, fireEvent, render, screen, userEvent, within } from "@testing-library/react-native";
-import { designs, type ImageKind } from "@/features/database";
-import { DatabaseProvider } from "@/features/database/react";
-import { createSyncSubscribe, createTempDatabase } from "@/features/database/testing";
-import { createDesign } from "@/features/designs";
-import { writeImages } from "@/features/images";
-import { DesignGallery, ImagePickerProvider, ImageStoreProvider } from "@/features/images/react";
-import { createTempImageStore } from "@/features/images/testing";
+import { act, fireEvent, screen, userEvent, within } from "@testing-library/react-native";
+import { designs } from "@/features/database";
 import type { ImageStore } from "../lib/image-store";
 import { listDesignImageNotes, listDesignImages } from "../lib/records";
 import type { ImagePicker, ImagePickResult } from "../lib/image-picker";
+import {
+  addNote,
+  attach,
+  database,
+  galleryDesign,
+  live,
+  renderGallery,
+  setupDesignGalleryFixtures,
+  sourceFile,
+  store,
+} from "./design-gallery-fixtures";
 
-const live = createSyncSubscribe();
-
-let database: ReturnType<typeof createTempDatabase>["database"];
-let dispose: () => void;
-let sourceDirectory: string;
-let store: ImageStore;
-let disposeStore: () => void;
-
-beforeEach(() => {
-  ({ database, dispose } = createTempDatabase());
-  sourceDirectory = mkdtempSync(join(tmpdir(), "jbdc-gallery-sources-"));
-  ({ store, dispose: disposeStore } = createTempImageStore());
-});
-
-afterEach(() => {
-  dispose();
-  disposeStore();
-  rmSync(sourceDirectory, { recursive: true, force: true });
-});
-
-async function attach(designId: string, kind: ImageKind, bytes: string, now: number) {
-  const sourcePath = join(sourceDirectory, `${kind}-${now}.jpg`);
-
-  writeFileSync(sourcePath, bytes);
-  await writeImages(
-    database,
-    store,
-    designId,
-    { kind: "attach", images: [{ sourcePath, kind }] },
-    now,
-  );
-}
-
-async function renderGallery(
-  designId: string,
-  picker: ImagePicker = { pick: async () => ({ kind: "cancelled" }) },
-  imageStore: ImageStore = store,
-) {
-  return render(
-    <DatabaseProvider database={database} subscribe={live.subscribe}>
-      <ImageStoreProvider store={imageStore}>
-        <ImagePickerProvider picker={picker}>
-          <DesignGallery designId={designId} />
-        </ImagePickerProvider>
-      </ImageStoreProvider>
-    </DatabaseProvider>,
-  );
-}
+setupDesignGalleryFixtures();
 
 test("the journey rail shows one chip per kind, all four always", async () => {
-  const design = createDesign(database, { name: "Early concept" });
+  const design = galleryDesign("Early concept");
 
   await renderGallery(design.id);
 
@@ -75,7 +30,7 @@ test("the journey rail shows one chip per kind, all four always", async () => {
 });
 
 test("pressing a stage chip activates that stage", async () => {
-  const design = createDesign(database, { name: "Wool coat" });
+  const design = galleryDesign("Wool coat");
 
   await attach(design.id, "sketch", "sketch bytes", 1000);
   await attach(design.id, "final", "final bytes", 2000);
@@ -90,7 +45,7 @@ test("pressing a stage chip activates that stage", async () => {
 });
 
 test("the journey counter names the stage and the position across the journey", async () => {
-  const design = createDesign(database, { name: "Wool coat" });
+  const design = galleryDesign("Wool coat");
 
   await attach(design.id, "sketch", "sketch bytes", 1000);
   await attach(design.id, "final", "final bytes", 2000);
@@ -100,7 +55,7 @@ test("the journey counter names the stage and the position across the journey", 
 });
 
 test("the filmstrip shows every image in journey order", async () => {
-  const design = createDesign(database, { name: "Wool coat" });
+  const design = galleryDesign("Wool coat");
 
   await attach(design.id, "inspiration", "inspiration bytes", 1000);
   await attach(design.id, "final", "final bytes", 2000);
@@ -113,7 +68,7 @@ test("the filmstrip shows every image in journey order", async () => {
 });
 
 test("the active filmstrip thumb is selected and names its stage", async () => {
-  const design = createDesign(database, { name: "Wool coat" });
+  const design = galleryDesign("Wool coat");
 
   await attach(design.id, "inspiration", "inspiration bytes", 1000);
   await attach(design.id, "final", "final bytes", 2000);
@@ -128,7 +83,7 @@ test("the active filmstrip thumb is selected and names its stage", async () => {
 });
 
 test("pressing a filmstrip thumb moves the pager to that image", async () => {
-  const design = createDesign(database, { name: "Wool coat" });
+  const design = galleryDesign("Wool coat");
 
   await attach(design.id, "inspiration", "inspiration bytes", 1000);
   await attach(design.id, "final", "final bytes", 2000);
@@ -142,7 +97,7 @@ test("pressing a filmstrip thumb moves the pager to that image", async () => {
 });
 
 test("a pager settle selects the page it landed on", async () => {
-  const design = createDesign(database, { name: "Wool coat" });
+  const design = galleryDesign("Wool coat");
 
   await attach(design.id, "inspiration", "inspiration bytes", 1000);
   await attach(design.id, "final", "final bytes", 2000);
@@ -160,7 +115,7 @@ test("a pager settle selects the page it landed on", async () => {
 });
 
 test("a design with no images keeps the dashed frame and no chrome", async () => {
-  const design = createDesign(database, { name: "Early concept" });
+  const design = galleryDesign("Early concept");
 
   await renderGallery(design.id);
 
@@ -170,7 +125,7 @@ test("a design with no images keeps the dashed frame and no chrome", async () =>
 });
 
 test("an empty stage on a design with images keeps the filmstrip and drops the counter", async () => {
-  const design = createDesign(database, { name: "Wool coat" });
+  const design = galleryDesign("Wool coat");
 
   await attach(design.id, "sketch", "sketch bytes", 1000);
   await attach(design.id, "final", "final bytes", 2000);
@@ -184,9 +139,9 @@ test("an empty stage on a design with images keeps the filmstrip and drops the c
 });
 
 test("the plus card attaches the picked files to the stage the owner chose", async () => {
-  const design = createDesign(database, { name: "Wool coat" });
-  const frontPath = join(sourceDirectory, "front.jpg");
-  const backPath = join(sourceDirectory, "back.jpg");
+  const design = galleryDesign("Wool coat");
+  const frontPath = sourceFile("front.jpg", "front bytes");
+  const backPath = sourceFile("back.jpg", "back bytes");
   const picker: ImagePicker = {
     pick: jest.fn(async (): Promise<ImagePickResult> => ({
       kind: "picked",
@@ -194,8 +149,6 @@ test("the plus card attaches the picked files to the stage the owner chose", asy
     })),
   };
 
-  writeFileSync(frontPath, "front bytes");
-  writeFileSync(backPath, "back bytes");
   await renderGallery(design.id, picker);
 
   await userEvent.press(screen.getByRole("button", { name: "Sketch" }));
@@ -216,8 +169,8 @@ test("the plus card attaches the picked files to the stage the owner chose", asy
 });
 
 test("a copy that fails leaves the stage unchanged and says so", async () => {
-  const design = createDesign(database, { name: "Wool coat" });
-  const sourcePath = join(sourceDirectory, "front.jpg");
+  const design = galleryDesign("Wool coat");
+  const sourcePath = sourceFile("front.jpg", "front bytes");
   const failing: ImageStore = {
     ...store,
     async copy() {
@@ -228,7 +181,6 @@ test("a copy that fails leaves the stage unchanged and says so", async () => {
     pick: async () => ({ kind: "picked", sourcePaths: [sourcePath] }),
   };
 
-  writeFileSync(sourcePath, "front bytes");
   await renderGallery(design.id, picker, failing);
 
   await userEvent.press(screen.getByRole("button", { name: "Add images to Final" }));
@@ -239,14 +191,8 @@ test("a copy that fails leaves the stage unchanged and says so", async () => {
   expect(listDesignImages(database, design.id)).toEqual([]);
 });
 
-async function addNote(designId: string, text: string, now: number) {
-  const [image] = listDesignImages(database, designId);
-
-  await writeImages(database, store, designId, { kind: "add-note", imageId: image.id, text }, now);
-}
-
 test("Add note opens the composer", async () => {
-  const design = createDesign(database, { name: "Wool coat" });
+  const design = galleryDesign("Wool coat");
 
   await attach(design.id, "sketch", "sketch bytes", 1000);
   await renderGallery(design.id);
@@ -258,7 +204,7 @@ test("Add note opens the composer", async () => {
 });
 
 test("Cancel closes the composer without writing a note", async () => {
-  const design = createDesign(database, { name: "Wool coat" });
+  const design = galleryDesign("Wool coat");
 
   await attach(design.id, "sketch", "sketch bytes", 1000);
   await renderGallery(design.id);
@@ -272,7 +218,7 @@ test("Cancel closes the composer without writing a note", async () => {
 });
 
 test("a note written in the composer is stored beside the current image", async () => {
-  const design = createDesign(database, { name: "Wool coat" });
+  const design = galleryDesign("Wool coat");
 
   await attach(design.id, "sketch", "sketch bytes", 1000);
   await renderGallery(design.id);
@@ -292,7 +238,7 @@ test("a note written in the composer is stored beside the current image", async 
 });
 
 test("a note is removed only after a second press", async () => {
-  const design = createDesign(database, { name: "Wool coat" });
+  const design = galleryDesign("Wool coat");
 
   await attach(design.id, "sketch", "sketch bytes", 1000);
   await addNote(design.id, "First pass was fitted.", 2000);
@@ -313,7 +259,7 @@ test("a note is removed only after a second press", async () => {
 });
 
 test("more notes than the block shows are one press away", async () => {
-  const design = createDesign(database, { name: "Wool coat" });
+  const design = galleryDesign("Wool coat");
 
   await attach(design.id, "sketch", "sketch bytes", 1000);
   await addNote(design.id, "First pass was fitted.", 2000);
@@ -332,7 +278,7 @@ async function openImageDetail(name: string) {
 }
 
 test("tapping the pager's image opens the image detail", async () => {
-  const design = createDesign(database, { name: "Wool coat" });
+  const design = galleryDesign("Wool coat");
 
   await attach(design.id, "sketch", "sketch bytes", 1000);
   await renderGallery(design.id);
@@ -343,7 +289,7 @@ test("tapping the pager's image opens the image detail", async () => {
 });
 
 test("the image detail offers one pill per kind", async () => {
-  const design = createDesign(database, { name: "Wool coat" });
+  const design = galleryDesign("Wool coat");
 
   await attach(design.id, "sketch", "sketch bytes", 1000);
   await renderGallery(design.id);
@@ -355,7 +301,7 @@ test("the image detail offers one pill per kind", async () => {
 });
 
 test("reclassifying a non-Cover image in the image detail changes the Cover on return", async () => {
-  const design = createDesign(database, { name: "Wool coat" });
+  const design = galleryDesign("Wool coat");
 
   await attach(design.id, "sketch", "sketch bytes", 1000);
   await attach(design.id, "prototype", "prototype bytes", 2000);
@@ -380,7 +326,7 @@ test("reclassifying a non-Cover image in the image detail changes the Cover on r
 });
 
 test("Remove asks once before deleting the image and its notes", async () => {
-  const design = createDesign(database, { name: "Wool coat" });
+  const design = galleryDesign("Wool coat");
 
   await attach(design.id, "sketch", "sketch bytes", 1000);
   await addNote(design.id, "First pass was fitted.", 2000);
@@ -402,7 +348,7 @@ test("Remove asks once before deleting the image and its notes", async () => {
 });
 
 test("a removal that does not land keeps the image open and says so", async () => {
-  const design = createDesign(database, { name: "Wool coat" });
+  const design = galleryDesign("Wool coat");
 
   await attach(design.id, "sketch", "sketch bytes", 1000);
   await renderGallery(design.id);
