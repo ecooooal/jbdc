@@ -292,7 +292,7 @@ function step(
 }
 
 /**
- * What the gallery shows right now: the active stage and the hero's image.
+ * What the gallery shows right now: the active stage and its selected image.
  * A pure derivation, so the component never repeats the selection rule.
  */
 export function galleryView<Stage extends GalleryStage>(
@@ -308,6 +308,42 @@ export function galleryView<Stage extends GalleryStage>(
     image: image ?? null,
     position: index + 1,
     count: stage?.images.length ?? 0,
+  };
+}
+
+/** The flat journey and where the gallery is in it. */
+export type JourneyView<Stage extends GalleryStage = GalleryStage> = {
+  /** Every image in journey order, oldest first within each stage. */
+  images: Stage["images"][number][];
+  /** The selected image, or null while the chosen stage has none. */
+  image: Stage["images"][number] | null;
+  /** 1-based position across the journey; 0 when no image is selected. */
+  position: number;
+  count: number;
+  /** The selected image's stage, or null when no image is selected. */
+  stage: ImageKind | null;
+};
+
+/**
+ * The pager's view of the live list: every image flattened in journey order,
+ * with the selected image's stage and its position across the whole journey.
+ * The stage comes from the selected image, never from a stage's own index, so
+ * a reclassification moves the counter with the image.
+ */
+export function journeyView<Stage extends GalleryStage>(
+  stages: readonly Stage[],
+  state: GalleryState,
+): JourneyView<Stage> {
+  const images = stages.flatMap((stage) => stage.images);
+  const index = state.imageId ? images.findIndex((image) => image.id === state.imageId) : -1;
+  const image = index >= 0 ? images[index] : null;
+
+  return {
+    images,
+    image,
+    position: index + 1,
+    count: images.length,
+    stage: image?.kind ?? null,
   };
 }
 
