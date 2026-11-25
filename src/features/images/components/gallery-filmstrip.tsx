@@ -73,13 +73,7 @@ export function GalleryFilmstrip({
       overScrollMode="never"
       showsHorizontalScrollIndicator={false}
       accessibilityLabel="Images in journey order"
-      contentContainerStyle={{
-        alignItems: "flex-end",
-        gap: 8,
-        paddingHorizontal: 12,
-        paddingBottom: 12,
-        paddingTop: 16,
-      }}
+      contentContainerStyle={{ alignItems: "flex-end", gap: 8, paddingTop: 16 }}
     >
       {journey.images.map((image, index) => (
         <FilmstripThumb

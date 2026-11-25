@@ -62,11 +62,6 @@ export type GalleryState = {
   attachFailed: boolean;
   /** The open note composer for the current image; null when it is closed. */
   imageNoteComposer: ImageNoteComposer | null;
-  /**
-   * Whether the note block shows every note rather than its first two. It
-   * closes again when the owner moves to another image.
-   */
-  imageNotesExpanded: boolean;
   /** Whether the notes button's menu is expanded. */
   notesMenuOpen: boolean;
   /** The note the read-only note sheet shows; null when the sheet is closed. */
@@ -133,7 +128,6 @@ export type GalleryFact =
   | { type: "image-note-draft-changed"; draft: string }
   | { type: "image-note-save-pressed" }
   | { type: "image-note-delete-pressed"; noteId: string }
-  | { type: "image-notes-more-pressed" }
   | { type: "notes-button-pressed" }
   | { type: "note-marker-pressed"; noteId: string }
   | { type: "note-sheet-closed" }
@@ -256,7 +250,6 @@ export function createInitialGalleryState(designId: string): GalleryState {
     awaitingKind: null,
     attachFailed: false,
     imageNoteComposer: null,
-    imageNotesExpanded: false,
     notesMenuOpen: false,
     noteSheetId: null,
     allNotesOpen: false,
@@ -404,42 +397,11 @@ export function notesIndexView<Note>(notes: readonly Note[]): NotesIndexView<Not
   return { count: notes.length, markers };
 }
 
-/** How many notes the block shows before it offers the rest. */
-export const IMAGE_NOTE_COLLAPSED_COUNT = 2;
-
-/** What the note block shows: the first two notes, or all of them expanded. */
-export type ImageNoteBlockView<Note> = {
-  total: number;
-  shown: readonly Note[];
-  /** Whether there are more notes than the collapsed block shows. */
-  collapsible: boolean;
-  expanded: boolean;
-};
-
-/**
- * The note block's derivation: never more than two notes until the owner asks
- * for all of them, and the control that asks only when there is more to see.
- */
-export function imageNoteBlockView<Note>(
-  notes: readonly Note[],
-  state: GalleryState,
-): ImageNoteBlockView<Note> {
-  const collapsible = notes.length > IMAGE_NOTE_COLLAPSED_COUNT;
-  const expanded = collapsible && state.imageNotesExpanded;
-
-  return {
-    total: notes.length,
-    shown: expanded ? notes : notes.slice(0, IMAGE_NOTE_COLLAPSED_COUNT),
-    collapsible,
-    expanded,
-  };
-}
-
 /**
  * The state after a selection. The notes belong to one image, so a half written
- * note, the expanded list, the menu, the note sheet, see-all, and the armed
- * delete all drop as soon as the current image changes; staying on the same
- * image — a reclassification, say — keeps them.
+ * note, the menu, the note sheet, see-all, and the armed delete all drop as
+ * soon as the current image changes; staying on the same image — a
+ * reclassification, say — keeps them.
  */
 function selected(state: GalleryState, kind: ImageKind, imageId: string | null): GalleryState {
   if (imageId === state.imageId) return { ...state, kind, imageId };
@@ -449,7 +411,6 @@ function selected(state: GalleryState, kind: ImageKind, imageId: string | null):
     kind,
     imageId,
     imageNoteComposer: null,
-    imageNotesExpanded: false,
     notesMenuOpen: false,
     noteSheetId: null,
     allNotesOpen: false,
@@ -632,9 +593,6 @@ export function galleryReducer(state: GalleryState, event: GalleryEvent): Galler
 
       return only({ ...state, imageNoteComposer: null });
     }
-
-    case "image-notes-more-pressed":
-      return only({ ...state, imageNotesExpanded: !state.imageNotesExpanded });
 
     case "notes-button-pressed":
       return only({ ...state, notesMenuOpen: !state.notesMenuOpen });

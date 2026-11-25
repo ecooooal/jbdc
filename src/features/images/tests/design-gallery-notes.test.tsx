@@ -54,6 +54,61 @@ test("a marker opens its note sheet with the note's text and created date", asyn
   expect(screen.queryByLabelText("Image detail")).toBeNull();
 });
 
+test("the notes button carries the current image's note count", async () => {
+  await galleryWithNotes(3);
+
+  expect(screen.getByRole("button", { name: "Notes (3)" })).toBeTruthy();
+});
+
+test("the menu offers Add note and See all notes, and Add note opens the composer", async () => {
+  await galleryWithNotes(2);
+
+  await userEvent.press(screen.getByRole("button", { name: "Notes (2)" }));
+
+  expect(screen.getByRole("button", { name: "Add note" })).toBeTruthy();
+  expect(screen.getByRole("button", { name: "See all notes (2)" })).toBeTruthy();
+  expect(screen.queryByRole("button", { name: /hide/i })).toBeNull();
+
+  await userEvent.press(screen.getByRole("button", { name: "Add note" }));
+
+  expect(screen.getByLabelText("New note")).toBeTruthy();
+});
+
+test("See all notes opens the sheet with every note", async () => {
+  await galleryWithNotes(2);
+
+  await userEvent.press(screen.getByRole("button", { name: "Notes (2)" }));
+  await userEvent.press(screen.getByRole("button", { name: "See all notes (2)" }));
+
+  const sheet = within(screen.getByTestId("see-all-notes"));
+
+  expect(sheet.getByText("Notes (2)")).toBeTruthy();
+  expect(sheet.getByText("First pass was fitted.")).toBeTruthy();
+  expect(sheet.getByText("Widened the shoulder.")).toBeTruthy();
+});
+
+test("opening the image detail closes the notes menu", async () => {
+  await galleryWithNotes(1);
+
+  await userEvent.press(screen.getByRole("button", { name: "Notes (1)" }));
+  expect(screen.getByRole("button", { name: "See all notes (1)" })).toBeTruthy();
+
+  await userEvent.press(screen.getByRole("button", { name: "Open Sketch image 1 of 1" }));
+
+  expect(screen.getByLabelText("Image detail")).toBeTruthy();
+  expect(screen.queryByRole("button", { name: "See all notes (1)" })).toBeNull();
+  expect(screen.queryByRole("button", { name: "Add note" })).toBeNull();
+});
+
+test("the old note block's controls are absent", async () => {
+  await galleryWithNotes(3);
+
+  expect(screen.queryByText("No notes yet. Add what you decided here, and why.")).toBeNull();
+  expect(screen.queryByRole("button", { name: /^Show all \d+ notes$/ })).toBeNull();
+  expect(screen.queryByRole("button", { name: "Show fewer notes" })).toBeNull();
+  expect(screen.queryByText("First pass was fitted.")).toBeNull();
+});
+
 test("the overflow marker opens see-all with every note, oldest first", async () => {
   await galleryWithNotes(6);
 

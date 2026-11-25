@@ -191,17 +191,10 @@ test("a copy that fails leaves the stage unchanged and says so", async () => {
   expect(listDesignImages(database, design.id)).toEqual([]);
 });
 
-test("Add note opens the composer", async () => {
-  const design = galleryDesign("Wool coat");
-
-  await attach(design.id, "sketch", "sketch bytes", 1000);
-  await renderGallery(design.id);
-
-  expect(screen.queryByLabelText("New note")).toBeNull();
-  await userEvent.press(screen.getByRole("button", { name: "Add note" }));
-
-  expect(screen.getByLabelText("New note")).toBeTruthy();
-});
+/** Opens the notes menu on an image carrying `count` notes. */
+async function openNotesMenu(count: number) {
+  await userEvent.press(screen.getByRole("button", { name: `Notes (${count})` }));
+}
 
 test("Cancel closes the composer without writing a note", async () => {
   const design = galleryDesign("Wool coat");
@@ -209,6 +202,7 @@ test("Cancel closes the composer without writing a note", async () => {
   await attach(design.id, "sketch", "sketch bytes", 1000);
   await renderGallery(design.id);
 
+  await openNotesMenu(0);
   await userEvent.press(screen.getByRole("button", { name: "Add note" }));
   await userEvent.type(screen.getByLabelText("New note"), "Widened the shoulder.");
   await userEvent.press(screen.getByRole("button", { name: "Cancel note" }));
@@ -223,6 +217,7 @@ test("a note written in the composer is stored beside the current image", async 
   await attach(design.id, "sketch", "sketch bytes", 1000);
   await renderGallery(design.id);
 
+  await openNotesMenu(0);
   await userEvent.press(screen.getByRole("button", { name: "Add note" }));
   await userEvent.type(screen.getByLabelText("New note"), "Widened the shoulder.");
   await userEvent.press(screen.getByRole("button", { name: "Save note" }));
@@ -233,43 +228,8 @@ test("a note written in the composer is stored beside the current image", async 
   expect(listDesignImageNotes(database, design.id)).toEqual([
     expect.objectContaining({ text: "Widened the shoulder." }),
   ]);
-  expect(screen.getByText("Widened the shoulder.")).toBeTruthy();
+  expect(screen.getByRole("button", { name: "Notes (1)" })).toBeTruthy();
   expect(screen.queryByLabelText("New note")).toBeNull();
-});
-
-test("a note is removed only after a second press", async () => {
-  const design = galleryDesign("Wool coat");
-
-  await attach(design.id, "sketch", "sketch bytes", 1000);
-  await addNote(design.id, "First pass was fitted.", 2000);
-  await renderGallery(design.id);
-
-  await userEvent.press(screen.getByRole("button", { name: "Delete note 1" }));
-  await act(async () => {});
-  await act(async () => live.notify("image_notes"));
-
-  expect(listDesignImageNotes(database, design.id)).toHaveLength(1);
-
-  await userEvent.press(screen.getByRole("button", { name: "Delete note 1" }));
-  await act(async () => {});
-  await act(async () => live.notify("image_notes"));
-
-  expect(listDesignImageNotes(database, design.id)).toEqual([]);
-  expect(screen.queryByText("First pass was fitted.")).toBeNull();
-});
-
-test("more notes than the block shows are one press away", async () => {
-  const design = galleryDesign("Wool coat");
-
-  await attach(design.id, "sketch", "sketch bytes", 1000);
-  await addNote(design.id, "First pass was fitted.", 2000);
-  await addNote(design.id, "Widened the shoulder.", 2100);
-  await addNote(design.id, "Kept the collar high.", 2200);
-  await renderGallery(design.id);
-
-  await userEvent.press(screen.getByRole("button", { name: "Show all 3 notes" }));
-
-  expect(screen.getByRole("button", { name: "Show fewer notes" })).toBeTruthy();
 });
 
 /** Opens the image detail on the pager's current image. */

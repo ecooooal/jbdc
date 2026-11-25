@@ -50,7 +50,6 @@ export function send(state: GalleryState, ...events: GalleryEvent[]): GalleryRes
 /** A gallery state's note UI before the owner opens anything. */
 export const noNoteUI = {
   imageNoteComposer: null,
-  imageNotesExpanded: false,
   notesMenuOpen: false,
   noteSheetId: null,
   allNotesOpen: false,

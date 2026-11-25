@@ -14,7 +14,7 @@ import type { ImageKind } from "@/features/database";
 import { Icon } from "@/shared/components/ui/icon";
 import { Text } from "@/shared/components/ui/text";
 import { QUIET_MOTION_DURATION_MS } from "@/shared/lib/motion";
-import type { JourneyView, NotesIndexView } from "../lib/gallery-reducer";
+import type { JourneyView, NotesIndexView, NotesMenuView } from "../lib/gallery-reducer";
 import {
   imageKindLabel,
   type Image as StoredImage,
@@ -24,6 +24,7 @@ import {
 import { useImageUri } from "../lib/image-store-context";
 import { GalleryFilmstrip } from "./gallery-filmstrip";
 import { GalleryNoteMarkers } from "./gallery-note-markers";
+import { GalleryNotesButton } from "./gallery-notes-button";
 
 /** The page a settled horizontal offset lands on, kept inside the journey it has. */
 function settledPage(offsetX: number, pageWidth: number, count: number): number {
@@ -143,7 +144,11 @@ export function GalleryPager({
   journey: JourneyView<ImageStage>;
   notes: {
     index: NotesIndexView<ImageNote>;
+    menu: NotesMenuView;
+    menuOpen: boolean;
+    onButtonPress: () => void;
     onNotePress: (noteId: string) => void;
+    onAddNotePress: () => void;
     onSeeAllPress: () => void;
   };
   onPageSettled: (imageId: string) => void;
@@ -228,8 +233,19 @@ export function GalleryPager({
       ) : null}
 
       {journey.count > 0 ? (
-        <View className="absolute inset-x-0 bottom-0">
-          <GalleryFilmstrip journey={journey} onSelect={onImageSelected} />
+        <View className="absolute inset-x-0 bottom-0 flex-row items-end gap-2 pb-3 pl-3 pr-3">
+          <View className="flex-1">
+            <GalleryFilmstrip journey={journey} onSelect={onImageSelected} />
+          </View>
+          {journey.image ? (
+            <GalleryNotesButton
+              view={notes.menu}
+              open={notes.menuOpen}
+              onPress={notes.onButtonPress}
+              onAddNotePress={notes.onAddNotePress}
+              onSeeAllPress={notes.onSeeAllPress}
+            />
+          ) : null}
         </View>
       ) : null}
     </View>

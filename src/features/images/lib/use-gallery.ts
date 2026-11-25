@@ -5,9 +5,9 @@ import {
   createInitialGalleryState,
   galleryReducer,
   galleryView,
-  imageNoteBlockView,
   journeyView,
   notesIndexView,
+  notesMenuView,
   writeOutcome,
   type GalleryEffect,
   type GalleryEvent,
@@ -128,13 +128,10 @@ export function useGallery(designId: string) {
     [data.imageNotes, state.imageId],
   );
   const notesIndex = useMemo(() => notesIndexView(notes), [notes]);
+  const notesMenu = useMemo(() => notesMenuView(notes), [notes]);
   const sheetNote = state.noteSheetId
     ? (notes.find((note) => note.id === state.noteSheetId) ?? null)
     : null;
-
-  // The old note block still shows the current image's commentary until the
-  // notes button replaces it.
-  const noteView = useMemo(() => imageNoteBlockView(notes, state), [notes, state]);
 
   const send = useCallback(
     (fact: GalleryFact) => dispatch(eventOf(fact, stages)),
@@ -148,9 +145,9 @@ export function useGallery(designId: string) {
     imageNotes: data.imageNotes,
     view: galleryView(stages, state),
     journey: journeyView(stages, state),
-    noteView,
     notes,
     notesIndex,
+    notesMenu,
     sheetNote,
     send,
     error,

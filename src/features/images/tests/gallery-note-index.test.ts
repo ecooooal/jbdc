@@ -145,7 +145,6 @@ describe("the two-step delete", () => {
     const open: GalleryState = {
       ...onImage("s1"),
       imageNoteComposer: { imageId: "s1", draft: "Widened the shoulder." },
-      imageNotesExpanded: true,
       notesMenuOpen: true,
       noteSheetId: "n1",
       allNotesOpen: true,

@@ -1,11 +1,6 @@
 import { createReducerTester } from "@/shared/testing/reducer-tester";
-import {
-  createInitialGalleryState,
-  galleryReducer,
-  imageNoteBlockView,
-  writeOutcome,
-} from "../lib/gallery-reducer";
-import { DESIGN_ID, journey, noNoteUI, onImage, send, stage } from "./gallery-reducer-fixtures";
+import { createInitialGalleryState, galleryReducer, writeOutcome } from "../lib/gallery-reducer";
+import { DESIGN_ID, journey, noNoteUI, onImage, stage } from "./gallery-reducer-fixtures";
 
 /** A tester on a gallery already looking at one image. */
 function testerAt(state = onImage("s1")) {
@@ -104,7 +99,7 @@ describe("the note composer", () => {
     expect(tester.getEffects()).toEqual([]);
   });
 
-  test("closes once the note lands, leaving a collapsed list collapsed", () => {
+  test("closes once the note lands", () => {
     const tester = testerAt();
 
     tester.send({ type: "image-note-composer-opened" });
@@ -113,28 +108,6 @@ describe("the note composer", () => {
     tester.send({ type: "image-note-added", imageId: "s1" });
 
     expect(tester.getState()).toEqual({ ...onImage("s1"), ...noNoteUI });
-    expect(tester.getEffects()).toEqual([
-      {
-        type: "add-image-note",
-        designId: DESIGN_ID,
-        change: { kind: "add-note", imageId: "s1", text: "Widened the shoulder." },
-      },
-    ]);
-  });
-
-  test("leaves a list the owner expanded open when a note lands", () => {
-    const tester = testerAt({ ...onImage("s1"), imageNotesExpanded: true });
-
-    tester.send({ type: "image-note-composer-opened" });
-    tester.send({ type: "image-note-draft-changed", draft: "Widened the shoulder." });
-    tester.send({ type: "image-note-save-pressed" });
-    tester.send({ type: "image-note-added", imageId: "s1" });
-
-    expect(tester.getState()).toEqual({
-      ...onImage("s1"),
-      imageNoteComposer: null,
-      imageNotesExpanded: true,
-    });
     expect(tester.getEffects()).toEqual([
       {
         type: "add-image-note",
@@ -229,62 +202,5 @@ describe("a refused note", () => {
       draft: "Widened the shoulder.",
     });
     expect(tester.getEffects()).toEqual([effect]);
-  });
-});
-
-describe("the note block", () => {
-  const notes = ["first", "second", "third", "fourth"];
-
-  test("shows its first two notes while there is more to see", () => {
-    expect(imageNoteBlockView(notes, createInitialGalleryState(DESIGN_ID))).toEqual({
-      total: 4,
-      shown: ["first", "second"],
-      collapsible: true,
-      expanded: false,
-    });
-  });
-
-  test("shows every note once the owner asks", () => {
-    const expanded = { ...createInitialGalleryState(DESIGN_ID), imageNotesExpanded: true };
-
-    expect(imageNoteBlockView(notes, expanded)).toEqual({
-      total: 4,
-      shown: notes,
-      collapsible: true,
-      expanded: true,
-    });
-  });
-
-  test("a list of two has nothing hidden and no control to offer", () => {
-    const expanded = { ...createInitialGalleryState(DESIGN_ID), imageNotesExpanded: true };
-
-    expect(imageNoteBlockView(["first", "second"], expanded)).toEqual({
-      total: 2,
-      shown: ["first", "second"],
-      collapsible: false,
-      expanded: false,
-    });
-  });
-
-  test("collapses again when the owner moves to another image", () => {
-    const expanded = send(
-      { ...onImage("s1"), imageNotesExpanded: true },
-      { type: "hero-swiped", direction: "next", stages: journey() },
-    ).state;
-
-    expect(imageNoteBlockView(notes, expanded)).toMatchObject({
-      shown: notes.slice(0, 2),
-      expanded: false,
-    });
-  });
-
-  test("pressing the more control toggles the list and back", () => {
-    const collapsed = createInitialGalleryState(DESIGN_ID);
-    const opened = send(collapsed, { type: "image-notes-more-pressed" }).state;
-
-    expect(imageNoteBlockView(notes, opened).expanded).toBe(true);
-    expect(
-      imageNoteBlockView(notes, send(opened, { type: "image-notes-more-pressed" }).state).expanded,
-    ).toBe(false);
   });
 });
