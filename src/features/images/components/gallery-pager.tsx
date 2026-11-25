@@ -17,7 +17,6 @@ import { QUIET_MOTION_DURATION_MS } from "@/shared/lib/motion";
 import type { JourneyView } from "../lib/gallery-reducer";
 import { imageKindLabel, type Image as StoredImage, type ImageStage } from "../lib/images";
 import { useImageUri } from "../lib/image-store-context";
-import { GalleryFilmstrip } from "./gallery-filmstrip";
 import { GalleryNotesButton } from "./gallery-notes-button";
 
 /** The page a settled horizontal offset lands on, kept inside the journey it has. */
@@ -129,24 +128,21 @@ type NotesButton = {
 /**
  * The pager: every image in the live journey, edge to edge at 3:4, square
  * edged, walking in order and bounded at both ends. The top chrome says where
- * the pager is; the filmstrip over the bottom edge jumps it elsewhere, and the
- * notes button sits beside it. A settle dispatches the image it landed on, and
- * a tap opens the image detail. With no image selected the dashed frame keeps
- * the pager's shape: an empty stage the owner chose keeps the filmstrip over
- * it, while a journey with no images shows neither filmstrip, counter, nor
- * notes button. The counter and notes button appear only over a selected image.
+ * the pager is; the notes button sits at the bottom right. A settle dispatches
+ * the image it landed on, and a tap opens the image detail. With no image
+ * selected the dashed frame keeps the pager's shape; a journey with no images
+ * shows neither counter nor notes button. The counter and notes button appear
+ * only over a selected image.
  */
 export function GalleryPager({
   journey,
   notes,
   onPageSettled,
-  onImageSelected,
   onImagePressed,
 }: {
   journey: JourneyView<ImageStage>;
   notes: NotesButton;
   onPageSettled: (imageId: string) => void;
-  onImageSelected: (imageId: string) => void;
   onImagePressed: (imageId: string) => void;
 }) {
   const { width: viewportWidth } = useWindowDimensions();
@@ -158,9 +154,9 @@ export function GalleryPager({
     ? journey.images.findIndex((image) => image.id === selectedId)
     : -1;
 
-  // The reducer owns the selection; the list follows it. A thumb press or a
-  // reclassification moves the selection, and the pager lands on that image
-  // without a second animation of its own.
+  // The reducer owns the selection; the list follows it. A stage press, a
+  // stage-row thumb, or a reclassification moves the selection, and the pager
+  // lands on that image without a second animation of its own.
   useEffect(() => {
     if (selectedIndex < 0) return;
 
@@ -218,14 +214,9 @@ export function GalleryPager({
         <JourneyCounter journey={journey} stage={journey.stage} />
       ) : null}
 
-      {journey.count > 0 ? (
-        <View className="absolute inset-x-0 bottom-0 flex-row items-end gap-2 pb-3 pl-3 pr-3">
-          <View className="flex-1">
-            <GalleryFilmstrip journey={journey} onSelect={onImageSelected} />
-          </View>
-          {journey.image ? (
-            <GalleryNotesButton count={notes.count} onPress={notes.onPress} />
-          ) : null}
+      {journey.image ? (
+        <View className="absolute bottom-3 right-3">
+          <GalleryNotesButton count={notes.count} onPress={notes.onPress} />
         </View>
       ) : null}
     </View>

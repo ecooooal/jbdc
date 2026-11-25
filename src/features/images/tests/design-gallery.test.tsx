@@ -188,6 +188,22 @@ test("the selected image is marked in the stage row", async () => {
   );
 });
 
+test("pressing a stage-row thumb moves the pager to that image", async () => {
+  const design = galleryDesign("Wool coat");
+
+  await attach(design.id, "final", "first final", 1000);
+  await attach(design.id, "final", "second final", 2000);
+  await renderGallery(design.id);
+
+  // The Cover is the newest Final; the row lists the stage oldest first, so the
+  // first thumb is the image the pager must walk back to.
+  expect(screen.getByLabelText("Final · 2 / 2")).toBeTruthy();
+
+  await userEvent.press(screen.getByRole("button", { name: "Final image 1" }));
+
+  expect(screen.getByLabelText("Final · 1 / 2")).toBeTruthy();
+});
+
 test("an empty stage's row shows only the plus card", async () => {
   const design = galleryDesign("Wool coat");
 
@@ -232,48 +248,6 @@ test("the journey counter names the stage and the position across the journey", 
   expect(screen.getByLabelText("Final · 2 / 2")).toBeTruthy();
 });
 
-test("the filmstrip shows every image in journey order", async () => {
-  const design = galleryDesign("Wool coat");
-
-  await attach(design.id, "inspiration", "inspiration bytes", 1000);
-  await attach(design.id, "final", "final bytes", 2000);
-  await renderGallery(design.id);
-
-  const filmstrip = within(screen.getByTestId("gallery-filmstrip"));
-
-  expect(filmstrip.getByRole("button", { name: "Inspiration image 1 of 2" })).toBeTruthy();
-  expect(filmstrip.getByRole("button", { name: "Final image 2 of 2" })).toBeTruthy();
-});
-
-test("the active filmstrip thumb is selected and names its stage", async () => {
-  const design = galleryDesign("Wool coat");
-
-  await attach(design.id, "inspiration", "inspiration bytes", 1000);
-  await attach(design.id, "final", "final bytes", 2000);
-  await renderGallery(design.id);
-
-  const active = within(screen.getByTestId("gallery-filmstrip")).getByRole("button", {
-    name: "Final image 2 of 2",
-  });
-
-  expect(active.props.accessibilityState).toMatchObject({ selected: true });
-  expect(within(active).getByText("Final")).toBeTruthy();
-});
-
-test("pressing a filmstrip thumb moves the pager to that image", async () => {
-  const design = galleryDesign("Wool coat");
-
-  await attach(design.id, "inspiration", "inspiration bytes", 1000);
-  await attach(design.id, "final", "final bytes", 2000);
-  await renderGallery(design.id);
-
-  expect(screen.getByLabelText("Final · 2 / 2")).toBeTruthy();
-
-  await userEvent.press(screen.getByRole("button", { name: "Inspiration image 1 of 2" }));
-
-  expect(screen.getByLabelText("Inspiration · 1 / 2")).toBeTruthy();
-});
-
 test("a pager settle selects the page it landed on", async () => {
   const design = galleryDesign("Wool coat");
 
@@ -299,10 +273,10 @@ test("a design with no images keeps the dashed frame and no chrome", async () =>
 
   expect(screen.getByTestId("gallery-pager-placeholder")).toBeTruthy();
   expect(screen.queryByTestId("gallery-journey-counter")).toBeNull();
-  expect(screen.queryByTestId("gallery-filmstrip")).toBeNull();
+  expect(screen.queryByLabelText("Notes (0)")).toBeNull();
 });
 
-test("an empty stage on a design with images keeps the filmstrip and drops the counter", async () => {
+test("an empty stage on a design with images keeps the dashed frame and drops the chrome", async () => {
   const design = galleryDesign("Wool coat");
 
   await attach(design.id, "sketch", "sketch bytes", 1000);
@@ -312,8 +286,8 @@ test("an empty stage on a design with images keeps the filmstrip and drops the c
   await userEvent.press(screen.getByRole("button", { name: "Prototype" }));
 
   expect(screen.getByTestId("gallery-pager-placeholder")).toBeTruthy();
-  expect(screen.getByTestId("gallery-filmstrip")).toBeTruthy();
   expect(screen.queryByTestId("gallery-journey-counter")).toBeNull();
+  expect(screen.queryByLabelText("Notes (0)")).toBeNull();
 });
 
 test("the plus card attaches the picked files to the stage the owner chose", async () => {

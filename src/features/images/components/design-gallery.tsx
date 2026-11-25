@@ -11,8 +11,8 @@ import { NotesSheet } from "./notes-sheet";
 
 /**
  * One Design's visual home: the pager walking every image in journey order with
- * the filmstrip and the notes button at the bottom right; then the stage
- * block's four equal cards and the active stage's images. The images and notes
+ * the notes button at the bottom right; then the stage block's four equal cards
+ * and the active stage's images. The images and notes
  * live read feeds the gallery reducer, so a write anywhere re-runs this without
  * a manual refresh. The plus card attaches to the active stage, so the stage the
  * owner picked is the kind the picked files get.
@@ -52,7 +52,6 @@ export function DesignGallery({ designId }: { designId: string }) {
           onPress: () => send({ type: "notes-button-pressed" }),
         }}
         onPageSettled={(imageId) => send({ type: "page-settled", imageId })}
-        onImageSelected={(imageId) => send({ type: "image-pressed", imageId })}
         onImagePressed={(imageId) => detail.send({ type: "image-opened", imageId })}
       />
 

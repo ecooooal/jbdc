@@ -48,9 +48,6 @@ _Note_: the Status entry's _Avoid_ on "stage" is about a design's standing, not 
 **the pager**:
 The gallery's swipe surface: one image at a time, full-bleed at 3:4 with `cover`, walking the journey in order and stopping at either end.
 
-**the filmstrip**:
-The gallery's bottom row of every image in journey order. The active thumb lifts and names its stage; pressing another selects it.
-
 **the notes button**:
 The gallery's bottom-right control, carrying the current image's note count; one press opens the notes sheet.
 

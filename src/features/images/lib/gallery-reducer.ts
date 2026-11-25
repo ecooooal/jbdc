@@ -429,7 +429,7 @@ function only(state: GalleryState): GalleryResult {
 }
 
 /**
- * The state after naming an image in the journey. A filmstrip press and a page
+ * The state after naming an image in the journey. A stage-row press and a page
  * settle share this rule: the live list says which stage holds the image, so a
  * reclassification cannot leave the selection and the counter disagreeing.
  */

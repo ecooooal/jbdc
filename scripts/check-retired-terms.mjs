@@ -113,14 +113,18 @@ const RETIRED = [
     phrase: "all-notes sheet",
     replacement: "the notes sheet",
   },
+  {
+    phrase: "the filmstrip",
+    replacement: "the stage row",
+  },
 ];
 
 /** Where prose and code are scanned; root-level Markdown is added below. */
 const SCAN_DIRS = ["src", "docs", ".impeccable"];
 const SCANNED_FILE = /\.(?:ts|tsx|md)$/;
 
-/** The architecture map is a disposable working artifact, never shipped. */
-const SKIPPED_DIRS = new Set(["node_modules", "architecture-reviews"]);
+/** Working artifacts and saved critique snapshots describe past states, not current prose. */
+const SKIPPED_DIRS = new Set(["node_modules", "architecture-reviews", "critique"]);
 
 /** Historical plan docs describe an intent at a point in time; current prose is the guard's scope. */
 const SKIPPED_FILES = new Set(["docs/ui-improve.md"]);
