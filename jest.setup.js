@@ -61,6 +61,13 @@ jest.mock("react-native-reanimated", () => {
       }),
       reduceMotion: () => ({}),
     },
+    // The stage row collapses on the shared accordion's linear layout
+    // transition; the stand-in only needs the builder chain to stay callable.
+    LinearTransition: {
+      duration: () => ({
+        reduceMotion: () => ({}),
+      }),
+    },
     ReduceMotion: { System: "system" },
     // The Detail's arrival builder is only read when the screen mounts; the
     // stand-in keeps the chain callable without a worklets runtime.

@@ -3,6 +3,7 @@ import { Plus } from "lucide-react-native";
 import { useEffect } from "react";
 import { Pressable, ScrollView, View } from "react-native";
 import Animated, {
+  LinearTransition,
   ReduceMotion,
   useAnimatedStyle,
   useSharedValue,
@@ -11,13 +12,22 @@ import Animated, {
 import type { ImageKind } from "@/features/database";
 import { Icon } from "@/shared/components/ui/icon";
 import { Text } from "@/shared/components/ui/text";
+import { QUIET_MOTION_DURATION_MS } from "@/shared/lib/motion";
 import { cn } from "@/shared/lib/utils";
-import type { StageCard } from "../lib/gallery-reducer";
+import type { StageCard, StageRowView } from "../lib/gallery-reducer";
 import { imageKindLabel, type Image as StoredImage, type ImageStage } from "../lib/images";
 import { useImageUri } from "../lib/image-store-context";
 
 /** The stage card's turn: the active tone and lift change in one quiet 150 ms. */
 const STAGE_CARD_MOTION_MS = 150;
+
+/**
+ * The row's open and close: the shared accordion's 200 ms linear layout
+ * transition, with no spring, resolved on the spot under reduced motion.
+ */
+const STAGE_ROW_LAYOUT = LinearTransition.duration(QUIET_MOTION_DURATION_MS).reduceMotion(
+  ReduceMotion.System,
+);
 
 function countLabel(count: number): string {
   return `${count} image${count === 1 ? "" : "s"}`;
@@ -74,8 +84,8 @@ function StageCardButton({ card, onPress }: { card: StageCard; onPress: () => vo
   );
 }
 
-/** A stored image, or the quiet placeholder a stage with none keeps. */
-function StageImage({ image, className }: { image: StoredImage | null; className?: string }) {
+/** A stored image's thumb, or the quiet placeholder its file's absence keeps. */
+function StageImage({ image, className }: { image: StoredImage; className?: string }) {
   const uri = useImageUri(image);
 
   if (!uri) {
@@ -113,30 +123,35 @@ function AddImageCard({ label, onPress }: { label: string; onPress: () => void }
 /**
  * The stage block: one stable row of four equal cards, each naming its stage
  * and how many images it holds, with the card the gallery is on taking the
- * Kraft tone. The active stage opens its images oldest to newest on the second
- * row, so the cards stay a stable spine and an empty stage reads zero. A thumb
- * selects the pager's image; the plus card at the end attaches to the active
- * stage it names, so its label and its write read from one derivation. When the
- * last attach did not land, one line says so and the row otherwise stays as it
- * was.
+ * Kraft tone. The active stage's row sits beneath them, its images oldest
+ * first and the plus card at the end; pressing the active card closes it and
+ * choosing another stage opens it. The row is one horizontal line that scrolls
+ * and stops at its ends, and it collapses on the shared accordion's linear
+ * layout transition. A thumb selects the pager's image; the plus card attaches
+ * to the stage the row shows, so its label and its write read from one
+ * derivation. When the last attach did not land, one line says so and the
+ * block otherwise stays as it was.
  */
 export function JourneyRail({
   cards,
-  active,
-  selectedId,
+  row,
+  rowOpen,
   attachFailed,
   onStagePress,
   onImagePress,
   onAddPress,
 }: {
   cards: readonly StageCard[];
-  active: ImageStage | null;
-  selectedId: string | null;
+  row: StageRowView<ImageStage>;
+  rowOpen: boolean;
   attachFailed: boolean;
   onStagePress: (kind: ImageKind) => void;
   onImagePress: (imageId: string) => void;
   onAddPress: (kind: ImageKind) => void;
 }) {
+  const kind = row.kind;
+  const label = kind ? imageKindLabel(kind) : null;
+
   return (
     <View className="gap-2">
       <View testID="stage-cards" className="flex-row gap-2">
@@ -151,41 +166,43 @@ export function JourneyRail({
         </Text>
       ) : null}
 
-      {active ? (
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ gap: 8 }}
-          accessibilityLabel={`${imageKindLabel(active.kind)} images, oldest first`}
-        >
-          {active.images.map((image, index) => {
-            const selected = image.id === selectedId;
+      <Animated.View layout={STAGE_ROW_LAYOUT} className="native:overflow-hidden">
+        {rowOpen && kind && label ? (
+          <ScrollView
+            testID="stage-row"
+            horizontal
+            bounces={false}
+            overScrollMode="never"
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ gap: 8 }}
+            accessibilityLabel={`${label} images, oldest first`}
+          >
+            {row.images.map((image, index) => {
+              const selected = image.id === row.selectedId;
 
-            return (
-              <Pressable
-                key={image.id}
-                role="button"
-                accessibilityLabel={`${imageKindLabel(active.kind)} image ${index + 1}`}
-                accessibilityState={{ selected }}
-                onPress={() => onImagePress(image.id)}
-              >
-                <StageImage
-                  image={image}
-                  className={cn(
-                    "aspect-[3/4] w-16 rounded-lg border-2",
-                    selected ? "border-primary" : "border-transparent",
-                  )}
-                />
-              </Pressable>
-            );
-          })}
+              return (
+                <Pressable
+                  key={image.id}
+                  role="button"
+                  accessibilityLabel={`${label} image ${index + 1}`}
+                  accessibilityState={{ selected }}
+                  onPress={() => onImagePress(image.id)}
+                >
+                  <StageImage
+                    image={image}
+                    className={cn(
+                      "aspect-[3/4] w-16 rounded-lg border-2",
+                      selected ? "border-primary" : "border-transparent",
+                    )}
+                  />
+                </Pressable>
+              );
+            })}
 
-          <AddImageCard
-            label={imageKindLabel(active.kind)}
-            onPress={() => onAddPress(active.kind)}
-          />
-        </ScrollView>
-      ) : null}
+            <AddImageCard label={label} onPress={() => onAddPress(kind)} />
+          </ScrollView>
+        ) : null}
+      </Animated.View>
     </View>
   );
 }

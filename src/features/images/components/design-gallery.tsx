@@ -30,9 +30,9 @@ export function DesignGallery({ designId }: { designId: string }) {
     state,
     images,
     imageNotes,
-    view,
     journey,
     stageCards,
+    stageRow,
     notes,
     notesIndex,
     notesMenu,
@@ -92,8 +92,8 @@ export function DesignGallery({ designId }: { designId: string }) {
 
       <JourneyRail
         cards={stageCards}
-        active={view.stage}
-        selectedId={journey.image?.id ?? null}
+        row={stageRow}
+        rowOpen={state.stageRowOpen}
         attachFailed={state.attachFailed}
         onStagePress={(kind) => send({ type: "stage-pressed", kind })}
         onImagePress={(imageId) => send({ type: "image-pressed", imageId })}
