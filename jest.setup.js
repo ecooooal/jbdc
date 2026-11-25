@@ -26,13 +26,27 @@ jest.mock("react-native-reanimated", () => {
     // the factory once against the stand-in's zero keyboard keeps it callable.
     useAnimatedStyle: (factory) => factory(),
     FadeIn: { reduceMotion: () => ({}) },
-    FadeOut: { reduceMotion: () => ({}) },
     // The FAB's upward expansion sets its duration before asking to respect the
     // system's reduce-motion setting; the stand-in keeps that chain callable.
     FadeInUp: {
       duration: () => ({
         reduceMotion: () => ({}),
       }),
+    },
+    // The pager's stage word rises into place as it cross-fades; the builder
+    // only needs to stay chainable without the worklets runtime.
+    FadeInDown: {
+      duration: () => ({
+        withInitialValues: () => ({
+          reduceMotion: () => ({}),
+        }),
+      }),
+    },
+    FadeOut: {
+      duration: () => ({
+        reduceMotion: () => ({}),
+      }),
+      reduceMotion: () => ({}),
     },
     ReduceMotion: { System: "system" },
     // The Detail's arrival builder is only read when the screen mounts; the

@@ -2,7 +2,8 @@ import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { eq } from "drizzle-orm";
-import { act, render, screen, userEvent } from "@testing-library/react-native";
+import { Dimensions } from "react-native";
+import { act, fireEvent, render, screen, userEvent, within } from "@testing-library/react-native";
 import { designs, type ImageKind } from "@/features/database";
 import { DatabaseProvider } from "@/features/database/react";
 import { createSyncSubscribe, createTempDatabase } from "@/features/database/testing";
@@ -86,6 +87,86 @@ test("pressing a stage chip activates that stage", async () => {
   expect(screen.getByRole("button", { name: "Sketch" }).props.accessibilityState).toMatchObject({
     selected: true,
   });
+});
+
+test("the journey counter names the stage and the position across the journey", async () => {
+  const design = createDesign(database, { name: "Wool coat" });
+
+  await attach(design.id, "sketch", "sketch bytes", 1000);
+  await attach(design.id, "final", "final bytes", 2000);
+  await renderGallery(design.id);
+
+  expect(screen.getByLabelText("Final · 2 / 2")).toBeTruthy();
+});
+
+test("the filmstrip shows every image in journey order", async () => {
+  const design = createDesign(database, { name: "Wool coat" });
+
+  await attach(design.id, "inspiration", "inspiration bytes", 1000);
+  await attach(design.id, "final", "final bytes", 2000);
+  await renderGallery(design.id);
+
+  const filmstrip = within(screen.getByTestId("gallery-filmstrip"));
+
+  expect(filmstrip.getByRole("button", { name: "Inspiration image 1 of 2" })).toBeTruthy();
+  expect(filmstrip.getByRole("button", { name: "Final image 2 of 2" })).toBeTruthy();
+});
+
+test("the active filmstrip thumb is selected and names its stage", async () => {
+  const design = createDesign(database, { name: "Wool coat" });
+
+  await attach(design.id, "inspiration", "inspiration bytes", 1000);
+  await attach(design.id, "final", "final bytes", 2000);
+  await renderGallery(design.id);
+
+  const active = within(screen.getByTestId("gallery-filmstrip")).getByRole("button", {
+    name: "Final image 2 of 2",
+  });
+
+  expect(active.props.accessibilityState).toMatchObject({ selected: true });
+  expect(within(active).getByText("Final")).toBeTruthy();
+});
+
+test("pressing a filmstrip thumb moves the pager to that image", async () => {
+  const design = createDesign(database, { name: "Wool coat" });
+
+  await attach(design.id, "inspiration", "inspiration bytes", 1000);
+  await attach(design.id, "final", "final bytes", 2000);
+  await renderGallery(design.id);
+
+  expect(screen.getByLabelText("Final · 2 / 2")).toBeTruthy();
+
+  await userEvent.press(screen.getByRole("button", { name: "Inspiration image 1 of 2" }));
+
+  expect(screen.getByLabelText("Inspiration · 1 / 2")).toBeTruthy();
+});
+
+test("a pager settle selects the page it landed on", async () => {
+  const design = createDesign(database, { name: "Wool coat" });
+
+  await attach(design.id, "inspiration", "inspiration bytes", 1000);
+  await attach(design.id, "final", "final bytes", 2000);
+  await renderGallery(design.id);
+
+  expect(screen.getByLabelText("Final · 2 / 2")).toBeTruthy();
+
+  const pageWidth = Dimensions.get("window").width;
+
+  await fireEvent(screen.getByTestId("gallery-pager"), "momentumScrollEnd", {
+    nativeEvent: { contentOffset: { x: 0 }, layoutMeasurement: { width: pageWidth } },
+  });
+
+  expect(screen.getByLabelText("Inspiration · 1 / 2")).toBeTruthy();
+});
+
+test("a design with no images keeps the dashed frame and no chrome", async () => {
+  const design = createDesign(database, { name: "Early concept" });
+
+  await renderGallery(design.id);
+
+  expect(screen.getByTestId("gallery-pager-placeholder")).toBeTruthy();
+  expect(screen.queryByTestId("gallery-journey-counter")).toBeNull();
+  expect(screen.queryByTestId("gallery-filmstrip")).toBeNull();
 });
 
 test("the plus card attaches the picked files to the stage the owner chose", async () => {
@@ -226,12 +307,12 @@ test("more notes than the block shows are one press away", async () => {
   expect(screen.getByRole("button", { name: "Show fewer notes" })).toBeTruthy();
 });
 
-/** Opens the image detail on the hero's image. */
+/** Opens the image detail on the pager's current image. */
 async function openImageDetail(name: string) {
   await userEvent.press(screen.getByRole("button", { name }));
 }
 
-test("tapping the hero's image opens the image detail", async () => {
+test("tapping the pager's image opens the image detail", async () => {
   const design = createDesign(database, { name: "Wool coat" });
 
   await attach(design.id, "sketch", "sketch bytes", 1000);
@@ -263,10 +344,10 @@ test("reclassifying a non-Cover image in the image detail changes the Cover on r
 
   // The newer image of the higher kind is the Cover, so the sketch is the one
   // the owner has to reach for.
-  expect(screen.getByRole("button", { name: "Open Prototype image 1 of 1" })).toBeTruthy();
+  expect(screen.getByRole("button", { name: "Open Prototype image 2 of 2" })).toBeTruthy();
 
   await userEvent.press(screen.getByRole("button", { name: "Sketch" }));
-  await openImageDetail("Open Sketch image 1 of 1");
+  await openImageDetail("Open Sketch image 1 of 2");
   await userEvent.press(screen.getByRole("button", { name: "Classify as Final" }));
   await act(async () => {});
   await act(async () => live.notify("images"));
@@ -276,7 +357,7 @@ test("reclassifying a non-Cover image in the image detail changes the Cover on r
     "final",
     "prototype",
   ]);
-  expect(screen.getByRole("button", { name: "Open Final image 1 of 1" })).toBeTruthy();
+  expect(screen.getByRole("button", { name: "Open Final image 2 of 2" })).toBeTruthy();
 });
 
 test("Remove asks once before deleting the image and its notes", async () => {

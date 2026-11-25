@@ -24,7 +24,7 @@ export type GalleryStage = {
   images: readonly GalleryImage[];
 };
 
-/** Which way the owner swiped the hero. */
+/** Which way the pager moved. */
 export type SwipeDirection = "next" | "previous";
 
 /**
@@ -39,8 +39,8 @@ export type ImageNoteComposer = {
 
 /**
  * The gallery's decisions: which stage the rail's second row shows, which image
- * the hero shows, whether the last attach failed, and the state of the note
- * block beneath the hero. The selections are ids; the live list derives the
+ * the pager shows, whether the last attach failed, and the state of the note
+ * block beneath the pager. The selections are ids; the live list derives the
  * rows.
  */
 export type GalleryState = {
@@ -93,6 +93,7 @@ export type GalleryResult = {
 export type GalleryGesture =
   | { type: "stage-pressed"; kind: ImageKind }
   | { type: "image-pressed"; imageId: string }
+  | { type: "page-settled"; imageId: string }
   | { type: "hero-swiped"; direction: SwipeDirection };
 
 /**
@@ -245,13 +246,9 @@ export function createInitialGalleryState(designId: string): GalleryState {
   };
 }
 
-/** The current image's stage, position and count, derived from the live list. */
+/** The stage the gallery is on, derived from the live list. */
 export type GalleryView<Stage extends GalleryStage = GalleryStage> = {
   stage: Stage | null;
-  image: Stage["images"][number] | null;
-  /** 1-based position within the active stage; 0 when the stage has no image. */
-  position: number;
-  count: number;
 };
 
 /** The live journey grouped into stages, in journey order. */
@@ -292,23 +289,14 @@ function step(
 }
 
 /**
- * What the gallery shows right now: the active stage and its selected image.
+ * The stage the gallery is on: the one the rail shows and the pager's stage.
  * A pure derivation, so the component never repeats the selection rule.
  */
 export function galleryView<Stage extends GalleryStage>(
   stages: readonly Stage[],
   state: GalleryState,
 ): GalleryView<Stage> {
-  const stage = stages.find((candidate) => candidate.kind === state.kind) ?? null;
-  const image = stage?.images.find((candidate) => candidate.id === state.imageId) ?? null;
-  const index = stage && image ? stage.images.indexOf(image) : -1;
-
-  return {
-    stage,
-    image: image ?? null,
-    position: index + 1,
-    count: stage?.images.length ?? 0,
-  };
+  return { stage: stages.find((candidate) => candidate.kind === state.kind) ?? null };
 }
 
 /** The flat journey and where the gallery is in it. */
@@ -395,15 +383,33 @@ function only(state: GalleryState): GalleryResult {
 }
 
 /**
+ * The state after naming an image in the journey. A filmstrip press and a page
+ * settle share this rule: the live list says which stage holds the image, so a
+ * reclassification cannot leave the selection and the counter disagreeing.
+ */
+function imageSelected(
+  state: GalleryState,
+  stages: readonly GalleryStage[],
+  imageId: string,
+): GalleryState {
+  const located = locationOf(stages, imageId);
+
+  return located
+    ? { ...selected(state, located.kind, located.imageId), awaitingKind: null }
+    : state;
+}
+
+/**
  * The gallery's decisions. It opens on the Cover; a later read keeps the
  * selected image while it exists — moving it to the stage its reclassification
  * gave it — and falls back to the Cover when it is gone. An empty stage the
  * owner chose stays chosen until its first image arrives. A stage press starts
  * that stage at its oldest image; a swipe walks the journey in order, within a
- * stage and then across the next filled one, stopping at either end. An attach
- * that failed is a flag the rail reads until the owner tries again or presses a
- * stage, and it never moves the selection. The note composer opens on the
- * current image, closes when the note lands, and is dropped when the owner
+ * stage and then across the next filled one, stopping at either end. A pager
+ * settle selects the image it landed on, by the same rule as a thumb press. An
+ * attach that failed is a flag the rail reads until the owner tries again or
+ * presses a stage, and it never moves the selection. The note composer opens on
+ * the current image, closes when the note lands, and is dropped when the owner
  * moves on. The result carries the writes the event declares: the plus press
  * declares its pick, the notes' own presses declare their writes, and every
  * other event declares none.
@@ -448,13 +454,9 @@ export function galleryReducer(state: GalleryState, event: GalleryEvent): Galler
       });
     }
 
-    case "image-pressed": {
-      const located = locationOf(event.stages, event.imageId);
-
-      return only(
-        located ? { ...selected(state, located.kind, located.imageId), awaitingKind: null } : state,
-      );
-    }
+    case "image-pressed":
+    case "page-settled":
+      return only(imageSelected(state, event.stages, event.imageId));
 
     case "hero-swiped": {
       const stepped = step(event.stages, state.imageId, event.direction);

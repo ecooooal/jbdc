@@ -6,6 +6,7 @@ import {
   galleryReducer,
   galleryView,
   imageNoteBlockView,
+  journeyView,
   writeOutcome,
   type GalleryEffect,
   type GalleryEvent,
@@ -24,6 +25,7 @@ function eventOf(fact: GalleryFact, stages: readonly GalleryStage[]): GalleryEve
   switch (fact.type) {
     case "stage-pressed":
     case "image-pressed":
+    case "page-settled":
     case "hero-swiped":
       return { ...fact, stages };
     default:
@@ -135,6 +137,7 @@ export function useGallery(designId: string) {
     images: data.images,
     imageNotes: data.imageNotes,
     view: galleryView(stages, state),
+    journey: journeyView(stages, state),
     noteView,
     send,
     error,
