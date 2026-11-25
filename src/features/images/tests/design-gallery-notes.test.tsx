@@ -1,5 +1,4 @@
 import { act, screen, userEvent, within } from "@testing-library/react-native";
-import { formatNoteDate } from "../components/note-date";
 import { listDesignImageNotes } from "../lib/records";
 import {
   addNote,
@@ -49,7 +48,7 @@ test("a marker opens its note sheet with the note's text and created date", asyn
   const sheet = within(screen.getByTestId("note-sheet"));
 
   expect(sheet.getByText("First pass was fitted.")).toBeTruthy();
-  expect(sheet.getByText(formatNoteDate(2000))).toBeTruthy();
+  expect(sheet.getByText("Jan 1, 1970")).toBeTruthy();
   expect(sheet.queryByRole("button", { name: "Delete note 1" })).toBeNull();
   expect(screen.queryByLabelText("Image detail")).toBeNull();
 });
@@ -85,6 +84,7 @@ test("See all notes opens the sheet with every note", async () => {
   expect(sheet.getByText("Notes (2)")).toBeTruthy();
   expect(sheet.getByText("First pass was fitted.")).toBeTruthy();
   expect(sheet.getByText("Widened the shoulder.")).toBeTruthy();
+  expect(sheet.getAllByText("Jan 1, 1970")).toHaveLength(2);
 });
 
 test("opening the image detail closes the notes menu", async () => {

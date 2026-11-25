@@ -65,7 +65,7 @@ describe("the Design images live read", () => {
     });
   });
 
-  test("re-runs when an image note is added, so the note block follows", async () => {
+  test("re-runs when an image note is added, so the notes follow", async () => {
     const design = createDesign(database, { name: "Wool coat" });
 
     await writeImages(

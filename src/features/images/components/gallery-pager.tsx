@@ -124,6 +124,22 @@ function PagerImage({
 }
 
 /**
+ * The notes chrome the pager carries: the note markers' index down the image's
+ * right edge, the notes menu and its open state, and the presses each sends
+ * back. Every piece is a reducer derivation or a fact, so the chrome holds no
+ * state of its own.
+ */
+type NotesChrome = {
+  index: NotesIndexView<ImageNote>;
+  menu: NotesMenuView;
+  menuOpen: boolean;
+  onButtonPress: () => void;
+  onNotePress: (noteId: string) => void;
+  onAddNotePress: () => void;
+  onSeeAllPress: () => void;
+};
+
+/**
  * The pager: every image in the live journey, edge to edge at 3:4, square
  * edged, walking in order and bounded at both ends. The top chrome says where
  * the pager is; the filmstrip over the bottom edge jumps it elsewhere, and the
@@ -142,15 +158,7 @@ export function GalleryPager({
   onImagePressed,
 }: {
   journey: JourneyView<ImageStage>;
-  notes: {
-    index: NotesIndexView<ImageNote>;
-    menu: NotesMenuView;
-    menuOpen: boolean;
-    onButtonPress: () => void;
-    onNotePress: (noteId: string) => void;
-    onAddNotePress: () => void;
-    onSeeAllPress: () => void;
-  };
+  notes: NotesChrome;
   onPageSettled: (imageId: string) => void;
   onImageSelected: (imageId: string) => void;
   onImagePressed: (imageId: string) => void;

@@ -3,7 +3,7 @@ import { Sheet } from "@/shared/components/sheet";
 import { Button } from "@/shared/components/ui/button";
 import { Text } from "@/shared/components/ui/text";
 import type { ImageNote } from "../lib/images";
-import { formatNoteDate } from "./note-date";
+import { formatNoteDate } from "../lib/note-date";
 
 /**
  * One note read on its own: its full text and created date, in a paper sheet.

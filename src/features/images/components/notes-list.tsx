@@ -5,7 +5,7 @@ import { Icon } from "@/shared/components/ui/icon";
 import { Text } from "@/shared/components/ui/text";
 import { cn } from "@/shared/lib/utils";
 import type { ImageNote } from "../lib/images";
-import { formatNoteDate } from "./note-date";
+import { formatNoteDate } from "../lib/note-date";
 
 /**
  * One image's notes as a read-only list: oldest first, each with its text and
