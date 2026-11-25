@@ -33,7 +33,7 @@
 - Notes
 	- a note is read-only everywhere; deletion is the two-step delete, one armed row at a time, cleared by closing the notes sheet or arming another
 	- the notes sheet: the current image's notes, oldest first; Add note expands the inline composer at the top, only the list scrolls, and a stored note stays in the sheet
-	- the composer is keyboard-aware, bound to the current image; changing the image drops the draft; only a stored note collapses it
+	- the composer is keyboard-aware, bound to the current image; changing the image drops the draft; a stored note collapses it and leaves the sheet open, while Cancel or closing the sheet collapses it and drops the draft
 	- a tap on the image opens the image detail: full-screen, black photography surface, one image, the four kind pills (the only edit), Remove behind its one question, and the notes list read-only with the two-step delete; no add, no pager, no filmstrip
 	- the notes sheet is a `ModalBottomSheet` (ADR-0006); no sheet opens over the image detail
 - Stage block

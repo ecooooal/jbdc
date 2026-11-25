@@ -18,11 +18,10 @@ import { NotesList } from "./notes-list";
  * hides behind its one question before the image and its notes go. The notes
  * list is the same read-only list as the notes sheet, with the same two-step
  * delete; its presses go to the gallery reducer, which owns the one arming
- * rule. The
- * image detail is the whole screen, so the pager's swipe and the rail wait
- * behind it. The image keeps a bounded area and everything beneath it scrolls,
- * so a long note never pushes the controls out of reach. A removal that did
- * not land leaves the image open and says so beside Remove.
+ * rule. The image detail is the whole screen, so the pager's swipe and the rail
+ * wait behind it. The image keeps a bounded area and everything beneath it
+ * scrolls, so a long note never pushes the controls out of reach. A removal
+ * that did not land leaves the image open and says so beside Remove.
  */
 export function ImageDetail({
   image,

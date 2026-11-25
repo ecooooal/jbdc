@@ -1,7 +1,7 @@
 import { Plus } from "lucide-react-native";
 import type { ReactNode } from "react";
 import { useEffect, useRef } from "react";
-import { ScrollView, useWindowDimensions, View, type ScrollViewInstance } from "react-native";
+import { ScrollView, View, type ScrollViewInstance } from "react-native";
 import { useReanimatedKeyboardAnimation } from "react-native-keyboard-controller";
 import Animated, { useAnimatedStyle } from "react-native-reanimated";
 import { Sheet } from "@/shared/components/sheet";
@@ -37,20 +37,21 @@ export function NotesSheet({
   send: (fact: GalleryFact) => void;
 }) {
   const list = useRef<ScrollViewInstance>(null);
-  const previousCount = useRef(notes.length);
-  const { height: windowHeight } = useWindowDimensions();
+  const lastNoteId = notes.at(-1)?.id;
+  const previousLastNoteId = useRef(lastNoteId);
 
   // A stored note arrives through the live read while the sheet is open; move
   // the list to it so the owner sees what she just wrote without closing the
-  // sheet. Opening the sheet starts at the oldest note, so only a growing list
-  // moves it.
+  // sheet. The last note's id, not the count, says one arrived: a read that
+  // saves and deletes in one pass can leave the count unchanged. Opening the
+  // sheet changes no id, so it still starts at the oldest note.
   useEffect(() => {
-    if (notes.length > previousCount.current) {
+    if (lastNoteId !== previousLastNoteId.current) {
       list.current?.scrollToEnd({ animated: true });
     }
 
-    previousCount.current = notes.length;
-  }, [notes.length]);
+    previousLastNoteId.current = lastNoteId;
+  }, [lastNoteId]);
 
   return (
     <Sheet open={open} onClose={() => send({ type: "notes-sheet-closed" })}>
@@ -113,12 +114,7 @@ export function NotesSheet({
               </Button>
             )}
 
-            <ScrollView
-              ref={list}
-              accessibilityLabel="Notes"
-              showsVerticalScrollIndicator={false}
-              style={{ maxHeight: Math.round(windowHeight * 0.5) }}
-            >
+            <ScrollView ref={list} accessibilityLabel="Notes" showsVerticalScrollIndicator={false}>
               <NotesList
                 notes={notes}
                 armedNoteId={armedNoteId}

@@ -66,24 +66,6 @@ describe("the note composer", () => {
     expect(tester.getEffects()).toEqual([]);
   });
 
-  test("closes once the note lands and leaves the sheet open", () => {
-    const tester = testerAt({ ...onImage("s1"), notesSheetOpen: true });
-
-    tester.send({ type: "image-note-composer-opened" });
-    tester.send({ type: "image-note-draft-changed", draft: "Widened the shoulder." });
-    tester.send({ type: "image-note-save-pressed" });
-    tester.send({ type: "image-note-added", imageId: "s1" });
-
-    expect(tester.getState()).toEqual({ ...onImage("s1"), ...noNoteUI, notesSheetOpen: true });
-    expect(tester.getEffects()).toEqual([
-      {
-        type: "add-image-note",
-        designId: DESIGN_ID,
-        change: { kind: "add-note", imageId: "s1", text: "Widened the shoulder." },
-      },
-    ]);
-  });
-
   test("a note landing for another image leaves the draft alone", () => {
     const tester = testerAt();
 

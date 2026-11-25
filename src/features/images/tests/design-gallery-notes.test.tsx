@@ -180,3 +180,22 @@ test("the image detail keeps the image's notes and has no Add note", async () =>
   expect(detail.queryByRole("button", { name: "Add note" })).toBeNull();
   expect(detail.queryByLabelText("New note")).toBeNull();
 });
+
+test("one press on the image detail's trash control arms; a second deletes", async () => {
+  const design = await galleryWithNotes(2);
+
+  const detail = await openImageDetail();
+
+  await userEvent.press(detail.getByRole("button", { name: "Delete note 1" }));
+  await settleNotes();
+
+  expect(detail.getByText("Tap again to delete")).toBeTruthy();
+  expect(listDesignImageNotes(database, design.id)).toHaveLength(2);
+
+  await userEvent.press(detail.getByRole("button", { name: "Delete note 1" }));
+  await settleNotes();
+
+  expect(listDesignImageNotes(database, design.id)).toHaveLength(1);
+  expect(detail.queryByText("First pass was fitted.")).toBeNull();
+  expect(detail.getByText("Widened the shoulder.")).toBeTruthy();
+});

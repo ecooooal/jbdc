@@ -61,7 +61,7 @@ The current image's notes in one sheet: the count and Close at the top, Add note
 The one destructive rule for a note: the first press arms the row ("Tap again to delete"), the second removes it. One row is armed at a time; closing the notes sheet or the image detail, or arming another, disarms it. No timer, no dialog, no undo.
 
 **the composer**:
-The notes sheet's inline composer: the draft textarea with Save and Cancel, bound to the image it was opened on. Save is disabled while the trimmed draft is empty; only a stored note collapses it, leaving the sheet open; changing the image drops it.
+The notes sheet's inline composer: the draft textarea with Save and Cancel, bound to the image it was opened on. Save is disabled while the trimmed draft is empty; a stored note collapses it and leaves the sheet open, while Cancel or closing the sheet collapses it and drops the draft; changing the image drops it.
 
 **the image detail**:
 The full-screen view a tap on the image opens: one image on the black photography surface, the four kind pills that reclassify it, Remove behind its one question, and the notes list read-only with the two-step delete. No add, no pager, and no sheet opens over it.
