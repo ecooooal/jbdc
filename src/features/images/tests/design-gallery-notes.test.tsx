@@ -137,6 +137,28 @@ test("one press on the image detail's trash control arms; a second deletes", asy
   expect(detail.getByText("Widened the shoulder.")).toBeTruthy();
 });
 
+test("closing and reopening the image detail disarms the trash, so the next press only arms", async () => {
+  const design = await galleryWithNotes(2);
+
+  let detail = await openImageDetailNotes();
+
+  await userEvent.press(detail.getByRole("button", { name: "Delete note 1" }));
+  expect(detail.getByText("Tap again to delete")).toBeTruthy();
+
+  await userEvent.press(detail.getByRole("button", { name: "Close image detail" }));
+
+  expect(screen.queryByLabelText("Image detail")).toBeNull();
+
+  detail = await openImageDetailNotes();
+
+  expect(detail.queryByText("Tap again to delete")).toBeNull();
+
+  await userEvent.press(detail.getByRole("button", { name: "Delete note 1" }));
+
+  expect(listDesignImageNotes(database, design.id)).toHaveLength(2);
+  expect(detail.getByText("Tap again to delete")).toBeTruthy();
+});
+
 test("the image detail has no Add note control", async () => {
   await galleryWithNotes(1);
 

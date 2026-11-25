@@ -115,7 +115,7 @@ export function ImageDetail({
                 notes={notes}
                 armedNoteId={armedNoteId}
                 onDeletePress={onNoteDeletePress}
-                onPhotography
+                overPhotography
               />
             </View>
 

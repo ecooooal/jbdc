@@ -119,6 +119,14 @@ describe("the two-step delete", () => {
     expect(closed.effects).toEqual([]);
   });
 
+  test("closing the image detail disarms the row and changes nothing else", () => {
+    const armedState = armed();
+    const closed = send(armedState, { type: "image-detail-closed" });
+
+    expect(closed.state).toEqual({ ...armedState, armedNoteId: null });
+    expect(closed.effects).toEqual([]);
+  });
+
   test("an image change clears the armed note", () => {
     const changed = send(armed(), {
       type: "hero-swiped",

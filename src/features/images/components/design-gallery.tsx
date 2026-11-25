@@ -1,5 +1,6 @@
 import { View } from "react-native";
 import { Text } from "@/shared/components/ui/text";
+import type { ImageDetailEvent } from "../lib/image-detail-reducer";
 import { imageNotesOf } from "../lib/image-notes";
 import { useGallery } from "../lib/use-gallery";
 import { useImageDetail } from "../lib/use-image-detail";
@@ -43,6 +44,13 @@ export function DesignGallery({ designId }: { designId: string }) {
   const detailImage = detail.state.imageId
     ? (images.find((image) => image.id === detail.state.imageId) ?? null)
     : null;
+  // The detail's close also reaches the gallery, which owns the two-step
+  // delete's arming and drops it so a return visit starts unarmed.
+  const sendDetail = (event: ImageDetailEvent) => {
+    detail.send(event);
+
+    if (event.type === "detail-closed") send({ type: "image-detail-closed" });
+  };
 
   if (error) {
     return <Text className="text-destructive">{error.message}</Text>;
@@ -98,7 +106,7 @@ export function DesignGallery({ designId }: { designId: string }) {
           armedNoteId={state.armedNoteId}
           confirmingRemoval={detail.state.confirmingRemoval}
           removeFailed={detail.state.removeFailed}
-          send={detail.send}
+          send={sendDetail}
           onNoteDeletePress={(noteId) => send({ type: "image-note-delete-pressed", noteId })}
         />
       ) : null}

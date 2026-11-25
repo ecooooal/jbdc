@@ -67,7 +67,7 @@ One note read on its own: full text and created date, read-only, no delete.
 Every note on the current image, oldest first, with the two-step delete.
 
 **the two-step delete**:
-The one destructive rule for a note: the first press arms the row ("Tap again to delete"), the second removes it. One row is armed at a time; closing the sheet or arming another disarms it. No timer, no dialog, no undo.
+The one destructive rule for a note: the first press arms the row ("Tap again to delete"), the second removes it. One row is armed at a time; closing the sheet or the image detail, or arming another, disarms it. No timer, no dialog, no undo.
 
 **the composer**:
 The add-note sheet: the draft textarea with Save and Cancel, bound to the image it was opened on. Only a stored note closes it; changing the image drops it.

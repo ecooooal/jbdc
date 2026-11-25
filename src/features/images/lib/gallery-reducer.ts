@@ -133,7 +133,8 @@ export type GalleryFact =
   | { type: "note-sheet-closed" }
   | { type: "see-all-notes-opened" }
   | { type: "see-all-notes-closed" }
-  | { type: "image-detail-opened" };
+  | { type: "image-detail-opened" }
+  | { type: "image-detail-closed" };
 
 /** The picker's answer that picked no file: a change of mind, or a refused permission. */
 type PickEnding = Extract<ImagePickResult, { kind: "cancelled" } | { kind: "denied" }>;
@@ -454,9 +455,10 @@ function imageSelected(
  * moves on. The notes button expands a menu with Add note and See all; a marker
  * opens one note's read-only sheet and closes the menu; see-all opens the list
  * and closes it too. A delete press only arms its row, and a second press on
- * the same row declares exactly one removal. The result carries the writes the
- * event declares: the plus press declares its pick, the notes' own presses
- * declare their writes, and every other event declares none.
+ * the same row declares exactly one removal; closing the image detail disarms
+ * it, so a return visit never deletes on its first press. The result carries
+ * the writes the event declares: the plus press declares its pick, the notes'
+ * own presses declare their writes, and every other event declares none.
  */
 export function galleryReducer(state: GalleryState, event: GalleryEvent): GalleryResult {
   switch (event.type) {
@@ -621,5 +623,10 @@ export function galleryReducer(state: GalleryState, event: GalleryEvent): Galler
     case "image-detail-opened":
       // The detail is the whole screen, so the in-screen menu closes behind it.
       return only({ ...state, notesMenuOpen: false });
+
+    case "image-detail-closed":
+      // One row is armed at a time, and closing the detail ends the arming: a
+      // return visit must never delete on its first press.
+      return only({ ...state, armedNoteId: null });
   }
 }
