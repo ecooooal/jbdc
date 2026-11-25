@@ -291,7 +291,7 @@ test("a note written in the composer is stored beside the current image", async 
   expect(screen.queryByLabelText("New note")).toBeNull();
 });
 
-test("a note is removed in one press, with no confirmation", async () => {
+test("a note is removed only after a second press", async () => {
   const design = createDesign(database, { name: "Wool coat" });
 
   await attach(design.id, "sketch", "sketch bytes", 1000);
@@ -299,7 +299,12 @@ test("a note is removed in one press, with no confirmation", async () => {
   await renderGallery(design.id);
 
   await userEvent.press(screen.getByRole("button", { name: "Delete note 1" }));
+  await act(async () => {});
+  await act(async () => live.notify("image_notes"));
 
+  expect(listDesignImageNotes(database, design.id)).toHaveLength(1);
+
+  await userEvent.press(screen.getByRole("button", { name: "Delete note 1" }));
   await act(async () => {});
   await act(async () => live.notify("image_notes"));
 

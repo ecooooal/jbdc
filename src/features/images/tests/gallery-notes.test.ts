@@ -199,22 +199,6 @@ describe("declaring a note write", () => {
     expect(tester.getState()).toEqual(gallery);
     expect(tester.getEffects()).toEqual([]);
   });
-
-  test("the delete press forwards the row's id and leaves the list as it was", () => {
-    const gallery = { ...onImage("s1"), imageNotesExpanded: true };
-    const tester = testerAt(gallery);
-
-    tester.send({ type: "image-note-delete-pressed", noteId: "n1" });
-
-    expect(tester.getState()).toEqual(gallery);
-    expect(tester.getEffects()).toEqual([
-      {
-        type: "remove-image-note",
-        designId: DESIGN_ID,
-        change: { kind: "remove-note", noteId: "n1" },
-      },
-    ]);
-  });
 });
 
 describe("a refused note", () => {

@@ -39,9 +39,9 @@ export type ImageNoteComposer = {
 
 /**
  * The gallery's decisions: which stage the rail's second row shows, which image
- * the pager shows, whether the last attach failed, and the state of the note
- * block beneath the pager. The selections are ids; the live list derives the
- * rows.
+ * the pager shows, whether the last attach failed, the note composer, and the
+ * notes chrome — the menu, the note sheet, see-all, and the armed delete row.
+ * The selections are ids; the live list derives the rows.
  */
 export type GalleryState = {
   /** The Design this gallery shows; every effect names it. */
@@ -67,6 +67,14 @@ export type GalleryState = {
    * closes again when the owner moves to another image.
    */
   imageNotesExpanded: boolean;
+  /** Whether the notes button's menu is expanded. */
+  notesMenuOpen: boolean;
+  /** The note the read-only note sheet shows; null when the sheet is closed. */
+  noteSheetId: string | null;
+  /** Whether the see-all sheet lists the current image's notes. */
+  allNotesOpen: boolean;
+  /** The note row whose first delete press armed it; null when none is armed. */
+  armedNoteId: string | null;
 };
 
 /**
@@ -125,7 +133,13 @@ export type GalleryFact =
   | { type: "image-note-draft-changed"; draft: string }
   | { type: "image-note-save-pressed" }
   | { type: "image-note-delete-pressed"; noteId: string }
-  | { type: "image-notes-more-pressed" };
+  | { type: "image-notes-more-pressed" }
+  | { type: "notes-button-pressed" }
+  | { type: "note-marker-pressed"; noteId: string }
+  | { type: "note-sheet-closed" }
+  | { type: "see-all-notes-opened" }
+  | { type: "see-all-notes-closed" }
+  | { type: "image-detail-opened" };
 
 /** The picker's answer that picked no file: a change of mind, or a refused permission. */
 type PickEnding = Extract<ImagePickResult, { kind: "cancelled" } | { kind: "denied" }>;
@@ -243,6 +257,10 @@ export function createInitialGalleryState(designId: string): GalleryState {
     attachFailed: false,
     imageNoteComposer: null,
     imageNotesExpanded: false,
+    notesMenuOpen: false,
+    noteSheetId: null,
+    allNotesOpen: false,
+    armedNoteId: null,
   };
 }
 
@@ -337,6 +355,55 @@ export function journeyView<Stage extends GalleryStage>(
   };
 }
 
+/**
+ * The notes menu as the button expands it: the count it carries and the two
+ * rows it offers. There is no row that only hides the notes; pressing the
+ * notes button again is the way the menu closes.
+ */
+export type NotesMenuAction = "add-note" | "see-all";
+
+export type NotesMenuView = {
+  count: number;
+  actions: readonly NotesMenuAction[];
+};
+
+/** The menu's derivation: Add note and See all notes, oldest-first count included. */
+export function notesMenuView<Note>(notes: readonly Note[]): NotesMenuView {
+  return { count: notes.length, actions: ["add-note", "see-all"] };
+}
+
+/** The most numbered markers an image shows before it folds the rest into `+N`. */
+export const NOTE_MARKER_LIMIT = 4;
+
+/** One marker on the image's right edge: a numbered note, or the `+N` overflow. */
+export type NoteMarker<Note> =
+  { kind: "note"; note: Note; number: number } | { kind: "overflow"; count: number };
+
+export type NotesIndexView<Note> = {
+  count: number;
+  markers: readonly NoteMarker<Note>[];
+};
+
+/**
+ * The notes index on the current image's right edge: one numbered marker per
+ * note, oldest first, capped at four with a `+N` marker for the rest. The
+ * numbers derive from each note's position on every read, so a removal
+ * renumbers the rest with nothing stored.
+ */
+export function notesIndexView<Note>(notes: readonly Note[]): NotesIndexView<Note> {
+  const shown = notes.slice(0, NOTE_MARKER_LIMIT);
+  const overflow = notes.length - shown.length;
+  const markers: NoteMarker<Note>[] = shown.map((note, index) => ({
+    kind: "note",
+    note,
+    number: index + 1,
+  }));
+
+  if (overflow > 0) markers.push({ kind: "overflow", count: overflow });
+
+  return { count: notes.length, markers };
+}
+
 /** How many notes the block shows before it offers the rest. */
 export const IMAGE_NOTE_COLLAPSED_COUNT = 2;
 
@@ -369,14 +436,25 @@ export function imageNoteBlockView<Note>(
 }
 
 /**
- * The state after a selection. The note UI belongs to one image, so a half
- * written note and the expanded list drop as soon as the current image changes;
- * staying on the same image — a reclassification, say — keeps both.
+ * The state after a selection. The notes belong to one image, so a half written
+ * note, the expanded list, the menu, the note sheet, see-all, and the armed
+ * delete all drop as soon as the current image changes; staying on the same
+ * image — a reclassification, say — keeps them.
  */
 function selected(state: GalleryState, kind: ImageKind, imageId: string | null): GalleryState {
   if (imageId === state.imageId) return { ...state, kind, imageId };
 
-  return { ...state, kind, imageId, imageNoteComposer: null, imageNotesExpanded: false };
+  return {
+    ...state,
+    kind,
+    imageId,
+    imageNoteComposer: null,
+    imageNotesExpanded: false,
+    notesMenuOpen: false,
+    noteSheetId: null,
+    allNotesOpen: false,
+    armedNoteId: null,
+  };
 }
 
 /** A result that asks for no write. */
@@ -412,9 +490,12 @@ function imageSelected(
  * attach that failed is a flag the rail reads until the owner tries again or
  * presses a stage, and it never moves the selection. The note composer opens on
  * the current image, closes when the note lands, and is dropped when the owner
- * moves on. The result carries the writes the event declares: the plus press
- * declares its pick, the notes' own presses declare their writes, and every
- * other event declares none.
+ * moves on. The notes button expands a menu with Add note and See all; a marker
+ * opens one note's read-only sheet and closes the menu; see-all opens the list
+ * and closes it too. A delete press only arms its row, and a second press on
+ * the same row declares exactly one removal. The result carries the writes the
+ * event declares: the plus press declares its pick, the notes' own presses
+ * declare their writes, and every other event declares none.
  */
 export function galleryReducer(state: GalleryState, event: GalleryEvent): GalleryResult {
   switch (event.type) {
@@ -481,10 +562,15 @@ export function galleryReducer(state: GalleryState, event: GalleryEvent): Galler
 
     case "image-note-composer-opened":
       // A note needs the image it explains; with none selected there is nothing
-      // to open the composer on.
+      // to open the composer on. Add note is a menu row, so opening the composer
+      // closes the menu it was chosen from.
       return only(
         state.imageId
-          ? { ...state, imageNoteComposer: { imageId: state.imageId, draft: "" } }
+          ? {
+              ...state,
+              imageNoteComposer: { imageId: state.imageId, draft: "" },
+              notesMenuOpen: false,
+            }
           : state,
       );
 
@@ -519,9 +605,15 @@ export function galleryReducer(state: GalleryState, event: GalleryEvent): Galler
         : only(state);
 
     case "image-note-delete-pressed":
-      // The row's id is the whole request; the live read is the only answer.
+      // The first press only arms its row; a second press on the same row
+      // declares exactly one removal and disarms it. The live read drops the row
+      // once the write lands, and arming another id replaces this one.
+      if (state.armedNoteId !== event.noteId) {
+        return only({ ...state, armedNoteId: event.noteId });
+      }
+
       return {
-        state,
+        state: { ...state, armedNoteId: null },
         effects: [
           {
             type: "remove-image-note",
@@ -543,5 +635,33 @@ export function galleryReducer(state: GalleryState, event: GalleryEvent): Galler
 
     case "image-notes-more-pressed":
       return only({ ...state, imageNotesExpanded: !state.imageNotesExpanded });
+
+    case "notes-button-pressed":
+      return only({ ...state, notesMenuOpen: !state.notesMenuOpen });
+
+    case "note-marker-pressed":
+      // A marker is the note's own door: it opens that note's sheet and closes
+      // the menu it was reached past.
+      return only({ ...state, notesMenuOpen: false, noteSheetId: event.noteId });
+
+    case "note-sheet-closed":
+      return only({ ...state, noteSheetId: null });
+
+    case "see-all-notes-opened":
+      return only({
+        ...state,
+        noteSheetId: null,
+        notesMenuOpen: false,
+        allNotesOpen: true,
+      });
+
+    case "see-all-notes-closed":
+      // One row is armed at a time, and closing the sheet ends the arming: a
+      // return visit must never delete on its first press.
+      return only({ ...state, allNotesOpen: false, armedNoteId: null });
+
+    case "image-detail-opened":
+      // The detail is the whole screen, so the in-screen menu closes behind it.
+      return only({ ...state, notesMenuOpen: false });
   }
 }
