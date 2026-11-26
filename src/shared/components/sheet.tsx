@@ -5,6 +5,7 @@ import {
 } from "@swmansion/react-native-bottom-sheet";
 import { type ReactNode, useId } from "react";
 import { View, type ColorValue } from "react-native";
+import { useKeyboardState } from "react-native-keyboard-controller";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useResolveClassNames } from "uniwind";
 import { cn } from "@/shared/lib/utils";
@@ -36,8 +37,13 @@ const SHEET_SETTLE_MS = 200;
  * the only lit thing the eye has left.
  *
  * The content detent follows its measured content immediately, because a sheet
- * that animates its own content (the notes sheet's composer keyboard padding)
- * would otherwise lag behind the height it measures.
+ * that animates its own content would otherwise lag behind the height it
+ * measures.
+ *
+ * The keyboard lifts the card instead of growing it: the detent's bottom inset
+ * grows to the keyboard's height, so the plate keeps its shape and its frame
+ * whole, and the fields stay above the keys rather than the keys climbing into
+ * the plate.
  */
 export function Sheet({
   open,
@@ -58,16 +64,27 @@ export function Sheet({
   // keeps it on the palette in both appearances.
   const scrim = useResolveClassNames("bg-overlay") as { backgroundColor?: ColorValue };
   const insets = useSafeAreaInsets();
+  // The keyboard's settled height, reported by the controller that already
+  // wraps the app. It replaces the bottom safe area the keys now cover, so the
+  // card keeps its floating gap above them instead of letting them climb into
+  // the plate. The controller keeps the last height after the keys leave — it
+  // is the closing animation's frame — so only a visible keyboard counts.
+  const keyboardHeight = useKeyboardState((state) => (state.isVisible ? state.height : 0));
   const id = useId();
   const depth = useSheetDepth(id, open);
   // The closed detent ignores insets; the open one floats the card clear of
   // the screen's sides and above the home indicator or gesture bar, and keeps
-  // the same gap under the status bar when the content grows tall.
+  // the same gap under the status bar when the content grows tall. An open
+  // keyboard replaces the bottom safe area it covers.
   const detents: ModalDetent[] = [
     0,
     {
       value: "content",
-      insets: { start: SHEET_INSET, end: SHEET_INSET, bottom: insets.bottom + SHEET_INSET },
+      insets: {
+        start: SHEET_INSET,
+        end: SHEET_INSET,
+        bottom: Math.max(insets.bottom, keyboardHeight) + SHEET_INSET,
+      },
     },
   ];
 
@@ -100,8 +117,10 @@ export function Sheet({
  * distance from the edge.
  *
  * Sixteen points of padding leaves the same air between the frame and the
- * content on every side, and gives the title a quieter measure than each
- * sheet's own padding did when it was tuned for a full-width panel.
+ * content on every side, and the same sixteen between one field and the next —
+ * the sheet's own list rhythm. The header's control is taller than its title,
+ * so the title gains a little more air below it than the fields get between
+ * them, and `SheetFooter` adds the rest above the closing row.
  *
  * Sheets pass their test id through because each body is still the surface's
  * own; everything else about it belongs to the wrapper.
@@ -116,8 +135,23 @@ export function SheetBody({
   children?: ReactNode;
 }) {
   return (
-    <View testID={testID} className={cn("gap-3 p-4", className)}>
+    <View testID={testID} className={cn("gap-4 p-4", className)}>
       <SheetFrame />
+      {children}
+    </View>
+  );
+}
+
+/**
+ * The closing row a sheet ends on: its actions on one line, set a section's
+ * distance below the last field rather than a field's distance, so the footer
+ * reads as the sheet's decision and not as another row of the form. `justify-end`
+ * is the default; a sheet whose two actions sit at opposite ends of the decision
+ * — Remove beside Close — overrides the alignment only.
+ */
+export function SheetFooter({ className, children }: { className?: string; children?: ReactNode }) {
+  return (
+    <View className={cn("flex-row items-center justify-end gap-2 pt-2", className)}>
       {children}
     </View>
   );

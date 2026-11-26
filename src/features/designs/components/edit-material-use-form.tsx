@@ -1,6 +1,4 @@
-import { View } from "react-native";
-import { KeyboardPadding } from "@/shared/components/keyboard-padding";
-import { SheetBody } from "@/shared/components/sheet";
+import { SheetBody, SheetFooter } from "@/shared/components/sheet";
 import { Button } from "@/shared/components/ui/button";
 import { Input } from "@/shared/components/ui/input";
 import { Text } from "@/shared/components/ui/text";
@@ -43,77 +41,75 @@ export function EditMaterialUseForm({
   }
 
   return (
-    <KeyboardPadding>
-      <SheetBody testID="edit-material-sheet">
-        <SheetHeader title="Edit material" closeLabel="Close material" onClose={close} />
+    <SheetBody testID="edit-material-sheet">
+      <SheetHeader title="Edit material" closeLabel="Close material" onClose={close} />
 
-        <FormField label="Material">
-          <TaxonomySelect
-            label="Material"
-            placeholder="No material"
-            value={selectedMaterial}
-            items={materialItems}
-            disabled={status !== "ready"}
-            clearable={false}
-            onSelect={(material) => {
-              if (!material || material.id === state.materialId) return;
+      <FormField label="Material">
+        <TaxonomySelect
+          label="Material"
+          placeholder="No material"
+          value={selectedMaterial}
+          items={materialItems}
+          disabled={status !== "ready"}
+          clearable={false}
+          onSelect={(material) => {
+            if (!material || material.id === state.materialId) return;
 
-              send({
-                type: "material-use-panel-fact",
-                fact: { type: "material-chosen", materialId: material.id },
-              });
-            }}
-          />
-        </FormField>
+            send({
+              type: "material-use-panel-fact",
+              fact: { type: "material-chosen", materialId: material.id },
+            });
+          }}
+        />
+      </FormField>
 
-        <FormField label="Colour">
-          <Input
-            value={state.colour}
-            onChangeText={(colour) =>
-              send({ type: "material-use-panel-fact", fact: { type: "colour-changed", colour } })
-            }
-            onBlur={() =>
-              send({ type: "material-use-panel-fact", fact: { type: "colour-committed" } })
-            }
-            onSubmitEditing={() =>
-              send({ type: "material-use-panel-fact", fact: { type: "colour-committed" } })
-            }
-            returnKeyType="done"
-            placeholder="Ivory"
-            autoFocus
-            accessibilityLabel="Colour"
-          />
-        </FormField>
+      <FormField label="Colour">
+        <Input
+          value={state.colour}
+          onChangeText={(colour) =>
+            send({ type: "material-use-panel-fact", fact: { type: "colour-changed", colour } })
+          }
+          onBlur={() =>
+            send({ type: "material-use-panel-fact", fact: { type: "colour-committed" } })
+          }
+          onSubmitEditing={() =>
+            send({ type: "material-use-panel-fact", fact: { type: "colour-committed" } })
+          }
+          returnKeyType="done"
+          placeholder="Ivory"
+          autoFocus
+          accessibilityLabel="Colour"
+        />
+      </FormField>
 
-        <FormField label="Role">
-          <MaterialUseRoleSelect
-            value={state.role}
-            onChange={(role) =>
-              send({ type: "material-use-panel-fact", fact: { type: "role-chosen", role } })
-            }
-          />
-        </FormField>
+      <FormField label="Role">
+        <MaterialUseRoleSelect
+          value={state.role}
+          onChange={(role) =>
+            send({ type: "material-use-panel-fact", fact: { type: "role-chosen", role } })
+          }
+        />
+      </FormField>
 
-        {materialsError ? (
-          <ReadError message="The Material list could not be loaded." error={materialsError} />
-        ) : null}
-        {state.error ? <FieldError message={state.error} /> : null}
+      {materialsError ? (
+        <ReadError message="The Material list could not be loaded." error={materialsError} />
+      ) : null}
+      {state.error ? <FieldError message={state.error} /> : null}
 
-        <View className="flex-row justify-between gap-2">
-          <Button
-            size="sm"
-            variant="destructive"
-            onPress={() =>
-              send({ type: "material-use-panel-fact", fact: { type: "remove-pressed" } })
-            }
-          >
-            <Text>Remove material</Text>
-          </Button>
-          <Button size="sm" variant="ghost" accessibilityLabel="Close material" onPress={close}>
-            <Text>Close</Text>
-          </Button>
-        </View>
-      </SheetBody>
-    </KeyboardPadding>
+      <SheetFooter className="justify-between">
+        <Button
+          size="sm"
+          variant="destructive"
+          onPress={() =>
+            send({ type: "material-use-panel-fact", fact: { type: "remove-pressed" } })
+          }
+        >
+          <Text>Remove material</Text>
+        </Button>
+        <Button size="sm" variant="ghost" accessibilityLabel="Close material" onPress={close}>
+          <Text>Close</Text>
+        </Button>
+      </SheetFooter>
+    </SheetBody>
   );
 }

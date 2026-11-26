@@ -22,8 +22,8 @@ jest.mock("react-native-reanimated", () => {
   return {
     __esModule: true,
     default: Animated,
-    // The sheet's keyboard padding is worked out in a style worklet; running
-    // the factory once against the stand-in's zero keyboard keeps it callable.
+    // Animated styles are worked out in a worklet; running the factory once
+    // against the stand-in's values keeps it callable.
     useAnimatedStyle: (factory) => factory(),
     // The stage tabs' fill and press share one value each; the stand-in keeps
     // the get/set surface and resolves each timing to its target value.
@@ -100,12 +100,16 @@ jest.mock("react-native-keyboard-controller", () => {
     height: { get: () => 0, value: 0 },
     progress: { get: () => 0, value: 0 },
   };
+  const keyboardState = { height: 0, isVisible: false };
 
   return {
     KeyboardProvider: View,
     KeyboardAwareScrollView: ScrollView,
     KeyboardToolbar: View,
     useReanimatedKeyboardAnimation: () => keyboard,
+    // The sheet reads the settled keyboard height to lift its card above the
+    // keys; a test renders with no keyboard, so the selector gets zero.
+    useKeyboardState: (selector) => selector(keyboardState),
   };
 });
 

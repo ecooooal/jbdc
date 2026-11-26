@@ -1,6 +1,4 @@
-import { View } from "react-native";
-import { KeyboardPadding } from "@/shared/components/keyboard-padding";
-import { SheetBody } from "@/shared/components/sheet";
+import { SheetBody, SheetFooter } from "@/shared/components/sheet";
 import { Button } from "@/shared/components/ui/button";
 import { Input } from "@/shared/components/ui/input";
 import { Text } from "@/shared/components/ui/text";
@@ -45,35 +43,33 @@ export function NewMaterialForm({
   }
 
   return (
-    <KeyboardPadding>
-      <SheetBody testID="new-material-sheet">
-        <SheetHeader
-          title="New material"
-          closeLabel="Close new material"
-          onClose={() => onFact({ type: "closed" })}
-        />
+    <SheetBody testID="new-material-sheet">
+      <SheetHeader
+        title="New material"
+        closeLabel="Close new material"
+        onClose={() => onFact({ type: "closed" })}
+      />
 
-        <Input
-          value={inline.name}
-          onChangeText={(name) => onFact({ type: "name-changed", name })}
-          onSubmitEditing={create}
-          placeholder="Name"
-          maxLength={MATERIAL_NAME_MAX_LENGTH}
-          autoFocus
-          accessibilityLabel="New material name"
-        />
+      <Input
+        value={inline.name}
+        onChangeText={(name) => onFact({ type: "name-changed", name })}
+        onSubmitEditing={create}
+        placeholder="Name"
+        maxLength={MATERIAL_NAME_MAX_LENGTH}
+        autoFocus
+        accessibilityLabel="New material name"
+      />
 
-        {inline.error ? <FieldError message={inline.error} /> : null}
+      {inline.error ? <FieldError message={inline.error} /> : null}
 
-        <View className="flex-row justify-end gap-2">
-          <Button size="sm" variant="ghost" onPress={() => onFact({ type: "closed" })}>
-            <Text>Cancel</Text>
-          </Button>
-          <Button size="sm" onPress={create}>
-            <Text>Add to list</Text>
-          </Button>
-        </View>
-      </SheetBody>
-    </KeyboardPadding>
+      <SheetFooter>
+        <Button size="sm" variant="ghost" onPress={() => onFact({ type: "closed" })}>
+          <Text>Cancel</Text>
+        </Button>
+        <Button size="sm" onPress={create}>
+          <Text>Add to list</Text>
+        </Button>
+      </SheetFooter>
+    </SheetBody>
   );
 }
