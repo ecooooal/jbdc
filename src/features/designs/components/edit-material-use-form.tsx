@@ -10,6 +10,7 @@ import {
 } from "../lib/edit-design-reducer";
 import { FormField } from "./form-field";
 import { MaterialUseRoleSelect } from "./material-use-role-select";
+import { ReadError } from "./read-error";
 import { TaxonomySelect } from "./taxonomy-select";
 
 /**
@@ -37,7 +38,7 @@ export function EditMaterialUseForm({
       <FormField label="Material">
         <TaxonomySelect
           label="Material"
-          placeholder="Choose a material"
+          placeholder="No material"
           value={selectedMaterial}
           items={materialItems}
           disabled={status !== "ready"}
@@ -82,7 +83,7 @@ export function EditMaterialUseForm({
       </FormField>
 
       {materialsError ? (
-        <Text className="text-destructive text-sm">{materialsError.message}</Text>
+        <ReadError message="The Material list could not be loaded." error={materialsError} />
       ) : null}
       {state.error ? <Text className="text-destructive text-sm">{state.error}</Text> : null}
 
@@ -93,9 +94,8 @@ export function EditMaterialUseForm({
           onPress={() =>
             send({ type: "material-use-panel-fact", fact: { type: "remove-pressed" } })
           }
-          accessibilityLabel="Remove material use"
         >
-          <Text>Remove</Text>
+          <Text>Remove material</Text>
         </Button>
         <Button
           size="sm"

@@ -45,7 +45,7 @@ export function MaterialUsesTable({
 
       {uses.length === 0 ? (
         <Text variant="muted" className="px-4 py-3">
-          No materials yet
+          No materials added
         </Text>
       ) : (
         uses.map((materialUse) => {

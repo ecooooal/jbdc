@@ -22,6 +22,7 @@ import { DesignStatusBadge } from "./design-status-badge";
 import { FieldRows } from "./field-rows";
 import { FormField } from "./form-field";
 import { MaterialUsesSection } from "./material-uses-section";
+import { ReadError } from "./read-error";
 import { TaxonomySelect } from "./taxonomy-select";
 
 /**
@@ -70,9 +71,12 @@ export function EditDesignScreen({ designId }: { designId: string }) {
     categories.find((category) => category.id === state.draft.categoryId) ?? null;
   const selectedCollection =
     collections.find((collection) => collection.id === state.draft.collectionId) ?? null;
-  const taxonomySummary = `${selectedCategory?.name ?? "No category"} · ${
-    selectedCollection?.name ?? "No collection"
-  }`;
+  const taxonomySummary =
+    selectedCategory === null && selectedCollection === null
+      ? "No category or collection"
+      : `${selectedCategory?.name ?? "No category"} · ${
+          selectedCollection?.name ?? "No collection"
+        }`;
 
   function textRowLeft(field: DesignTextEditableField): void {
     send({ type: "text-row-left", field });
@@ -123,10 +127,12 @@ export function EditDesignScreen({ designId }: { designId: string }) {
       </View>
 
       {readError ? (
-        <Text className="text-destructive px-6 pt-4">{readError.message}</Text>
+        <View className="px-6 pt-4">
+          <ReadError message="This design could not be loaded." error={readError} />
+        </View>
       ) : readStatus === "loading" ? null : !design ? (
         <View className="flex-1 items-center justify-center gap-2 px-6 pb-16">
-          <Text variant="h4">This design is not here</Text>
+          <Text variant="h4">Design not found</Text>
           <Text variant="muted" className="text-center">
             It may have been removed.
           </Text>
@@ -221,7 +227,7 @@ export function EditDesignScreen({ designId }: { designId: string }) {
                   autoFocus
                   textAlignVertical="top"
                   className="h-28 py-2"
-                  placeholder="What this piece is"
+                  placeholder="What the design is"
                   accessibilityLabel="Description"
                 />
                 {fieldError("description")}
@@ -244,7 +250,10 @@ export function EditDesignScreen({ designId }: { designId: string }) {
           </View>
 
           {taxonomyError ? (
-            <Text className="text-destructive text-sm">{taxonomyError.message}</Text>
+            <ReadError
+              message="The Category and Collection lists could not be loaded."
+              error={taxonomyError}
+            />
           ) : null}
 
           <Tabs

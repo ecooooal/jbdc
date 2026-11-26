@@ -26,6 +26,7 @@ import type { DesignDetail } from "../lib/records";
 import { useDesignDetail } from "../lib/use-design-detail";
 import { DesignStatusBadge } from "./design-status-badge";
 import { MaterialUsesTable } from "./material-uses-table";
+import { ReadError } from "./read-error";
 import { SectionTabs } from "./section-tabs";
 
 const SHORT_DATE_FORMAT = new Intl.DateTimeFormat(undefined, {
@@ -183,20 +184,22 @@ function sectionContent(
   return { filled, materialUses, isEmpty: filled.length === 0 && materialUses.length === 0 };
 }
 
-/** One section read-only: filled rows only, or a note when it has none. */
+/** One section read-only: filled rows only, or a note naming it when it has none. */
 function DetailSection({
   design,
   tab,
+  label,
   fields,
 }: {
   design: DesignDetail;
   tab: DesignSectionTab;
+  label: string;
   fields: readonly DesignSectionFieldDefinition[];
 }) {
   const { filled, materialUses, isEmpty } = sectionContent(design, tab, fields);
 
   if (isEmpty) {
-    return <Text variant="muted">Nothing recorded yet</Text>;
+    return <Text variant="muted">No {label} recorded yet</Text>;
   }
 
   return (
@@ -219,8 +222,8 @@ function DetailSection({
 /**
  * The two long sections read-only. A design that has recorded nothing shows no
  * tab content at all; otherwise both tabs are there, each hiding its empty
- * rows and saying so when the whole section is empty. Detail opens on the
- * first section that has something to show.
+ * rows and naming the section when the whole section is empty. Detail opens on
+ * the first section that has something to show.
  */
 function DetailSections({ design }: { design: DesignDetail }) {
   const [chosen, setChosen] = useState<DesignSectionTab | null>(null);
@@ -229,7 +232,12 @@ function DetailSections({ design }: { design: DesignDetail }) {
   );
 
   if (recorded.length === 0) {
-    return <Text variant="muted">Nothing recorded yet</Text>;
+    return (
+      <View className="gap-1">
+        <Text variant="muted">No Specification or Creative direction recorded yet</Text>
+        <Text variant="muted">Open Edit to record them</Text>
+      </View>
+    );
   }
 
   const tab = chosen ?? recorded[0].tab;
@@ -242,9 +250,9 @@ function DetailSections({ design }: { design: DesignDetail }) {
       }}
     >
       <SectionTabs />
-      {DESIGN_SECTIONS.map(({ tab: value, fields }) => (
+      {DESIGN_SECTIONS.map(({ tab: value, label, fields }) => (
         <TabsContent key={value} value={value}>
-          <DetailSection design={design} tab={value} fields={fields} />
+          <DetailSection design={design} tab={value} label={label} fields={fields} />
         </TabsContent>
       ))}
     </Tabs>
@@ -296,12 +304,14 @@ export function DesignDetailScreen({ designId }: { designId: string }) {
           <DetailHeader design={design} />
 
           {error ? (
-            <Text className="text-destructive px-6 pt-4">{error.message}</Text>
+            <View className="px-6 pt-4">
+              <ReadError message="This design could not be loaded." error={error} />
+            </View>
           ) : status === "loading" ? null : design ? (
             <DesignDetailContent design={design} />
           ) : (
             <View className="flex-1 items-center justify-center gap-2 px-6 pb-16">
-              <Text variant="h4">This design is not here</Text>
+              <Text variant="h4">Design not found</Text>
               <Text variant="muted" className="text-center">
                 It may have been removed.
               </Text>

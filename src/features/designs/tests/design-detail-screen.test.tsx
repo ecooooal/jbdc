@@ -348,7 +348,7 @@ test("Detail hides Creative direction rows the owner has not recorded", async ()
   expect(screen.queryByText("Palette")).toBeNull();
 });
 
-test("an empty section waits with Nothing recorded yet", async () => {
+test("an empty section names the section it has nothing for", async () => {
   const design = createDesign(database, {
     name: "Sunday Afternoon",
     silhouette: "Relaxed A-line",
@@ -358,7 +358,7 @@ test("an empty section waits with Nothing recorded yet", async () => {
 
   await userEvent.press(screen.getByRole("tab", { name: "Creative direction" }));
 
-  expect(screen.getByText("Nothing recorded yet")).toBeTruthy();
+  expect(screen.getByText("No Creative direction recorded yet")).toBeTruthy();
 });
 
 test("a design that has recorded nothing shows no tab content", async () => {
@@ -366,7 +366,8 @@ test("a design that has recorded nothing shows no tab content", async () => {
 
   await renderDetail(design.id);
 
-  expect(screen.getByText("Nothing recorded yet")).toBeTruthy();
+  expect(screen.getByText("No Specification or Creative direction recorded yet")).toBeTruthy();
+  expect(screen.getByText("Open Edit to record them")).toBeTruthy();
   expect(screen.queryByText("Specification")).toBeNull();
 });
 
@@ -403,7 +404,7 @@ test("a design with only Material uses opens on Specification", async () => {
   expect(screen.getByRole("tab", { name: "Specification" })).toBeTruthy();
   expect(screen.getByText("Wool")).toBeTruthy();
   expect(screen.getByText("Charcoal")).toBeTruthy();
-  expect(screen.queryByText("Nothing recorded yet")).toBeNull();
+  expect(screen.queryByText("No Specification or Creative direction recorded yet")).toBeNull();
 });
 
 test("Detail composes the gallery from the images module", async () => {

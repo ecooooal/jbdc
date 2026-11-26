@@ -135,7 +135,7 @@ describe("edit hero", () => {
     expect(screen.getByText("No description")).toBeTruthy();
 
     await openRow("Description");
-    expect(screen.getByPlaceholderText("What this piece is")).toBeTruthy();
+    expect(screen.getByPlaceholderText("What the design is")).toBeTruthy();
   });
 
   test("the hero shows the Status, Category, and Collection", async () => {
@@ -292,7 +292,7 @@ describe("Creative direction rows", () => {
     await openTab("Creative direction");
     await openRow("Concept");
 
-    expect(screen.getByPlaceholderText("What this piece is trying to do")).toBeTruthy();
+    expect(screen.getByPlaceholderText("What the design is trying to do")).toBeTruthy();
   });
 
   test("a Creative direction row typed and left is stored and collapses", async () => {
@@ -325,7 +325,7 @@ describe("Materials", () => {
     for (const heading of ["Material", "Colour", "Role"]) {
       expect(screen.getByText(heading)).toBeTruthy();
     }
-    expect(screen.getByText("No materials yet")).toBeTruthy();
+    expect(screen.getByText("No materials added")).toBeTruthy();
     expect(screen.getByRole("button", { name: "Add material" })).toBeTruthy();
   });
 
@@ -343,7 +343,7 @@ describe("Materials", () => {
     expect(screen.getByText("Silk crêpe")).toBeTruthy();
 
     await userEvent.type(screen.getByLabelText("Colour"), "Ivory");
-    await userEvent.press(screen.getByRole("button", { name: "Add material use" }));
+    await userEvent.press(screen.getByRole("button", { name: "Add material" }));
 
     await act(async () => {
       live.notify("design_materials");
@@ -376,7 +376,7 @@ describe("Materials", () => {
     expect(screen.getByLabelText("Material")).toBeTruthy();
     expect(screen.getByLabelText("Colour")).toHaveDisplayValue("Charcoal");
     expect(screen.getByLabelText("Role")).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Remove material use" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Remove material" })).toBeTruthy();
   });
 
   test("a colour typed and left writes the use with no Save action", async () => {
@@ -436,7 +436,7 @@ describe("Materials", () => {
 
     await renderEdit(design.id);
     await userEvent.press(screen.getByRole("button", { name: "Edit Wool (Charcoal)" }));
-    await userEvent.press(screen.getByRole("button", { name: "Remove material use" }));
+    await userEvent.press(screen.getByRole("button", { name: "Remove material" }));
 
     await act(async () => {
       live.notify("design_materials");
@@ -444,7 +444,7 @@ describe("Materials", () => {
     });
 
     expect(listMaterialUses(database, design.id)).toEqual([]);
-    expect(screen.getByText("No materials yet")).toBeTruthy();
+    expect(screen.getByText("No materials added")).toBeTruthy();
   });
 });
 

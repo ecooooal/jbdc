@@ -17,6 +17,7 @@ import { inlineCreationResult, type InlineCreationEvent } from "../lib/inline-cr
 import { FormField } from "./form-field";
 import { InlineCreationPanel } from "./inline-creation-panel";
 import { MaterialUseRoleSelect } from "./material-use-role-select";
+import { ReadError } from "./read-error";
 import { TaxonomySelect } from "./taxonomy-select";
 
 /**
@@ -63,7 +64,7 @@ export function AddMaterialUseForm({
       <FormField label="Material">
         <TaxonomySelect
           label="Material"
-          placeholder="Choose a material"
+          placeholder="No material"
           value={selectedMaterial}
           items={materials}
           disabled={status !== "ready"}
@@ -108,7 +109,7 @@ export function AddMaterialUseForm({
       </FormField>
 
       {materialsError ? (
-        <Text className="text-destructive text-sm">{materialsError.message}</Text>
+        <ReadError message="The Material list could not be loaded." error={materialsError} />
       ) : null}
       {state.error ? <Text className="text-destructive text-sm">{state.error}</Text> : null}
 
@@ -116,13 +117,8 @@ export function AddMaterialUseForm({
         <Button size="sm" variant="ghost" onPress={onCancel}>
           <Text>Cancel</Text>
         </Button>
-        <Button
-          size="sm"
-          disabled={!canAdd}
-          onPress={onConfirm}
-          accessibilityLabel="Add material use"
-        >
-          <Text>Add</Text>
+        <Button size="sm" disabled={!canAdd} onPress={onConfirm}>
+          <Text>Add material</Text>
         </Button>
       </View>
     </View>
