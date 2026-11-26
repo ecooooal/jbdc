@@ -21,6 +21,7 @@ colors:
   destructive-foreground: "#FFFFFF"
   photography: "#000000"
   photography-ink: "#FFFFFF"
+  destructive-on-photography: "#E27770"
   overlay: "rgba(0, 0, 0, 0.60)"
   overlay-foreground: "#FFFFFF"
   dark:

@@ -64,6 +64,7 @@ export function NotesList({
                 size="icon"
                 variant="ghost"
                 className={cn(overPhotography && "active:bg-photography-ink/10")}
+                hitSlop={2}
                 accessibilityLabel={`Delete note ${index + 1}`}
                 accessibilityHint={
                   armed ? "Deletes this note" : "Press twice in a row to delete this note"
@@ -75,7 +76,9 @@ export function NotesList({
                   className={cn(
                     "size-4",
                     armed
-                      ? "text-destructive"
+                      ? overPhotography
+                        ? "text-destructive-on-photography"
+                        : "text-destructive"
                       : overPhotography
                         ? "text-photography-ink/60"
                         : "text-muted-foreground",
@@ -84,7 +87,13 @@ export function NotesList({
               </Button>
             </View>
             {armed ? (
-              <Text className="text-destructive text-xs" accessibilityLiveRegion="polite">
+              <Text
+                className={cn(
+                  "text-xs",
+                  overPhotography ? "text-destructive-on-photography" : "text-destructive",
+                )}
+                accessibilityLiveRegion="polite"
+              >
                 Tap again to delete
               </Text>
             ) : null}

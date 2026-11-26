@@ -1,7 +1,9 @@
 import { Image as ExpoImage } from "expo-image";
-import { ImageIcon, X } from "lucide-react-native";
-import { Modal, Pressable, ScrollView, View } from "react-native";
+import { X } from "lucide-react-native";
+import { useEffect, useRef } from "react";
+import { Modal, Pressable, ScrollView, View, type ScrollViewInstance } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useReducedMotion } from "react-native-reanimated";
 import { IMAGE_KINDS } from "@/features/database";
 import { Button } from "@/shared/components/ui/button";
 import { Icon } from "@/shared/components/ui/icon";
@@ -20,8 +22,9 @@ import { NotesList } from "./notes-list";
  * delete; its presses go to the gallery reducer, which owns the one arming
  * rule. The image detail is the whole screen, so the pager's swipe and the rail
  * wait behind it. The image keeps a bounded area and everything beneath it
- * scrolls, so a long note never pushes the controls out of reach. A removal
- * that did not land leaves the image open and says so beside Remove.
+ * scrolls, so a long note never pushes the controls out of reach; the one
+ * question grows the end of the page and the view follows it. A removal that
+ * did not land leaves the image open and says so beside Remove.
  */
 export function ImageDetail({
   image,
@@ -42,6 +45,15 @@ export function ImageDetail({
 }) {
   const uri = useImageUri(image);
   const label = imageKindLabel(image.kind);
+  const scroll = useRef<ScrollViewInstance>(null);
+  const reduced = useReducedMotion();
+
+  // The question grows the end of the page, so the view follows it to keep the
+  // whole block and its answer on screen. Reduced motion arrives on the spot
+  // rather than sliding.
+  useEffect(() => {
+    if (confirmingRemoval) scroll.current?.scrollToEnd({ animated: !reduced });
+  }, [confirmingRemoval, reduced]);
 
   return (
     <Modal visible animationType="fade" onRequestClose={() => send({ type: "detail-closed" })}>
@@ -50,13 +62,14 @@ export function ImageDetail({
         accessibilityLabel="Image detail"
         accessibilityViewIsModal
       >
-        <SafeAreaView className="flex-1" edges={["top", "left", "right", "bottom"]}>
+        <SafeAreaView style={{ flex: 1 }} edges={["top", "left", "right", "bottom"]}>
           <View className="flex-row items-center justify-between px-4 py-1">
             <Text className="text-xs font-semibold text-photography-ink/70">{label}</Text>
             <Button
               size="icon"
               variant="ghost"
               className="active:bg-photography-ink/10"
+              hitSlop={4}
               accessibilityLabel="Close image detail"
               onPress={() => send({ type: "detail-closed" })}
             >
@@ -64,7 +77,7 @@ export function ImageDetail({
             </Button>
           </View>
 
-          <View className="h-1/2 items-center justify-center px-2">
+          <View className="h-1/2 items-center justify-center px-6 py-2">
             {uri ? (
               <ExpoImage
                 source={{ uri }}
@@ -73,13 +86,18 @@ export function ImageDetail({
                 style={{ width: "100%", height: "100%" }}
               />
             ) : (
-              <Icon as={ImageIcon} className="size-10 text-photography-ink/40" />
+              <View className="h-full w-full items-center justify-center rounded-md border border-dashed border-photography-ink/40 px-6">
+                <Text variant="muted" className="text-center text-photography-ink/60">
+                  This image could not be opened.
+                </Text>
+              </View>
             )}
           </View>
 
           <ScrollView
+            ref={scroll}
             className="flex-1"
-            contentContainerStyle={{ gap: 16, paddingHorizontal: 24, paddingBottom: 48 }}
+            contentContainerClassName="gap-6 px-6 pb-12 pt-6"
             showsVerticalScrollIndicator={false}
           >
             <View className="flex-row flex-wrap gap-2">
@@ -92,9 +110,10 @@ export function ImageDetail({
                     role="button"
                     accessibilityLabel={`Classify as ${imageKindLabel(kind)}`}
                     accessibilityState={{ selected }}
+                    hitSlop={{ top: 6, bottom: 6, left: 3, right: 3 }}
                     onPress={() => send({ type: "kind-pressed", kind })}
                     className={cn(
-                      "rounded-full border px-3 py-1",
+                      "justify-center rounded-full border px-3 py-2",
                       selected
                         ? "border-photography-ink bg-photography-ink"
                         : "border-photography-ink/40 active:bg-photography-ink/10",
@@ -113,7 +132,7 @@ export function ImageDetail({
               })}
             </View>
 
-            <View className="gap-2">
+            <View className="gap-3">
               <Text className="font-serif text-lg font-semibold leading-tight text-photography-ink">
                 {notes.length > 0 ? `Notes (${notes.length})` : "Notes"}
               </Text>
@@ -125,15 +144,16 @@ export function ImageDetail({
               />
             </View>
 
-            <View className="gap-2 border-t border-photography-ink/15 pt-4">
+            <View className="gap-3 border-t border-photography-ink/15 pt-4">
               {confirmingRemoval ? (
-                <View className="gap-2 rounded-xl bg-photography-ink/10 p-3">
+                <View className="gap-3 rounded-xl bg-photography-ink/10 p-4">
                   <Text className="text-photography-ink">Remove this image and its notes?</Text>
                   <View className="flex-row justify-end gap-2">
                     <Button
                       size="sm"
                       variant="ghost"
-                      className="active:bg-photography-ink/10"
+                      className="active:bg-photography-ink/20"
+                      hitSlop={4}
                       accessibilityLabel="Keep image"
                       onPress={() => send({ type: "remove-cancelled" })}
                     >
@@ -142,6 +162,7 @@ export function ImageDetail({
                     <Button
                       size="sm"
                       variant="destructive"
+                      hitSlop={4}
                       accessibilityLabel="Remove image and notes"
                       onPress={() => send({ type: "remove-confirmed" })}
                     >
@@ -150,20 +171,29 @@ export function ImageDetail({
                   </View>
                 </View>
               ) : (
-                <Button
-                  size="sm"
-                  variant="destructive"
-                  className="self-start"
-                  accessibilityLabel="Remove image"
-                  onPress={() => send({ type: "remove-pressed" })}
-                >
-                  <Text>Remove image</Text>
-                </Button>
-              )}
+                <View className="flex-row items-center gap-3">
+                  <Pressable
+                    role="button"
+                    accessibilityLabel="Remove image"
+                    hitSlop={4}
+                    onPress={() => send({ type: "remove-pressed" })}
+                    className="justify-center rounded-md py-2 active:opacity-60"
+                  >
+                    <Text className="text-sm font-medium text-destructive-on-photography">
+                      Remove image
+                    </Text>
+                  </Pressable>
 
-              {removeFailed ? (
-                <Text className="text-destructive text-sm">The image could not be removed.</Text>
-              ) : null}
+                  {removeFailed ? (
+                    <Text
+                      className="flex-1 text-sm text-destructive-on-photography"
+                      accessibilityLiveRegion="polite"
+                    >
+                      The image could not be removed.
+                    </Text>
+                  ) : null}
+                </View>
+              )}
             </View>
           </ScrollView>
         </SafeAreaView>

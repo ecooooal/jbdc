@@ -21,6 +21,7 @@ colors:
   destructive-foreground: "#FFFFFF"
   photography: "#000000"
   photography-ink: "#FFFFFF"
+  destructive-on-photography: "#E27770"
   overlay: "rgba(0, 0, 0, 0.60)"
   overlay-foreground: "#FFFFFF"
   dark:
@@ -290,6 +291,7 @@ A warm, low-saturation paper palette whose only saturated voices are two accents
 - **Thread Line** (`border`, #E8E5DF / #444444): hairline borders, row dividers, and input strokes.
 - **Photography Black** (`photography`, #000000): the full-screen image detail and the ground of the pager plate. It exists only on the photography surface.
 - **Photography Ink** (`photography-ink`, #FFFFFF): white text and glyphs on the black surface.
+- **Photography Red** (`destructive-on-photography`, #E27770): Rejection Red on Photography Black. The black ground takes the lifted red — the light scheme's #B94B45 reaches only 4.2:1 there, under the readable floor — so armed deletes, failed removals, and other destruction on the black surface stay legible in both schemes.
 - **Photography Overlay** (`overlay`, rgba(0, 0, 0, 0.60)): the translucent pill behind stage, position, note, and notes-count chrome over an image, and the scrim behind a floating sheet.
 - **Overlay Ink** (`overlay-foreground`, #FFFFFF): text and glyphs on a photography overlay pill.
 
@@ -316,6 +318,7 @@ The code's shadcn-style slot names resolve to this palette:
 | `border`, `input` | Thread Line |
 | `photography` | Photography Black |
 | `photography-ink` | Photography Ink |
+| `destructive-on-photography` | Photography Red |
 | `overlay` | Photography Overlay |
 | `overlay-foreground` | Overlay Ink |
 
@@ -470,7 +473,7 @@ The same wrapper carries Edit's four sheets and the choice sheets they open, and
 
 ### The image detail (signature)
 
-A full-screen black photography surface with white ink. The stage label sits top-left at 12px semibold 70% white, with a ghost close control opposite. The image is fit whole inside a bounded half-screen stage. Classification is one pill per kind: the selected pill is white with black text; the rest are 40% white strokes that fill to 10% white when pressed. Notes read on the black surface with 60% white dates and 15% white hairlines. Remove asks its one question in a 14px white/10 block; a failed removal says so in Rejection Red beside the control. No paper surface enters this screen.
+A full-screen black photography surface with white ink. The stage label sits top-left at 12px semibold 70% white, with a ghost close control opposite. The image is fit whole inside a bounded half-screen stage, inset to the screen's 24px margin, and a file that cannot be read keeps the dashed frame there with one line saying so — never a glyph. Classification is one pill per kind: the selected pill is white with black text; the rest are 40% white strokes that fill to 10% white when pressed. Notes read on the black surface with 60% white dates and 15% white hairlines. Remove waits as red text at the end of the page, under its hairline; it asks its one question in a 14px white/10 block, and a failed removal says so beside the control. Rejection Red lifts to Photography Red on this surface, because the light scheme's red does not reach the readable floor on black. No paper surface enters this screen.
 
 ### The Library's floating action
 

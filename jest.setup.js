@@ -79,6 +79,9 @@ jest.mock("react-native-reanimated", () => {
       }),
     },
     ReduceMotion: { System: "system" },
+    // The image detail follows its growing question without a slide when the
+    // system asks; the stand-in reports the default, motion allowed.
+    useReducedMotion: () => false,
     // The Detail's arrival builder is only read when the screen mounts; the
     // stand-in keeps the chain callable without a worklets runtime.
     ZoomIn: {

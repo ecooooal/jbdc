@@ -44,6 +44,7 @@
       --color-ring: #687c68;
       --color-photography: #000000;
       --color-photography-ink: #ffffff;
+      --color-destructive-on-photography: #e27770;
       --color-overlay: rgba(0, 0, 0, 0.6);
       --color-overlay-foreground: #ffffff;
     }
@@ -75,6 +76,7 @@
       --color-ring: #a4b69a;
       --color-photography: #000000;
       --color-photography-ink: #ffffff;
+      --color-destructive-on-photography: #e27770;
       --color-overlay: rgba(0, 0, 0, 0.6);
       --color-overlay-foreground: #ffffff;
     }
