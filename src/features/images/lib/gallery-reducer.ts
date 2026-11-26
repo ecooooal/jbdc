@@ -458,6 +458,45 @@ function imageSelected(
 }
 
 /**
+ * The state after a live read: keep the selected image while it exists, keep a
+ * chosen empty stage while it is still empty, and otherwise open on the Cover.
+ * It is a rule, not a moment: the gallery applies it to the state it renders on
+ * the same pass that new rows arrive, so the first frame with images is already
+ * on the Cover instead of an empty plate, and the reducer applies it to the
+ * state it stores for later gestures.
+ */
+export function galleryAfterRead(
+  state: GalleryState,
+  stages: readonly GalleryStage[],
+  cover: string | null,
+): GalleryState {
+  const kept = locationOf(stages, state.imageId);
+
+  if (kept) return { ...selected(state, kept.kind, kept.imageId), awaitingKind: null };
+
+  // The chosen empty stage keeps its place when a read arrives: it holds
+  // the stage empty until its first image, then selects that image. Without
+  // a chosen stage the Cover wins, so a gallery opened on no images still
+  // follows the first Cover that appears.
+  if (state.awaitingKind) {
+    const chosen = stages.find((candidate) => candidate.kind === state.awaitingKind);
+    const first = chosen?.images[0];
+
+    return {
+      ...selected(state, state.awaitingKind, first?.id ?? null),
+      awaitingKind: first ? null : state.awaitingKind,
+    };
+  }
+
+  const locatedCover = locationOf(stages, cover);
+
+  return {
+    ...selected(state, locatedCover?.kind ?? state.kind, locatedCover?.imageId ?? null),
+    awaitingKind: null,
+  };
+}
+
+/**
  * The gallery's decisions. It opens on the Cover; a later read keeps the
  * selected image while it exists — moving it to the stage its reclassification
  * gave it — and falls back to the Cover when it is gone. An empty stage the
@@ -480,32 +519,8 @@ function imageSelected(
  */
 export function galleryReducer(state: GalleryState, event: GalleryEvent): GalleryResult {
   switch (event.type) {
-    case "images-read": {
-      const kept = locationOf(event.stages, state.imageId);
-
-      if (kept) return only({ ...selected(state, kept.kind, kept.imageId), awaitingKind: null });
-
-      // The chosen empty stage keeps its place when a read arrives: it holds
-      // the stage empty until its first image, then selects that image. Without
-      // a chosen stage the Cover wins, so a gallery opened on no images still
-      // follows the first Cover that appears.
-      if (state.awaitingKind) {
-        const chosen = event.stages.find((candidate) => candidate.kind === state.awaitingKind);
-        const first = chosen?.images[0];
-
-        return only({
-          ...selected(state, state.awaitingKind, first?.id ?? null),
-          awaitingKind: first ? null : state.awaitingKind,
-        });
-      }
-
-      const cover = locationOf(event.stages, event.cover);
-
-      return only({
-        ...selected(state, cover?.kind ?? state.kind, cover?.imageId ?? null),
-        awaitingKind: null,
-      });
-    }
+    case "images-read":
+      return only(galleryAfterRead(state, event.stages, event.cover));
 
     case "stage-pressed": {
       // The active card is the same stage the gallery is on. Pressing it

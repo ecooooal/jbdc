@@ -1,8 +1,9 @@
-import { useCallback, useLayoutEffect, useMemo } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import { useDatabase, useLiveRead } from "@/features/database/react";
 import { useReducerRunner } from "@/shared/hooks/use-reducer-runner";
 import {
   createInitialGalleryState,
+  galleryAfterRead,
   galleryReducer,
   journeyView,
   stageTabsView,
@@ -115,18 +116,20 @@ export function useGallery(designId: string) {
     perform,
   );
 
-  // The read lands before the frame paints: on the render where the live read
-  // first has rows, the gallery is already on the Cover, so the loading frame
-  // hands straight to the plate instead of flashing an empty one.
-  useLayoutEffect(() => {
+  // The read is applied to the state this render uses, not one effect later, so
+  // the first frame with rows already shows the Cover instead of an empty
+  // plate. The reducer keeps the same state for the gestures that follow.
+  const view = useMemo(() => galleryAfterRead(state, stages, cover), [state, stages, cover]);
+
+  useEffect(() => {
     dispatch({ type: "images-read", stages, cover });
   }, [dispatch, stages, cover]);
 
   // The notes belong to the current image and stay in the live read; the rows
   // derive on every read without being copied into the reducer.
   const notes = useMemo(
-    () => imageNotesOf(data.imageNotes, state.imageId),
-    [data.imageNotes, state.imageId],
+    () => imageNotesOf(data.imageNotes, view.imageId),
+    [data.imageNotes, view.imageId],
   );
 
   const send = useCallback(
@@ -135,13 +138,13 @@ export function useGallery(designId: string) {
   );
 
   return {
-    state,
+    state: view,
     stages,
     images: data.images,
     imageNotes: data.imageNotes,
-    journey: journeyView(stages, state),
-    stageTabs: stageTabsView(stages, state).tabs,
-    stageRow: stageRowView(stages, state),
+    journey: journeyView(stages, view),
+    stageTabs: stageTabsView(stages, view).tabs,
+    stageRow: stageRowView(stages, view),
     notes,
     send,
     error,
