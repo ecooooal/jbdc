@@ -3,9 +3,9 @@ import {
   type ModalDetent,
   type SurfaceStyle,
 } from "@swmansion/react-native-bottom-sheet";
-import { type ReactNode, useId } from "react";
+import { type ReactNode, useEffect, useId, useState } from "react";
 import { View, type ColorValue } from "react-native";
-import { useKeyboardState } from "react-native-keyboard-controller";
+import { KeyboardController, KeyboardEvents } from "react-native-keyboard-controller";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useResolveClassNames } from "uniwind";
 import { cn } from "@/shared/lib/utils";
@@ -15,8 +15,47 @@ import { useSheetDepth } from "./sheet-stack";
 /** The floating card's gap from the screen's sides, and above its bottom safe area. */
 const SHEET_INSET = 12;
 
-/** DESIGN.md's Quiet Turn: a sheet arrives and leaves within 200ms. */
+/**
+ * DESIGN.md's Quiet Turn: a sheet arrives and leaves within 200ms. The same
+ * spring carries the card between its two keyboard heights.
+ */
 const SHEET_SETTLE_MS = 200;
+
+/**
+ * The height the keys hold the card at, from the leading edge of the keyboard's
+ * move in either direction.
+ *
+ * The controller's settled state only reports a hide once the keys have
+ * finished leaving, so a card that followed it would hang in the air for the
+ * whole exit and then drop in one frame. The will-events let the card start back
+ * down as the keys start down, and the host's spring carries it to its rest; on
+ * the way up the same spring starts when the keys start rising.
+ *
+ * The showing frame announces the height. A hiding frame announces none, so the
+ * last shown height stays on hand until the next show replaces it.
+ */
+function useKeyboardLift(): number {
+  const [keyboard, setKeyboard] = useState(() => ({
+    open: KeyboardController.isVisible(),
+    height: KeyboardController.state().height,
+  }));
+
+  useEffect(() => {
+    const show = KeyboardEvents.addListener("keyboardWillShow", (event) =>
+      setKeyboard({ open: true, height: event.height }),
+    );
+    const hide = KeyboardEvents.addListener("keyboardWillHide", () =>
+      setKeyboard((previous) => ({ open: false, height: previous.height })),
+    );
+
+    return () => {
+      show.remove();
+      hide.remove();
+    };
+  }, []);
+
+  return keyboard.open ? keyboard.height : 0;
+}
 
 /**
  * The sheet wrapper: the one place the app configures a modal bottom sheet. It
@@ -43,7 +82,9 @@ const SHEET_SETTLE_MS = 200;
  * The keyboard lifts the card instead of growing it: the detent's bottom inset
  * grows to the keyboard's height, so the plate keeps its shape and its frame
  * whole, and the fields stay above the keys rather than the keys climbing into
- * the plate.
+ * the plate. The lift begins with the keys, in either direction, and the host
+ * springs the card between the two heights, so the card travels with the
+ * keyboard rather than arriving after it.
  */
 export function Sheet({
   open,
@@ -64,12 +105,10 @@ export function Sheet({
   // keeps it on the palette in both appearances.
   const scrim = useResolveClassNames("bg-overlay") as { backgroundColor?: ColorValue };
   const insets = useSafeAreaInsets();
-  // The keyboard's settled height, reported by the controller that already
-  // wraps the app. It replaces the bottom safe area the keys now cover, so the
-  // card keeps its floating gap above them instead of letting them climb into
-  // the plate. The controller keeps the last height after the keys leave — it
-  // is the closing animation's frame — so only a visible keyboard counts.
-  const keyboardHeight = useKeyboardState((state) => (state.isVisible ? state.height : 0));
+  // The keyboard's height while it is up. It replaces the bottom safe area the
+  // keys now cover, so the card keeps its floating gap above them instead of
+  // letting them climb into the plate.
+  const keyboardLift = useKeyboardLift();
   const id = useId();
   const depth = useSheetDepth(id, open);
   // The closed detent ignores insets; the open one floats the card clear of
@@ -83,7 +122,7 @@ export function Sheet({
       insets: {
         start: SHEET_INSET,
         end: SHEET_INSET,
-        bottom: Math.max(insets.bottom, keyboardHeight) + SHEET_INSET,
+        bottom: Math.max(insets.bottom, keyboardLift) + SHEET_INSET,
       },
     },
   ];
@@ -97,7 +136,10 @@ export function Sheet({
       onIndexChange={(index) => {
         if (index === 0) onClose();
       }}
-      animateContentHeight={false}
+      // The host springs the card to what its detents resolve to, so the
+      // keyboard's lift and drop travel instead of snapping in one frame, and a
+      // row added to a sheet makes room the same way.
+      animateContentHeight
       settleDuration={SHEET_SETTLE_MS}
       scrimColor={scrim.backgroundColor}
       surface={<SheetSurface depth={depth} />}

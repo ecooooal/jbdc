@@ -101,15 +101,18 @@ jest.mock("react-native-keyboard-controller", () => {
     progress: { get: () => 0, value: 0 },
   };
   const keyboardState = { height: 0, isVisible: false };
+  const noSubscription = { remove: () => {} };
 
   return {
     KeyboardProvider: View,
     KeyboardAwareScrollView: ScrollView,
     KeyboardToolbar: View,
     useReanimatedKeyboardAnimation: () => keyboard,
-    // The sheet reads the settled keyboard height to lift its card above the
-    // keys; a test renders with no keyboard, so the selector gets zero.
-    useKeyboardState: (selector) => selector(keyboardState),
+    // The sheet reads the lead edge of the keyboard's move to lift its card,
+    // and its current height when it mounts with the keys already up; a test
+    // renders with no keyboard, so neither signal arrives.
+    KeyboardEvents: { addListener: () => noSubscription },
+    KeyboardController: { isVisible: () => false, state: () => keyboardState },
   };
 });
 
