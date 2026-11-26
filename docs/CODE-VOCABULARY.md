@@ -22,6 +22,14 @@ What a reducer's result asks a runner to perform, carried beside the state it re
 **runner**:
 The one hook, `useReducerRunner` at `src/shared/hooks/use-reducer-runner.ts`, behind the visit, the gallery and the image detail. It owns the state, the latest ref, the state-then-latest ordering, and the effect loop; each surface keeps only its perform body, which performs the effect and folds the ending. It carries no policy: reviewing a write's behaviour means reading the surface's perform body and the fold.
 
+## The shared controls
+
+**the two-step delete**:
+The one destructive rule for a note or a Material use: the first press arms the target ("Tap again to delete" / "Tap again to remove"), the second removes it. One delete is armed at a time; closing its surface, arming another, or — in the Material sheet — any other edit disarms it. No timer, no dialog, no undo. The arming is the surface reducer's state; the control only renders it.
+
+**the delete control**:
+`src/shared/components/delete-button.tsx`: the trash the rule wears — a 16px glyph in a 40×40 ghost icon button, Faded Thread at rest and Rejection Red once armed, Photography Red on the image detail's photograph. `DeleteButton` is the control; `DeleteCue` is the armed line ("Tap again to delete" or "…to remove"), placed where the surface has room. The control's accessible hint promises the two presses while unarmed and names the confirming press once armed. The notes list and the Material sheet use it.
+
 ## The sheets
 
 **the sheet wrapper**:
@@ -65,9 +73,6 @@ The gallery's bottom-right control, carrying the current image's note count; one
 
 **the notes sheet**:
 The current image's notes in one sheet: the count and Close at the top, Add note expanding the inline composer, and every note below, oldest first, with the two-step delete. Only the list scrolls; the header and composer stay above it.
-
-**the two-step delete**:
-The one destructive rule for a note: the first press arms the row ("Tap again to delete"), the second removes it. One row is armed at a time; closing the notes sheet or the image detail, or arming another, disarms it. No timer, no dialog, no undo.
 
 **the composer**:
 The notes sheet's inline composer: the draft textarea with Save and Cancel, bound to the image it was opened on. Save is disabled while the trimmed draft is empty; a stored note collapses it and leaves the sheet open, while Cancel or closing the sheet collapses it and drops the draft; changing the image drops it.

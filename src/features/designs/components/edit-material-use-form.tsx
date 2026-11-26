@@ -1,12 +1,10 @@
-import { Trash2 } from "lucide-react-native";
 import { View } from "react-native";
+import { DeleteButton, DeleteCue } from "@/shared/components/delete-button";
 import { SheetBody, SheetFooter } from "@/shared/components/sheet";
 import { Button } from "@/shared/components/ui/button";
-import { Icon } from "@/shared/components/ui/icon";
 import { Input } from "@/shared/components/ui/input";
 import { Text } from "@/shared/components/ui/text";
 import { useMaterials } from "@/features/materials/react";
-import { cn } from "@/shared/lib/utils";
 import {
   materialUseChoices,
   type EditDesignGesture,
@@ -27,11 +25,12 @@ import { SheetHeader } from "@/shared/components/sheet-header";
  * always has.
  *
  * "Remove from design" detaches this Material use from the design; it never
- * deletes the Material from the owner's list. It wears the notes' trash, in
- * Faded Thread at rest and Rejection Red once armed, and follows their two-step
- * grammar: the first press arms the control — "Tap again to remove" — and the
- * second writes the removal. Any other edit, a refusal, or closing the sheet
- * disarms it, so no return visit removes on its first press.
+ * deletes the Material from the owner's list. It wears the shared delete
+ * control, in Faded Thread at rest and Rejection Red once armed, and follows
+ * the same two-step grammar as a note: the first press arms the control —
+ * "Tap again to remove" — and the second writes the removal. Any other edit, a
+ * refusal, or closing the sheet disarms it, so no return visit removes on its
+ * first press.
  *
  * The visit holds this panel's draft, its stored use, and whether Remove is
  * armed; it decides what each gesture writes: this form only renders the state
@@ -112,29 +111,16 @@ export function EditMaterialUseForm({
 
       <SheetFooter className="justify-between">
         <View className="flex-row items-center gap-2">
-          {removeArmed ? (
-            <Text className="text-destructive text-xs" accessibilityLiveRegion="polite">
-              Tap again to remove
-            </Text>
-          ) : null}
-          <Button
-            size="icon"
-            variant="ghost"
+          {removeArmed ? <DeleteCue action="remove" /> : null}
+          <DeleteButton
             accessibilityLabel="Remove from design"
-            accessibilityHint={
-              removeArmed
-                ? "Removes this Material use from the design"
-                : "Press twice in a row to remove this Material use from the design"
-            }
+            object="this Material use from the design"
+            action="remove"
+            armed={removeArmed}
             onPress={() =>
               send({ type: "material-use-panel-fact", fact: { type: "remove-pressed" } })
             }
-          >
-            <Icon
-              as={Trash2}
-              className={cn(removeArmed ? "text-destructive" : "text-muted-foreground")}
-            />
-          </Button>
+          />
         </View>
         <Button size="sm" onPress={close}>
           <Text>Done</Text>

@@ -1,7 +1,5 @@
-import { Trash2 } from "lucide-react-native";
 import { View } from "react-native";
-import { Button } from "@/shared/components/ui/button";
-import { Icon } from "@/shared/components/ui/icon";
+import { DeleteButton, DeleteCue } from "@/shared/components/delete-button";
 import { Text } from "@/shared/components/ui/text";
 import { cn } from "@/shared/lib/utils";
 import type { ImageNote } from "../lib/images";
@@ -9,12 +7,12 @@ import { formatNoteDate } from "../lib/note-date";
 
 /**
  * One image's notes as a read-only list: oldest first, each with its text and
- * created date. The trash control follows the two-step delete, so its first
- * press only arms the row — "Tap again to delete" — and the second dispatches
- * the removal. The rule lives in the gallery reducer; this list only renders
- * the armed id it is given. The notes sheet and the image detail share it, and
- * `overPhotography` gives the image detail's black surface white ink and white
- * hairlines instead of the paper palette.
+ * created date. The shared delete control follows the two-step delete, so its
+ * first press only arms the row — "Tap again to delete" — and the second
+ * dispatches the removal. The rule lives in the gallery reducer; this list only
+ * renders the armed id it is given. The notes sheet and the image detail share
+ * it, and `overPhotography` gives the image detail's black surface white ink,
+ * Photography Red, and white hairlines instead of the paper palette.
  */
 export function NotesList({
   notes,
@@ -60,43 +58,15 @@ export function NotesList({
               <Text className={cn("flex-1", overPhotography && "text-photography-ink")}>
                 {note.text}
               </Text>
-              <Button
-                size="icon"
-                variant="ghost"
-                className={cn(overPhotography && "active:bg-photography-ink/10")}
-                hitSlop={2}
+              <DeleteButton
                 accessibilityLabel={`Delete note ${index + 1}`}
-                accessibilityHint={
-                  armed ? "Deletes this note" : "Press twice in a row to delete this note"
-                }
+                object="this note"
+                armed={armed}
+                overPhotography={overPhotography}
                 onPress={() => onDeletePress(note.id)}
-              >
-                <Icon
-                  as={Trash2}
-                  className={cn(
-                    "size-4",
-                    armed
-                      ? overPhotography
-                        ? "text-destructive-on-photography"
-                        : "text-destructive"
-                      : overPhotography
-                        ? "text-photography-ink/60"
-                        : "text-muted-foreground",
-                  )}
-                />
-              </Button>
+              />
             </View>
-            {armed ? (
-              <Text
-                className={cn(
-                  "text-xs",
-                  overPhotography ? "text-destructive-on-photography" : "text-destructive",
-                )}
-                accessibilityLiveRegion="polite"
-              >
-                Tap again to delete
-              </Text>
-            ) : null}
+            {armed ? <DeleteCue overPhotography={overPhotography} /> : null}
           </View>
         );
       })}

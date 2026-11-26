@@ -405,7 +405,7 @@ Motion is quiet and decelerating: overlays fade in over 200ms and out over 150ms
 - **Terminology:** `GLOSSARY.md` is canonical and binding (Design, Specification, Creative Direction, History, Status, Material use, Library, Owner, Image note). A term not in it is not a term; its avoid-lists apply (never "photo" for an Image, never "user" for the Owner).
 - **Button and action labels:** Verb phrases naming the outcome — "Create a design", "Add images to Prototype", "Save note". Never "OK", "Submit", or "Done" alone.
 - **Empty, loading, and error states:** One quiet line plus one action — "The library is empty" / "Designs you add will appear here."; a missing value reads "Not set"; History with no entries reads "Nothing has changed yet." Errors are plain and name what failed, in Rejection Red: "The images could not be added." / "The image could not be removed."
-- **Destruction:** Notes delete in two steps: the first press arms the row with "Tap again to delete" in Rejection Red, the second deletes. An image asks its one question — "Remove this image and its notes?" — with Keep and Remove.
+- **Destruction:** Notes and Material uses delete in two steps: the first press arms the control with "Tap again to delete" (or "Tap again to remove") in Rejection Red, the second deletes. An image asks its one question — "Remove this image and its notes?" — with Keep and Remove.
 - **Numbers, dates, and units:** Short dates via the system formatter ("Nov 23, 2026"); History entries add hour and minute; note dates use the mono face. Saves are never announced — no toasts, no banners; History is a screen the Owner opens.
 
 ## Components
@@ -419,6 +419,7 @@ The library is uniwind + rn-primitives with shadcn-style slot names; every color
 - **Primary:** Sanded Wood fill with Ink Thread text, 16px horizontal padding.
 - **Press:** Instant tonal shift — primary darkens to 90%. Disabled is 50% opacity.
 - **Outline / Ghost / Icon:** Thread Line border on Warm Paper; ghost and icon variants are transparent until pressed, when they take the Kraft tint. Icon buttons are 40×40. Destructive is Rejection Red with white in light and ink in dark.
+- **Delete:** the one destructive control: a 16px trash glyph in a 40×40 ghost icon button, Faded Thread at rest and Rejection Red once armed (Photography Red on the photograph), with its two-press cue beside or below it. No delete fires on the first press.
 
 ### Status badges
 
