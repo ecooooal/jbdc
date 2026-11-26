@@ -259,9 +259,10 @@ Don't:
 Do:
 - Do resolve every color through the slot table in Colors — wood is `primary`, sage is `secondary`, Kraft is `muted`/`accent`.
 - Do separate with Thread Line hairlines and group with Kraft Layer insets; let tone carry the hierarchy.
+- Do give every editable row one trailing pencil in Faded Thread and the 120ms Kraft press wash; Status carries neither.
 - Do mark every empty attach point with the dashed frame — an empty stage, a missing cover, an add action.
 - Do keep Cormorant for titles only, DM Sans for information, DM Mono for dates, ids, and measurements.
-- (+4 more)
+- (+5 more)
 Map: docs/design-token.md
 Map: src/global.css
 Map: GLOSSARY.md

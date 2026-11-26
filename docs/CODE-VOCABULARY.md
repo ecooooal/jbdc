@@ -27,6 +27,15 @@ The one hook, `useReducerRunner` at `src/shared/hooks/use-reducer-runner.ts`, be
 **the sheet wrapper**:
 `Sheet` at `src/shared/components/sheet.tsx`: the one place the app configures a modal bottom sheet — a closed detent, a content detent, the paper surface, and the close fact. It carries no rules and no state; the surface that owns the open state says what a close means. A drag to the closed detent, the scrim, a screen reader's dismiss, or Android's Back all report through it.
 
+**the read row**:
+`components/field-rows.tsx`, and the shape the identity rows share: the value, and one trailing 16px pencil in Faded Thread. The name, Category and collection, and Description blocks take it inside their outlines; a Specification or Creative direction row takes it after its value. The pencil is decorative, so the row keeps its own role and label, and the row takes the Kraft press wash for the 120ms press beat. Its Input is mounted underneath from the start — hidden, not absent — so a press moves focus into the next row before the previous one unmounts and the keyboard stays up. Status is the one field that is not a read row.
+
+**the taxonomy sheet**:
+Edit's Category and Collection sheet on the shared wrapper: the title "Category and collection", the two clearable selects, and a Close labelled "Close category and collection". A choice sends `choice-chosen` and writes at once while the sheet stays open; Close sends `row-closed`. Its open state is the visit's `editing: "taxonomy"`, so no component boolean sits beside it.
+
+**the material sheets**:
+`components/material-use-sheets.tsx`: Edit's three Material sheets, rendered beside the screen on the shared wrapper. Add material holds Material with a ghost "New material" action, Colour, and Role; its footer's "Add to design" sends `material-use-add-confirmed`, while Cancel and Close discard the unconfirmed use. Edit material writes each field as it changes — Close flushes an unwritten colour through the panel's `closed` fact, and "Remove material" stays immediate. New material stacks above Add material: one focused name field whose Return submits through `inlineCreationResult`, and Cancel or Close returns to Add material with its choices intact. Add and Edit share the visit's one `materialUsePanel`; New material keeps the inline slice's `open`. Each header is its title in the serif voice and one ghost Close, labelled "Close add material", "Close material", or "Close new material".
+
 ## The Design screen's images
 
 The Design screen's gallery, its parts, and its writes.

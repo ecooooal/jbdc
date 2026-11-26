@@ -55,15 +55,32 @@
 	- "Nothing recorded yet" stays as it is
 
 # Edit design screen
-- All fields should share the same keyboard, currently when keyboard is present, tapping a field re-renders the keyboard
+- Status is outside every group: the pill sits alone on its own line 8px under the name, and it carries no pencil, no press, and no destination
+- Every editable row shares one grammar: the value, one trailing 16px pencil in Faded Thread, and the app's Kraft press wash for the documented 120ms `press` beat, taken on press-in and released on press-out
+	- the pencil is decorative for the screen reader; the row keeps its own role and label
+	- a value that wraps keeps its pencil on its first line; a row that cannot change carries neither pencil nor wash
 - Name block
-	- proper spacing 
-	- name block is outline
-	- status, category, and collection are grouped outline and switch to bottom sheet 
-	- description is outline
-- Specification block
-	- pressing a field should have onPress feedback animation
+	- one outlined block on a Thread Line at the field radius and 16px padding, the name in the title voice, the pencil top-right
+	- opening it swaps in one Input in the same footprint, with one visible stroke, `autoFocus`, `DESIGN_NAME_MAX_LENGTH`, and the existing commit-on-leave rule
+- Category and collection
+	- one outlined block 12px under the Status pill, showing the combined summary or "No category or collection", the pencil trailing; its accessibility label stays "Category and collection"
+	- a press opens the taxonomy sheet, titled "Category and collection", holding the existing clearable Category and Collection selects
+	- a choice writes at once and the sheet stays open; Close — or a drag, the scrim, or Android Back — returns to the screen
+- Description block
+	- one outlined block 16px under the taxonomy row, showing the description or "No description", the pencil top-right
+	- opening it swaps in one multiline Input in the same footprint, with the existing placeholder and commit-on-leave rule
+- The identity block holds these three blocks and nothing else: no other field, label, or date
+- Specification and Creative direction
+	- keep their hairline group, labels, values, "Not set" state, and one-open-row rule; each row gains the trailing pencil after its value, and the press wash joins the press that opens its editor in place
 - Material block
-	- Add material should be a bottom sheet
-	- Adding new material should be a bottom sheet (bottom sheets can stack)
-		- pressing enter on keyboard should submit
+	- the table keeps Material / Colour / Role and gains a fourth 16px pencil column; every Material use row shows its pencil and takes the press wash, and its label stays "Edit {Material} ({colour})"
+	- `＋ Add material` is the block's last row inside the same outline, with the Plus glyph, the label, and the press wash; a press opens the Add material sheet
+	- "No materials added" stays as the block's empty row, and the inline add and edit cards retire
+	- the taxonomy sheet, the Add material sheet, the Edit material sheet, and the New material sheet all render on the shared wrapper: paper, 16px top corners, a content detent, and no drag handle
+	- every sheet opens with its title in the serif voice and one ghost Close reading "Close", labelled for its sheet: "Close category and collection", "Close add material", "Close material", "Close new material"
+	- Add material's footer is ghost Cancel and primary "Add to design"; Edit material's is destructive "Remove material" and ghost Close, and Remove stays immediate
+	- New material stacks above Add material: one focused name field whose Return submits, and Cancel or Close returns to Add material with its Material, Colour, and Role intact
+- The keyboard
+	- moving between text rows keeps the keyboard up: the next field takes focus while the keyboard stays, because every text row's Input is mounted before it is opened
+	- opening a sheet, closing the screen, and switching section tabs may dismiss it; each sheet's fields stay above the keyboard
+- New Design keeps its inline Category and Collection creation unchanged: this screen is the pattern, and that divergence is out of scope until a follow-up
