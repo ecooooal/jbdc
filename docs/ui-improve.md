@@ -16,6 +16,8 @@
 - The header has no create button; the FAB owns add
 
 ## Design screen
+- Ground
+	- the page stands on Unbleached Paper, and the stage cards return to Warm Paper, so the detail reads as a sheet laid on the mat; no other screen changes ground
 - Header
 	- fixed while the page scrolls; when its content needs more room it grows in height, never scrolls
 	- left: back, then Collection in the serif voice, Category beneath it in muted text, and created/updated beneath that in mono; an absent Collection or Category is omitted, not labelled "No …"

@@ -69,7 +69,7 @@ function StageCardButton({ card, onPress }: { card: StageCard; onPress: () => vo
     >
       <Animated.View
         style={lift}
-        className="border-border bg-card min-h-14 justify-center gap-1 rounded-lg border px-2 py-2"
+        className="border-border bg-background min-h-14 justify-center gap-1 rounded-lg border px-2 py-2"
       >
         <Animated.View
           pointerEvents="none"

@@ -227,6 +227,7 @@ Rules:
 - The Single-View Carve-Out. The single view's details panel is the one surface that blurs — only the photography beneath it; no card, sheet, bar, or control blurs.
 - The Pill Rule. Pills are for state and selection — badges, stage chips, counters, toggles.
 - The Quiet Turn Rule. Motion never announces — it only arrives and leaves, in 200ms or less.
+- The Detail Ground Rule. The Design detail alone stands on Unbleached Paper; its cards return to Warm Paper.
 Elevation:
 - Whisper: 0 1px 3px 0 rgba(0,0,0,0.05), 0 1px 2px -1px rgba(0,0,0,0.05)
 - Dialog: 0 10px 15px -3px rgba(0,0,0,0.05), 0 4px 6px -4px rgba(0,0,0,0.05) — the centered dialog, the deepest point in the system.

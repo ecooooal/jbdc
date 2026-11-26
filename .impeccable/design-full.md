@@ -226,7 +226,7 @@ The palette is live in `src/global.css`; Cormorant Garamond 600, DM Sans 400/500
 
 **Key Characteristics:**
 
-- Paper tonal hierarchy — Warm Paper page, Unbleached Paper cards, Kraft Layer insets — instead of shadows
+- Paper tonal hierarchy — Warm Paper page, Unbleached Paper cards, Kraft Layer insets — instead of shadows; the Design detail alone inverts the mat, Unbleached Paper underfoot and Warm Paper for its cards
 - Cormorant Garamond titles over DM Sans body; DM Mono for dates, ids, measurements, constants
 - Two accents with fixed meanings: Sanded Wood (confirmed/primary/selection), Muslin Sage (in-development/active); red is rejection and destruction only
 - Hairline Thread Line borders everywhere; dashed frames are the signature for empty attach points and missing covers
@@ -251,7 +251,7 @@ A warm, low-saturation paper palette whose only saturated voices are two accents
 
 ### Neutral
 
-- **Warm Paper** (`background`, #FFFFFF light / #242424 dark): the page behind everything. Pure white in light mode is deliberate: it is the mat the archive sits on, not a SaaS canvas.
+- **Warm Paper** (`background`, #FFFFFF light / #242424 dark): the page behind everything. Pure white in light mode is deliberate: it is the mat the archive sits on, not a SaaS canvas. The Design detail is the one page that gives its ground to Unbleached Paper and hands the cards Warm Paper, so the record reads as a sheet laid on the mat.
 - **Unbleached Paper** (`surface`, #F8F6F2 / #303030): every resting surface content sits on — cards, tiles, sheets.
 - **Kraft Layer** (`surface-secondary`, #F2EBDD / #424242): the inset group one step into a surface — form sections, field tables, image placeholders, the fill of a selected stage chip.
 - **Ink Thread** (`foreground`, #292724 / #F0EEE9): primary text — the ink of the ledger.
@@ -286,6 +286,8 @@ The code's shadcn-style slot names resolve to this palette:
 
 **The Overlay Exception.** Over photography, persistent chrome is a translucent-black pill (`rgba(0,0,0,0.6)`) with white text; muted text runs at 60% white, hairlines at 15%, fills at 10%, and unselected strokes at 40%. A menu or sheet the Owner deliberately opens may be paper; chrome that merely sits on the image may not. Nowhere else does true black appear inside the paper world.
 
+**The Detail Ground Rule.** The Design detail is the one page that inverts the mat: Unbleached Paper underfoot, Warm Paper for its cards and stage cards. No other screen changes ground, and the inversion is light and dark alike.
+
 ## Typography
 
 **Display/Title Font:** Cormorant Garamond, 600 only (with Georgia, serif)
@@ -319,7 +321,7 @@ The Library grid is density-driven, not breakpoint-driven: the Owner chooses the
 
 Grouping is the Owner's second arrangement decision: the Library shows one flat stream, or sections under their Collection labels with a 12px gap between tiles and a 24px gap between sections. The single view walks the same ordered list. The floating action button keeps its corner at every density; the single view's panel leaves that corner clear, and the grid reserves 68px (56px button + 12px gap) below its last row.
 
-Forms and recorded sections group into inset blocks — one tonal step (Kraft Layer) or a hairline border inside the card — so a half-filled design reads as intentional rather than incomplete: empty sections simply say "Nothing recorded yet." The create form and Edit open as full screens; the create form is a modal presentation, and each form ends in 48px of breathing room above the keyboard.
+Forms and recorded sections group into inset blocks — one tonal step (Kraft Layer) or a hairline border inside the card — so a half-filled design reads as intentional rather than incomplete: empty sections simply say "Nothing recorded yet." The Design detail alone stands on Unbleached Paper and puts its stage cards back on Warm Paper. The create form and Edit open as full screens; the create form is a modal presentation, and each form ends in 48px of breathing room above the keyboard.
 
 ## Elevation & Depth
 
@@ -414,11 +416,11 @@ The library is uniwind + rn-primitives with shadcn-style slot names; every color
 
 ### The journey rail (signature)
 
-One equal-width card per image stage — inspiration, sketch, prototype, final — all four always visible, each carrying its stage label and its image count, so an empty stage shows exactly where work is missing. The active card takes the Kraft Layer tone, a 2px Sanded Wood selection border, and a small scale; the active stage's row sits beneath it as one horizontal line of 3:4 thumbs (10px radius; the selected one carries a 2px Sanded Wood border) ending in the dashed add-card. Pressing another stage starts its row at its oldest image; pressing the active stage closes the row.
+One equal-width card per image stage — inspiration, sketch, prototype, final — all four always visible, each carrying its stage label and its image count, so an empty stage shows exactly where work is missing. The cards are Warm Paper on the detail's Unbleached Paper ground, so they read as paper chips laid on the sheet. The active card takes the Kraft Layer tone, a 2px Sanded Wood selection border, and a small scale; the active stage's row sits beneath it as one horizontal line of 3:4 thumbs (10px radius; the selected one carries a 2px Sanded Wood border) ending in the dashed add-card. Pressing another stage starts its row at its oldest image; pressing the active stage closes the row.
 
 ### The gallery pager (signature)
 
-The Detail's visual home: a 3:4 stage, full-bleed and square-edged, walking every image in order and bounded at both ends. The stage is photography black when it holds an image, and the image is fitted whole on it — a 3:4 photograph fills the stage, while a screenshot, receipt or whiteboard keeps its edges on black. The journey counter sits top-left as a translucent-black pill with a 15% white hairline — the stage name in 12px semibold white, then `· 7 / 19`; the stage word cross-fades as a swipe crosses into another stage. The notes button sits at the bottom right as a matching pill with a notebook glyph and the count; it opens the notes sheet. The stage block beneath the pager is the thumbnail navigation: the active stage's row lists its images oldest first and ends in the dashed add-card. With no image selected, the stage becomes a Kraft mount with the dashed frame: `No photography yet` when the journey is empty, `No {Stage} images yet` when the chosen stage is; a journey with no images shows neither counter nor notes button.
+The Detail's visual home, on the detail's Unbleached Paper ground: a 3:4 stage, full-bleed and square-edged, walking every image in order and bounded at both ends. The stage is photography black when it holds an image, and the image is fitted whole on it — a 3:4 photograph fills the stage, while a screenshot, receipt or whiteboard keeps its edges on black. The journey counter sits top-left as a translucent-black pill with a 15% white hairline — the stage name in 12px semibold white, then `· 7 / 19`; the stage word cross-fades as a swipe crosses into another stage. The notes button sits at the bottom right as a matching pill with a notebook glyph and the count; it opens the notes sheet. The stage block beneath the pager is the thumbnail navigation: the active stage's row lists its images oldest first and ends in the dashed add-card. With no image selected, the stage becomes a Kraft mount with the dashed frame: `No photography yet` when the journey is empty, `No {Stage} images yet` when the chosen stage is; a journey with no images shows neither counter nor notes button.
 
 ### Paper sheets (signature)
 

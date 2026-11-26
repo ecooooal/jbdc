@@ -290,23 +290,25 @@ export function DesignDetailScreen({ designId }: { designId: string }) {
   const { design, error, status } = useDesignDetail(designId);
 
   return (
-    <Animated.View entering={DETAIL_ZOOM} style={{ flex: 1 }}>
-      <SafeAreaView style={{ flex: 1 }} className="bg-background" edges={["top", "left", "right"]}>
-        <DetailHeader design={design} />
+    <View style={{ flex: 1 }} className="bg-card">
+      <Animated.View entering={DETAIL_ZOOM} style={{ flex: 1 }}>
+        <SafeAreaView style={{ flex: 1 }} edges={["top", "left", "right"]}>
+          <DetailHeader design={design} />
 
-        {error ? (
-          <Text className="text-destructive px-6 pt-4">{error.message}</Text>
-        ) : status === "loading" ? null : design ? (
-          <DesignDetailContent design={design} />
-        ) : (
-          <View className="flex-1 items-center justify-center gap-2 px-6 pb-16">
-            <Text variant="h4">This design is not here</Text>
-            <Text variant="muted" className="text-center">
-              It may have been removed.
-            </Text>
-          </View>
-        )}
-      </SafeAreaView>
-    </Animated.View>
+          {error ? (
+            <Text className="text-destructive px-6 pt-4">{error.message}</Text>
+          ) : status === "loading" ? null : design ? (
+            <DesignDetailContent design={design} />
+          ) : (
+            <View className="flex-1 items-center justify-center gap-2 px-6 pb-16">
+              <Text variant="h4">This design is not here</Text>
+              <Text variant="muted" className="text-center">
+                It may have been removed.
+              </Text>
+            </View>
+          )}
+        </SafeAreaView>
+      </Animated.View>
+    </View>
   );
 }
