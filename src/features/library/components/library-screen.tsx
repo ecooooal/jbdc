@@ -2,12 +2,14 @@ import { router } from "expo-router";
 import { Plus, Search, SlidersHorizontal } from "lucide-react-native";
 import { useCallback } from "react";
 import { ScrollView, useWindowDimensions, View } from "react-native";
+import Animated from "react-native-reanimated";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAppTheme, useCardDensity, useGrouping } from "@/features/settings/react";
 import { Button } from "@/shared/components/ui/button";
 import { Icon } from "@/shared/components/ui/icon";
 import { Text } from "@/shared/components/ui/text";
 import { useReducerRunner } from "@/shared/hooks/use-reducer-runner";
+import { QUIET_ARRIVAL } from "@/shared/lib/motion";
 import {
   LIBRARY_GRID_GAP,
   LIBRARY_HORIZONTAL_PADDING,
@@ -121,6 +123,10 @@ function SearchFilterActions() {
  * of breaking it. The chosen grouping decides whether the grid is one flat
  * stream or sections under their Collection labels, and the pager walks the
  * same ordered list.
+ *
+ * The view, the grouping, and emptiness each replace the whole body, so a
+ * change arrives with the world's quiet fade rather than cutting between two
+ * arrangements.
  */
 export function LibraryScreen() {
   const { designs, error, status } = useLibraryDesigns();
@@ -198,70 +204,84 @@ export function LibraryScreen() {
           {error ? <Text className="text-destructive mt-6">{error.message}</Text> : null}
         </View>
 
-        {status === "loading" ? null : isEmpty ? (
-          <View
-            className="flex-1 items-center justify-center gap-5 pb-16"
-            style={{ paddingHorizontal: LIBRARY_SIDE_PADDING }}
+        {status === "loading" ? null : (
+          <Animated.View
+            // A different view, a different grouping, or the first (or last)
+            // Design replaces the whole body, so it arrives with the world's
+            // quiet fade instead of cutting between two arrangements.
+            key={`${density}:${grouping}:${isEmpty}`}
+            entering={QUIET_ARRIVAL}
+            className="flex-1"
           >
-            <View className="items-center gap-2">
-              <Text variant="h4">The library is empty</Text>
-              <Text variant="muted" className="text-center">
-                Designs you add will appear here.
-              </Text>
-            </View>
-            <Button onPress={() => router.push("/designs/new")}>
-              <Icon as={Plus} />
-              <Text>Create a design</Text>
-            </Button>
-          </View>
-        ) : density === 1 ? (
-          <SingleView
-            designs={orderedLibraryDesigns(arrangement)}
-            width={screenWidth}
-            pressFor={pressFor}
-          />
-        ) : (
-          <View className="flex-1" style={{ paddingHorizontal: LIBRARY_SIDE_PADDING }}>
-            <ScrollView
-              className="mt-6 flex-1"
-              showsVerticalScrollIndicator={false}
-              contentContainerStyle={{ paddingBottom: insets.bottom + FAB_SCROLL_CLEARANCE }}
-            >
-              {arrangement.kind === "grouped" ? (
-                <View className="gap-6">
-                  {arrangement.sections.map((section) => (
-                    <View
-                      key={section.collection ?? NO_COLLECTION_KEY}
-                      testID={`library-section-${section.collection ?? NO_COLLECTION_KEY}`}
-                      className="gap-3"
-                    >
-                      <View className="flex-row items-center gap-3">
-                        <Text role="heading" className="text-muted-foreground text-xs font-medium">
-                          {section.collection ?? NO_COLLECTION_LABEL}
-                        </Text>
-                        <View className="bg-border h-px flex-1" />
-                      </View>
+            {isEmpty ? (
+              <View
+                className="flex-1 items-center justify-center gap-5 pb-16"
+                style={{ paddingHorizontal: LIBRARY_SIDE_PADDING }}
+              >
+                <View className="items-center gap-2">
+                  <Text variant="h4">The library is empty</Text>
+                  <Text variant="muted" className="text-center">
+                    Designs you add will appear here.
+                  </Text>
+                </View>
+                <Button onPress={() => router.push("/designs/new")}>
+                  <Icon as={Plus} />
+                  <Text>Create a design</Text>
+                </Button>
+              </View>
+            ) : density === 1 ? (
+              <SingleView
+                designs={orderedLibraryDesigns(arrangement)}
+                width={screenWidth}
+                pressFor={pressFor}
+              />
+            ) : (
+              <View className="flex-1" style={{ paddingHorizontal: LIBRARY_SIDE_PADDING }}>
+                <ScrollView
+                  className="mt-6 flex-1"
+                  showsVerticalScrollIndicator={false}
+                  contentContainerStyle={{ paddingBottom: insets.bottom + FAB_SCROLL_CLEARANCE }}
+                >
+                  {arrangement.kind === "grouped" ? (
+                    <View className="gap-6">
+                      {arrangement.sections.map((section) => (
+                        <View
+                          key={section.collection ?? NO_COLLECTION_KEY}
+                          testID={`library-section-${section.collection ?? NO_COLLECTION_KEY}`}
+                          className="gap-3"
+                        >
+                          <View className="flex-row items-center gap-3">
+                            <Text
+                              role="heading"
+                              className="text-muted-foreground text-xs font-medium"
+                            >
+                              {section.collection ?? NO_COLLECTION_LABEL}
+                            </Text>
+                            <View className="bg-border h-px flex-1" />
+                          </View>
+                          <SectionGrid
+                            designs={section.designs}
+                            columns={columns}
+                            cardWidth={cardWidth}
+                            pressFor={pressFor}
+                          />
+                        </View>
+                      ))}
+                    </View>
+                  ) : (
+                    <View className="gap-6">
                       <SectionGrid
-                        designs={section.designs}
+                        designs={arrangement.designs}
                         columns={columns}
                         cardWidth={cardWidth}
                         pressFor={pressFor}
                       />
                     </View>
-                  ))}
-                </View>
-              ) : (
-                <View className="gap-6">
-                  <SectionGrid
-                    designs={arrangement.designs}
-                    columns={columns}
-                    cardWidth={cardWidth}
-                    pressFor={pressFor}
-                  />
-                </View>
-              )}
-            </ScrollView>
-          </View>
+                  )}
+                </ScrollView>
+              </View>
+            )}
+          </Animated.View>
         )}
       </View>
 
