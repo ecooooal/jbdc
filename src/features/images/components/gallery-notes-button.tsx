@@ -15,6 +15,7 @@ export function GalleryNotesButton({ count, onPress }: { count: number; onPress:
       size="sm"
       className="active:bg-photography border-overlay-foreground/15 rounded-full border bg-overlay px-3"
       accessibilityLabel={`Notes (${count})`}
+      hitSlop={4}
       onPress={onPress}
     >
       <Icon as={NotebookText} className="size-4 text-overlay-foreground" />
