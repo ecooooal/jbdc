@@ -1,9 +1,8 @@
 import { Image } from "expo-image";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   FlatList,
   Pressable,
-  useWindowDimensions,
   View,
   type NativeScrollEvent,
   type NativeSyntheticEvent,
@@ -115,7 +114,9 @@ function PagerImage({
           style={{ width: "100%", height: "100%" }}
         />
       ) : (
-        <View className="border-photography-ink/40 h-full w-full border border-dashed" />
+        <View className="h-full w-full p-3">
+          <View className="border-photography-ink/40 h-full w-full rounded-md border border-dashed" />
+        </View>
       )}
     </Pressable>
   );
@@ -124,13 +125,12 @@ function PagerImage({
 /** The pager's shape with no image to show: the dashed frame and one line saying why. */
 function PagerPlaceholder({ copy }: { copy: string }) {
   return (
-    <View
-      testID="gallery-pager-placeholder"
-      className="border-muted-foreground h-full w-full items-center justify-center border border-dashed px-6"
-    >
-      <Text variant="muted" className="text-center">
-        {copy}
-      </Text>
+    <View testID="gallery-pager-placeholder" className="h-full w-full p-3">
+      <View className="border-muted-foreground h-full w-full items-center justify-center rounded-md border border-dashed px-6">
+        <Text variant="muted" className="text-center">
+          {copy}
+        </Text>
+      </View>
     </View>
   );
 }
@@ -145,16 +145,17 @@ type NotesButton = {
 };
 
 /**
- * The pager: every image in the live journey on a 3:4 stage, edge to edge and
- * square edged, walking in order and bounded at both ends. The image is fitted
- * whole on photography black, so a 3:4 photograph fills the stage and a
- * screenshot or whiteboard keeps its edges; the stage is a Kraft mount only
- * with nothing to show. The top chrome says where the pager is; the notes
- * button sits at the bottom right. A settle dispatches the image it landed on,
- * and a tap opens the image detail. With no image selected the dashed frame
- * keeps the pager's shape and names the state; a journey with no images shows
- * neither counter nor notes button. The counter and notes button appear only
- * over a selected image.
+ * The pager: every image in the live journey on a 3:4 plate, inset from the
+ * page's gutters so the photography never bleeds edge to edge, walking in
+ * order and bounded at both ends. The plate carries a Thread Line hairline and
+ * the detail's 10px radius; the image is fitted whole on photography black, so
+ * a 3:4 photograph fills it and a screenshot or whiteboard keeps its edges.
+ * With nothing to show the plate is a Kraft mount with the inset dashed frame.
+ * The top chrome says where the pager is; the notes button sits at the bottom
+ * right. A settle dispatches the image it landed on, and a tap opens the image
+ * detail. With no image selected the dashed frame keeps the plate's shape and
+ * names the state; a journey with no images shows neither counter nor notes
+ * button. The counter and notes button appear only over a selected image.
  */
 export function GalleryPager({
   journey,
@@ -170,8 +171,9 @@ export function GalleryPager({
   onPageSettled: (imageId: string) => void;
   onImagePressed: (imageId: string) => void;
 }) {
-  const { width: viewportWidth } = useWindowDimensions();
-  const pageWidth = Math.max(0, viewportWidth);
+  // The plate measures its own width, so the inset follows the page's gutters
+  // and the safe area without the pager knowing either.
+  const [pageWidth, setPageWidth] = useState(0);
   const pageHeight = (pageWidth * 4) / 3;
   const list = useRef<FlatList<StoredImage> | null>(null);
   const selectedId = journey.image?.id ?? null;
@@ -200,10 +202,20 @@ export function GalleryPager({
 
   return (
     <View
-      className={cn("-mx-6 overflow-hidden", journey.image ? "bg-photography" : "bg-muted")}
-      style={{ width: pageWidth, height: pageHeight }}
+      testID="gallery-plate"
+      className={cn(
+        "w-full overflow-hidden rounded-lg",
+        journey.image ? "border-border border bg-photography" : "bg-muted",
+      )}
+      style={{ aspectRatio: 3 / 4 }}
+      onLayout={(event) => {
+        // The hairline is drawn inside the plate, so the pages get its inner width.
+        const inner = Math.round(event.nativeEvent.layout.width) - (journey.image ? 2 : 0);
+
+        setPageWidth((current) => (current === inner ? current : inner));
+      }}
     >
-      {journey.image ? (
+      {journey.image && pageWidth > 0 ? (
         <FlatList
           ref={list}
           testID="gallery-pager"
@@ -230,7 +242,7 @@ export function GalleryPager({
             />
           )}
         />
-      ) : (
+      ) : journey.image ? null : (
         <PagerPlaceholder copy={emptyCopy} />
       )}
 

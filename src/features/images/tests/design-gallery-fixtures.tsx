@@ -9,7 +9,8 @@
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { render } from "@testing-library/react-native";
+import { render, fireEvent } from "@testing-library/react-native";
+import { Dimensions } from "react-native";
 import type { ImageKind } from "@/features/database";
 import { DatabaseProvider } from "@/features/database/react";
 import { createSyncSubscribe, createTempDatabase } from "@/features/database/testing";
@@ -83,12 +84,12 @@ export async function addNote(designId: string, text: string, now: number) {
 }
 
 /** The gallery inside the providers a rendered surface reads through. */
-export function renderGallery(
+export async function renderGallery(
   designId: string,
   picker: ImagePicker = { pick: async () => ({ kind: "cancelled" }) },
   imageStore: ImageStore = store,
 ) {
-  return render(
+  const view = await render(
     <DatabaseProvider database={database} subscribe={live.subscribe}>
       <ImageStoreProvider store={imageStore}>
         <ImagePickerProvider picker={picker}>
@@ -97,4 +98,15 @@ export function renderGallery(
       </ImageStoreProvider>
     </DatabaseProvider>,
   );
+
+  // The pager sizes its pages from the plate it was given, so a rendered
+  // suite has to hand the plate the width a device layout would.
+  await fireEvent.layout(view.getByTestId("gallery-plate"), {
+    width: Dimensions.get("window").width,
+    height: 0,
+    x: 0,
+    y: 0,
+  });
+
+  return view;
 }
