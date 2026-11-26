@@ -295,7 +295,7 @@ describe("Materials", () => {
     expect(screen.getByText("Silk crêpe")).toBeTruthy();
 
     await userEvent.type(screen.getByLabelText("Colour"), "Ivory");
-    await userEvent.press(screen.getByRole("button", { name: "Add material" }));
+    await userEvent.press(screen.getByRole("button", { name: "Add to design" }));
 
     await act(async () => {
       live.notify("design_materials");
@@ -355,7 +355,7 @@ describe("Materials", () => {
     expect(screen.queryByRole("button", { name: /save/i })).toBeNull();
   });
 
-  test("a colour typed and finished with Done is written as the editor closes", async () => {
+  test("a colour typed and finished with Close is written as the sheet closes", async () => {
     const design = newDesign();
     const wool = createMaterial(database, { name: "Wool" });
 
@@ -368,11 +368,12 @@ describe("Materials", () => {
     await renderEdit(design.id);
     await userEvent.press(screen.getByRole("button", { name: "Edit Wool (Charcoal)" }));
     await fireEvent.changeText(screen.getByLabelText("Colour"), "Black");
-    await userEvent.press(screen.getByRole("button", { name: "Done" }));
+    await userEvent.press(screen.getAllByRole("button", { name: "Close material" })[0]);
 
     expect(listMaterialUses(database, design.id)).toEqual([
       expect.objectContaining({ materialName: "Wool", colour: "Black", role: "main" }),
     ]);
+    expect(screen.queryByLabelText("Colour")).toBeNull();
     expect(screen.getByRole("button", { name: "Add material" })).toBeTruthy();
   });
 

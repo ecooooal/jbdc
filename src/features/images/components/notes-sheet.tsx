@@ -1,9 +1,7 @@
 import { Plus } from "lucide-react-native";
-import type { ReactNode } from "react";
 import { useEffect, useRef } from "react";
 import { ScrollView, View, type ScrollViewInstance } from "react-native";
-import { useReanimatedKeyboardAnimation } from "react-native-keyboard-controller";
-import Animated, { useAnimatedStyle } from "react-native-reanimated";
+import { KeyboardPadding } from "@/shared/components/keyboard-padding";
 import { Sheet } from "@/shared/components/sheet";
 import { Button } from "@/shared/components/ui/button";
 import { Icon } from "@/shared/components/ui/icon";
@@ -126,19 +124,4 @@ export function NotesSheet({
       ) : null}
     </Sheet>
   );
-}
-
-/**
- * Lifts the sheet's content by the keyboard's height, so a content detent grows
- * exactly as much as the keyboard covers. The padding runs on the UI thread
- * with the keyboard's own animation; the sheet follows the measured content
- * without adding a second animation of its own.
- */
-function KeyboardPadding({ children }: { children: ReactNode }) {
-  const { height } = useReanimatedKeyboardAnimation();
-  const padding = useAnimatedStyle(() => ({
-    paddingBottom: Math.max(-height.get(), 0),
-  }));
-
-  return <Animated.View style={padding}>{children}</Animated.View>;
 }

@@ -1,7 +1,9 @@
 import { act, screen, userEvent, within } from "@testing-library/react-native";
 import { getDesign } from "@/features/designs";
+import { createMaterial } from "@/features/materials";
 import { createCategory } from "@/features/taxonomy";
 import {
+  addMaterialUse,
   database,
   newDesign,
   openRow,
@@ -77,6 +79,21 @@ describe("the row grammar", () => {
         within(row(label)).getAllByTestId("row-pencil", { includeHiddenElements: true }),
       ).toHaveLength(1);
     }
+  });
+
+  test("every Material use row trails one pencil", async () => {
+    const design = newDesign();
+    const wool = createMaterial(database, { name: "Wool" });
+
+    addMaterialUse(design.id, { materialId: wool.id, colour: "Charcoal", role: "main" });
+
+    await renderEdit(design.id);
+
+    const use = screen.getByRole("button", { name: "Edit Wool (Charcoal)" });
+
+    expect(within(use).getAllByTestId("row-pencil", { includeHiddenElements: true })).toHaveLength(
+      1,
+    );
   });
 
   test("the Status pill has no button role and no pencil", async () => {

@@ -23,9 +23,11 @@ import { useEditVisit } from "../lib/use-edit-visit";
 import { DesignStatusBadge } from "./design-status-badge";
 import { FieldRows } from "./field-rows";
 import { FormField } from "./form-field";
+import { MaterialUseSheets } from "./material-use-sheets";
 import { MaterialUsesSection } from "./material-uses-section";
 import { ReadError } from "./read-error";
 import { RowPencil } from "./row-pencil";
+import { SheetHeader } from "./sheet-header";
 import { TaxonomySelect } from "./taxonomy-select";
 
 /**
@@ -330,19 +332,11 @@ export function EditDesignScreen({ designId }: { designId: string }) {
           <Sheet open={state.editing === "taxonomy"} onClose={closeRow}>
             {state.editing === "taxonomy" ? (
               <View testID="taxonomy-sheet" className="gap-3 px-4 pb-4 pt-3">
-                <View className="flex-row items-center justify-between gap-3">
-                  <Text className="font-serif text-lg font-semibold leading-tight">
-                    Category and collection
-                  </Text>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    accessibilityLabel="Close category and collection"
-                    onPress={closeRow}
-                  >
-                    <Text>Close</Text>
-                  </Button>
-                </View>
+                <SheetHeader
+                  title="Category and collection"
+                  closeLabel="Close category and collection"
+                  onClose={closeRow}
+                />
 
                 <FormField label="Category">
                   <TaxonomySelect
@@ -370,6 +364,8 @@ export function EditDesignScreen({ designId }: { designId: string }) {
               </View>
             ) : null}
           </Sheet>
+
+          <MaterialUseSheets panel={state.materialUsePanel} send={send} />
         </>
       )}
     </SafeAreaView>
