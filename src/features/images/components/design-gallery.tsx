@@ -4,6 +4,7 @@ import type { ImageDetailEvent } from "../lib/image-detail-reducer";
 import { imageNotesOf } from "../lib/image-notes";
 import { useGallery } from "../lib/use-gallery";
 import { useImageDetail } from "../lib/use-image-detail";
+import { GalleryLoading } from "./gallery-loading";
 import { GalleryPager } from "./gallery-pager";
 import { ImageDetail } from "./image-detail";
 import { JourneyRail } from "./journey-rail";
@@ -19,8 +20,10 @@ import { NotesSheet } from "./notes-sheet";
  * The notes button opens the one notes sheet, where Add note expands the inline
  * composer and every note reads with the two-step delete; its open state stays
  * in the gallery reducer. A tap on a page opens the image detail, whose own
- * reducer owns reclassification and the one remove question. The designs module
- * composes it above Detail's identity block.
+ * reducer owns reclassification and the one remove question. Until the images
+ * read lands, the loading frame holds the gallery's whole shape, so the sheet
+ * beneath it never jumps when the images arrive. The designs module composes it
+ * above Detail's identity block.
  */
 export function DesignGallery({ designId }: { designId: string }) {
   const { state, images, imageNotes, journey, stageTabs, stageRow, notes, send, error, status } =
@@ -41,6 +44,7 @@ export function DesignGallery({ designId }: { designId: string }) {
     return <Text className="text-destructive">{error.message}</Text>;
   }
 
+  if (status === "loading") return <GalleryLoading />;
   if (status !== "ready") return null;
 
   return (

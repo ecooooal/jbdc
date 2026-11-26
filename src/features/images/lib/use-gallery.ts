@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo } from "react";
+import { useCallback, useLayoutEffect, useMemo } from "react";
 import { useDatabase, useLiveRead } from "@/features/database/react";
 import { useReducerRunner } from "@/shared/hooks/use-reducer-runner";
 import {
@@ -115,7 +115,10 @@ export function useGallery(designId: string) {
     perform,
   );
 
-  useEffect(() => {
+  // The read lands before the frame paints: on the render where the live read
+  // first has rows, the gallery is already on the Cover, so the loading frame
+  // hands straight to the plate instead of flashing an empty one.
+  useLayoutEffect(() => {
     dispatch({ type: "images-read", stages, cover });
   }, [dispatch, stages, cover]);
 
