@@ -69,7 +69,8 @@
 - Description block
 	- one outlined block 16px under the taxonomy row, showing the description or "No description", the pencil top-right
 	- opening it swaps in one multiline Input in the same footprint, with the existing placeholder and commit-on-leave rule
-- The identity block holds these three blocks and nothing else: no other field, label, or date
+- The identity block holds these three labelled blocks and nothing else: no other field or date
+	- each block carries its name above it in the muted voice — "Design name", "Category and collection", "Description" — so a filled block never reads as an unlabelled field
 - Specification and Creative direction
 	- keep their hairline group, labels, values, "Not set" state, and one-open-row rule; each row gains the trailing pencil after its value, and the press wash joins the press that opens its editor in place
 - Material block

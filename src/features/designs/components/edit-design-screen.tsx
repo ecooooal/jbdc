@@ -195,6 +195,10 @@ export function EditDesignScreen({ designId }: { designId: string }) {
             keyboardShouldPersistTaps="handled"
           >
             <View>
+              <Text variant="muted" className="mb-2">
+                Design name
+              </Text>
+
               <View className="border-border overflow-hidden rounded-md border">
                 <Input
                   key="name-input"
@@ -240,12 +244,16 @@ export function EditDesignScreen({ designId }: { designId: string }) {
                 <DesignStatusBadge status={design.status} />
               </View>
 
+              <Text variant="muted" className="mt-3 mb-2">
+                Category and collection
+              </Text>
+
               <Pressable
                 onPress={openTaxonomy}
                 accessibilityRole="button"
                 accessibilityLabel="Category and collection"
                 accessibilityValue={{ text: taxonomySummary }}
-                className="border-border active:bg-accent mt-3 flex-row items-center justify-between gap-3 rounded-md border p-4"
+                className="border-border active:bg-accent flex-row items-center justify-between gap-3 rounded-md border p-4"
               >
                 {hasTaxonomy ? (
                   <Text className="flex-1 leading-6">{taxonomySummary}</Text>
@@ -257,7 +265,11 @@ export function EditDesignScreen({ designId }: { designId: string }) {
                 <RowPencil />
               </Pressable>
 
-              <View className="border-border mt-4 overflow-hidden rounded-md border">
+              <Text variant="muted" className="mt-4 mb-2">
+                Description
+              </Text>
+
+              <View className="border-border overflow-hidden rounded-md border">
                 <Input
                   key="description-input"
                   ref={descriptionInput}

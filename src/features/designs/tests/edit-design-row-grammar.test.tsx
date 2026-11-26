@@ -136,6 +136,16 @@ describe("the read rows", () => {
 
     expect(screen.getByRole("heading", { name: "Edit design" })).toBeTruthy();
   });
+
+  test("the identity blocks are named on screen", async () => {
+    const design = newDesign();
+
+    await renderEdit(design.id);
+
+    for (const label of ["Design name", "Category and collection", "Description"]) {
+      expect(screen.getByText(label)).toBeTruthy();
+    }
+  });
 });
 
 describe("the taxonomy sheet", () => {
