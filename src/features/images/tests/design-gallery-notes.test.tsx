@@ -141,7 +141,7 @@ test("one press on a note's trash control arms it; a second deletes it", async (
   await userEvent.press(sheet.getByRole("button", { name: "Delete note 1" }));
   await settleNotes();
 
-  expect(sheet.getByText("Tap again to delete")).toBeTruthy();
+  expect(sheet.getByText("Delete")).toBeTruthy();
   expect(listDesignImageNotes(database, design.id)).toHaveLength(2);
 
   await userEvent.press(sheet.getByRole("button", { name: "Delete note 1" }));
@@ -191,7 +191,7 @@ test("one press on the image detail's trash control arms; a second deletes", asy
   await userEvent.press(detail.getByRole("button", { name: "Delete note 1" }));
   await settleNotes();
 
-  expect(detail.getByText("Tap again to delete")).toBeTruthy();
+  expect(detail.getByText("Delete")).toBeTruthy();
   expect(listDesignImageNotes(database, design.id)).toHaveLength(2);
 
   await userEvent.press(detail.getByRole("button", { name: "Delete note 1" }));

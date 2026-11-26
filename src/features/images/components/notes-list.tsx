@@ -1,5 +1,5 @@
 import { View } from "react-native";
-import { DeleteButton, DeleteCue } from "@/shared/components/delete-button";
+import { DeleteButton } from "@/shared/components/delete-button";
 import { Text } from "@/shared/components/ui/text";
 import { cn } from "@/shared/lib/utils";
 import type { ImageNote } from "../lib/images";
@@ -8,11 +8,11 @@ import { formatNoteDate } from "../lib/note-date";
 /**
  * One image's notes as a read-only list: oldest first, each with its text and
  * created date. The shared delete control follows the two-step delete, so its
- * first press only arms the row — "Tap again to delete" — and the second
+ * first press only arms the row — the trash becomes "Delete" — and the second
  * dispatches the removal. The rule lives in the gallery reducer; this list only
  * renders the armed id it is given. The notes sheet and the image detail share
- * it, and `overPhotography` gives the image detail's black surface white ink,
- * Photography Red, and white hairlines instead of the paper palette.
+ * it, and `overPhotography` gives the image detail's black surface white ink
+ * and white hairlines instead of the paper palette.
  */
 export function NotesList({
   notes,
@@ -66,7 +66,6 @@ export function NotesList({
                 onPress={() => onDeletePress(note.id)}
               />
             </View>
-            {armed ? <DeleteCue overPhotography={overPhotography} /> : null}
           </View>
         );
       })}

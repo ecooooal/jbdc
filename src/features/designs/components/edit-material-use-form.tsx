@@ -1,5 +1,4 @@
-import { View } from "react-native";
-import { DeleteButton, DeleteCue } from "@/shared/components/delete-button";
+import { DeleteButton } from "@/shared/components/delete-button";
 import { SheetBody, SheetFooter } from "@/shared/components/sheet";
 import { Button } from "@/shared/components/ui/button";
 import { Input } from "@/shared/components/ui/input";
@@ -27,10 +26,10 @@ import { SheetHeader } from "@/shared/components/sheet-header";
  * "Remove from design" detaches this Material use from the design; it never
  * deletes the Material from the owner's list. It wears the shared delete
  * control, in Faded Thread at rest and Rejection Red once armed, and follows
- * the same two-step grammar as a note: the first press arms the control —
- * "Tap again to remove" — and the second writes the removal. Any other edit, a
- * refusal, or closing the sheet disarms it, so no return visit removes on its
- * first press.
+ * the same two-step grammar as a note: the first press arms the control — the
+ * trash becomes "Remove" — and the second writes the removal. Any other edit,
+ * a refusal, or closing the sheet disarms it, so no return visit removes on
+ * its first press.
  *
  * The visit holds this panel's draft, its stored use, and whether Remove is
  * armed; it decides what each gesture writes: this form only renders the state
@@ -110,18 +109,15 @@ export function EditMaterialUseForm({
       {state.error ? <FieldError message={state.error} /> : null}
 
       <SheetFooter className="justify-between">
-        <View className="flex-row items-center gap-2">
-          {removeArmed ? <DeleteCue action="remove" /> : null}
-          <DeleteButton
-            accessibilityLabel="Remove from design"
-            object="this Material use from the design"
-            action="remove"
-            armed={removeArmed}
-            onPress={() =>
-              send({ type: "material-use-panel-fact", fact: { type: "remove-pressed" } })
-            }
-          />
-        </View>
+        <DeleteButton
+          accessibilityLabel="Remove from design"
+          object="this Material use from the design"
+          action="remove"
+          armed={removeArmed}
+          onPress={() =>
+            send({ type: "material-use-panel-fact", fact: { type: "remove-pressed" } })
+          }
+        />
         <Button size="sm" onPress={close}>
           <Text>Done</Text>
         </Button>

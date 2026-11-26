@@ -5,12 +5,13 @@ import { Text } from "@/shared/components/ui/text";
 import { cn } from "@/shared/lib/utils";
 
 /**
- * The one delete control: a trash glyph that never deletes on its first press.
- * The surface reducer owns the two-step rule and passes `armed`; the first
- * press renders the armed glyph, and the second confirms. While unarmed, the
- * control announces the rule to a screen reader, so every delete promises the
- * same two presses. `overPhotography` swaps the paper palette for the image
- * detail's white ink and Photography Red.
+ * The one delete control: a trash glyph at rest that becomes the confirm word
+ * on the first press. The surface reducer owns the two-step rule and passes
+ * `armed`; the second press, on that same word, confirms. The word is the
+ * control, so no separate cue can look pressable without being pressable.
+ * While unarmed, the control announces the rule to a screen reader, so every
+ * delete promises the same two presses. `overPhotography` swaps the paper
+ * palette for the image detail's white ink.
  */
 export function DeleteButton({
   accessibilityLabel,
@@ -38,52 +39,26 @@ export function DeleteButton({
 
   return (
     <Button
-      size="icon"
-      variant="ghost"
-      className={cn(overPhotography && "active:bg-photography-ink/10")}
-      hitSlop={2}
+      size={armed ? "sm" : "icon"}
+      variant={armed ? "destructive" : "ghost"}
+      className={cn(!armed && overPhotography && "active:bg-photography-ink/10")}
+      hitSlop={4}
       accessibilityLabel={accessibilityLabel}
       accessibilityHint={hint}
+      accessibilityLiveRegion={armed ? "polite" : undefined}
       onPress={onPress}
     >
-      <Icon
-        as={Trash2}
-        className={cn(
-          "size-4",
-          armed
-            ? overPhotography
-              ? "text-destructive-on-photography"
-              : "text-destructive"
-            : overPhotography
-              ? "text-photography-ink/60"
-              : "text-muted-foreground",
-        )}
-      />
-    </Button>
-  );
-}
-
-/**
- * The armed line that names the second press. It sits where the surface has
- * room — under a note, beside the sheet footer's trash — and speaks in the
- * surface's own verb, so the delete control and its cue never disagree.
- */
-export function DeleteCue({
-  action = "delete",
-  overPhotography = false,
-}: {
-  action?: "delete" | "remove";
-  overPhotography?: boolean;
-}) {
-  return (
-    <Text
-      className={cn(
-        "text-xs",
-        overPhotography ? "text-destructive-on-photography" : "text-destructive",
+      {armed ? (
+        <Text>{action === "delete" ? "Delete" : "Remove"}</Text>
+      ) : (
+        <Icon
+          as={Trash2}
+          className={cn(
+            "size-4",
+            overPhotography ? "text-photography-ink/60" : "text-muted-foreground",
+          )}
+        />
       )}
-      accessibilityLiveRegion="polite"
-    >
-      Tap again to {action}
-    </Text>
+    </Button>
   );
 }

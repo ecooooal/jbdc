@@ -244,8 +244,9 @@ describe("the Edit material sheet", () => {
     await userEvent.press(editSheet().getByRole("button", { name: "Remove from design" }));
     await settleUseWrites();
 
-    // The first press only arms: the cue shows and the use is still recorded.
-    expect(editSheet().getByText("Tap again to remove")).toBeTruthy();
+    // The first press only arms: the trash becomes the confirm word and the use
+    // is still recorded.
+    expect(editSheet().getByText("Remove")).toBeTruthy();
     expect(listMaterialUses(database, design.id)).toHaveLength(1);
 
     await userEvent.press(editSheet().getByRole("button", { name: "Remove from design" }));

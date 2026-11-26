@@ -1,5 +1,5 @@
 import { render, screen } from "@testing-library/react-native";
-import { DeleteButton, DeleteCue } from "./delete-button";
+import { DeleteButton } from "./delete-button";
 
 test("promises two presses until the surface reducer arms the control", async () => {
   const view = await render(
@@ -13,6 +13,7 @@ test("promises two presses until the surface reducer arms the control", async ()
 
   const button = screen.getByRole("button", { name: "Delete note 1" });
   expect(button.props.accessibilityHint).toBe("Press twice in a row to delete this note");
+  expect(screen.queryByText("Delete")).toBeNull();
 
   await view.rerender(
     <DeleteButton
@@ -23,13 +24,23 @@ test("promises two presses until the surface reducer arms the control", async ()
     />,
   );
 
+  // The trash is replaced by the confirm word, and the same button carries it.
+  expect(screen.getByText("Delete")).toBeTruthy();
   expect(screen.getByRole("button", { name: "Delete note 1" }).props.accessibilityHint).toBe(
     "Deletes this note",
   );
 });
 
-test("the cue speaks the surface's verb and names the second press", async () => {
-  await render(<DeleteCue action="remove" />);
+test("the confirm word follows the surface's verb", async () => {
+  await render(
+    <DeleteButton
+      accessibilityLabel="Remove from design"
+      object="this Material use from the design"
+      action="remove"
+      armed
+      onPress={jest.fn()}
+    />,
+  );
 
-  expect(screen.getByText("Tap again to remove")).toBeTruthy();
+  expect(screen.getByText("Remove")).toBeTruthy();
 });

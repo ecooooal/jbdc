@@ -25,10 +25,10 @@ The one hook, `useReducerRunner` at `src/shared/hooks/use-reducer-runner.ts`, be
 ## The shared controls
 
 **the two-step delete**:
-The one destructive rule for a note or a Material use: the first press arms the target ("Tap again to delete" / "Tap again to remove"), the second removes it. One delete is armed at a time; closing its surface, arming another, or — in the Material sheet — any other edit disarms it. No timer, no dialog, no undo. The arming is the surface reducer's state; the control only renders it.
+The one destructive rule for a note or a Material use: the first press arms the target by replacing its trash with the confirm word ("Delete" or "Remove"), and the second press on that word removes it. One delete is armed at a time; closing its surface, arming another, or — in the Material sheet — any other edit disarms it. No timer, no dialog, no undo. The arming is the surface reducer's state; the control only renders it.
 
 **the delete control**:
-`src/shared/components/delete-button.tsx`: the trash the rule wears — a 16px glyph in a 40×40 ghost icon button, Faded Thread at rest and Rejection Red once armed, Photography Red on the image detail's photograph. `DeleteButton` is the control; `DeleteCue` is the armed line ("Tap again to delete" or "…to remove"), placed where the surface has room. The control's accessible hint promises the two presses while unarmed and names the confirming press once armed. The notes list and the Material sheet use it.
+`src/shared/components/delete-button.tsx`: the trash the rule wears — a 16px glyph in a 40×40 ghost icon button, Faded Thread at rest. Once armed, the same button becomes the confirm word in the destructive variant, so the filled red and its foreground carry the second press on paper and on the photograph alike. The control's accessible hint promises the two presses while unarmed and names the confirming press once armed. The notes list and the Material sheet use it.
 
 ## The sheets
 
