@@ -30,7 +30,7 @@ export function NotesList({
 }) {
   if (notes.length === 0) {
     return (
-      <Text variant="muted" className={cn(overPhotography && "text-white/60")}>
+      <Text variant="muted" className={cn(overPhotography && "text-photography-ink/60")}>
         No notes on this image.
       </Text>
     );
@@ -47,21 +47,23 @@ export function NotesList({
             className={cn(
               "gap-1 py-3",
               index > 0 && "border-t",
-              index > 0 && (overPhotography ? "border-white/15" : "border-border"),
+              index > 0 && (overPhotography ? "border-photography-ink/15" : "border-border"),
             )}
           >
             <Text
               variant="muted"
-              className={cn("font-mono text-xs", overPhotography && "text-white/60")}
+              className={cn("font-mono text-xs", overPhotography && "text-photography-ink/60")}
             >
               {formatNoteDate(note.createdAt)}
             </Text>
             <View className="flex-row items-start gap-2">
-              <Text className={cn("flex-1", overPhotography && "text-white")}>{note.text}</Text>
+              <Text className={cn("flex-1", overPhotography && "text-photography-ink")}>
+                {note.text}
+              </Text>
               <Button
                 size="icon"
                 variant="ghost"
-                className={cn(overPhotography && "active:bg-white/10")}
+                className={cn(overPhotography && "active:bg-photography-ink/10")}
                 accessibilityLabel={`Delete note ${index + 1}`}
                 accessibilityHint={
                   armed ? "Deletes this note" : "Press twice in a row to delete this note"
@@ -75,7 +77,7 @@ export function NotesList({
                     armed
                       ? "text-destructive"
                       : overPhotography
-                        ? "text-white/60"
+                        ? "text-photography-ink/60"
                         : "text-muted-foreground",
                   )}
                 />

@@ -13,12 +13,12 @@ export function GalleryNotesButton({ count, onPress }: { count: number; onPress:
     <Button
       variant="ghost"
       size="sm"
-      className="active:bg-black/70 border-white/15 rounded-full border bg-black/60 px-3"
+      className="active:bg-photography border-overlay-foreground/15 rounded-full border bg-overlay px-3"
       accessibilityLabel={`Notes (${count})`}
       onPress={onPress}
     >
-      <Icon as={NotebookText} className="size-4 text-white" />
-      <Text className="text-xs font-semibold text-white">{count}</Text>
+      <Icon as={NotebookText} className="size-4 text-overlay-foreground" />
+      <Text className="text-xs font-semibold text-overlay-foreground">{count}</Text>
     </Button>
   );
 }

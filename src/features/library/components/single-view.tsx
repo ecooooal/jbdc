@@ -68,13 +68,13 @@ export function SingleView({
           pointerEvents="none"
           className={cn(
             "absolute right-4 top-4 rounded-full px-3 py-1",
-            overPhotography ? "bg-black/60" : "bg-muted",
+            overPhotography ? "bg-overlay" : "bg-muted",
           )}
         >
           <Text
             className={cn(
               "text-xs font-semibold",
-              overPhotography ? "text-white" : "text-foreground",
+              overPhotography ? "text-overlay-foreground" : "text-foreground",
             )}
           >
             {settled + 1} / {designs.length}

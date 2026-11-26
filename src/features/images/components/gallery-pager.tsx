@@ -41,7 +41,7 @@ const STAGE_WORD_EXITING = FadeOut.duration(QUIET_MOTION_DURATION_MS).reduceMoti
 function StageWord({ kind }: { kind: ImageKind }) {
   return (
     <Animated.View entering={STAGE_WORD_ENTERING} exiting={STAGE_WORD_EXITING}>
-      <Text className="text-xs font-semibold text-white">{imageKindLabel(kind)}</Text>
+      <Text className="text-xs font-semibold text-overlay-foreground">{imageKindLabel(kind)}</Text>
     </Animated.View>
   );
 }
@@ -67,10 +67,10 @@ function JourneyCounter({
       testID="gallery-journey-counter"
       accessible
       accessibilityLabel={`${label} image ${journey.position} of ${journey.count}`}
-      className="border-white/15 absolute left-3 top-3 flex-row items-center rounded-full border bg-black/60 px-3 py-1"
+      className="border-overlay-foreground/15 absolute left-3 top-3 flex-row items-center rounded-full border bg-overlay px-3 py-1"
     >
       <StageWord key={stage} kind={stage} />
-      <Text className="text-xs text-white">{` · ${journey.position} / ${journey.count}`}</Text>
+      <Text className="text-xs text-overlay-foreground">{` · ${journey.position} / ${journey.count}`}</Text>
     </View>
   );
 }
@@ -115,7 +115,7 @@ function PagerImage({
           style={{ width: "100%", height: "100%" }}
         />
       ) : (
-        <View className="border-white/40 h-full w-full border border-dashed" />
+        <View className="border-photography-ink/40 h-full w-full border border-dashed" />
       )}
     </Pressable>
   );
@@ -200,7 +200,7 @@ export function GalleryPager({
 
   return (
     <View
-      className={cn("-mx-6 overflow-hidden", journey.image ? "bg-black" : "bg-muted")}
+      className={cn("-mx-6 overflow-hidden", journey.image ? "bg-photography" : "bg-muted")}
       style={{ width: pageWidth, height: pageHeight }}
     >
       {journey.image ? (

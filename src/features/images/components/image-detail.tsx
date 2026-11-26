@@ -45,18 +45,22 @@ export function ImageDetail({
 
   return (
     <Modal visible animationType="fade" onRequestClose={() => send({ type: "detail-closed" })}>
-      <View className="flex-1 bg-black" accessibilityLabel="Image detail" accessibilityViewIsModal>
+      <View
+        className="flex-1 bg-photography"
+        accessibilityLabel="Image detail"
+        accessibilityViewIsModal
+      >
         <SafeAreaView className="flex-1" edges={["top", "left", "right", "bottom"]}>
           <View className="flex-row items-center justify-between px-4 py-1">
-            <Text className="text-xs font-semibold text-white/70">{label}</Text>
+            <Text className="text-xs font-semibold text-photography-ink/70">{label}</Text>
             <Button
               size="icon"
               variant="ghost"
-              className="active:bg-white/10"
+              className="active:bg-photography-ink/10"
               accessibilityLabel="Close image detail"
               onPress={() => send({ type: "detail-closed" })}
             >
-              <Icon as={X} className="size-5 text-white" />
+              <Icon as={X} className="size-5 text-photography-ink" />
             </Button>
           </View>
 
@@ -69,7 +73,7 @@ export function ImageDetail({
                 style={{ width: "100%", height: "100%" }}
               />
             ) : (
-              <Icon as={ImageIcon} className="size-10 text-white/40" />
+              <Icon as={ImageIcon} className="size-10 text-photography-ink/40" />
             )}
           </View>
 
@@ -91,13 +95,15 @@ export function ImageDetail({
                     onPress={() => send({ type: "kind-pressed", kind })}
                     className={cn(
                       "rounded-full border px-3 py-1",
-                      selected ? "border-white bg-white" : "border-white/40 active:bg-white/10",
+                      selected
+                        ? "border-photography-ink bg-photography-ink"
+                        : "border-photography-ink/40 active:bg-photography-ink/10",
                     )}
                   >
                     <Text
                       className={cn(
                         "text-xs font-semibold",
-                        selected ? "text-black" : "text-white",
+                        selected ? "text-photography" : "text-photography-ink",
                       )}
                     >
                       {imageKindLabel(kind)}
@@ -108,7 +114,7 @@ export function ImageDetail({
             </View>
 
             <View className="gap-2">
-              <Text className="font-serif text-lg font-semibold leading-tight text-white">
+              <Text className="font-serif text-lg font-semibold leading-tight text-photography-ink">
                 {notes.length > 0 ? `Notes (${notes.length})` : "Notes"}
               </Text>
               <NotesList
@@ -119,19 +125,19 @@ export function ImageDetail({
               />
             </View>
 
-            <View className="gap-2 border-t border-white/15 pt-4">
+            <View className="gap-2 border-t border-photography-ink/15 pt-4">
               {confirmingRemoval ? (
-                <View className="gap-2 rounded-xl bg-white/10 p-3">
-                  <Text className="text-white">Remove this image and its notes?</Text>
+                <View className="gap-2 rounded-xl bg-photography-ink/10 p-3">
+                  <Text className="text-photography-ink">Remove this image and its notes?</Text>
                   <View className="flex-row justify-end gap-2">
                     <Button
                       size="sm"
                       variant="ghost"
-                      className="active:bg-white/10"
+                      className="active:bg-photography-ink/10"
                       accessibilityLabel="Keep image"
                       onPress={() => send({ type: "remove-cancelled" })}
                     >
-                      <Text className="text-white">Keep</Text>
+                      <Text className="text-photography-ink">Keep</Text>
                     </Button>
                     <Button
                       size="sm"

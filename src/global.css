@@ -33,9 +33,14 @@
       --color-accent: #f2ebdd;
       --color-accent-foreground: #292724;
       --color-destructive: #b94b45;
+      --color-destructive-foreground: #ffffff;
       --color-border: #e8e5df;
       --color-input: #e8e5df;
       --color-ring: #687c68;
+      --color-photography: #000000;
+      --color-photography-ink: #ffffff;
+      --color-overlay: rgba(0, 0, 0, 0.6);
+      --color-overlay-foreground: #ffffff;
     }
 
     @variant dark {
@@ -54,9 +59,14 @@
       --color-accent: #424242;
       --color-accent-foreground: #f0eee9;
       --color-destructive: #e27770;
+      --color-destructive-foreground: #242424;
       --color-border: #444444;
       --color-input: #444444;
       --color-ring: #a4b69a;
+      --color-photography: #000000;
+      --color-photography-ink: #ffffff;
+      --color-overlay: rgba(0, 0, 0, 0.6);
+      --color-overlay-foreground: #ffffff;
     }
   }
 }

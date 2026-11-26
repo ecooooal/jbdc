@@ -278,7 +278,12 @@ The code's shadcn-style slot names resolve to this palette:
 | `secondary` | Muslin Sage |
 | `secondary-foreground` | White (light) / ink (dark) on sage |
 | `destructive` | Rejection Red |
+| `destructive-foreground` | White (light) / ink (dark) on Rejection Red |
 | `border`, `input` | Thread Line |
+| `photography` | Photography Black |
+| `photography-ink` | Photography Ink |
+| `overlay` | Photography Overlay |
+| `overlay-foreground` | Overlay Ink |
 
 ### Named Rules
 
