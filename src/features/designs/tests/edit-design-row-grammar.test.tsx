@@ -109,6 +109,35 @@ describe("the row grammar", () => {
   });
 });
 
+describe("the read rows", () => {
+  test("every read row announces the value it shows", async () => {
+    const design = newDesign();
+
+    await renderEdit(design.id);
+
+    expect(screen.getByRole("button", { name: "Design name" })).toHaveAccessibilityValue({
+      text: "Silk slip dress",
+    });
+    expect(
+      screen.getByRole("button", { name: "Category and collection" }),
+    ).toHaveAccessibilityValue({ text: "No category or collection" });
+    expect(screen.getByRole("button", { name: "Description" })).toHaveAccessibilityValue({
+      text: "Bias cut",
+    });
+    expect(screen.getByRole("button", { name: "Silhouette" })).toHaveAccessibilityValue({
+      text: "Not set",
+    });
+  });
+
+  test("the screen names itself in its header", async () => {
+    const design = newDesign();
+
+    await renderEdit(design.id);
+
+    expect(screen.getByRole("heading", { name: "Edit design" })).toBeTruthy();
+  });
+});
+
 describe("the taxonomy sheet", () => {
   test("a Category choice is stored while the sheet stays open", async () => {
     const category = createCategory(database, { name: "Bridal" });

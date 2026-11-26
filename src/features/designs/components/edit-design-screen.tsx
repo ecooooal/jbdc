@@ -2,7 +2,7 @@ import { router } from "expo-router";
 import { ChevronLeft } from "lucide-react-native";
 import { useEffect, useRef } from "react";
 import { AppState, Keyboard, Pressable, View, type TextInputInstance } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 import type { DesignEditableField } from "@/features/designs";
 import { DESIGN_NAME_MAX_LENGTH } from "../lib/records";
@@ -21,6 +21,7 @@ import { DESIGN_SECTIONS, isDesignSectionTab, type DesignSectionTab } from "../l
 import { useDesignDetail } from "../lib/use-design-detail";
 import { useEditVisit } from "../lib/use-edit-visit";
 import { DesignStatusBadge } from "./design-status-badge";
+import { FieldError } from "./field-error";
 import { FieldRows } from "./field-rows";
 import { FormField } from "./form-field";
 import { MaterialUseSheets } from "./material-use-sheets";
@@ -46,6 +47,7 @@ import { TaxonomySelect } from "./taxonomy-select";
  * affordance. Category and Collection open in one sheet.
  */
 export function EditDesignScreen({ designId }: { designId: string }) {
+  const insets = useSafeAreaInsets();
   const { design, error: readError, status: readStatus } = useDesignDetail(designId);
   const { categories, collections, error: taxonomyError, status: taxonomyStatus } = useTaxonomy();
   const [state, send] = useEditVisit(designId);
@@ -83,12 +85,10 @@ export function EditDesignScreen({ designId }: { designId: string }) {
     categories.find((category) => category.id === state.draft.categoryId) ?? null;
   const selectedCollection =
     collections.find((collection) => collection.id === state.draft.collectionId) ?? null;
-  const taxonomySummary =
-    selectedCategory === null && selectedCollection === null
-      ? "No category or collection"
-      : `${selectedCategory?.name ?? "No category"} · ${
-          selectedCollection?.name ?? "No collection"
-        }`;
+  const hasTaxonomy = selectedCategory !== null || selectedCollection !== null;
+  const taxonomySummary = hasTaxonomy
+    ? `${selectedCategory?.name ?? "No category"} · ${selectedCollection?.name ?? "No collection"}`
+    : "No category or collection";
 
   function textRowLeft(field: DesignTextEditableField): void {
     send({ type: "text-row-left", field });
@@ -139,23 +139,35 @@ export function EditDesignScreen({ designId }: { designId: string }) {
   function fieldError(field: DesignEditableField) {
     if (state.error?.field !== field) return null;
 
-    return <Text className="text-destructive text-sm">{state.error.message}</Text>;
+    return <FieldError message={state.error.message} />;
   }
 
   const editingName = state.editing === "name";
   const editingDescription = state.editing === "description";
 
   return (
-    <SafeAreaView style={{ flex: 1 }} className="bg-background" edges={["top", "left", "right"]}>
-      <View className="flex-row items-center px-4 pt-2">
+    <View
+      style={{
+        flex: 1,
+        paddingTop: insets.top,
+        paddingLeft: insets.left,
+        paddingRight: insets.right,
+      }}
+      className="bg-background"
+    >
+      <View className="flex-row items-center gap-2 px-4 pt-2">
         <Button
           size="icon"
           variant="ghost"
           accessibilityLabel="Back to design"
+          hitSlop={4}
           onPress={() => router.back()}
         >
           <Icon as={ChevronLeft} />
         </Button>
+        <Text variant="h4" className="flex-1 leading-tight">
+          Edit design
+        </Text>
       </View>
 
       {readError ? (
@@ -175,7 +187,7 @@ export function EditDesignScreen({ designId }: { designId: string }) {
             style={{ flex: 1 }}
             bottomOffset={24}
             contentContainerStyle={{
-              gap: 20,
+              gap: 24,
               paddingHorizontal: 24,
               paddingTop: 8,
               paddingBottom: 48,
@@ -195,7 +207,7 @@ export function EditDesignScreen({ designId }: { designId: string }) {
                   maxLength={DESIGN_NAME_MAX_LENGTH}
                   className={cn(
                     editingName
-                      ? "border-0 bg-transparent px-4 py-4 text-2xl font-serif leading-tight shadow-none"
+                      ? "h-auto min-h-0 border-0 bg-transparent px-4 py-4 text-2xl font-serif leading-tight shadow-none"
                       : "absolute inset-0 opacity-0",
                   )}
                   pointerEvents={editingName ? "auto" : "none"}
@@ -213,6 +225,7 @@ export function EditDesignScreen({ designId }: { designId: string }) {
                     onPress={() => openTextRow("name")}
                     accessibilityRole="button"
                     accessibilityLabel="Design name"
+                    accessibilityValue={{ text: state.draft.name }}
                     className="active:bg-accent flex-row items-start justify-between gap-3 p-4"
                   >
                     <Text variant="h3" className="flex-1">
@@ -231,11 +244,16 @@ export function EditDesignScreen({ designId }: { designId: string }) {
                 onPress={openTaxonomy}
                 accessibilityRole="button"
                 accessibilityLabel="Category and collection"
+                accessibilityValue={{ text: taxonomySummary }}
                 className="border-border active:bg-accent mt-3 flex-row items-center justify-between gap-3 rounded-md border p-4"
               >
-                <Text variant="muted" className="flex-1">
-                  {taxonomySummary}
-                </Text>
+                {hasTaxonomy ? (
+                  <Text className="flex-1 leading-6">{taxonomySummary}</Text>
+                ) : (
+                  <Text variant="muted" className="flex-1">
+                    {taxonomySummary}
+                  </Text>
+                )}
                 <RowPencil />
               </Pressable>
 
@@ -269,6 +287,7 @@ export function EditDesignScreen({ designId }: { designId: string }) {
                     onPress={() => openTextRow("description")}
                     accessibilityRole="button"
                     accessibilityLabel="Description"
+                    accessibilityValue={{ text: state.draft.description || "No description" }}
                     className="active:bg-accent flex-row items-start justify-between gap-3 p-4"
                   >
                     {state.draft.description ? (
@@ -293,14 +312,15 @@ export function EditDesignScreen({ designId }: { designId: string }) {
 
             <Tabs
               value={state.tab}
+              className="gap-4"
               onValueChange={(value) => {
                 if (isDesignSectionTab(value)) changeTab(value);
               }}
             >
-              <TabsList>
+              <TabsList className="h-auto w-full rounded-xl p-1">
                 {DESIGN_SECTIONS.map(({ tab, label }) => (
-                  <TabsTrigger key={tab} value={tab}>
-                    <Text>{label}</Text>
+                  <TabsTrigger key={tab} value={tab} className="min-h-10 flex-1 rounded-lg px-3">
+                    <Text className="text-center">{label}</Text>
                   </TabsTrigger>
                 ))}
               </TabsList>
@@ -338,6 +358,13 @@ export function EditDesignScreen({ designId }: { designId: string }) {
                   onClose={closeRow}
                 />
 
+                {taxonomyError ? (
+                  <ReadError
+                    message="The Category and Collection lists could not be loaded."
+                    error={taxonomyError}
+                  />
+                ) : null}
+
                 <FormField label="Category">
                   <TaxonomySelect
                     label="Category"
@@ -368,6 +395,6 @@ export function EditDesignScreen({ designId }: { designId: string }) {
           <MaterialUseSheets panel={state.materialUsePanel} send={send} />
         </>
       )}
-    </SafeAreaView>
+    </View>
   );
 }

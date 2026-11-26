@@ -9,6 +9,7 @@ import {
   type EditDesignGesture,
   type EditingMaterialUse,
 } from "../lib/edit-design-reducer";
+import { FieldError } from "./field-error";
 import { FormField } from "./form-field";
 import { MaterialUseRoleSelect } from "./material-use-role-select";
 import { ReadError } from "./read-error";
@@ -95,7 +96,7 @@ export function EditMaterialUseForm({
         {materialsError ? (
           <ReadError message="The Material list could not be loaded." error={materialsError} />
         ) : null}
-        {state.error ? <Text className="text-destructive text-sm">{state.error}</Text> : null}
+        {state.error ? <FieldError message={state.error} /> : null}
 
         <View className="flex-row justify-between gap-2">
           <Button

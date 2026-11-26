@@ -5,6 +5,7 @@ import { Text } from "@/shared/components/ui/text";
 import { cn } from "@/shared/lib/utils";
 import type { EditDesignState } from "../lib/edit-design-reducer";
 import type { DesignSectionField, DesignSectionFieldDefinition } from "../lib/sections";
+import { FieldError } from "./field-error";
 import { RowPencil } from "./row-pencil";
 
 /**
@@ -101,13 +102,14 @@ function FieldRow({
       />
       {editing ? (
         error ? (
-          <Text className="text-destructive text-sm">{error}</Text>
+          <FieldError message={error} />
         ) : null
       ) : (
         <Pressable
           onPress={open}
           accessibilityRole="button"
           accessibilityLabel={label}
+          accessibilityValue={{ text: value || "Not set" }}
           className="active:bg-accent flex-row items-start justify-between gap-4 px-4 py-3"
         >
           <Text variant="muted">{label}</Text>

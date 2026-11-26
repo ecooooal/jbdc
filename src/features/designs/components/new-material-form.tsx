@@ -14,6 +14,7 @@ import {
   type InlineCreationEvent,
   type InlineCreationState,
 } from "../lib/inline-creation-reducer";
+import { FieldError } from "./field-error";
 import { SheetHeader } from "./sheet-header";
 
 /**
@@ -61,7 +62,7 @@ export function NewMaterialForm({
           accessibilityLabel="New material name"
         />
 
-        {inline.error ? <Text className="text-destructive text-sm">{inline.error}</Text> : null}
+        {inline.error ? <FieldError message={inline.error} /> : null}
 
         <View className="flex-row justify-end gap-2">
           <Button size="sm" variant="ghost" onPress={() => onFact({ type: "closed" })}>

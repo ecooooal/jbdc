@@ -8,6 +8,7 @@ import { Text } from "@/shared/components/ui/text";
 import { useMaterials } from "@/features/materials/react";
 import { canAddMaterialUse, type AddMaterialUseState } from "../lib/add-material-use-reducer";
 import type { EditDesignGesture } from "../lib/edit-design-reducer";
+import { FieldError } from "./field-error";
 import { FormField } from "./form-field";
 import { MaterialUseRoleSelect } from "./material-use-role-select";
 import { ReadError } from "./read-error";
@@ -92,7 +93,7 @@ export function AddMaterialUseForm({
         {materialsError ? (
           <ReadError message="The Material list could not be loaded." error={materialsError} />
         ) : null}
-        {state.error ? <Text className="text-destructive text-sm">{state.error}</Text> : null}
+        {state.error ? <FieldError message={state.error} /> : null}
 
         <View className="flex-row justify-end gap-2">
           <Button size="sm" variant="ghost" onPress={close}>
