@@ -401,7 +401,7 @@ The library is uniwind + rn-primitives with shadcn-style slot names; every color
 
 ### Inputs / Fields
 
-- **Style:** Thread Line stroke on Warm Paper, 8px radius, 40px tall, DM Sans body type; placeholder at Faded Thread, 50% on native.
+- **Style:** Thread Line stroke on Warm Paper, 8px radius, 40px tall, DM Sans body type; the placeholder is Faded Thread at full strength so it clears 4.5:1 on both paper tones.
 - **Focus:** On web, the stroke shifts to Sage with a 3px 25% Sage ring; native fields carry no glow.
 - **Disabled:** 50% opacity. Errors sit beneath the field in Rejection Red, 14px.
 
@@ -424,7 +424,7 @@ The Detail's visual home, on the detail's Unbleached Paper ground: a 3:4 stage, 
 
 ### Paper sheets (signature)
 
-The current image's notes open in one bottom sheet: Unbleached Paper, 16px top corners only, a content detent that follows its measured height, and no paper card floating above the page. The header carries `Notes (n)` and a ghost Close; Add note expands the inline composer beneath it. The composer is keyboard-aware, keeps its draft through a refusal, and disables Save while the draft is empty; only the list below scrolls, so the header and composer never leave the screen. Notes read oldest first with the same two-step delete. Note dates are Mono-small in Faded Thread, note text Body in Ink Thread, and the armed line is 12px Rejection Red.
+The current image's notes open in one bottom sheet: Unbleached Paper, 16px top corners only, a content detent that follows its measured height, and no paper card floating above the page. The header carries `Notes (n)` and a ghost Close; Add note expands the inline composer beneath it. The composer's field is Warm Paper on the sheet with a Thread Line stroke, and focus turns the stroke Sage; the caret and selection follow the same Sage. The composer is keyboard-aware, keeps its draft through a refusal, and disables Save while the draft is empty; only the list below scrolls, so the header and composer never leave the screen. Notes read oldest first with the same two-step delete. Note dates are Mono-small in Faded Thread, note text Body in Ink Thread, and the armed line is 12px Rejection Red.
 
 ### The image detail (signature)
 
