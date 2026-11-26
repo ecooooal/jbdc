@@ -1,72 +1,24 @@
-import { PortalHost } from "@rn-primitives/portal";
-import { act, fireEvent, render, screen, userEvent } from "@testing-library/react-native";
+import { act, fireEvent, screen, userEvent } from "@testing-library/react-native";
 import { AppState } from "react-native";
-import { SafeAreaProvider } from "react-native-safe-area-context";
-import { DatabaseProvider } from "@/features/database/react";
-import { createSyncSubscribe, createTempDatabase } from "@/features/database/testing";
-import { createDesign, getDesign, writeDesign } from "@/features/designs";
-import { listMaterialUses } from "../lib/records";
-import { EditDesignScreen } from "@/features/designs/react";
+import { createDesign, getDesign } from "@/features/designs";
 import { listDesignEvents } from "@/features/history";
 import { createMaterial } from "@/features/materials";
 import { createCategory, createCollection } from "@/features/taxonomy";
+import { listMaterialUses } from "../lib/records";
+import {
+  addMaterialUse,
+  database,
+  live,
+  newDesign,
+  openRow,
+  openTab,
+  renderEdit,
+  setupEditDesignFixtures,
+} from "./edit-design-screen-fixtures";
 
 jest.mock("expo-router", () => ({ router: { back: jest.fn() } }));
 
-/** Seeds a recorded use through the visit's one write path. */
-function addMaterialUse(
-  database: ReturnType<typeof createTempDatabase>["database"],
-  designId: string,
-  input: { materialId: string; colour: string; role: "main" | "secondary" | "other" },
-  now?: number,
-) {
-  writeDesign(database, designId, { uses: [{ kind: "add", input }] }, now);
-}
-
-const INITIAL_METRICS = {
-  frame: { x: 0, y: 0, width: 390, height: 844 },
-  insets: { top: 47, left: 0, right: 0, bottom: 34 },
-};
-
-const live = createSyncSubscribe();
-
-let database: ReturnType<typeof createTempDatabase>["database"];
-let dispose: () => void;
-
-beforeEach(() => {
-  ({ database, dispose } = createTempDatabase());
-});
-
-afterEach(() => {
-  dispose();
-});
-
-async function renderEdit(designId: string) {
-  return render(
-    <SafeAreaProvider initialMetrics={INITIAL_METRICS}>
-      <DatabaseProvider database={database} subscribe={live.subscribe}>
-        <EditDesignScreen designId={designId} />
-        <PortalHost />
-      </DatabaseProvider>
-    </SafeAreaProvider>,
-  );
-}
-
-function newDesign() {
-  return createDesign(database, {
-    name: "Silk slip dress",
-    description: "Bias cut",
-  });
-}
-
-/** Opens the read-first editor for a hero field or a section row. */
-async function openRow(label: string) {
-  await userEvent.press(screen.getByRole("button", { name: label }));
-}
-
-async function openTab(name: string) {
-  await userEvent.press(screen.getByRole("tab", { name }));
-}
+setupEditDesignFixtures();
 
 describe("edit hero", () => {
   test("a name typed and left is stored with no Save action", async () => {
@@ -135,7 +87,7 @@ describe("edit hero", () => {
     expect(screen.getByText("No description")).toBeTruthy();
 
     await openRow("Description");
-    expect(screen.getByPlaceholderText("What this piece is")).toBeTruthy();
+    expect(screen.getByPlaceholderText("What the design is")).toBeTruthy();
   });
 
   test("the hero shows the Status, Category, and Collection", async () => {
@@ -161,7 +113,7 @@ describe("edit hero", () => {
     expect(screen.queryByLabelText("Design journey")).toBeNull();
   });
 
-  test("tapping Category · Collection opens both pickers and Done closes them", async () => {
+  test("tapping Category · Collection opens the taxonomy sheet and Close returns to the screen", async () => {
     const category = createCategory(database, { name: "Dress" });
     const design = createDesign(database, {
       name: "Silk slip dress",
@@ -174,7 +126,7 @@ describe("edit hero", () => {
     expect(screen.getByLabelText("Category")).toBeTruthy();
     expect(screen.getByLabelText("Collection")).toBeTruthy();
 
-    await userEvent.press(screen.getByRole("button", { name: "Done" }));
+    await userEvent.press(screen.getByRole("button", { name: "Close category and collection" }));
 
     expect(screen.queryByLabelText("Category")).toBeNull();
   });
@@ -292,7 +244,7 @@ describe("Creative direction rows", () => {
     await openTab("Creative direction");
     await openRow("Concept");
 
-    expect(screen.getByPlaceholderText("What this piece is trying to do")).toBeTruthy();
+    expect(screen.getByPlaceholderText("What the design is trying to do")).toBeTruthy();
   });
 
   test("a Creative direction row typed and left is stored and collapses", async () => {
@@ -325,7 +277,7 @@ describe("Materials", () => {
     for (const heading of ["Material", "Colour", "Role"]) {
       expect(screen.getByText(heading)).toBeTruthy();
     }
-    expect(screen.getByText("No materials yet")).toBeTruthy();
+    expect(screen.getByText("No materials added")).toBeTruthy();
     expect(screen.getByRole("button", { name: "Add material" })).toBeTruthy();
   });
 
@@ -343,7 +295,7 @@ describe("Materials", () => {
     expect(screen.getByText("Silk crêpe")).toBeTruthy();
 
     await userEvent.type(screen.getByLabelText("Colour"), "Ivory");
-    await userEvent.press(screen.getByRole("button", { name: "Add material use" }));
+    await userEvent.press(screen.getByRole("button", { name: "Add to design" }));
 
     await act(async () => {
       live.notify("design_materials");
@@ -363,7 +315,7 @@ describe("Materials", () => {
     const design = newDesign();
     const wool = createMaterial(database, { name: "Wool" });
 
-    addMaterialUse(database, design.id, {
+    addMaterialUse(design.id, {
       materialId: wool.id,
       colour: "Charcoal",
       role: "main",
@@ -376,14 +328,14 @@ describe("Materials", () => {
     expect(screen.getByLabelText("Material")).toBeTruthy();
     expect(screen.getByLabelText("Colour")).toHaveDisplayValue("Charcoal");
     expect(screen.getByLabelText("Role")).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Remove material use" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Remove from design" })).toBeTruthy();
   });
 
   test("a colour typed and left writes the use with no Save action", async () => {
     const design = newDesign();
     const wool = createMaterial(database, { name: "Wool" });
 
-    addMaterialUse(database, design.id, {
+    addMaterialUse(design.id, {
       materialId: wool.id,
       colour: "Charcoal",
       role: "main",
@@ -403,11 +355,11 @@ describe("Materials", () => {
     expect(screen.queryByRole("button", { name: /save/i })).toBeNull();
   });
 
-  test("a colour typed and finished with Done is written as the editor closes", async () => {
+  test("a colour typed and finished with Close is written as the sheet closes", async () => {
     const design = newDesign();
     const wool = createMaterial(database, { name: "Wool" });
 
-    addMaterialUse(database, design.id, {
+    addMaterialUse(design.id, {
       materialId: wool.id,
       colour: "Charcoal",
       role: "main",
@@ -416,19 +368,20 @@ describe("Materials", () => {
     await renderEdit(design.id);
     await userEvent.press(screen.getByRole("button", { name: "Edit Wool (Charcoal)" }));
     await fireEvent.changeText(screen.getByLabelText("Colour"), "Black");
-    await userEvent.press(screen.getByRole("button", { name: "Done" }));
+    await userEvent.press(screen.getByRole("button", { name: "Close material" }));
 
     expect(listMaterialUses(database, design.id)).toEqual([
       expect.objectContaining({ materialName: "Wool", colour: "Black", role: "main" }),
     ]);
+    expect(screen.queryByLabelText("Colour")).toBeNull();
     expect(screen.getByRole("button", { name: "Add material" })).toBeTruthy();
   });
 
-  test("a use can be removed", async () => {
+  test("a use is removed after the second press of Remove from design", async () => {
     const design = newDesign();
     const wool = createMaterial(database, { name: "Wool" });
 
-    addMaterialUse(database, design.id, {
+    addMaterialUse(design.id, {
       materialId: wool.id,
       colour: "Charcoal",
       role: "main",
@@ -436,7 +389,8 @@ describe("Materials", () => {
 
     await renderEdit(design.id);
     await userEvent.press(screen.getByRole("button", { name: "Edit Wool (Charcoal)" }));
-    await userEvent.press(screen.getByRole("button", { name: "Remove material use" }));
+    await userEvent.press(screen.getByRole("button", { name: "Remove from design" }));
+    await userEvent.press(screen.getByRole("button", { name: "Remove from design" }));
 
     await act(async () => {
       live.notify("design_materials");
@@ -444,7 +398,7 @@ describe("Materials", () => {
     });
 
     expect(listMaterialUses(database, design.id)).toEqual([]);
-    expect(screen.getByText("No materials yet")).toBeTruthy();
+    expect(screen.getByText("No materials added")).toBeTruthy();
   });
 });
 

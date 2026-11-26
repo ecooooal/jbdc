@@ -1,71 +1,92 @@
 import { View } from "react-native";
 import { Text } from "@/shared/components/ui/text";
+import type { ImageDetailEvent } from "../lib/image-detail-reducer";
 import { imageNotesOf } from "../lib/image-notes";
 import { useGallery } from "../lib/use-gallery";
-import { useImageViewer } from "../lib/use-image-viewer";
-import { GalleryHero } from "./gallery-hero";
-import { ImageNoteBlock } from "./image-note-block";
-import { ImageViewer } from "./image-viewer";
+import { useImageDetail } from "../lib/use-image-detail";
+import { GalleryLoading } from "./gallery-loading";
+import { GalleryPager } from "./gallery-pager";
+import { ImageDetail } from "./image-detail";
 import { JourneyRail } from "./journey-rail";
+import { NotesSheet } from "./notes-sheet";
 
 /**
- * One Design's visual home: the current image on the hero, the notes that
- * explain it beneath, then the journey rail with the active stage's images.
- * The images and notes live read feeds the gallery reducer, so a write
- * anywhere re-runs this without a manual refresh. The plus card attaches to
- * the active stage, so the stage the owner picked is the kind the picked files
- * get. A tap on the hero opens the full-screen viewer, whose own reducer owns
- * reclassification and the one remove question. The designs module composes it
- * above Detail's hero text.
+ * One Design's visual home: the pager walking every image in journey order with
+ * the notes button at the bottom right; then the stage block's four equal tabs
+ * and the active stage's images. The images and notes
+ * live read feeds the gallery reducer, so a write anywhere re-runs this without
+ * a manual refresh. The plus card attaches to the active stage, so the stage the
+ * owner picked is the kind the picked files get.
+ * The notes button opens the one notes sheet, where Add note expands the inline
+ * composer and every note reads with the two-step delete; its open state stays
+ * in the gallery reducer. A tap on a page opens the image detail, whose own
+ * reducer owns reclassification and the one remove question. Until the images
+ * read lands, the loading frame holds the gallery's whole shape, so the sheet
+ * beneath it never jumps when the images arrive. The designs module composes it
+ * above Detail's identity block.
  */
 export function DesignGallery({ designId }: { designId: string }) {
-  const { state, stages, images, imageNotes, view, noteView, send, error, status } =
+  const { state, images, imageNotes, journey, stageTabs, stageRow, notes, send, error, status } =
     useGallery(designId);
-  const viewer = useImageViewer(designId);
-  const viewed = viewer.state.imageId
-    ? (images.find((image) => image.id === viewer.state.imageId) ?? null)
+  const detail = useImageDetail(designId);
+  const detailImage = detail.state.imageId
+    ? (images.find((image) => image.id === detail.state.imageId) ?? null)
     : null;
+  // The detail's close also reaches the gallery, which owns the two-step
+  // delete's arming and drops it so a return visit starts unarmed.
+  const sendDetail = (event: ImageDetailEvent) => {
+    detail.send(event);
+
+    if (event.type === "detail-closed") send({ type: "image-detail-closed" });
+  };
 
   if (error) {
     return <Text className="text-destructive">{error.message}</Text>;
   }
 
+  if (status === "loading") return <GalleryLoading />;
   if (status !== "ready") return null;
 
   return (
     <View className="gap-3" accessibilityLabel="Design journey">
-      <GalleryHero
-        image={view.image}
-        kind={view.stage?.kind ?? state.kind}
-        position={view.position}
-        count={view.count}
-        onSwipe={(direction) => send({ type: "hero-swiped", direction })}
-        onImagePress={() => {
-          if (view.image) viewer.send({ type: "image-opened", imageId: view.image.id });
+      <GalleryPager
+        journey={journey}
+        stageKind={state.kind}
+        notes={{
+          count: notes.length,
+          onPress: () => send({ type: "notes-button-pressed" }),
         }}
+        onPageSettled={(imageId) => send({ type: "page-settled", imageId })}
+        onImagePressed={(imageId) => detail.send({ type: "image-opened", imageId })}
       />
 
-      {view.image ? (
-        <ImageNoteBlock view={noteView} composer={state.imageNoteComposer} send={send} />
-      ) : null}
+      <NotesSheet
+        open={state.notesSheetOpen}
+        notes={notes}
+        composer={state.imageNoteComposer}
+        armedNoteId={state.armedNoteId}
+        send={send}
+      />
 
       <JourneyRail
-        stages={stages}
-        active={view.stage}
-        selectedId={view.image?.id ?? null}
+        tabs={stageTabs}
+        row={stageRow}
+        rowOpen={state.stageRowOpen}
         attachFailed={state.attachFailed}
         onStagePress={(kind) => send({ type: "stage-pressed", kind })}
         onImagePress={(imageId) => send({ type: "image-pressed", imageId })}
         onAddPress={(kind) => send({ type: "attach-pressed", kind })}
       />
 
-      {viewed ? (
-        <ImageViewer
-          image={viewed}
-          notes={imageNotesOf(imageNotes, viewed.id)}
-          confirmingRemoval={viewer.state.confirmingRemoval}
-          removeFailed={viewer.state.removeFailed}
-          send={viewer.send}
+      {detailImage ? (
+        <ImageDetail
+          image={detailImage}
+          notes={imageNotesOf(imageNotes, detailImage.id)}
+          armedNoteId={state.armedNoteId}
+          confirmingRemoval={detail.state.confirmingRemoval}
+          removeFailed={detail.state.removeFailed}
+          send={sendDetail}
+          onNoteDeletePress={(noteId) => send({ type: "image-note-delete-pressed", noteId })}
         />
       ) : null}
     </View>

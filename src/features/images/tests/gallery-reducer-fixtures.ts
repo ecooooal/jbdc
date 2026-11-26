@@ -47,8 +47,16 @@ export function send(state: GalleryState, ...events: GalleryEvent[]): GalleryRes
   );
 }
 
-/** A gallery state's note UI before the owner opens anything. */
-export const noNoteUI = { imageNoteComposer: null, imageNotesExpanded: false };
+/**
+ * A gallery state's untouched chrome: no note UI open, and the stage row in its
+ * initial open state.
+ */
+export const noNoteUI = {
+  stageRowOpen: true,
+  imageNoteComposer: null,
+  notesSheetOpen: false,
+  armedNoteId: null,
+};
 
 /** A gallery looking at one image, with nothing else settled yet. */
 export function onImage(imageId: string, kind: ImageKind = "sketch"): GalleryState {

@@ -1,24 +1,39 @@
-import { View } from "react-native";
-import { useMaterials } from "@/features/materials/react";
+import { DeleteButton } from "@/shared/components/delete-button";
+import { SheetBody, SheetFooter } from "@/shared/components/sheet";
 import { Button } from "@/shared/components/ui/button";
 import { Input } from "@/shared/components/ui/input";
 import { Text } from "@/shared/components/ui/text";
+import { useMaterials } from "@/features/materials/react";
 import {
   materialUseChoices,
   type EditDesignGesture,
   type EditingMaterialUse,
 } from "../lib/edit-design-reducer";
+import { ChoiceSheet } from "./choice-sheet";
+import { FieldError } from "./field-error";
 import { FormField } from "./form-field";
-import { MaterialUseRoleSelect } from "./material-use-role-select";
-import { TaxonomySelect } from "./taxonomy-select";
+import { MaterialUseRolePicker } from "./material-use-role-picker";
+import { ReadError } from "./read-error";
+import { SheetHeader } from "@/shared/components/sheet-header";
 
 /**
- * The editor a Materials row opens. Material, colour, and role each write as
- * soon as they change, so there is no Save step; the panel stays open until
- * Done or Remove, and the screen's live read brings the re-sorted row back.
+ * The Edit material sheet's body. Material, colour, and role each write as soon
+ * as they change, so there is no Save step; the sheet stays open until the
+ * header's X or the footer's Done, and the screen's live read brings the
+ * re-sorted row back. Both closes flush a typed colour first, as the panel
+ * always has.
  *
- * The visit holds this panel's draft and its stored use, and decides what each
- * gesture writes: this form only renders the state and reports what happened.
+ * "Remove from design" detaches this Material use from the design; it never
+ * deletes the Material from the owner's list. It wears the shared delete
+ * control, in Faded Thread at rest and Rejection Red once armed, and follows
+ * the same two-step grammar as a note: the first press arms the control — the
+ * trash becomes "Remove" — and the second writes the removal. Any other edit,
+ * a refusal, or closing the sheet disarms it, so no return visit removes on
+ * its first press.
+ *
+ * The visit holds this panel's draft, its stored use, and whether Remove is
+ * armed; it decides what each gesture writes: this form only renders the state
+ * and reports what happened.
  */
 export function EditMaterialUseForm({
   state,
@@ -31,13 +46,20 @@ export function EditMaterialUseForm({
   const materialItems = materialUseChoices(materials, state);
   const selectedMaterial =
     materialItems.find((material) => material.id === state.materialId) ?? null;
+  const removeArmed = state.removeArmed;
+
+  function close(): void {
+    send({ type: "material-use-panel-fact", fact: { type: "closed" } });
+  }
 
   return (
-    <View className="border-border gap-3 rounded-xl border p-3">
+    <SheetBody testID="edit-material-sheet" scroll>
+      <SheetHeader title="Edit material" closeLabel="Close material" onClose={close} />
+
       <FormField label="Material">
-        <TaxonomySelect
+        <ChoiceSheet
           label="Material"
-          placeholder="Choose a material"
+          placeholder="No material"
           value={selectedMaterial}
           items={materialItems}
           disabled={status !== "ready"}
@@ -73,7 +95,7 @@ export function EditMaterialUseForm({
       </FormField>
 
       <FormField label="Role">
-        <MaterialUseRoleSelect
+        <MaterialUseRolePicker
           value={state.role}
           onChange={(role) =>
             send({ type: "material-use-panel-fact", fact: { type: "role-chosen", role } })
@@ -82,29 +104,24 @@ export function EditMaterialUseForm({
       </FormField>
 
       {materialsError ? (
-        <Text className="text-destructive text-sm">{materialsError.message}</Text>
+        <ReadError message="The Material list could not be loaded." error={materialsError} />
       ) : null}
-      {state.error ? <Text className="text-destructive text-sm">{state.error}</Text> : null}
+      {state.error ? <FieldError message={state.error} /> : null}
 
-      <View className="flex-row justify-between gap-2">
-        <Button
-          size="sm"
-          variant="destructive"
+      <SheetFooter className="justify-between">
+        <DeleteButton
+          accessibilityLabel="Remove from design"
+          object="this Material use from the design"
+          action="remove"
+          armed={removeArmed}
           onPress={() =>
             send({ type: "material-use-panel-fact", fact: { type: "remove-pressed" } })
           }
-          accessibilityLabel="Remove material use"
-        >
-          <Text>Remove</Text>
-        </Button>
-        <Button
-          size="sm"
-          variant="ghost"
-          onPress={() => send({ type: "material-use-panel-fact", fact: { type: "closed" } })}
-        >
+        />
+        <Button size="sm" onPress={close}>
           <Text>Done</Text>
         </Button>
-      </View>
-    </View>
+      </SheetFooter>
+    </SheetBody>
   );
 }

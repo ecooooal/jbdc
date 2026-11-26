@@ -43,6 +43,8 @@ export type EditingMaterialUse = {
   materialId: string;
   colour: string;
   role: MaterialUseRole;
+  /** True once the first Remove press armed the control; the next press removes. */
+  removeArmed: boolean;
   error: string | null;
 };
 
@@ -57,6 +59,7 @@ function editingMaterialUseFrom(materialUse: MaterialUse): EditingMaterialUse {
     materialId: materialUse.materialId,
     colour: materialUse.colour,
     role: materialUse.role,
+    removeArmed: false,
     error: null,
   };
 }
@@ -775,7 +778,13 @@ export function editDesignReducer(
             // A typed colour is a draft; leaving the field or the panel writes it.
             return only({
               ...state,
-              materialUsePanel: { kind: "edit", ...editing, colour: fact.colour, error: null },
+              materialUsePanel: {
+                kind: "edit",
+                ...editing,
+                colour: fact.colour,
+                removeArmed: false,
+                error: null,
+              },
             });
           }
 
@@ -790,8 +799,18 @@ export function editDesignReducer(
             ),
           );
         }
-        case "colour-committed":
-          return { state, effects: materialUseFlushEffects(state, event.now) };
+        case "colour-committed": {
+          // Committing a typed colour is another write, so it ends the arming
+          // the first Remove press began.
+          const next = editing?.removeArmed
+            ? {
+                ...state,
+                materialUsePanel: { kind: "edit" as const, ...editing, removeArmed: false },
+              }
+            : state;
+
+          return { state: next, effects: materialUseFlushEffects(next, event.now) };
+        }
         case "material-chosen": {
           if (editing) {
             if (fact.materialId === null) return only(state);
@@ -802,6 +821,7 @@ export function editDesignReducer(
                 kind: "edit" as const,
                 ...editing,
                 materialId: fact.materialId,
+                removeArmed: false,
                 error: null,
               },
             };
@@ -827,7 +847,13 @@ export function editDesignReducer(
           if (editing) {
             const next = {
               ...state,
-              materialUsePanel: { kind: "edit" as const, ...editing, role: fact.role, error: null },
+              materialUsePanel: {
+                kind: "edit" as const,
+                ...editing,
+                role: fact.role,
+                removeArmed: false,
+                error: null,
+              },
             };
 
             return { state: next, effects: materialUseFlushEffects(next, event.now) };
@@ -847,8 +873,22 @@ export function editDesignReducer(
         case "remove-pressed": {
           if (!editing) return only(state);
 
+          // The first press only arms the control; the second press on the same
+          // open editor declares exactly one removal and disarms it. Any other
+          // edit, refusal, or close drops the arming, so a return visit never
+          // removes on its first press.
+          if (!editing.removeArmed) {
+            return only({
+              ...state,
+              materialUsePanel: { kind: "edit", ...editing, removeArmed: true },
+            });
+          }
+
           return {
-            state,
+            state: {
+              ...state,
+              materialUsePanel: { kind: "edit", ...editing, removeArmed: false },
+            },
             effects: [
               writeEffect(
                 state,
@@ -873,6 +913,7 @@ export function editDesignReducer(
                     colour: fact.materialUse.colour,
                     role: fact.materialUse.role,
                     stored: fact.materialUse,
+                    removeArmed: false,
                     error: null,
                   }
                 : state.materialUsePanel,
@@ -894,6 +935,7 @@ export function editDesignReducer(
               colour: editing.stored.colour,
               role: editing.stored.role,
               stored: editing.stored,
+              removeArmed: false,
               error: fact.message,
             },
           });

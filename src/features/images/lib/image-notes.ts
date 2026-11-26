@@ -1,8 +1,8 @@
 import type { ImageNote } from "./images";
 
 /**
- * The quiet cap on one Image note. The composer lets the owner type past it and
- * the write path refuses what is over, so nothing over the cap is ever stored
+ * The quiet cap on one Image note. The composer stops typing at it, and the
+ * write path still refuses what is over, so nothing over the cap is ever stored
  * and nothing interrupts her to say so.
  */
 export const IMAGE_NOTE_MAX_LENGTH = 280;

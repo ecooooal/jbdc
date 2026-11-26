@@ -29,6 +29,7 @@ import {
 } from "../lib/new-design-form-reducer";
 import { FormField } from "./form-field";
 import { InlineCreationPanel } from "./inline-creation-panel";
+import { ReadError } from "./read-error";
 import { TaxonomySelect } from "./taxonomy-select";
 
 /**
@@ -125,7 +126,10 @@ export function NewDesignForm() {
         </FormField>
 
         {taxonomyError ? (
-          <Text className="text-destructive text-sm">{taxonomyError.message}</Text>
+          <ReadError
+            message="The Category and Collection lists could not be loaded."
+            error={taxonomyError}
+          />
         ) : null}
 
         <FormField label="Category">
@@ -212,7 +216,7 @@ export function NewDesignForm() {
             <Text>Cancel</Text>
           </Button>
           <Button className="flex-1" disabled={!canCreate} onPress={create}>
-            <Text>Create</Text>
+            <Text>Create design</Text>
           </Button>
         </View>
       </KeyboardAwareScrollView>

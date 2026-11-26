@@ -1,5 +1,27 @@
 {
   "$schema": "https://opencode.ai/config.json",
+  "permissions": [
+    {
+      "action": "external_directory",
+      "resource": "/home/echo/workspace/wt/*",
+      "effect": "allow"
+    },
+    {
+      "action": "edit",
+      "resource": "/home/echo/workspace/wt/*",
+      "effect": "allow"
+    },
+    {
+      "action": "read",
+      "resource": "*/.git/config",
+      "effect": "deny"
+    },
+    {
+      "action": "edit",
+      "resource": "*/.git/config",
+      "effect": "deny"
+    }
+  ],
   "policies": [
     {
       "action": "tool.use",

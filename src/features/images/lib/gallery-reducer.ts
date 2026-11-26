@@ -24,13 +24,13 @@ export type GalleryStage = {
   images: readonly GalleryImage[];
 };
 
-/** Which way the owner swiped the hero. */
+/** Which way the pager moved. */
 export type SwipeDirection = "next" | "previous";
 
 /**
- * The note composer, bound to the image it was opened on. The draft and its
- * image travel together, so changing the image drops a half-written note rather
- * than carrying it to a picture it was not written for.
+ * The inline note composer, bound to the image it was opened on. The draft and
+ * its image travel together, so changing the image drops a half-written note
+ * rather than carrying it to a picture it was not written for.
  */
 export type ImageNoteComposer = {
   imageId: string;
@@ -38,10 +38,10 @@ export type ImageNoteComposer = {
 };
 
 /**
- * The gallery's decisions: which stage the rail's second row shows, which image
- * the hero shows, whether the last attach failed, and the state of the note
- * block beneath the hero. The selections are ids; the live list derives the
- * rows.
+ * The gallery's decisions: which stage the stage block shows, whether its row
+ * is open, which image the pager shows, whether the last attach failed, whether
+ * the notes sheet is open, the inline note composer, and the armed delete row.
+ * The selections are ids; the live list derives the rows.
  */
 export type GalleryState = {
   /** The Design this gallery shows; every effect names it. */
@@ -50,23 +50,28 @@ export type GalleryState = {
   imageId: string | null;
   /**
    * The stage the owner chose while it was empty, still waiting for its first
-   * image. It keeps the rail there while the Cover would pull it elsewhere; any
+   * image. It keeps the block there while the Cover would pull it elsewhere; any
    * selection, or a read that fills it, clears it.
    */
   awaitingKind: ImageKind | null;
   /**
-   * The last attach did not land. The stage is exactly as it was, so the rail
+   * Whether the active stage's image row is open. It starts open; only a stage
+   * press turns it, because a swipe or a read moves the active card without
+   * changing whether the row is open.
+   */
+  stageRowOpen: boolean;
+  /**
+   * The last attach did not land. The stage is exactly as it was, so the block
    * says the images could not be added rather than a failed write reading as a
    * cancel; a new attach press or a stage press clears it.
    */
   attachFailed: boolean;
-  /** The open note composer for the current image; null when it is closed. */
+  /** Whether the current image's notes sheet is open. */
+  notesSheetOpen: boolean;
+  /** The expanded inline note composer for the current image; null when collapsed. */
   imageNoteComposer: ImageNoteComposer | null;
-  /**
-   * Whether the note block shows every note rather than its first two. It
-   * closes again when the owner moves to another image.
-   */
-  imageNotesExpanded: boolean;
+  /** The note row whose first delete press armed it; null when none is armed. */
+  armedNoteId: string | null;
 };
 
 /**
@@ -93,6 +98,7 @@ export type GalleryResult = {
 export type GalleryGesture =
   | { type: "stage-pressed"; kind: ImageKind }
   | { type: "image-pressed"; imageId: string }
+  | { type: "page-settled"; imageId: string }
   | { type: "hero-swiped"; direction: SwipeDirection };
 
 /**
@@ -124,7 +130,9 @@ export type GalleryFact =
   | { type: "image-note-draft-changed"; draft: string }
   | { type: "image-note-save-pressed" }
   | { type: "image-note-delete-pressed"; noteId: string }
-  | { type: "image-notes-more-pressed" };
+  | { type: "notes-button-pressed" }
+  | { type: "notes-sheet-closed" }
+  | { type: "image-detail-closed" };
 
 /** The picker's answer that picked no file: a change of mind, or a refused permission. */
 type PickEnding = Extract<ImagePickResult, { kind: "cancelled" } | { kind: "denied" }>;
@@ -239,19 +247,17 @@ export function createInitialGalleryState(designId: string): GalleryState {
     kind: "final",
     imageId: null,
     awaitingKind: null,
+    stageRowOpen: true,
     attachFailed: false,
+    notesSheetOpen: false,
     imageNoteComposer: null,
-    imageNotesExpanded: false,
+    armedNoteId: null,
   };
 }
 
-/** The current image's stage, position and count, derived from the live list. */
+/** The stage the gallery is on, derived from the live list. */
 export type GalleryView<Stage extends GalleryStage = GalleryStage> = {
   stage: Stage | null;
-  image: Stage["images"][number] | null;
-  /** 1-based position within the active stage; 0 when the stage has no image. */
-  position: number;
-  count: number;
 };
 
 /** The live journey grouped into stages, in journey order. */
@@ -292,65 +298,141 @@ function step(
 }
 
 /**
- * What the gallery shows right now: the active stage and the hero's image.
- * A pure derivation, so the component never repeats the selection rule.
+ * The stage the rail shows: the live stage for the gallery's chosen kind. The
+ * pager's stage is not this one — it derives from the selected image through
+ * `journeyView`. A pure derivation, so the component never repeats the
+ * selection rule.
  */
 export function galleryView<Stage extends GalleryStage>(
   stages: readonly Stage[],
   state: GalleryState,
 ): GalleryView<Stage> {
-  const stage = stages.find((candidate) => candidate.kind === state.kind) ?? null;
-  const image = stage?.images.find((candidate) => candidate.id === state.imageId) ?? null;
-  const index = stage && image ? stage.images.indexOf(image) : -1;
-
-  return {
-    stage,
-    image: image ?? null,
-    position: index + 1,
-    count: stage?.images.length ?? 0,
-  };
+  return { stage: stages.find((candidate) => candidate.kind === state.kind) ?? null };
 }
 
-/** How many notes the block shows before it offers the rest. */
-export const IMAGE_NOTE_COLLAPSED_COUNT = 2;
-
-/** What the note block shows: the first two notes, or all of them expanded. */
-export type ImageNoteBlockView<Note> = {
-  total: number;
-  shown: readonly Note[];
-  /** Whether there are more notes than the collapsed block shows. */
-  collapsible: boolean;
-  expanded: boolean;
+/** The flat journey and where the gallery is in it. */
+export type JourneyView<Stage extends GalleryStage = GalleryStage> = {
+  /** Every image in journey order, oldest first within each stage. */
+  images: Stage["images"][number][];
+  /** The selected image, or null while the chosen stage has none. */
+  image: Stage["images"][number] | null;
+  /** 1-based position across the journey; 0 when no image is selected. */
+  position: number;
+  count: number;
+  /** The selected image's stage, or null when no image is selected. */
+  stage: ImageKind | null;
 };
 
 /**
- * The note block's derivation: never more than two notes until the owner asks
- * for all of them, and the control that asks only when there is more to see.
+ * The pager's view of the live list: every image flattened in journey order,
+ * with the selected image's stage and its position across the whole journey.
+ * The stage comes from the selected image, never from a stage's own index, so
+ * a reclassification moves the counter with the image.
  */
-export function imageNoteBlockView<Note>(
-  notes: readonly Note[],
+export function journeyView<Stage extends GalleryStage>(
+  stages: readonly Stage[],
   state: GalleryState,
-): ImageNoteBlockView<Note> {
-  const collapsible = notes.length > IMAGE_NOTE_COLLAPSED_COUNT;
-  const expanded = collapsible && state.imageNotesExpanded;
+): JourneyView<Stage> {
+  const images = stages.flatMap((stage) => stage.images);
+  const index = state.imageId ? images.findIndex((image) => image.id === state.imageId) : -1;
+  const image = index >= 0 ? images[index] : null;
 
   return {
-    total: notes.length,
-    shown: expanded ? notes : notes.slice(0, IMAGE_NOTE_COLLAPSED_COUNT),
-    collapsible,
-    expanded,
+    images,
+    image,
+    position: index + 1,
+    count: images.length,
+    stage: image?.kind ?? null,
+  };
+}
+
+/** One tab in the stage block: its stage, its image count, and whether it is active. */
+export type StageTab = {
+  kind: ImageKind;
+  count: number;
+  active: boolean;
+};
+
+/** The stage block's four tabs, in journey order. */
+export type StageTabsView = {
+  tabs: StageTab[];
+};
+
+/**
+ * The four stage tabs: every stage with the number of images it holds, and the
+ * one the gallery is on marked active. The active tab follows the current
+ * image and holds the empty stage the owner chose; it never reads the Cover.
+ */
+export function stageTabsView(stages: readonly GalleryStage[], state: GalleryState): StageTabsView {
+  const active = galleryView(stages, state).stage;
+
+  return {
+    tabs: stages.map((stage) => ({
+      kind: stage.kind,
+      count: stage.images.length,
+      active: stage.kind === active?.kind,
+    })),
   };
 }
 
 /**
- * The state after a selection. The note UI belongs to one image, so a half
- * written note and the expanded list drop as soon as the current image changes;
- * staying on the same image — a reclassification, say — keeps both.
+ * The active stage's row: its stage, its images oldest first, where each one
+ * sits in the journey, and the image the pager shows.
+ */
+export type StageRowView<Stage extends GalleryStage = GalleryStage> = {
+  kind: ImageKind | null;
+  images: Stage["images"];
+  /** Each image's 1-based position across the whole journey, in `images` order. */
+  positions: number[];
+  /** Every image in the journey: the positions' denominator, the counter's count. */
+  count: number;
+  selectedId: string | null;
+};
+
+/**
+ * The row under the four cards: the active stage's images in journey order, the
+ * image the pager shows, and where each of those images sits in the whole
+ * journey. The positions read from the same flat journey the counter and the
+ * pager count, so a stage never numbers its images in a system of its own. The
+ * reducer owns whether the row is open; this view names what it would list, so
+ * the component never repeats the selection rule.
+ */
+export function stageRowView<Stage extends GalleryStage>(
+  stages: readonly Stage[],
+  state: GalleryState,
+): StageRowView<Stage> {
+  const stage = galleryView(stages, state).stage;
+  const journey = journeyView(stages, state);
+  const images = stage?.images ?? [];
+
+  return {
+    kind: stage?.kind ?? null,
+    images,
+    positions: images.map(
+      (image) => journey.images.findIndex((candidate) => candidate.id === image.id) + 1,
+    ),
+    count: journey.count,
+    selectedId: state.imageId,
+  };
+}
+
+/**
+ * The state after a selection. The notes belong to one image, so the notes
+ * sheet, the inline composer, and the armed delete all drop as soon as the
+ * current image changes; staying on the same image — a reclassification, say —
+ * keeps them.
  */
 function selected(state: GalleryState, kind: ImageKind, imageId: string | null): GalleryState {
   if (imageId === state.imageId) return { ...state, kind, imageId };
 
-  return { ...state, kind, imageId, imageNoteComposer: null, imageNotesExpanded: false };
+  return {
+    ...state,
+    kind,
+    imageId,
+    notesSheetOpen: false,
+    imageNoteComposer: null,
+    armedNoteId: null,
+  };
 }
 
 /** A result that asks for no write. */
@@ -359,66 +441,109 @@ function only(state: GalleryState): GalleryResult {
 }
 
 /**
+ * The state after naming an image in the journey. A stage-row press and a page
+ * settle share this rule: the live list says which stage holds the image, so a
+ * reclassification cannot leave the selection and the counter disagreeing.
+ */
+function imageSelected(
+  state: GalleryState,
+  stages: readonly GalleryStage[],
+  imageId: string,
+): GalleryState {
+  const located = locationOf(stages, imageId);
+
+  return located
+    ? { ...selected(state, located.kind, located.imageId), awaitingKind: null }
+    : state;
+}
+
+/**
+ * The state after a live read: keep the selected image while it exists, keep a
+ * chosen empty stage while it is still empty, and otherwise open on the Cover.
+ * It is a rule, not a moment: the gallery applies it to the state it renders on
+ * the same pass that new rows arrive, so the first frame with images is already
+ * on the Cover instead of an empty plate, and the reducer applies it to the
+ * state it stores for later gestures.
+ */
+export function galleryAfterRead(
+  state: GalleryState,
+  stages: readonly GalleryStage[],
+  cover: string | null,
+): GalleryState {
+  const kept = locationOf(stages, state.imageId);
+
+  if (kept) return { ...selected(state, kept.kind, kept.imageId), awaitingKind: null };
+
+  // The chosen empty stage keeps its place when a read arrives: it holds
+  // the stage empty until its first image, then selects that image. Without
+  // a chosen stage the Cover wins, so a gallery opened on no images still
+  // follows the first Cover that appears.
+  if (state.awaitingKind) {
+    const chosen = stages.find((candidate) => candidate.kind === state.awaitingKind);
+    const first = chosen?.images[0];
+
+    return {
+      ...selected(state, state.awaitingKind, first?.id ?? null),
+      awaitingKind: first ? null : state.awaitingKind,
+    };
+  }
+
+  const locatedCover = locationOf(stages, cover);
+
+  return {
+    ...selected(state, locatedCover?.kind ?? state.kind, locatedCover?.imageId ?? null),
+    awaitingKind: null,
+  };
+}
+
+/**
  * The gallery's decisions. It opens on the Cover; a later read keeps the
  * selected image while it exists — moving it to the stage its reclassification
  * gave it — and falls back to the Cover when it is gone. An empty stage the
  * owner chose stays chosen until its first image arrives. A stage press starts
- * that stage at its oldest image; a swipe walks the journey in order, within a
- * stage and then across the next filled one, stopping at either end. An attach
- * that failed is a flag the rail reads until the owner tries again or presses a
- * stage, and it never moves the selection. The note composer opens on the
- * current image, closes when the note lands, and is dropped when the owner
- * moves on. The result carries the writes the event declares: the plus press
- * declares its pick, the notes' own presses declare their writes, and every
- * other event declares none.
+ * that stage at its oldest image and opens its row, while pressing the active
+ * stage toggles the row and keeps its image; a swipe walks the journey in
+ * order, within a stage and then across the next filled one, stopping at either
+ * end, and leaves the row open or closed as it was. A pager
+ * settle selects the image it landed on, by the same rule as a thumb press. An
+ * attach that failed is a flag the stage block reads until the owner tries
+ * again or presses a stage, and it never moves the selection. The notes button
+ * opens the current image's notes sheet; Add note expands the inline composer,
+ * which collapses once its note lands while the sheet stays open, and is
+ * dropped when the sheet closes or the owner moves on. A delete press only
+ * arms its row, and a second press on the same row declares exactly one
+ * removal; closing the sheet or the image detail disarms it, so a return visit
+ * never deletes on its first press. The result carries the writes the event
+ * declares: the plus press declares its pick, the notes' own presses declare
+ * their writes, and every other event declares none.
  */
 export function galleryReducer(state: GalleryState, event: GalleryEvent): GalleryResult {
   switch (event.type) {
-    case "images-read": {
-      const kept = locationOf(event.stages, state.imageId);
-
-      if (kept) return only({ ...selected(state, kept.kind, kept.imageId), awaitingKind: null });
-
-      // The chosen empty stage keeps its place when a read arrives: it holds
-      // the stage empty until its first image, then selects that image. Without
-      // a chosen stage the Cover wins, so a gallery opened on no images still
-      // follows the first Cover that appears.
-      if (state.awaitingKind) {
-        const chosen = event.stages.find((candidate) => candidate.kind === state.awaitingKind);
-        const first = chosen?.images[0];
-
-        return only({
-          ...selected(state, state.awaitingKind, first?.id ?? null),
-          awaitingKind: first ? null : state.awaitingKind,
-        });
-      }
-
-      const cover = locationOf(event.stages, event.cover);
-
-      return only({
-        ...selected(state, cover?.kind ?? state.kind, cover?.imageId ?? null),
-        awaitingKind: null,
-      });
-    }
+    case "images-read":
+      return only(galleryAfterRead(state, event.stages, event.cover));
 
     case "stage-pressed": {
+      // The active card is the same stage the gallery is on. Pressing it
+      // toggles the row and leaves the selection alone; pressing another stage
+      // selects its oldest image and opens the row.
+      if (galleryView(event.stages, state).stage?.kind === event.kind) {
+        return only({ ...state, stageRowOpen: !state.stageRowOpen, attachFailed: false });
+      }
+
       const stage = event.stages.find((candidate) => candidate.kind === event.kind);
       const first = stage?.images[0] ?? null;
 
       return only({
         ...selected(state, event.kind, first?.id ?? null),
         awaitingKind: first ? null : event.kind,
+        stageRowOpen: true,
         attachFailed: false,
       });
     }
 
-    case "image-pressed": {
-      const located = locationOf(event.stages, event.imageId);
-
-      return only(
-        located ? { ...selected(state, located.kind, located.imageId), awaitingKind: null } : state,
-      );
-    }
+    case "image-pressed":
+    case "page-settled":
+      return only(imageSelected(state, event.stages, event.imageId));
 
     case "hero-swiped": {
       const stepped = step(event.stages, state.imageId, event.direction);
@@ -441,10 +566,14 @@ export function galleryReducer(state: GalleryState, event: GalleryEvent): Galler
 
     case "image-note-composer-opened":
       // A note needs the image it explains; with none selected there is nothing
-      // to open the composer on.
+      // to open the composer on. Add note lives in the notes sheet, so expanding
+      // the composer leaves the sheet open beneath it.
       return only(
         state.imageId
-          ? { ...state, imageNoteComposer: { imageId: state.imageId, draft: "" } }
+          ? {
+              ...state,
+              imageNoteComposer: { imageId: state.imageId, draft: "" },
+            }
           : state,
       );
 
@@ -479,9 +608,15 @@ export function galleryReducer(state: GalleryState, event: GalleryEvent): Galler
         : only(state);
 
     case "image-note-delete-pressed":
-      // The row's id is the whole request; the live read is the only answer.
+      // The first press only arms its row; a second press on the same row
+      // declares exactly one removal and disarms it. The live read drops the row
+      // once the write lands, and arming another id replaces this one.
+      if (state.armedNoteId !== event.noteId) {
+        return only({ ...state, armedNoteId: event.noteId });
+      }
+
       return {
-        state,
+        state: { ...state, armedNoteId: null },
         effects: [
           {
             type: "remove-image-note",
@@ -494,14 +629,27 @@ export function galleryReducer(state: GalleryState, event: GalleryEvent): Galler
     case "image-note-added": {
       // The note landed on the image the composer was opened for. A read that
       // moved the owner elsewhere has already dropped that composer, so only a
-      // note for the open composer clears it. The list keeps its state: a
-      // collapsed block stays collapsed, so a third note stays behind the two.
+      // note for the open composer clears it; the sheet stays open so the list
+      // shows what she just wrote.
       if (state.imageNoteComposer?.imageId !== event.imageId) return only(state);
 
       return only({ ...state, imageNoteComposer: null });
     }
 
-    case "image-notes-more-pressed":
-      return only({ ...state, imageNotesExpanded: !state.imageNotesExpanded });
+    case "notes-button-pressed":
+      // The pill opens the one sheet; there is no menu to toggle and the pill is
+      // unreachable while the sheet is up, so a repeated press changes nothing.
+      return only({ ...state, notesSheetOpen: true });
+
+    case "notes-sheet-closed":
+      // Every close — the control, a drag, the scrim, or Back — sends this one
+      // fact. It drops the draft and the arming, so a return visit starts
+      // collapsed and never deletes on its first press.
+      return only({ ...state, notesSheetOpen: false, imageNoteComposer: null, armedNoteId: null });
+
+    case "image-detail-closed":
+      // One row is armed at a time, and closing the detail ends the arming: a
+      // return visit must never delete on its first press.
+      return only({ ...state, armedNoteId: null });
   }
 }

@@ -472,8 +472,8 @@ export type DesignImagesRows = {
 };
 
 /**
- * One Design's images and their notes as a live read. The gallery, the journey
- * rail, and the note block derive from it, so an attach, remove, reclassify, or
+ * One Design's images and their notes as a live read. The gallery, its notes,
+ * and the journey rail derive from it, so an attach, remove, reclassify, or
  * note write re-runs the screen without a manual refresh; the tables it watches
  * are declared beside the query (ADR-0005).
  */

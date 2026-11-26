@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "main": "expo-router/entry",
   "dependencies": {
+    "@expo-google-fonts/cormorant-garamond": "^0.4.1",
+    "@expo-google-fonts/dm-mono": "^0.4.2",
+    "@expo-google-fonts/dm-sans": "^0.4.2",
     "@expo/ui": "~58.0.27",
     "@rn-primitives/accordion": "^1.5.2",
     "@rn-primitives/alert-dialog": "^1.5.2",
@@ -28,10 +31,12 @@
     "@rn-primitives/toggle": "^1.5.2",
     "@rn-primitives/toggle-group": "^1.5.2",
     "@rn-primitives/tooltip": "^1.5.2",
+    "@swmansion/react-native-bottom-sheet": "1.1.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "drizzle-orm": "1.0.0-rc.5",
     "expo": "~58.0.23",
+    "expo-blur": "~58.0.6",
     "expo-constants": "~58.0.15",
     "expo-crypto": "~58.0.8",
     "expo-device": "~58.0.5",
@@ -41,6 +46,7 @@
     "expo-image": "~58.0.18",
     "expo-image-picker": "~58.0.10",
     "expo-linking": "~58.0.16",
+    "expo-navigation-bar": "~58.0.4",
     "expo-router": "~58.0.30",
     "expo-splash-screen": "~58.0.13",
     "expo-sqlite": "~58.0.17",
@@ -86,6 +92,7 @@
   },
   "scripts": {
     "start": "expo start",
+    "device": "node scripts/device.mjs",
     "reset-project": "node ./scripts/reset-project.js",
     "android": "expo run:android",
     "ios": "expo run:ios",
@@ -97,7 +104,7 @@
     "typecheck": "tsc --noEmit",
     "test": "jest",
     "map:check": "node scripts/check-architecture-map.mjs",
-    "check": "pnpm format:check && pnpm typecheck && pnpm lint && node scripts/check-feature-boundaries.mjs && node scripts/check-entry-exports.mjs && node scripts/check-frontend-state.mjs && node scripts/check-test-size.mjs && pnpm test",
+    "check": "pnpm format:check && pnpm typecheck && pnpm lint && node scripts/check-feature-boundaries.mjs && node scripts/check-entry-exports.mjs && node scripts/check-frontend-state.mjs && node scripts/check-test-size.mjs && node scripts/check-retired-terms.mjs && pnpm test",
     "db:generate": "drizzle-kit generate && node scripts/make-migrations-idempotent.mjs"
   },
   "private": true

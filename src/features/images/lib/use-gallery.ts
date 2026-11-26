@@ -3,9 +3,11 @@ import { useDatabase, useLiveRead } from "@/features/database/react";
 import { useReducerRunner } from "@/shared/hooks/use-reducer-runner";
 import {
   createInitialGalleryState,
+  galleryAfterRead,
   galleryReducer,
-  galleryView,
-  imageNoteBlockView,
+  journeyView,
+  stageTabsView,
+  stageRowView,
   writeOutcome,
   type GalleryEffect,
   type GalleryEvent,
@@ -24,6 +26,7 @@ function eventOf(fact: GalleryFact, stages: readonly GalleryStage[]): GalleryEve
   switch (fact.type) {
     case "stage-pressed":
     case "image-pressed":
+    case "page-settled":
     case "hero-swiped":
       return { ...fact, stages };
     default:
@@ -113,15 +116,20 @@ export function useGallery(designId: string) {
     perform,
   );
 
+  // The read is applied to the state this render uses, not one effect later, so
+  // the first frame with rows already shows the Cover instead of an empty
+  // plate. The reducer keeps the same state for the gestures that follow.
+  const view = useMemo(() => galleryAfterRead(state, stages, cover), [state, stages, cover]);
+
   useEffect(() => {
     dispatch({ type: "images-read", stages, cover });
   }, [dispatch, stages, cover]);
 
-  // The note block shows the current image's commentary; the rows stay in the
-  // live read, so a write re-runs this without copying them into the reducer.
-  const noteView = useMemo(
-    () => imageNoteBlockView(imageNotesOf(data.imageNotes, state.imageId), state),
-    [data.imageNotes, state],
+  // The notes belong to the current image and stay in the live read; the rows
+  // derive on every read without being copied into the reducer.
+  const notes = useMemo(
+    () => imageNotesOf(data.imageNotes, view.imageId),
+    [data.imageNotes, view.imageId],
   );
 
   const send = useCallback(
@@ -130,12 +138,14 @@ export function useGallery(designId: string) {
   );
 
   return {
-    state,
+    state: view,
     stages,
     images: data.images,
     imageNotes: data.imageNotes,
-    view: galleryView(stages, state),
-    noteView,
+    journey: journeyView(stages, view),
+    stageTabs: stageTabsView(stages, view).tabs,
+    stageRow: stageRowView(stages, view),
+    notes,
     send,
     error,
     status,

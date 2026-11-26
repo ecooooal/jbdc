@@ -1,0 +1,61 @@
+
+
+## Typography
+- Cormorant Garamond
+	- titles
+- DM Sans 
+	- medium for stages, labels, materials
+	- regular for texts, descriptions
+	- mono for constants, id, measurements.
+## Colors
+```
+  light: {
+    background: "#FFFFFF",
+    surface: "#F8F6F2",
+    surfaceSecondary: "#F2EBDD",
+    sheet: "#F8F6F2",
+    sheetStacked: "#F2EBDD",
+    sheetStackedDeep: "#E9DFCB",
+
+    foreground: "#292724",
+    foregroundSecondary: "#6E6A63",
+
+    border: "#E8E5DF",
+
+    wood: "#B38A64",
+    woodForeground: "#292724",
+    selection: "#8A6642",
+    selectionForeground: "#F8F6F2",
+
+    green: "#687C68",
+    greenForeground: "#FFFFFF",
+
+    destructive: "#B94B45",
+    destructiveForeground: "#FFFFFF",
+  },
+
+  dark: {
+    background: "#242424",
+    surface: "#303030",
+    surfaceSecondary: "#424242",
+    sheet: "#303030",
+    sheetStacked: "#383838",
+    sheetStackedDeep: "#404040",
+
+    foreground: "#F0EEE9",
+    foregroundSecondary: "#B5B0A7",
+
+    border: "#444444",
+
+    wood: "#D1B18A",
+    woodForeground: "#292724",
+    selection: "#8A6642",
+    selectionForeground: "#F8F6F2",
+
+    green: "#A4B69A",
+    greenForeground: "#242424",
+
+    destructive: "#E27770",
+    destructiveForeground: "#242424",
+  },
+```

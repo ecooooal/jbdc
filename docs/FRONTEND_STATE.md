@@ -26,7 +26,7 @@ One file per **surface**, not per feature: two screens that do not share a state
 
 Start with `useReducer` from React. Most surfaces here need no effect runner at all: `expo-sqlite` writes are synchronous and `useLiveRead` already pushes read results in. Declare effects as data only when a surface has async work whose order or outcome is a decision.
 
-Do not take a dependency for it. There is no maintained effect-reducer package for React 19: one shared runner at `src/shared/hooks/use-reducer-runner.ts` runs the visit, the gallery and the viewer, each keeping only a perform body. It carries its own test.
+Do not take a dependency for it. There is no maintained effect-reducer package for React 19: one shared runner at `src/shared/hooks/use-reducer-runner.ts` runs the visit, the gallery and the image detail, each keeping only a perform body. It carries its own test.
 
 The rules:
 
@@ -42,7 +42,7 @@ Three situations come up often enough to have a fixed answer:
 
 - **One I/O must finish before the next starts.** Either chain them with an outcome event, or declare one effect and put the order on it as data.
 - **A late outcome.** Name what it was for (`designId`) and have the reducer ignore one for a surface that has since moved on.
-- **A caller that awaits.** There is no request id and no promise to settle: `dispatch` returns nothing and the runner discards a performer's return without awaiting it, so `await send(…)` awaits nothing at all. Work finishes by the outcome events its perform body dispatches when its answer is a decision — the gallery awaits the picker and the write path inside one perform body and folds each answer back as an event — and the surface reads the state those events produced on a later render. Not every answer is a decision: the viewer's reclassify and the visit's record dispatch nothing. The reducer still decides what the outcome means.
+- **A caller that awaits.** There is no request id and no promise to settle: `dispatch` returns nothing and the runner discards a performer's return without awaiting it, so `await send(…)` awaits nothing at all. Work finishes by the outcome events its perform body dispatches when its answer is a decision — the gallery awaits the picker and the write path inside one perform body and folds each answer back as an event — and the surface reads the state those events produced on a later render. Not every answer is a decision: the image detail's reclassify and the visit's record dispatch nothing. The reducer still decides what the outcome means.
 
 ## React Native exceptions
 

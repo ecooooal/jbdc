@@ -5,19 +5,16 @@ describe("library grid", () => {
     expect(libraryGrid(1, 342)).toEqual({ columns: 1, cardWidth: 342 });
   });
 
-  test("densities 2 and 4 render that many columns", () => {
-    const two = libraryGrid(2, 342);
-    const four = libraryGrid(4, 342);
+  test("density 2 renders two columns", () => {
+    const { columns, cardWidth } = libraryGrid(2, 342);
 
-    expect(two.columns).toBe(2);
-    expect(four.columns).toBe(4);
-    expect(two.cardWidth).toBeGreaterThan(0);
-    expect(four.cardWidth).toBeGreaterThan(0);
+    expect(columns).toBe(2);
+    expect(cardWidth).toBeGreaterThan(0);
   });
 
   test("every row fits the content width before and after a rotation", () => {
     for (const contentWidth of [0, 20, 342, 430, 768, 1024]) {
-      for (const density of [1, 2, 4] as const) {
+      for (const density of [1, 2] as const) {
         const { columns, cardWidth } = libraryGrid(density, contentWidth);
 
         expect(columns * cardWidth + LIBRARY_GRID_GAP * (columns - 1)).toBeLessThanOrEqual(
@@ -27,8 +24,8 @@ describe("library grid", () => {
     }
   });
 
-  test("a width too small for the gaps falls back to one fitting card", () => {
-    expect(libraryGrid(4, 0)).toEqual({ columns: 1, cardWidth: 0 });
-    expect(libraryGrid(4, 20)).toEqual({ columns: 1, cardWidth: 20 });
+  test("a width too small for the gap falls back to one fitting card", () => {
+    expect(libraryGrid(2, 0)).toEqual({ columns: 1, cardWidth: 0 });
+    expect(libraryGrid(2, 8)).toEqual({ columns: 1, cardWidth: 8 });
   });
 });

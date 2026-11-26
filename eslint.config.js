@@ -60,6 +60,24 @@ const negatedEffectListAssertion = {
     "Assert the whole effect list with toEqual (docs/FRONTEND_STATE.md §Testing); a length lets a substituted effect pass.",
 };
 
+// A test asserts what the Owner reads, not the shape of the element carrying
+// it: `heading.props.children` still passes while every heading renders blank.
+const elementShapeAssertion = {
+  selector: "MemberExpression[property.name='children'][object.property.name='props']",
+  message:
+    "Assert the rendered text with toHaveTextContent; element.props.children reads the element's shape, not its behaviour.",
+};
+
+// Radii resolve through DESIGN.md / src/global.css (AGENTS.md), never as a
+// numeric literal in a style object. The token path keeps the sheet and every
+// later surface on the same scale.
+const numericRadius = {
+  selector:
+    "Property[key.name=/^border(Top|Bottom)?(Left|Right)?Radius$/] > Literal[raw=/^\\d+(\\.\\d+)?$/]",
+  message:
+    "Resolve radii through DESIGN.md / src/global.css (AGENTS.md); a numeric radius is a hardcoded token.",
+};
+
 module.exports = defineConfig([
   expoConfig,
   {
@@ -69,6 +87,7 @@ module.exports = defineConfig([
     files: ["**/*.{ts,tsx}"],
     rules: {
       "no-restricted-imports": restrictedImports(),
+      "no-restricted-syntax": ["error", numericRadius],
     },
   },
   {
@@ -92,7 +111,12 @@ module.exports = defineConfig([
   {
     files: ["**/tests/**/*.{ts,tsx}"],
     rules: {
-      "no-restricted-syntax": ["error", effectListAssertion, negatedEffectListAssertion],
+      "no-restricted-syntax": [
+        "error",
+        effectListAssertion,
+        negatedEffectListAssertion,
+        elementShapeAssertion,
+      ],
     },
   },
 ]);

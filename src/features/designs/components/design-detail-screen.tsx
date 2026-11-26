@@ -1,14 +1,29 @@
 import { router } from "expo-router";
-import { ChevronLeft } from "lucide-react-native";
+import {
+  ChevronLeft,
+  EllipsisVertical,
+  History as HistoryIcon,
+  Pencil,
+  Plus,
+  RotateCwClock,
+} from "lucide-react-native";
 import { useState } from "react";
 import { ScrollView, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import Animated, { ZoomIn } from "react-native-reanimated";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { DesignGallery } from "@/features/images/react";
-import { Badge } from "@/shared/components/ui/badge";
 import { Button } from "@/shared/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/shared/components/ui/dropdown-menu";
 import { Icon } from "@/shared/components/ui/icon";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/components/ui/tabs";
+import { Tabs, TabsContent } from "@/shared/components/ui/tabs";
 import { Text } from "@/shared/components/ui/text";
+import { DETAIL_ARRIVAL, QUIET_ARRIVAL } from "@/shared/lib/motion";
+import { cn } from "@/shared/lib/utils";
 import {
   DESIGN_SECTIONS,
   isDesignSectionTab,
@@ -19,6 +34,8 @@ import type { DesignDetail } from "../lib/records";
 import { useDesignDetail } from "../lib/use-design-detail";
 import { DesignStatusBadge } from "./design-status-badge";
 import { MaterialUsesTable } from "./material-uses-table";
+import { ReadError } from "./read-error";
+import { SectionTabs } from "./section-tabs";
 
 const SHORT_DATE_FORMAT = new Intl.DateTimeFormat(undefined, {
   year: "numeric",
@@ -30,78 +47,186 @@ function formatShortDate(timestamp: number): string {
   return SHORT_DATE_FORMAT.format(timestamp);
 }
 
-/** When the Design was made and last changed, beside its name. */
-function DetailDateBadges({ design }: { design: DesignDetail }) {
-  return (
-    <View className="flex-row flex-wrap items-center gap-2">
-      <Badge variant="outline">
-        <Text>Created {formatShortDate(design.createdAt)}</Text>
-      </Badge>
-      <Badge variant="outline">
-        <Text>Updated {formatShortDate(design.updatedAt)}</Text>
-      </Badge>
-    </View>
-  );
+/** A date whose own spaces never break, so a wrapping line never splits one. */
+function unbreakableDate(timestamp: number): string {
+  return formatShortDate(timestamp).replaceAll(" ", "\u00A0");
 }
 
-/** A label and its value. Only rendered when the value exists. */
-function DetailRow({ label, value }: { label: string; value: string }) {
+/**
+ * The record's dates as one quiet line: a plus marks its creation and a clock
+ * turned back marks its last update, each date in the mono voice. A Design that
+ * has never been written since it was created has one date, not the same date
+ * twice. The icons stand in for the words on screen, so the row carries the
+ * words for a screen reader.
+ */
+function DetailDates({
+  createdAt,
+  updatedAt,
+  className,
+}: {
+  createdAt: number;
+  updatedAt: number;
+  className?: string;
+}) {
+  const created = formatShortDate(createdAt);
+  const updated = formatShortDate(updatedAt);
+  const label =
+    createdAt === updatedAt ? `Created ${created}` : `Created ${created}, updated ${updated}`;
+  const date = "text-muted-foreground font-mono text-xs leading-4";
+  const mark = "text-muted-foreground size-3.5";
+
   return (
-    <View className="flex-row items-start justify-between gap-4 py-2">
-      <Text variant="muted">{label}</Text>
-      <Text className="flex-1 text-right">{value}</Text>
+    <View
+      accessible
+      accessibilityLabel={label}
+      className={cn("flex-row flex-wrap items-center gap-x-4 gap-y-1", className)}
+    >
+      <View className="flex-row items-center gap-1.5">
+        <Icon as={Plus} className={mark} />
+        <Text className={date}>{unbreakableDate(createdAt)}</Text>
+      </View>
+      {createdAt === updatedAt ? null : (
+        <View className="flex-row items-center gap-1.5">
+          <Icon as={RotateCwClock} className={mark} />
+          <Text className={date}>{unbreakableDate(updatedAt)}</Text>
+        </View>
+      )}
     </View>
   );
 }
 
 /**
- * The hero: the gallery, then the name with its dates, Status,
- * Category · Collection, and description. The designs module owns the text;
- * the images module owns the hero image and its journey.
+ * A label and its value, left-aligned in two columns. A field the owner has not
+ * recorded keeps its row and reads `Not set`, the same word Edit uses, so the
+ * sheet keeps its shape while the sections switch. Both columns share the
+ * body's leading, so a wrapped label and a wrapped value keep one baseline.
  */
-function DetailHero({ design }: { design: DesignDetail }) {
+function DetailRow({ label, value }: { label: string; value: string }) {
   return (
-    <View className="gap-3">
-      <DesignGallery designId={design.id} />
-      <View className="flex-row flex-wrap items-center gap-2">
-        <Text variant="h3">{design.name}</Text>
-        <DetailDateBadges design={design} />
-      </View>
-      <View className="flex-row items-center gap-2">
-        <DesignStatusBadge status={design.status} />
-        <Text variant="muted">
-          {design.category ?? "No category"} · {design.collection ?? "No collection"}
+    <View className="flex-row items-start gap-4 py-3">
+      <Text variant="muted" className="flex-[2] leading-6">
+        {label}
+      </Text>
+      {value ? (
+        <Text className="flex-[3] leading-6">{value}</Text>
+      ) : (
+        <Text variant="muted" className="flex-[3] leading-6">
+          Not set
         </Text>
-      </View>
-      {design.description ? (
-        <Text variant="muted" className="text-base leading-6">
-          {design.description}
-        </Text>
-      ) : null}
+      )}
     </View>
   );
 }
 
-function recordedRows(
-  design: DesignDetail,
-  fields: readonly DesignSectionFieldDefinition[],
-): DesignSectionFieldDefinition[] {
-  return fields.filter(({ field }) => Boolean(design[field]));
+/**
+ * The header's one action area: a kebab that opens the shared menu with the
+ * Design's History and Edit routes. Each row is an icon and its label. The
+ * native menu renders in a portal, so Jest renders its rows through the
+ * primitive's root instead of opening it.
+ */
+function DetailActions({ designId }: { designId: string }) {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button size="icon" variant="ghost" accessibilityLabel="Design actions" hitSlop={4}>
+          <Icon as={EllipsisVertical} />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuItem
+          textValue="History"
+          onPress={() =>
+            router.push({ pathname: "/designs/[id]/history", params: { id: designId } })
+          }
+        >
+          <Icon as={HistoryIcon} className="size-4" />
+          <Text>History</Text>
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          textValue="Edit"
+          onPress={() => router.push({ pathname: "/designs/[id]/edit", params: { id: designId } })}
+        >
+          <Icon as={Pencil} className="size-4" />
+          <Text>Edit</Text>
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
 }
 
-/** What one section records, and whether it has anything to show. */
-function sectionContent(
-  design: DesignDetail,
-  tab: DesignSectionTab,
-  fields: readonly DesignSectionFieldDefinition[],
-) {
-  const filled = recordedRows(design, fields);
-  const materialUses = tab === "specification" ? design.materialUses : [];
+/**
+ * The fixed header, outside the scrolling content: the back control, then the
+ * Design's place — Collection in the serif voice and Category under it in the
+ * muted voice — and one action area at the end. The record's dates belong with
+ * the name in the body, so the header stays a quiet place line. It grows to fit
+ * its lines instead of truncating. An absent Collection or Category is named
+ * ("No collection", "No category") so the header never reads as a gap.
+ */
+function DetailHeader({ design }: { design: DesignDetail | null }) {
+  return (
+    <View testID="detail-header" className="flex-row items-start gap-2 px-4 pt-2">
+      <Button
+        size="icon"
+        variant="ghost"
+        accessibilityLabel="Back to Library"
+        hitSlop={4}
+        onPress={() => router.back()}
+      >
+        <Icon as={ChevronLeft} />
+      </Button>
 
-  return { filled, materialUses, isEmpty: filled.length === 0 && materialUses.length === 0 };
+      <View className="flex-1 gap-1 pb-2">
+        {design ? (
+          <>
+            <Text variant="h4" className="leading-tight">
+              {design.collection ?? "No collection"}
+            </Text>
+            <Text variant="muted">{design.category ?? "No category"}</Text>
+          </>
+        ) : null}
+      </View>
+
+      {design ? <DetailActions designId={design.id} /> : null}
+    </View>
+  );
 }
 
-/** One section read-only: filled rows only, or a note when it has none. */
+/**
+ * The body's opening: the name in the title voice with its Status pill, the
+ * description, then the record's dates as one quiet mono line. The name keeps
+ * the page's full measure, so a long name wraps against the sheet's edge
+ * instead of against a column of metadata; the pill follows it on the same
+ * line, its label seated on the name's baseline rather than floating at the
+ * line box's centre, or drops beneath it when the name needs the width. The
+ * dates are provenance, not the subject, so they sit under the description
+ * rather than beside the title. The Category and Collection live in the fixed
+ * header; the image block and the sections follow beneath.
+ */
+function DetailIdentity({ design }: { design: DesignDetail }) {
+  return (
+    <View testID="detail-identity">
+      <View className="flex-row flex-wrap items-baseline gap-x-2 gap-y-1">
+        <Text variant="h3" className="leading-tight">
+          {design.name}
+        </Text>
+        <DesignStatusBadge status={design.status} />
+      </View>
+      {design.description ? (
+        <Text variant="muted" className="mt-2 text-base leading-6">
+          {design.description}
+        </Text>
+      ) : null}
+      <DetailDates createdAt={design.createdAt} updatedAt={design.updatedAt} className="mt-3" />
+    </View>
+  );
+}
+
+/**
+ * One section read-only: every field in its declared order, each reading its
+ * value or `Not set`. The Specification section ends with the Material uses
+ * table, which keeps its own empty row. Nothing is hidden, so switching
+ * sections never changes the sheet's shape.
+ */
 function DetailSection({
   design,
   tab,
@@ -111,58 +236,41 @@ function DetailSection({
   tab: DesignSectionTab;
   fields: readonly DesignSectionFieldDefinition[];
 }) {
-  const { filled, materialUses, isEmpty } = sectionContent(design, tab, fields);
-
-  if (isEmpty) {
-    return <Text variant="muted">Nothing recorded yet</Text>;
-  }
-
   return (
-    <View className="gap-4">
-      {filled.length > 0 ? (
-        <View className="border-border rounded-xl border px-4 py-1">
-          {filled.map(({ field, label }) => (
-            <DetailRow key={field} label={label} value={design[field] ?? ""} />
-          ))}
-        </View>
+    <Animated.View testID={`detail-section-${tab}`} entering={QUIET_ARRIVAL} className="gap-4">
+      <View>
+        {fields.map(({ field, label }, index) => (
+          <View key={field}>
+            {index > 0 ? <View className="bg-border h-hairline" /> : null}
+            <DetailRow label={label} value={design[field] ?? ""} />
+          </View>
+        ))}
+      </View>
+      {tab === "specification" ? (
+        <MaterialUsesTable uses={design.materialUses} variant="detail" />
       ) : null}
-      {materialUses.length > 0 ? <MaterialUsesTable uses={materialUses} /> : null}
-    </View>
+    </Animated.View>
   );
 }
 
 /**
- * The two long sections read-only. A design that has recorded nothing shows no
- * tab content at all; otherwise both tabs are there, each hiding its empty
- * rows and saying so when the whole section is empty. Detail opens on the
- * first section that has something to show.
+ * The two long sections read-only. Both tabs are always here, and each holds
+ * every field, so an empty section is a section of `Not set` rows rather than
+ * a blank panel. Detail opens on Specification.
  */
 function DetailSections({ design }: { design: DesignDetail }) {
   const [chosen, setChosen] = useState<DesignSectionTab | null>(null);
-  const recorded = DESIGN_SECTIONS.filter(
-    ({ tab, fields }) => !sectionContent(design, tab, fields).isEmpty,
-  );
-
-  if (recorded.length === 0) {
-    return <Text variant="muted">Nothing recorded yet</Text>;
-  }
-
-  const tab = chosen ?? recorded[0].tab;
+  const tab = chosen ?? DESIGN_SECTIONS[0].tab;
 
   return (
     <Tabs
       value={tab}
+      className="gap-4"
       onValueChange={(value) => {
         if (isDesignSectionTab(value)) setChosen(value);
       }}
     >
-      <TabsList>
-        {DESIGN_SECTIONS.map(({ tab: value, label }) => (
-          <TabsTrigger key={value} value={value}>
-            <Text>{label}</Text>
-          </TabsTrigger>
-        ))}
-      </TabsList>
+      <SectionTabs />
       {DESIGN_SECTIONS.map(({ tab: value, fields }) => (
         <TabsContent key={value} value={value}>
           <DetailSection design={design} tab={value} fields={fields} />
@@ -173,15 +281,17 @@ function DetailSections({ design }: { design: DesignDetail }) {
 }
 
 /**
- * What one Design is right now: its hero, then the sections it has recorded.
- * Name, its dates and Status are always here; the rest appears only when it
- * exists, so an unfinished Design reads as intentional rather than incomplete.
+ * What one Design is right now: its identity, then its images, then both
+ * sections in full. Name and Status are always here; every field keeps its
+ * row, so the sheet's shape is the same whether the design is finished or not.
  */
 function DesignDetailContent({ design }: { design: DesignDetail }) {
   return (
     <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
       <View className="gap-6 px-6 pb-12 pt-2">
-        <DetailHero design={design} />
+        <DetailIdentity design={design} />
+
+        <DesignGallery designId={design.id} />
 
         <DetailSections design={design} />
       </View>
@@ -190,62 +300,56 @@ function DesignDetailContent({ design }: { design: DesignDetail }) {
 }
 
 /**
- * Detail for one Design, opened from its Library card. It subscribes to the
- * record, so later edits show here without reopening the screen. Back returns
- * to the Library.
+ * The Detail's half of its arrival: while the native stack fades the screen,
+ * its content settles from a small zoom. Reanimated's default Reduce Motion
+ * behaviour keeps that an instant cut when the system asks.
+ */
+const DETAIL_ZOOM = ZoomIn.duration(DETAIL_ARRIVAL.zoom.duration).withInitialValues({
+  transform: [{ scale: DETAIL_ARRIVAL.zoom.from }],
+});
+
+/**
+ * Detail for one Design, opened from its Library card. The header stays fixed
+ * above the scrolling content; the body opens on the identity block and
+ * subscribes to the record, so later edits show here without reopening the
+ * screen. Back returns to the Library.
  */
 export function DesignDetailScreen({ designId }: { designId: string }) {
   const { design, error, status } = useDesignDetail(designId);
+  // The provider measured these at launch, so the header sits below the status
+  // bar on its first frame. The native SafeAreaView measures window insets
+  // after its first layout, which lets the pushed screen paint at the top and
+  // snap down once the insets arrive.
+  const insets = useSafeAreaInsets();
 
   return (
-    <SafeAreaView style={{ flex: 1 }} className="bg-background" edges={["top", "left", "right"]}>
-      <View className="flex-row items-center justify-between px-4 pt-2">
-        <Button
-          size="icon"
-          variant="ghost"
-          accessibilityLabel="Back to Library"
-          onPress={() => router.back()}
-        >
-          <Icon as={ChevronLeft} />
-        </Button>
-        {design ? (
-          <View className="flex-row items-center gap-1">
-            <Button
-              size="sm"
-              variant="ghost"
-              accessibilityLabel="History"
-              onPress={() =>
-                router.push({ pathname: "/designs/[id]/history", params: { id: designId } })
-              }
-            >
-              <Text>History</Text>
-            </Button>
-            <Button
-              size="sm"
-              variant="ghost"
-              accessibilityLabel="Edit design"
-              onPress={() =>
-                router.push({ pathname: "/designs/[id]/edit", params: { id: designId } })
-              }
-            >
-              <Text>Edit</Text>
-            </Button>
-          </View>
-        ) : null}
-      </View>
+    <View
+      style={{
+        flex: 1,
+        paddingTop: insets.top,
+        paddingLeft: insets.left,
+        paddingRight: insets.right,
+      }}
+      className="bg-card"
+    >
+      <Animated.View entering={DETAIL_ZOOM} style={{ flex: 1 }}>
+        <DetailHeader design={design} />
 
-      {error ? (
-        <Text className="text-destructive px-6 pt-4">{error.message}</Text>
-      ) : status === "loading" ? null : design ? (
-        <DesignDetailContent design={design} />
-      ) : (
-        <View className="flex-1 items-center justify-center gap-2 px-6 pb-16">
-          <Text variant="h4">This design is not here</Text>
-          <Text variant="muted" className="text-center">
-            It may have been removed.
-          </Text>
-        </View>
-      )}
-    </SafeAreaView>
+        {error ? (
+          <View className="px-6 pt-4">
+            <ReadError message="This design could not be loaded." error={error} />
+          </View>
+        ) : status === "loading" ? null : design ? (
+          <DesignDetailContent design={design} />
+        ) : (
+          <View className="flex-1 items-center justify-center gap-2 px-6 pb-16">
+            <Text variant="h4">Design not found</Text>
+            <Text variant="muted" className="text-center">
+              It may have been removed.
+            </Text>
+          </View>
+        )}
+      </Animated.View>
+    </View>
   );
 }

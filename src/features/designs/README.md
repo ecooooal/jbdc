@@ -28,10 +28,11 @@ is Detail's live read.
 
 ## The Material use path
 
-`components/material-uses-section.tsx` holds the table and the one panel that
-can be open, and picks between `add-material-use-form.tsx` and
-`edit-material-use-form.tsx`. Both forms only render the visit's panel and send
-it what happened. The visit holds the open panel's draft and the stored use a
+`components/material-uses-section.tsx` holds the table whose last row opens the
+Add material sheet. `components/material-use-sheets.tsx` renders the visit's one
+add-or-edit panel on the shared sheet wrapper, with the New material sheet
+stacked above Add material. Both forms only render the visit's panel and send it
+what happened. The visit holds the open panel's draft and the stored use a
 refusal restores, handles its facts directly, and declares the fields and uses
 it changed in one `write-design` effect — not a choice among record functions.
 `lib/use-edit-visit.ts` hands those changes to `writeDesign` in `lib/records.ts`,
@@ -49,9 +50,13 @@ is worth an Event.
 ## Screens and pieces
 
 - `components/edit-design-screen.tsx`, `components/design-detail-screen.tsx` — the two screens.
+- `components/section-tabs.tsx` — Detail's section index: two full-width label halves on the shared Tabs root, the open one inked over a wood rule on the shared hairline; Edit keeps its filled bar.
 - `components/new-design-form.tsx` — create: name, Category, Collection.
 - `components/field-rows.tsx` — one section's read-first rows; `form-field.tsx` is a single labelled input.
-- `components/taxonomy-select.tsx` — Category/Collection picker with None; `material-use-role-select.tsx` — role chips.
-- `components/inline-creation-panel.tsx` — create a Category, Collection, or Material without leaving the form.
-- `components/material-uses-table.tsx` — the read-only rows Detail and Edit share.
+- `components/taxonomy-select.tsx` — the create form's Category/Collection popover select with None; `choice-sheet.tsx` — Edit's trigger and its stacked choice sheet; `material-use-role-picker.tsx` — the Role choice.
+- `components/inline-creation-panel.tsx` — create a Category or Collection without leaving the form.
+- `components/material-uses-table.tsx` — the rows Detail and Edit share; Edit adds the pencil column and the last `Add material` row.
+- `components/material-uses-section.tsx` — Edit's Materials block: the uses table, whose last row opens the Add material sheet.
+- `components/material-use-sheets.tsx` — the Add material and Edit material sheets, with the New material sheet stacked above Add.
+- `components/add-material-use-form.tsx`, `edit-material-use-form.tsx`, `new-material-form.tsx` — the three Material sheets' bodies.
 - `components/design-status-badge.tsx` — a Status badge. The hero image and its journey belong to the `images` module's gallery; Detail composes `DesignGallery` above its text.

@@ -81,7 +81,7 @@ What one Event changed, as it stores it: for a visit, each field with the value 
 _Avoid_: patch, delta, changeset — and "diff" for comparing versions, which this app does not do.
 
 **Decision**:
-An event recording a choice about a design and why it was made, optionally with potential improvements. A rejection reason is a decision.
+An event recording a choice about a design and why it was made, optionally with potential improvements. A rejection reason is a decision. A Status is where the design stands now; a Decision is the recorded why, and it survives later Status moves.
 _Avoid_: verdict, outcome
 
 **Note**:
@@ -91,6 +91,10 @@ _Avoid_: "image note", which is a different record
 **Rejected**:
 A status meaning this design will not proceed. It keeps its reason, its images, and its specifications, and stays in the catalog.
 _Avoid_: failed, dropped, cancelled
+
+**Rejected designs**:
+The view of the catalog showing only designs whose Status is Rejected, each with the latest reason it was rejected. A view, not a Status; **Archived** is a different Status and is not part of it.
+_Avoid_: rejected archive, archive — "archive" collides with **Archived**, which is a different Status
 
 **Archived**:
 A status meaning the design is kept out of the way but is still part of the catalog — visible in filters, not in the default library.

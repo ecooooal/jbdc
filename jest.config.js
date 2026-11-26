@@ -7,6 +7,8 @@ module.exports = {
   // structuredClone) that Jest's Node environment touches between tests, where
   // a lazy require is illegal. Resolve them during setup.
   setupFiles: ["<rootDir>/jest.setup.js"],
+  // Literal date tests must not depend on the machine's clock; the setup pins TZ.
+  globalSetup: "<rootDir>/jest.global-setup.js",
   // The preset whitelists pnpm's inner `node_modules` only for React Native
   // packages. Render tests also pull JSX/ESM from the UI kit, so add the
   // packages our components import directly.

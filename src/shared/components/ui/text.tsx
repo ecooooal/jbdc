@@ -6,7 +6,7 @@ import { Platform, Text as RNText, type Role } from "react-native";
 
 const textVariants = cva(
   cn(
-    "text-foreground text-base",
+    "text-foreground text-base font-sans",
     Platform.select({
       web: "select-text",
     }),
@@ -16,15 +16,21 @@ const textVariants = cva(
       variant: {
         default: "",
         h1: cn(
-          "text-center text-4xl font-extrabold tracking-tight",
+          "text-center text-4xl font-serif font-semibold tracking-tight",
           Platform.select({ web: "scroll-m-20 text-balance" }),
         ),
         h2: cn(
-          "border-border border-b pb-2 text-3xl font-semibold tracking-tight",
+          "border-border border-b pb-2 text-3xl font-serif font-semibold tracking-tight",
           Platform.select({ web: "scroll-m-20 first:mt-0" }),
         ),
-        h3: cn("text-2xl font-semibold tracking-tight", Platform.select({ web: "scroll-m-20" })),
-        h4: cn("text-xl font-semibold tracking-tight", Platform.select({ web: "scroll-m-20" })),
+        h3: cn(
+          "text-2xl font-serif font-semibold tracking-tight",
+          Platform.select({ web: "scroll-m-20" }),
+        ),
+        h4: cn(
+          "text-xl font-serif font-semibold tracking-tight",
+          Platform.select({ web: "scroll-m-20" }),
+        ),
         p: "mt-3 leading-7 sm:mt-6",
         blockquote: "mt-4 border-l-2 pl-3 italic sm:mt-6 sm:pl-6",
         code: cn(
@@ -55,13 +61,6 @@ const ROLE: Partial<Record<TextVariant, Role>> = {
   code: Platform.select({ web: "code" as Role }),
 };
 
-const ARIA_LEVEL: Partial<Record<TextVariant, string>> = {
-  h1: "1",
-  h2: "2",
-  h3: "3",
-  h4: "4",
-};
-
 const TextClassContext = React.createContext<string | undefined>(undefined);
 
 function Text({
@@ -80,7 +79,6 @@ function Text({
     <Component
       className={cn(textVariants({ variant }), textClass, className)}
       role={variant ? ROLE[variant] : undefined}
-      aria-level={variant ? ARIA_LEVEL[variant] : undefined}
       {...props}
     />
   );

@@ -1,8 +1,8 @@
 /**
  * The seven Creative direction fields, in the order Edit and Detail read them.
- * Each entry carries the label the owner sees and the PRD wording its editor
- * uses as a placeholder. Description says what the piece is; Concept says what
- * it is trying to do.
+ * Each entry carries the label the owner sees and the example its editor uses
+ * as a placeholder. Description says what the design is; Concept says what it
+ * is trying to do.
  *
  * The module has no runtime import, so the reducer and the screens can both
  * read it without reaching the database.
@@ -11,7 +11,7 @@ export const CREATIVE_DIRECTION_FIELDS = [
   {
     field: "concept",
     label: "Concept",
-    placeholder: "What this piece is trying to do",
+    placeholder: "What the design is trying to do",
     multiline: true,
   },
   {
@@ -35,7 +35,7 @@ export const CREATIVE_DIRECTION_FIELDS = [
   {
     field: "audience",
     label: "Audience",
-    placeholder: "Intended customer or wearer",
+    placeholder: "Who the design is for",
     multiline: false,
   },
   {
@@ -47,7 +47,7 @@ export const CREATIVE_DIRECTION_FIELDS = [
   {
     field: "palette",
     label: "Palette",
-    placeholder: "Intended color combinations",
+    placeholder: "Intended colour combinations",
     multiline: false,
   },
 ] as const;

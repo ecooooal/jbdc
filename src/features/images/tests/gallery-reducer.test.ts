@@ -3,7 +3,7 @@ import {
   type GalleryEvent,
   type GalleryState,
 } from "../lib/gallery-reducer";
-import { DESIGN_ID, journey, noNoteUI, send, stage } from "./gallery-reducer-fixtures";
+import { DESIGN_ID, journey, noNoteUI, onImage, send, stage } from "./gallery-reducer-fixtures";
 
 /** The state the events settle on; these scenarios declare no write of their own. */
 function settle(state: GalleryState, ...events: GalleryEvent[]): GalleryState {
@@ -237,6 +237,100 @@ describe("the journey rail", () => {
       attachFailed: false,
       ...noNoteUI,
     });
+  });
+});
+
+describe("the stage row", () => {
+  test("pressing a different stage opens the row", () => {
+    const opened = settle(createInitialGalleryState(DESIGN_ID), {
+      type: "images-read",
+      stages: journey(),
+      cover: "f2",
+    });
+    const closed = settle(opened, { type: "stage-pressed", kind: "final", stages: journey() });
+
+    expect(closed.stageRowOpen).toBe(false);
+    expect(
+      settle(closed, { type: "stage-pressed", kind: "sketch", stages: journey() }),
+    ).toMatchObject({ kind: "sketch", imageId: "s1", stageRowOpen: true });
+  });
+
+  test("pressing the active stage closes an open row", () => {
+    const opened = settle(createInitialGalleryState(DESIGN_ID), {
+      type: "images-read",
+      stages: journey(),
+      cover: "f2",
+    });
+
+    expect(
+      settle(opened, { type: "stage-pressed", kind: "final", stages: journey() }),
+    ).toMatchObject({ kind: "final", imageId: "f2", stageRowOpen: false });
+  });
+
+  test("pressing the active stage opens a closed row", () => {
+    const opened = settle(createInitialGalleryState(DESIGN_ID), {
+      type: "images-read",
+      stages: journey(),
+      cover: "f2",
+    });
+    const closed = settle(opened, { type: "stage-pressed", kind: "final", stages: journey() });
+
+    expect(closed.stageRowOpen).toBe(false);
+    expect(
+      settle(closed, { type: "stage-pressed", kind: "final", stages: journey() }),
+    ).toMatchObject({ kind: "final", imageId: "f2", stageRowOpen: true });
+  });
+
+  test("a swipe leaves the row's open state unchanged", () => {
+    const stages = [
+      stage("inspiration", "i1", "i2"),
+      stage("sketch", "s1", "s2"),
+      stage("prototype"),
+      stage("final", "f1"),
+    ];
+    const opened = settle(createInitialGalleryState(DESIGN_ID), {
+      type: "images-read",
+      stages,
+      cover: "f1",
+    });
+    const closed = settle(opened, { type: "stage-pressed", kind: "final", stages });
+
+    expect(closed.stageRowOpen).toBe(false);
+    expect(settle(closed, { type: "hero-swiped", direction: "previous", stages })).toMatchObject({
+      kind: "sketch",
+      imageId: "s2",
+      stageRowOpen: false,
+    });
+  });
+
+  test("a Cover fallback keeps the row's open state", () => {
+    const opened = settle(createInitialGalleryState(DESIGN_ID), {
+      type: "images-read",
+      stages: journey(),
+      cover: "f2",
+    });
+    const closed = settle(opened, { type: "stage-pressed", kind: "final", stages: journey() });
+
+    expect(
+      settle(closed, {
+        type: "images-read",
+        stages: [
+          stage("inspiration", "i1", "i2"),
+          stage("sketch", "s1", "s2"),
+          stage("prototype"),
+          stage("final"),
+        ],
+        cover: "i2",
+      }),
+    ).toMatchObject({ kind: "inspiration", imageId: "i2", stageRowOpen: false });
+  });
+
+  test("the active stage's press clears a failed attach", () => {
+    const failed = { ...onImage("s2"), attachFailed: true };
+
+    expect(
+      settle(failed, { type: "stage-pressed", kind: "sketch", stages: journey() }),
+    ).toMatchObject({ kind: "sketch", imageId: "s2", attachFailed: false });
   });
 });
 

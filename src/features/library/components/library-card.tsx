@@ -1,70 +1,21 @@
 import { Image } from "expo-image";
-import { Shirt } from "lucide-react-native";
-import { Pressable, View } from "react-native";
-import { designStatusLabel } from "@/features/designs";
+import { View } from "react-native";
 import { DesignStatusBadge } from "@/features/designs/react";
 import { useImageUri } from "@/features/images/react";
 import type { LibraryDesign } from "../lib/query";
-import type { CardDensity } from "@/features/settings";
 import { Card } from "@/shared/components/ui/card";
-import { Icon } from "@/shared/components/ui/icon";
 import { Text } from "@/shared/components/ui/text";
-import { cn } from "@/shared/lib/utils";
+import { EmptyCover } from "./empty-cover";
+import { PressHighlight, type PressHighlightHandlers } from "./press-highlight";
 
-function Meta({ value, placeholder }: { value: string | null; placeholder: string }) {
-  return value ? (
-    <Text variant="muted" numberOfLines={1} className="shrink">
-      {value}
-    </Text>
-  ) : (
-    <Text variant="muted" numberOfLines={1} className="shrink italic opacity-60">
-      {placeholder}
-    </Text>
-  );
-}
-
-function MetaLine({ design }: { design: LibraryDesign }) {
+/** The design's Cover, when it has one. */
+function Cover({ name, uri }: { name: string; uri: string }) {
   return (
-    <View className="flex-row items-center gap-2">
-      <Meta value={design.category} placeholder="No category" />
-      <Text variant="muted" className="opacity-40">
-        ·
-      </Text>
-      <Meta value={design.collection} placeholder="No collection" />
-    </View>
-  );
-}
-
-function MetaStack({ design }: { design: LibraryDesign }) {
-  return (
-    <View className="gap-0.5">
-      <Meta value={design.category} placeholder="No category" />
-      <Meta value={design.collection} placeholder="No collection" />
-    </View>
-  );
-}
-
-/** The design's Cover, or the quiet stand-in an image-less design keeps. */
-function Cover({ design, className }: { design: LibraryDesign; className?: string }) {
-  const uri = useImageUri(design.cover);
-
-  if (!uri) {
-    return (
-      <View
-        testID="cover-placeholder"
-        className={cn("bg-muted items-center justify-center", className)}
-      >
-        <Icon as={Shirt} className="text-muted-foreground size-5 opacity-60" />
-      </View>
-    );
-  }
-
-  return (
-    <View className={cn("bg-muted overflow-hidden", className)}>
+    <View className="bg-muted aspect-[4/5] w-full overflow-hidden">
       <Image
         testID="library-cover"
         source={{ uri }}
-        accessibilityLabel={`Cover of ${design.name}`}
+        accessibilityLabel={`Cover of ${name}`}
         contentFit="cover"
         style={{ width: "100%", height: "100%" }}
       />
@@ -72,73 +23,59 @@ function Cover({ design, className }: { design: LibraryDesign; className?: strin
   );
 }
 
-/** Density 1: a full-width list row, not a large card. */
-function ListRow({ design }: { design: LibraryDesign }) {
-  return (
-    <Card className="flex-row items-center gap-3 rounded-lg py-3 pl-3 pr-4">
-      <Cover design={design} className="size-16 rounded-md" />
-      <View className="flex-1 gap-1">
-        <Text role="heading" aria-level={3} className="text-base font-medium" numberOfLines={1}>
-          {design.name}
-        </Text>
-        <MetaLine design={design} />
-      </View>
-      <DesignStatusBadge status={design.status} />
-    </Card>
-  );
-}
-
-/** Density 2 and 4: a cover-first tile. Four per row keeps only the name readable. */
-function Tile({ design, density }: { design: LibraryDesign; density: Exclude<CardDensity, 1> }) {
-  const compact = density === 4;
+/**
+ * Two per row: a cover-first tile. The Design's name is the loudest thing in
+ * it — the title face, the same voice the single view gives it — over the
+ * Status pill. The grid leaves taxonomy to the single view: a wrapped mono
+ * line made neighbouring tiles taller than their content, so the tile keeps
+ * only what survives a glance. The card fills its row's height and the pill
+ * sits at the bottom, so a tile with a shorter name still ends on the same
+ * line as its neighbour. The name takes as many lines as it needs, so the
+ * Owner's text-size setting never clips it mid-word.
+ */
+function Tile({ design }: { design: LibraryDesign }) {
+  const uri = useImageUri(design.cover);
 
   return (
-    <Card className={cn("gap-0 overflow-hidden py-0", compact ? "rounded-lg" : "rounded-xl")}>
-      <Cover design={design} className={cn("w-full", compact ? "aspect-square" : "aspect-[4/5]")} />
-      <View className={cn("gap-2", compact ? "p-2" : "p-3")}>
-        <Text
-          role="heading"
-          aria-level={3}
-          className={cn("font-medium", compact ? "text-xs leading-4" : "text-base leading-5")}
-          numberOfLines={2}
-        >
+    <Card className="flex-1 gap-0 overflow-hidden rounded-xl py-0">
+      {uri ? (
+        <Cover name={design.name} uri={uri} />
+      ) : (
+        <EmptyCover name={design.name} size="tile" className="aspect-[4/5] w-full" />
+      )}
+      <View className="flex-1 gap-2 p-3">
+        <Text role="heading" className="font-serif text-2xl font-semibold leading-7 tracking-tight">
           {design.name}
         </Text>
-        {compact ? (
-          <Text variant="muted" className="text-[10px] leading-3" numberOfLines={1}>
-            {designStatusLabel(design.status)}
-          </Text>
-        ) : (
-          <>
-            <MetaStack design={design} />
-            <View className="self-start">
-              <DesignStatusBadge status={design.status} />
-            </View>
-          </>
-        )}
+        <View className="flex-1" />
+        <View className="self-start">
+          <DesignStatusBadge status={design.status} />
+        </View>
       </View>
     </Card>
   );
 }
 
 /**
- * One Design in the Library. The shape follows the owner's chosen density:
- * one is a list row with every field, two is a roomy tile, four is a compact
- * tile that keeps the cover and name legible. The whole card is one button:
- * pressing it opens that Design.
+ * One Design in the Library at density 2. The whole card is one button:
+ * pressing it dips and tints, then opens that Design. The single view draws no
+ * card; it gives the same Design its own page.
  */
 export function LibraryCard({
   design,
-  density,
-  onPress,
+  press,
 }: {
   design: LibraryDesign;
-  density: CardDensity;
-  onPress: () => void;
+  press: PressHighlightHandlers;
 }) {
   return (
-    <Pressable role="button" onPress={onPress} className="active:opacity-70">
-      {density === 1 ? <ListRow design={design} /> : <Tile design={design} density={density} />}
-    </Pressable>
+    <PressHighlight
+      accessibilityLabel={design.name}
+      className="flex-1"
+      overlayClassName="rounded-xl"
+      {...press}
+    >
+      <Tile design={design} />
+    </PressHighlight>
   );
 }

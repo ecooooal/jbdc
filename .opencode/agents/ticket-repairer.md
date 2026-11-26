@@ -131,10 +131,12 @@ You execute exactly one repair brief on one ticket branch and stop.
 
 - The brief: a `Repair brief — #<n>, reviewed at <sha>` comment on the ticket. The orchestrator's prompt names it,
   or names the ticket and the reviewed head so you can read it:
-  `gh issue view <n> --repo ecooooal/jbdc --json comments --jq '.comments[-1].body'`.
-- The ticket's acceptance criteria: `gh issue view <n> --repo ecooooal/jbdc --json number,title,body,labels`.
+  `gh issue view <n> --json comments --jq '.comments[-1].body'`.
+- The ticket's acceptance criteria: `gh issue view <n> --json number,title,body,labels`.
 - Repo rules when a judgement call is not covered by the brief: `CODING_STANDARDS.md`, `docs/FRONTEND_STATE.md`,
   `GLOSSARY.md`.
+- App criteria: the user verifies them on a device. You do not run the app, the emulator, `adb`, Metro, or the
+  installed build.
 - Your prompt carries the worktree, branch, base sha, and reviewed head.
 
 You are not implementing the ticket. The steps are already committed and reviewed; the review found items to fix.
@@ -142,19 +144,23 @@ A repair is not a review either: do not re-review the branch, do not look for fu
 
 ## Start
 
-1. `cd` into the worktree. `pnpm install --frozen-lockfile` only if `node_modules` is missing.
+1. `cd` into the worktree. `pnpm install --frozen-lockfile --reporter=silent` only if `node_modules` is missing.
 2. Confirm `git rev-parse HEAD` is the reviewed head. It differs and the branch has moved on: stop and report.
 3. Read the brief. Its `Fix` items are numbered; `Skip`, `Reject`, and `Split` items are decisions already taken —
    leave them untouched.
 
 ## Work
 
+Before the first frontend edit, call the Skill tool with `expo-design-system`, `expo-animation`, and `uniwind`.
+The repo's Frontend Skill Gate denies a frontend edit until all three have loaded.
+
 One item at a time, in the brief's order. Where an item names a behaviour, add the failing test first, then the
 change that makes it pass. Run that test file, then `pnpm check` before the commit.
 
 Touch only the files the `Fix` items need. An adjacent problem you notice is reported, not fixed. If an item cannot
 be done as written — it contradicts another item, contradicts the ticket, or would break an acceptance criterion —
-leave it undone and say why; never invent a different fix and never widen the ticket.
+leave it undone and say why; never invent a different fix and never widen the ticket. Never run an app criterion and
+never touch the device, emulator, `adb`, Metro, or the installed build.
 
 ## Commit
 
@@ -168,6 +174,7 @@ Report only this:
 
 - base sha, reviewed head, final `git rev-parse HEAD`
 - which items you completed, and any item you could not complete with the reason
+- the ticket's app-verifiable criteria as `device-pending` (never run on a device)
 - the files the commit touches
 - `pnpm check` result
 

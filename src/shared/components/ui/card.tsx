@@ -35,7 +35,6 @@ function CardTitle({
     <Text
       ref={ref}
       role="heading"
-      aria-level={3}
       className={cn("font-semibold leading-none", className)}
       {...props}
     />

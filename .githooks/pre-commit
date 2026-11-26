@@ -1,7 +1,13 @@
 #!/bin/sh
-# Local gate: staged scope, then typecheck, lint, both guards, and tests. CI
-# repeats the checks on push.
+# The fast gate, once per commit: staged scope, formatting, and the guards that
+# read the tree. Typecheck, lint, and the suite belong to pre-push — a ticket of
+# four step commits pays for them once, at the push, not four times.
 set -e
 
 node scripts/check-staged-scope.mjs
-pnpm check
+pnpm format:check
+node scripts/check-feature-boundaries.mjs
+node scripts/check-entry-exports.mjs
+node scripts/check-frontend-state.mjs
+node scripts/check-test-size.mjs
+node scripts/check-retired-terms.mjs

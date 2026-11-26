@@ -37,7 +37,7 @@ test("a category created inline is selected and saved with the design", async ()
 
     expect(screen.getByText("Knitwear")).toBeTruthy();
 
-    await user.press(screen.getByRole("button", { name: "Create" }));
+    await user.press(screen.getByRole("button", { name: "Create design" }));
 
     const category = listCategories(database).find((entry) => entry.name === "Knitwear");
 
