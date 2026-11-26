@@ -53,7 +53,7 @@ is worth an Event.
 - `components/section-tabs.tsx` — Detail's section index: two full-width label halves on the shared Tabs root, the open one inked over a wood rule on the shared hairline; Edit keeps its filled bar.
 - `components/new-design-form.tsx` — create: name, Category, Collection.
 - `components/field-rows.tsx` — one section's read-first rows; `form-field.tsx` is a single labelled input.
-- `components/taxonomy-select.tsx` — Category/Collection picker with None; `material-use-role-picker.tsx` — the Role choice.
+- `components/taxonomy-select.tsx` — the create form's Category/Collection popover select with None; `choice-sheet.tsx` — Edit's trigger and its stacked choice sheet; `material-use-role-picker.tsx` — the Role choice.
 - `components/inline-creation-panel.tsx` — create a Category or Collection without leaving the form.
 - `components/material-uses-table.tsx` — the rows Detail and Edit share; Edit adds the pencil column and the last `Add material` row.
 - `components/material-uses-section.tsx` — Edit's Materials block: the uses table, whose last row opens the Add material sheet.

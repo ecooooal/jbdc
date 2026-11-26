@@ -1,4 +1,5 @@
 import { act, screen, userEvent, within } from "@testing-library/react-native";
+import { Keyboard } from "react-native";
 import { getDesign } from "@/features/designs";
 import { createMaterial } from "@/features/materials";
 import { createCategory } from "@/features/taxonomy";
@@ -156,7 +157,16 @@ describe("the taxonomy sheet", () => {
     await renderEdit(design.id);
     await act(async () => {});
     await openRow("Category and collection");
+
+    // The picker stacks above the taxonomy sheet: both choices stay mounted,
+    // and its list arrives only once the field is pressed.
+    const dismissKeyboard = jest.spyOn(Keyboard, "dismiss");
+    expect(screen.queryByRole("button", { name: "Bridal" })).toBeNull();
+    await userEvent.press(screen.getByRole("button", { name: "Category" }));
+    expect(dismissKeyboard).toHaveBeenCalled();
+    expect(screen.getByLabelText("Collection")).toBeTruthy();
     await userEvent.press(screen.getByRole("button", { name: "Bridal" }));
+    dismissKeyboard.mockRestore();
 
     expect(getDesign(database, design.id)).toMatchObject({ categoryId: category.id });
     expect(screen.getByLabelText("Category")).toBeTruthy();

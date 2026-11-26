@@ -23,6 +23,7 @@ import type { EditDesignRow } from "../lib/edit-design-reducer";
 import { DESIGN_SECTIONS, isDesignSectionTab, type DesignSectionTab } from "../lib/sections";
 import { useDesignDetail } from "../lib/use-design-detail";
 import { useEditVisit } from "../lib/use-edit-visit";
+import { ChoiceSheet } from "./choice-sheet";
 import { DesignStatusBadge } from "./design-status-badge";
 import { FieldError } from "./field-error";
 import { FieldRows } from "./field-rows";
@@ -32,7 +33,6 @@ import { MaterialUsesSection } from "./material-uses-section";
 import { ReadError } from "./read-error";
 import { RowPencil } from "./row-pencil";
 import { EditSectionTabs } from "./section-tabs";
-import { TaxonomySelect } from "./taxonomy-select";
 
 /**
  * Edit for one Design. The hero holds the Design's identity, which the owner
@@ -375,7 +375,7 @@ export function EditDesignScreen({ designId }: { designId: string }) {
                 ) : null}
 
                 <FormField label="Category">
-                  <TaxonomySelect
+                  <ChoiceSheet
                     label="Category"
                     placeholder="No category"
                     value={selectedCategory}
@@ -386,7 +386,7 @@ export function EditDesignScreen({ designId }: { designId: string }) {
                   {fieldError("categoryId")}
                 </FormField>
                 <FormField label="Collection">
-                  <TaxonomySelect
+                  <ChoiceSheet
                     label="Collection"
                     placeholder="No collection"
                     value={selectedCollection}

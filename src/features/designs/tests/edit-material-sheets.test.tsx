@@ -183,11 +183,45 @@ describe("the Edit material sheet", () => {
     expect(editSheet().getByLabelText("Colour")).toHaveDisplayValue("Charcoal");
     expect(editSheet().getByRole("radio", { name: "Main" })).toBeChecked();
     expect(editSheet().getByRole("button", { name: "Remove from design" })).toBeTruthy();
-    // The header's X is the sheet's only close.
     expect(editSheet().getByRole("button", { name: "Close material" })).toBeTruthy();
+    expect(editSheet().getByRole("button", { name: "Done" })).toBeTruthy();
   });
 
-  test("Close writes the typed colour and returns to the screen", async () => {
+  test("the Material trigger stacks its choice sheet and picks another Material", async () => {
+    const { design } = designWithWoolUse();
+
+    createMaterial(database, { name: "Linen" });
+
+    await renderEdit(design.id);
+    await userEvent.press(screen.getByRole("button", { name: "Edit Wool (Charcoal)" }));
+
+    // The choice sheet sits above Edit material: the sheet stays mounted.
+    await userEvent.press(editSheet().getByRole("button", { name: "Material" }));
+    expect(screen.getByTestId("edit-material-sheet")).toBeTruthy();
+    await userEvent.press(editSheet().getByRole("button", { name: "Linen" }));
+    await settleUseWrites();
+
+    expect(listMaterialUses(database, design.id)).toEqual([
+      expect.objectContaining({ materialName: "Linen", colour: "Charcoal", role: "main" }),
+    ]);
+  });
+
+  test("Done writes the typed colour and returns to the screen", async () => {
+    const { design } = designWithWoolUse();
+
+    await renderEdit(design.id);
+    await userEvent.press(screen.getByRole("button", { name: "Edit Wool (Charcoal)" }));
+    await fireEvent.changeText(editSheet().getByLabelText("Colour"), "Black");
+    await userEvent.press(editSheet().getByRole("button", { name: "Done" }));
+    await settleUseWrites();
+
+    expect(screen.queryByTestId("edit-material-sheet")).toBeNull();
+    expect(listMaterialUses(database, design.id)).toEqual([
+      expect.objectContaining({ materialName: "Wool", colour: "Black", role: "main" }),
+    ]);
+  });
+
+  test("the header's X writes the typed colour too", async () => {
     const { design } = designWithWoolUse();
 
     await renderEdit(design.id);

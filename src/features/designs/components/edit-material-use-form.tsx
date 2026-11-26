@@ -1,4 +1,5 @@
 import { Trash2 } from "lucide-react-native";
+import { View } from "react-native";
 import { SheetBody, SheetFooter } from "@/shared/components/sheet";
 import { Button } from "@/shared/components/ui/button";
 import { Icon } from "@/shared/components/ui/icon";
@@ -11,19 +12,19 @@ import {
   type EditDesignGesture,
   type EditingMaterialUse,
 } from "../lib/edit-design-reducer";
+import { ChoiceSheet } from "./choice-sheet";
 import { FieldError } from "./field-error";
 import { FormField } from "./form-field";
 import { MaterialUseRolePicker } from "./material-use-role-picker";
 import { ReadError } from "./read-error";
 import { SheetHeader } from "@/shared/components/sheet-header";
-import { TaxonomySelect } from "./taxonomy-select";
 
 /**
  * The Edit material sheet's body. Material, colour, and role each write as soon
  * as they change, so there is no Save step; the sheet stays open until the
- * header's X, which is its only close, and the screen's live read brings the
- * re-sorted row back. Closing flushes a typed colour first, as the panel always
- * has.
+ * header's X or the footer's Done, and the screen's live read brings the
+ * re-sorted row back. Both closes flush a typed colour first, as the panel
+ * always has.
  *
  * "Remove from design" detaches this Material use from the design; it never
  * deletes the Material from the owner's list. It wears the notes' trash, in
@@ -58,7 +59,7 @@ export function EditMaterialUseForm({
       <SheetHeader title="Edit material" closeLabel="Close material" onClose={close} />
 
       <FormField label="Material">
-        <TaxonomySelect
+        <ChoiceSheet
           label="Material"
           placeholder="No material"
           value={selectedMaterial}
@@ -109,29 +110,34 @@ export function EditMaterialUseForm({
       ) : null}
       {state.error ? <FieldError message={state.error} /> : null}
 
-      <SheetFooter>
-        {removeArmed ? (
-          <Text className="text-destructive text-xs" accessibilityLiveRegion="polite">
-            Tap again to remove
-          </Text>
-        ) : null}
-        <Button
-          size="icon"
-          variant="ghost"
-          accessibilityLabel="Remove from design"
-          accessibilityHint={
-            removeArmed
-              ? "Removes this Material use from the design"
-              : "Press twice in a row to remove this Material use from the design"
-          }
-          onPress={() =>
-            send({ type: "material-use-panel-fact", fact: { type: "remove-pressed" } })
-          }
-        >
-          <Icon
-            as={Trash2}
-            className={cn(removeArmed ? "text-destructive" : "text-muted-foreground")}
-          />
+      <SheetFooter className="justify-between">
+        <View className="flex-row items-center gap-2">
+          {removeArmed ? (
+            <Text className="text-destructive text-xs" accessibilityLiveRegion="polite">
+              Tap again to remove
+            </Text>
+          ) : null}
+          <Button
+            size="icon"
+            variant="ghost"
+            accessibilityLabel="Remove from design"
+            accessibilityHint={
+              removeArmed
+                ? "Removes this Material use from the design"
+                : "Press twice in a row to remove this Material use from the design"
+            }
+            onPress={() =>
+              send({ type: "material-use-panel-fact", fact: { type: "remove-pressed" } })
+            }
+          >
+            <Icon
+              as={Trash2}
+              className={cn(removeArmed ? "text-destructive" : "text-muted-foreground")}
+            />
+          </Button>
+        </View>
+        <Button size="sm" onPress={close}>
+          <Text>Done</Text>
         </Button>
       </SheetFooter>
     </SheetBody>
