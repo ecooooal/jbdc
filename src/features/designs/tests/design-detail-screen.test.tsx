@@ -196,11 +196,11 @@ test("the fixed header carries the back control and the Design's place", async (
   expect(headerRegion().getByRole("button", { name: "Back to Library" })).toBeTruthy();
   expect(headerRegion().getByText("Spring")).toBeTruthy();
   expect(headerRegion().getByText("Dress")).toBeTruthy();
-  expect(headerRegion().queryByText("Created Jan 5, 2026")).toBeNull();
-  expect(headerRegion().queryByText("Updated Feb 12, 2026")).toBeNull();
+  expect(headerRegion().queryByText(/Created Jan\s5,\s2026/)).toBeNull();
+  expect(headerRegion().queryByText(/Updated Feb\s12,\s2026/)).toBeNull();
 });
 
-test("the body opens on the identity block: name, Status pill, dates, and description", async () => {
+test("the body opens on the identity block: name, Status pill, one date, and description", async () => {
   const design = createDesign(
     database,
     { name: "Silk slip dress", description: "Bias cut, cowl neck." },
@@ -211,12 +211,12 @@ test("the body opens on the identity block: name, Status pill, dates, and descri
 
   expect(identityRegion().getByText("Silk slip dress")).toBeTruthy();
   expect(identityRegion().getByText("Concept")).toBeTruthy();
-  expect(identityRegion().getByText("Created Jan 5, 2026")).toBeTruthy();
-  expect(identityRegion().getByText("Updated Jan 5, 2026")).toBeTruthy();
+  expect(identityRegion().getByText(/Created Jan\s5,\s2026/)).toBeTruthy();
+  expect(identityRegion().queryByText(/Updated/)).toBeNull();
   expect(identityRegion().getByText("Bias cut, cowl neck.")).toBeTruthy();
 });
 
-test("the dates appear once each", async () => {
+test("an edited Design shows both record dates on one line", async () => {
   const design = createDesign(database, { name: "Silk slip dress" }, Date.UTC(2026, 0, 5, 12));
   writeDesign(
     database,
@@ -227,8 +227,7 @@ test("the dates appear once each", async () => {
 
   await renderDetail(design.id);
 
-  expect(screen.getAllByText("Created Jan 5, 2026")).toHaveLength(1);
-  expect(screen.getAllByText("Updated Feb 12, 2026")).toHaveLength(1);
+  expect(screen.getAllByText(/Created Jan\s5,\s2026 · Updated Feb\s12,\s2026/)).toHaveLength(1);
 });
 
 test("a Design with no Collection names it instead of leaving the line blank", async () => {

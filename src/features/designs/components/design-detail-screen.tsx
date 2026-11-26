@@ -16,6 +16,7 @@ import { Icon } from "@/shared/components/ui/icon";
 import { Tabs, TabsContent } from "@/shared/components/ui/tabs";
 import { Text } from "@/shared/components/ui/text";
 import { DETAIL_ARRIVAL, QUIET_MOTION_DURATION_MS } from "@/shared/lib/motion";
+import { cn } from "@/shared/lib/utils";
 import {
   DESIGN_SECTIONS,
   isDesignSectionTab,
@@ -39,11 +40,36 @@ function formatShortDate(timestamp: number): string {
   return SHORT_DATE_FORMAT.format(timestamp);
 }
 
-/** One date line: its label and short date in the mono voice. */
-function DetailDate({ label, value }: { label: string; value: string }) {
+/**
+ * A date whose own spaces never break: when the line runs out of room it
+ * wraps between the two dates, never inside one.
+ */
+function unbreakableDate(timestamp: number): string {
+  return formatShortDate(timestamp).replaceAll(" ", "\u00A0");
+}
+
+/**
+ * The record's dates on one line in the mono voice. A Design that has never
+ * been written since it was created has one date, not the same date under two
+ * labels; the second label appears only when the record has actually changed.
+ */
+function DetailDates({
+  createdAt,
+  updatedAt,
+  className,
+}: {
+  createdAt: number;
+  updatedAt: number;
+  className?: string;
+}) {
+  // Each label is bound to its date, so a line that runs out of room breaks
+  // between the two dates rather than orphaning a label from its date.
+  const created = `Created\u00A0${unbreakableDate(createdAt)}`;
+  const updated = `Updated\u00A0${unbreakableDate(updatedAt)}`;
+
   return (
-    <Text className="text-muted-foreground font-mono text-xs leading-4">
-      {label} {value}
+    <Text className={cn("text-muted-foreground font-mono text-xs leading-4", className)}>
+      {createdAt === updatedAt ? created : `${created} · ${updated}`}
     </Text>
   );
 }
@@ -144,31 +170,30 @@ function DetailHeader({ design }: { design: DesignDetail | null }) {
 }
 
 /**
- * The body's opening: the name in the title voice with its Status pill, then
- * the record's created and updated dates as a mono stack beside the name, then
- * the description. The Category and Collection live in the fixed header; the
+ * The body's opening: the name in the title voice with its Status pill, the
+ * description, then the record's dates as one quiet mono line. The name keeps
+ * the page's full measure, so a long name wraps against the sheet's edge
+ * instead of against a column of metadata; the pill follows it on the same
+ * line, or drops beneath it when the name needs the width. The dates are
+ * provenance, not the subject, so they sit under the description rather than
+ * beside the title. The Category and Collection live in the fixed header; the
  * image block and the sections follow beneath.
  */
 function DetailIdentity({ design }: { design: DesignDetail }) {
   return (
-    <View testID="detail-identity" className="gap-2">
-      <View className="flex-row items-start justify-between gap-3">
-        <View className="flex-1 flex-row flex-wrap items-center gap-2">
-          <Text variant="h3" className="leading-tight">
-            {design.name}
-          </Text>
-          <DesignStatusBadge status={design.status} />
-        </View>
-        <View className="shrink-0 items-end pt-1">
-          <DetailDate label="Created" value={formatShortDate(design.createdAt)} />
-          <DetailDate label="Updated" value={formatShortDate(design.updatedAt)} />
-        </View>
+    <View testID="detail-identity">
+      <View className="flex-row flex-wrap items-center gap-x-2 gap-y-1">
+        <Text variant="h3" className="leading-tight">
+          {design.name}
+        </Text>
+        <DesignStatusBadge status={design.status} />
       </View>
       {design.description ? (
-        <Text variant="muted" className="text-base leading-6">
+        <Text variant="muted" className="mt-2 text-base leading-6">
           {design.description}
         </Text>
       ) : null}
+      <DetailDates createdAt={design.createdAt} updatedAt={design.updatedAt} className="mt-3" />
     </View>
   );
 }
