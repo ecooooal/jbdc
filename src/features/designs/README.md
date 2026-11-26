@@ -49,7 +49,7 @@ is worth an Event.
 ## Screens and pieces
 
 - `components/edit-design-screen.tsx`, `components/design-detail-screen.tsx` — the two screens.
-- `components/section-tabs.tsx` — Detail's plain section switcher: labels on the shared Tabs root, the active one marked by its text and border; Edit keeps its filled bar.
+- `components/section-tabs.tsx` — Detail's section index: two full-width label halves on the shared Tabs root, the open one inked over a wood rule on the shared hairline; Edit keeps its filled bar.
 - `components/new-design-form.tsx` — create: name, Category, Collection.
 - `components/field-rows.tsx` — one section's read-first rows; `form-field.tsx` is a single labelled input.
 - `components/taxonomy-select.tsx` — Category/Collection picker with None; `material-use-role-select.tsx` — role chips.

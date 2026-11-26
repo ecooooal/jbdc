@@ -1,14 +1,14 @@
 import * as TabsPrimitive from "@rn-primitives/tabs";
 import type { ReactNode } from "react";
 import { useEffect } from "react";
-import { Platform } from "react-native";
+import { View } from "react-native";
 import Animated, {
   ReduceMotion,
   useAnimatedStyle,
   useSharedValue,
   withTiming,
 } from "react-native-reanimated";
-import { Text, TextClassContext } from "@/shared/components/ui/text";
+import { Text } from "@/shared/components/ui/text";
 import { cn } from "@/shared/lib/utils";
 import { DESIGN_SECTIONS } from "../lib/sections";
 
@@ -19,9 +19,10 @@ import { DESIGN_SECTIONS } from "../lib/sections";
 const TAB_SELECTION_DURATION_MS = 150;
 
 /**
- * One section tab: a plain label whose weight and tone say whether it is the
- * open section, with a hairline border that fades in rather than appearing.
- * The root supplies the selected value.
+ * One section tab: a full-height half of the index, its label set in the body
+ * voice and its selection marked by a wood rule on the shared baseline. The
+ * whole half is the target, and a press takes the Kraft tint instead of
+ * moving. The root supplies the selected value.
  */
 function SectionTab({ value, children }: { value: string; children: ReactNode }) {
   const { value: activeValue } = TabsPrimitive.useRootContext();
@@ -37,49 +38,40 @@ function SectionTab({ value, children }: { value: string; children: ReactNode })
     );
   }, [selected, selection]);
 
-  const border = useAnimatedStyle(() => ({ opacity: selection.get() }));
+  const rule = useAnimatedStyle(() => ({ opacity: selection.get() }));
 
   return (
-    <TextClassContext.Provider
-      value={cn(
-        "text-sm leading-5",
-        selected ? "text-foreground font-medium" : "text-muted-foreground font-normal",
-      )}
+    <TabsPrimitive.Trigger
+      value={value}
+      className="relative min-h-12 flex-1 items-center justify-start rounded-lg px-3 pb-3 pt-3 active:bg-accent"
     >
-      <TabsPrimitive.Trigger
-        value={value}
+      <Text
         className={cn(
-          "relative flex flex-row items-center justify-center gap-1.5 rounded-md border border-transparent px-2 py-1 shadow-none shadow-black/5",
-          "active:opacity-60",
-          Platform.select({
-            web: "focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:outline-ring web:h-[calc(100%-1px)] inline-flex cursor-default whitespace-nowrap transition-[color,box-shadow] focus-visible:outline-1 focus-visible:ring-[3px] disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0",
-          }),
+          "text-base leading-6",
+          selected ? "text-foreground font-medium" : "text-muted-foreground font-normal",
         )}
       >
-        <Animated.View
-          pointerEvents="none"
-          style={border}
-          className="border-border absolute inset-0 rounded-md border"
-        />
-        <Text>{children}</Text>
-      </TabsPrimitive.Trigger>
-    </TextClassContext.Provider>
+        {children}
+      </Text>
+      <View pointerEvents="none" className="bg-border absolute inset-x-0 bottom-0 h-hairline" />
+      <Animated.View
+        pointerEvents="none"
+        style={rule}
+        className="bg-primary absolute inset-x-0 bottom-0 h-0.5 rounded-full"
+      />
+    </TabsPrimitive.Trigger>
   );
 }
 
 /**
- * The Detail's section switcher: a plain row of the sections' labels rather
- * than Edit's filled bar. The open section is inked and medium; the rest stay
- * muted and regular. The shared Tabs root and content still own the state.
+ * The Detail's section switcher: a two-column index laid across the sheet,
+ * not Edit's filled bar. The open section is inked and medium over a wood
+ * rule; the other stays faded on the shared Thread Line. The shared Tabs root
+ * and content still own the state.
  */
 export function SectionTabs() {
   return (
-    <TabsPrimitive.List
-      className={cn(
-        "flex h-9 flex-row items-center justify-center gap-1",
-        Platform.select({ web: "inline-flex w-fit", native: "mr-auto" }),
-      )}
-    >
+    <TabsPrimitive.List className="flex flex-row items-stretch">
       {DESIGN_SECTIONS.map(({ tab, label }) => (
         <SectionTab key={tab} value={tab}>
           {label}

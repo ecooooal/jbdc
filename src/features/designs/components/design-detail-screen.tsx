@@ -217,6 +217,7 @@ function DetailSections({ design }: { design: DesignDetail }) {
   return (
     <Tabs
       value={tab}
+      className="gap-4"
       onValueChange={(value) => {
         if (isDesignSectionTab(value)) setChosen(value);
       }}
