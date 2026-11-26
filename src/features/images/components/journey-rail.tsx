@@ -164,10 +164,10 @@ function AddImageCard({ label, onPress }: { label: string; onPress: () => void }
       role="button"
       accessibilityLabel={`Add images to ${label}`}
       onPress={onPress}
-      className="border-border bg-muted aspect-[3/4] w-16 items-center justify-center gap-1 rounded-lg border border-dashed"
+      className="border-border aspect-[3/4] w-16 items-center justify-center gap-1 rounded-lg border border-dashed active:bg-accent"
     >
       <Icon as={Plus} className="text-muted-foreground size-5" />
-      <Text variant="muted" className="text-[10px] leading-3">
+      <Text variant="muted" className="text-xs leading-4">
         Add
       </Text>
     </Pressable>
