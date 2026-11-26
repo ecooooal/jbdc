@@ -21,6 +21,8 @@
 
     wood: "#B38A64",
     woodForeground: "#292724",
+    selection: "#8A6642",
+    selectionForeground: "#F8F6F2",
 
     green: "#687C68",
     greenForeground: "#FFFFFF",
@@ -41,6 +43,8 @@
 
     wood: "#D1B18A",
     woodForeground: "#292724",
+    selection: "#8A6642",
+    selectionForeground: "#F8F6F2",
 
     green: "#A4B69A",
     greenForeground: "#242424",

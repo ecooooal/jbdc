@@ -346,31 +346,28 @@ export function journeyView<Stage extends GalleryStage>(
   };
 }
 
-/** One card in the stage block: its stage, its image count, and whether it is active. */
-export type StageCard = {
+/** One tab in the stage block: its stage, its image count, and whether it is active. */
+export type StageTab = {
   kind: ImageKind;
   count: number;
   active: boolean;
 };
 
-/** The stage block's four cards, in journey order. */
-export type StageCardsView = {
-  cards: StageCard[];
+/** The stage block's four tabs, in journey order. */
+export type StageTabsView = {
+  tabs: StageTab[];
 };
 
 /**
- * The four stage cards: every stage with the number of images it holds, and the
- * one the gallery is on marked active. The active card follows the current
+ * The four stage tabs: every stage with the number of images it holds, and the
+ * one the gallery is on marked active. The active tab follows the current
  * image and holds the empty stage the owner chose; it never reads the Cover.
  */
-export function stageCardsView(
-  stages: readonly GalleryStage[],
-  state: GalleryState,
-): StageCardsView {
+export function stageTabsView(stages: readonly GalleryStage[], state: GalleryState): StageTabsView {
   const active = galleryView(stages, state).stage;
 
   return {
-    cards: stages.map((stage) => ({
+    tabs: stages.map((stage) => ({
       kind: stage.kind,
       count: stage.images.length,
       active: stage.kind === active?.kind,

@@ -24,17 +24,22 @@ function counterName(): string {
   return screen.getByTestId("gallery-journey-counter").props.accessibilityLabel;
 }
 
-test("the stage block shows one card for each of the four stages", async () => {
+/** A stage tab by its stage name; its accessible name carries the image count. */
+function stageTab(label: string) {
+  return screen.getByRole("tab", { name: new RegExp(`^${label},`) });
+}
+
+test("the stage block shows one tab for each of the four stages", async () => {
   const design = galleryDesign("Early concept");
 
   await renderGallery(design.id);
 
   for (const label of ["Inspiration", "Sketch", "Prototype", "Final"]) {
-    expect(screen.getByRole("button", { name: label })).toBeTruthy();
+    expect(stageTab(label)).toBeTruthy();
   }
 });
 
-test("each stage card names its stage and carries its image count", async () => {
+test("each stage tab names its stage and carries its image count", async () => {
   const design = galleryDesign("Wool coat");
 
   await attach(design.id, "inspiration", "inspiration bytes", 1000);
@@ -42,49 +47,45 @@ test("each stage card names its stage and carries its image count", async () => 
   await attach(design.id, "final", "final bytes", 3000);
   await renderGallery(design.id);
 
-  const card = (label: string) => within(screen.getByRole("button", { name: label }));
+  const tabs = within(screen.getByTestId("stage-tabs"));
 
-  expect(card("Inspiration").getByText("Inspiration")).toBeTruthy();
-  expect(card("Inspiration").getByText("2 images")).toBeTruthy();
-  expect(card("Sketch").getByText("Sketch")).toBeTruthy();
-  expect(card("Sketch").getByText("0 images")).toBeTruthy();
-  expect(card("Prototype").getByText("Prototype")).toBeTruthy();
-  expect(card("Prototype").getByText("0 images")).toBeTruthy();
-  expect(card("Final").getByText("Final")).toBeTruthy();
-  expect(card("Final").getByText("1 image")).toBeTruthy();
+  expect(tabs.getAllByRole("tab").map((tab) => tab.props.accessibilityLabel)).toEqual([
+    "Inspiration, 2 images",
+    "Sketch, 0 images",
+    "Prototype, 0 images",
+    "Final, 1 image",
+  ]);
 });
 
-test("the stage card for the gallery's stage is the selected one", async () => {
+test("the stage tab for the gallery's stage is the selected one", async () => {
   const design = galleryDesign("Wool coat");
 
   await attach(design.id, "sketch", "sketch bytes", 1000);
   await attach(design.id, "final", "final bytes", 2000);
   await renderGallery(design.id);
 
-  expect(screen.getByRole("button", { name: "Final" }).props.accessibilityState).toMatchObject({
+  expect(stageTab("Final").props.accessibilityState).toMatchObject({
     selected: true,
   });
-  expect(
-    screen.getByRole("button", { name: "Inspiration" }).props.accessibilityState,
-  ).toMatchObject({
+  expect(stageTab("Inspiration").props.accessibilityState).toMatchObject({
     selected: false,
   });
-  expect(screen.getByRole("button", { name: "Sketch" }).props.accessibilityState).toMatchObject({
+  expect(stageTab("Sketch").props.accessibilityState).toMatchObject({
     selected: false,
   });
-  expect(screen.getByRole("button", { name: "Prototype" }).props.accessibilityState).toMatchObject({
+  expect(stageTab("Prototype").props.accessibilityState).toMatchObject({
     selected: false,
   });
 });
 
-test("the active stage card follows the pager when a swipe settles on another stage", async () => {
+test("the active stage tab follows the pager when a swipe settles on another stage", async () => {
   const design = galleryDesign("Wool coat");
 
   await attach(design.id, "inspiration", "inspiration bytes", 1000);
   await attach(design.id, "final", "final bytes", 2000);
   await renderGallery(design.id);
 
-  expect(screen.getByRole("button", { name: "Final" }).props.accessibilityState).toMatchObject({
+  expect(stageTab("Final").props.accessibilityState).toMatchObject({
     selected: true,
   });
 
@@ -94,17 +95,15 @@ test("the active stage card follows the pager when a swipe settles on another st
     nativeEvent: { contentOffset: { x: 0 }, layoutMeasurement: { width: pageWidth } },
   });
 
-  expect(
-    screen.getByRole("button", { name: "Inspiration" }).props.accessibilityState,
-  ).toMatchObject({
+  expect(stageTab("Inspiration").props.accessibilityState).toMatchObject({
     selected: true,
   });
-  expect(screen.getByRole("button", { name: "Final" }).props.accessibilityState).toMatchObject({
+  expect(stageTab("Final").props.accessibilityState).toMatchObject({
     selected: false,
   });
 });
 
-test("pressing a stage card selects that stage's oldest image", async () => {
+test("pressing a stage tab selects that stage's oldest image", async () => {
   const design = galleryDesign("Wool coat");
 
   await attach(design.id, "sketch", "first sketch", 1000);
@@ -116,10 +115,10 @@ test("pressing a stage card selects that stage's oldest image", async () => {
   // older of its two images, not to the newest or the one already on screen.
   expect(counterName()).toBe("Final image 3 of 3");
 
-  await userEvent.press(screen.getByRole("button", { name: "Sketch" }));
+  await userEvent.press(stageTab("Sketch"));
 
   expect(counterName()).toBe("Sketch image 1 of 3");
-  expect(screen.getByRole("button", { name: "Sketch" }).props.accessibilityState).toMatchObject({
+  expect(stageTab("Sketch").props.accessibilityState).toMatchObject({
     selected: true,
   });
 });
@@ -133,10 +132,10 @@ test("the stage row opens on a stage press", async () => {
 
   // The active Final row starts open; the active press closes it, and choosing
   // another stage opens that stage's row.
-  await userEvent.press(screen.getByRole("button", { name: "Final" }));
+  await userEvent.press(stageTab("Final"));
   expect(screen.queryByTestId("stage-row")).toBeNull();
 
-  await userEvent.press(screen.getByRole("button", { name: "Sketch" }));
+  await userEvent.press(stageTab("Sketch"));
 
   const row = within(screen.getByTestId("stage-row"));
 
@@ -151,7 +150,7 @@ test("pressing the active stage closes its row", async () => {
 
   expect(screen.getByTestId("stage-row")).toBeTruthy();
 
-  await userEvent.press(screen.getByRole("button", { name: "Final" }));
+  await userEvent.press(stageTab("Final"));
 
   expect(screen.queryByTestId("stage-row")).toBeNull();
 });
@@ -233,7 +232,7 @@ test("an empty stage's row shows only the plus card", async () => {
   await attach(design.id, "sketch", "sketch bytes", 1000);
   await renderGallery(design.id);
 
-  await userEvent.press(screen.getByRole("button", { name: "Prototype" }));
+  await userEvent.press(stageTab("Prototype"));
 
   const row = within(screen.getByTestId("stage-row"));
 
@@ -241,24 +240,21 @@ test("an empty stage's row shows only the plus card", async () => {
   expect(row.getByRole("button", { name: "Add images to Prototype" })).toBeTruthy();
 });
 
-test("no stage-named chip remains: the four stage controls are equal cards", async () => {
+test("the four stage controls are one tab row", async () => {
   const design = galleryDesign("Early concept");
 
   await renderGallery(design.id);
 
-  // A chip was a pill; the card is an equal column of the stable row. Only the
-  // four cards answer to a stage's name, and each sits inside the stage row.
-  const stageNames = /^(Inspiration|Sketch|Prototype|Final)$/;
-  const controls = screen.getAllByRole("button", { name: stageNames });
+  // Only the tab row answers to a stage's name; the section index below keeps
+  // its own labels. Every stage tab sits inside the one capsule.
+  const row = within(screen.getByTestId("stage-tabs"));
 
-  expect(controls).toHaveLength(4);
-
-  const row = within(screen.getByTestId("stage-cards"));
-
-  for (const control of controls) {
-    expect(control.props.testID).toMatch(/^stage-card-/);
-    expect(row.getByRole("button", { name: control.props.accessibilityLabel })).toBe(control);
-  }
+  expect(row.getAllByRole("tab").map((tab) => tab.props.testID)).toEqual([
+    "stage-tab-inspiration",
+    "stage-tab-sketch",
+    "stage-tab-prototype",
+    "stage-tab-final",
+  ]);
 });
 
 test("the journey counter names the stage and the position across the journey", async () => {
@@ -316,7 +312,7 @@ test("an empty stage on a design with images keeps the dashed frame and drops th
   await attach(design.id, "final", "final bytes", 2000);
   await renderGallery(design.id);
 
-  await userEvent.press(screen.getByRole("button", { name: "Prototype" }));
+  await userEvent.press(stageTab("Prototype"));
 
   expect(screen.getByTestId("gallery-pager-placeholder")).toBeTruthy();
   expect(screen.getByText("No Prototype images yet")).toBeTruthy();
@@ -337,7 +333,7 @@ test("the plus card attaches the picked files to the stage the owner chose", asy
 
   await renderGallery(design.id, picker);
 
-  await userEvent.press(screen.getByRole("button", { name: "Sketch" }));
+  await userEvent.press(stageTab("Sketch"));
   await userEvent.press(screen.getByRole("button", { name: "Add images to Sketch" }));
 
   // Let the picked files land, then report the write the way the app's change
@@ -416,7 +412,7 @@ test("reclassifying a non-Cover image in the image detail changes the Cover on r
   // the owner has to reach for.
   expect(screen.getByRole("button", { name: "Open Prototype image 2 of 2" })).toBeTruthy();
 
-  await userEvent.press(screen.getByRole("button", { name: "Sketch" }));
+  await userEvent.press(stageTab("Sketch"));
   await openImageDetail("Open Sketch image 1 of 2");
   await userEvent.press(screen.getByRole("button", { name: "Classify as Final" }));
   await act(async () => {});

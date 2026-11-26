@@ -25,7 +25,7 @@ jest.mock("react-native-reanimated", () => {
     // The sheet's keyboard padding is worked out in a style worklet; running
     // the factory once against the stand-in's zero keyboard keeps it callable.
     useAnimatedStyle: (factory) => factory(),
-    // The stage card's 150 ms tone and lift share one value; the stand-in keeps
+    // The stage tabs' fill and press share one value each; the stand-in keeps
     // the get/set surface and resolves each timing to its target value.
     useSharedValue: (initial) => {
       let current = initial;
@@ -38,6 +38,9 @@ jest.mock("react-native-reanimated", () => {
       };
     },
     withTiming: (toValue) => toValue,
+    // The stage tabs' selection curve is only handed to withTiming, which the
+    // stand-in resolves to its target; the curve itself never runs.
+    Easing: { bezier: () => (t) => t },
     // The Detail section's arrival cross-fades within the quiet budget; the
     // builder only needs to stay chainable without the worklets runtime.
     FadeIn: {

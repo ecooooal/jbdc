@@ -10,6 +10,8 @@ colors:
   border: "#E8E5DF"
   wood: "#B38A64"
   wood-foreground: "#292724"
+  selection: "#8A6642"
+  selection-foreground: "#F8F6F2"
   green: "#687C68"
   green-foreground: "#FFFFFF"
   destructive: "#B94B45"
@@ -27,6 +29,8 @@ colors:
     border: "#444444"
     wood: "#D1B18A"
     wood-foreground: "#292724"
+    selection: "#8A6642"
+    selection-foreground: "#F8F6F2"
     green: "#A4B69A"
     green-foreground: "#242424"
     destructive: "#E27770"
@@ -239,7 +243,8 @@ A warm, low-saturation paper palette whose only saturated voices are two accents
 
 ### Primary
 
-- **Sanded Wood** (`wood`, #B38A64 light / #D1B18A dark): the single primary accent. Primary actions, the Approved and Produced status badge, the selected journey chip's and thumb's border, and selection marks. Ink Thread text sits on it in both modes. Rare by design — well under 10% of any screen.
+- **Sanded Wood** (`wood`, #B38A64 light / #D1B18A dark): the single primary accent. Primary actions, the Approved and Produced status badge, the selected journey tab's and thumb's mark, and selection marks. Ink Thread text sits on it in both modes. Rare by design — well under 10% of any screen.
+- **Deep Wood** (`selection`, #8A6642 both schemes): Sanded Wood one shade deeper, the fill under selected text in light and dark alike. It exists because a mid-tone wood cannot carry either its own ink or a light ink at 12px; the deeper fill takes Unbleached Paper text at 4.8:1. It is not a second accent, and it never appears as a half-tone or a gradient.
 
 ### Secondary
 
@@ -275,6 +280,8 @@ The code's shadcn-style slot names resolve to this palette:
 | `muted-foreground` | Faded Thread |
 | `primary` | Sanded Wood |
 | `primary-foreground` | Ink Thread on wood |
+| `selection` | Deep Wood |
+| `selection-foreground` | Unbleached Paper on Deep Wood |
 | `secondary` | Muslin Sage |
 | `secondary-foreground` | White (light) / ink (dark) on sage |
 | `destructive` | Rejection Red |
@@ -291,7 +298,7 @@ The code's shadcn-style slot names resolve to this palette:
 
 **The Overlay Exception.** Over photography, persistent chrome is a translucent-black pill (`rgba(0,0,0,0.6)`) with white text; muted text runs at 60% white, hairlines at 15%, fills at 10%, and unselected strokes at 40%. A menu or sheet the Owner deliberately opens may be paper; chrome that merely sits on the image may not. Nowhere else does true black appear inside the paper world.
 
-**The Detail Ground Rule.** The Design detail is the one page that inverts the mat: Unbleached Paper underfoot, Warm Paper for its cards and stage cards. No other screen changes ground, and the inversion is light and dark alike.
+**The Detail Ground Rule.** The Design detail is the one page that inverts the mat: Unbleached Paper underfoot, Warm Paper for its cards and stage tabs. No other screen changes ground, and the inversion is light and dark alike.
 
 ## Typography
 
@@ -355,7 +362,7 @@ Photography keeps a fixed stage: 4:5 for Library covers on tiles, 3:4 for the fu
 
 ## Motion & Micro-interaction
 
-Motion is quiet and decelerating: overlays fade in over 200ms and out over 150ms (Reanimated, honoring the system Reduce Motion setting); accordion-style reveals take 200ms; press feedback is an instant tonal shift (a button darkens to 90%) or, on a Library card, a 0.98 dip with a 5% ink wash held for 120ms before the route opens — the press itself never animates. The FAB's speed-dial rows rise and fade in inside the same 200ms budget. The journey counter's stage word cross-fades with a 6px downward settle when the pager crosses into another stage. Nothing bounces, nothing loops, nothing moves for decoration. Screen-to-screen transitions are plain fades, except the Library's Detail arrival: a 0.96 to 1 zoom inside the same 200ms fade, on that route only.
+Motion is quiet and decelerating: overlays fade in over 200ms and out over 150ms (Reanimated, honoring the system Reduce Motion setting); accordion-style reveals take 200ms; the stage tabs' Deep Wood fill travels to its tab in 180ms on a strong ease-out; press feedback is an instant tonal shift (a button darkens to 90%) or, on a Library card, a 0.98 dip with a 5% ink wash held for 120ms before the route opens — the press itself never animates. The FAB's speed-dial rows rise and fade in inside the same 200ms budget. The journey counter's stage word cross-fades with a 6px downward settle when the pager crosses into another stage. Nothing bounces, nothing loops, nothing moves for decoration. Screen-to-screen transitions are plain fades, except the Library's Detail arrival: a 0.96 to 1 zoom inside the same 200ms fade, on that route only.
 
 ### Named Rules
 
@@ -391,9 +398,8 @@ The library is uniwind + rn-primitives with shadcn-style slot names; every color
 
 ### Chips & toggles
 
-- **Journey stage chip:** Pill with a 32px round thumbnail, stage name in Label-small semibold, and a muted 10px count below. Unselected: Thread Line border on the page. Selected: Sanded Wood border on a Kraft fill.
 - **Density control:** Outlined segmented group drawing the two layouts — one page, or two columns — instead of numerals; the chosen segment takes the Kraft selected state. Every segment keeps a 48dp touch target while its glyph stays 20px.
-- **Section tabs:** Detail uses a plain row of labels; the active tab is marked by Ink Thread text and a Thread Line border. Edit uses the filled Kraft trough with the selected segment raised on Warm Paper.
+- **Section tabs:** Detail sets them as a two-column index across the sheet: the open label in Ink Thread over a 2px Sanded Wood selection rule, the other in Faded Thread over the shared Thread Line hairline. Each half is the tab's whole target, and a press takes the Kraft tint. Edit uses the filled Kraft trough with the selected segment raised on Warm Paper.
 
 ### Cards
 
@@ -421,7 +427,7 @@ The library is uniwind + rn-primitives with shadcn-style slot names; every color
 
 ### The journey rail (signature)
 
-One equal-width card per image stage — inspiration, sketch, prototype, final — all four always visible, each carrying its stage label and its image count, so an empty stage shows exactly where work is missing. The cards are Warm Paper on the detail's Unbleached Paper ground, so they read as paper chips laid on the sheet. The active card takes the Kraft Layer tone, a 2px Sanded Wood selection border, and a small scale; the active stage's row sits beneath it as one horizontal line of 3:4 thumbs (10px radius; the selected one carries a 2px Sanded Wood border) ending in the dashed add-card. Pressing another stage starts its row at its oldest image; pressing the active stage closes the row.
+One rounded tab row on the detail's Unbleached Paper ground: four equal tabs, all four always visible, each carrying its stage label over a picture glyph and its image count, so an empty stage reads 0 where work is missing. The row is Warm Paper inside a Thread Line hairline at the 14px radius, and the thin divider between two tabs shows only where no fill touches it. The selected tab takes the Deep Wood fill with Unbleached Paper ink and the 10px radius in both schemes — the one fill in the system that carries light text, because a 12px label never sits on Sanded Wood's mid-tone — and the rest stay Warm Paper with the count in Faded Thread. The fill travels to its tab in 180ms on a strong ease-out and the selected label takes the cream ink with it; a press dips the tab's content 4% in 110ms and moves no fill. The active stage's row sits beneath the tabs as one horizontal line of 3:4 thumbs (10px radius; the selected one carries a 2px Sanded Wood border) ending in the dashed add-card. Pressing another stage starts its row at its oldest image; pressing the selected stage closes the row.
 
 ### The gallery pager (signature)
 

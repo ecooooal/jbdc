@@ -11,7 +11,7 @@ import { NotesSheet } from "./notes-sheet";
 
 /**
  * One Design's visual home: the pager walking every image in journey order with
- * the notes button at the bottom right; then the stage block's four equal cards
+ * the notes button at the bottom right; then the stage block's four equal tabs
  * and the active stage's images. The images and notes
  * live read feeds the gallery reducer, so a write anywhere re-runs this without
  * a manual refresh. The plus card attaches to the active stage, so the stage the
@@ -23,7 +23,7 @@ import { NotesSheet } from "./notes-sheet";
  * composes it above Detail's identity block.
  */
 export function DesignGallery({ designId }: { designId: string }) {
-  const { state, images, imageNotes, journey, stageCards, stageRow, notes, send, error, status } =
+  const { state, images, imageNotes, journey, stageTabs, stageRow, notes, send, error, status } =
     useGallery(designId);
   const detail = useImageDetail(designId);
   const detailImage = detail.state.imageId
@@ -65,7 +65,7 @@ export function DesignGallery({ designId }: { designId: string }) {
       />
 
       <JourneyRail
-        cards={stageCards}
+        tabs={stageTabs}
         row={stageRow}
         rowOpen={state.stageRowOpen}
         attachFailed={state.attachFailed}

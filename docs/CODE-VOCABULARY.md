@@ -64,7 +64,7 @@ The notes sheet's inline composer: the draft textarea with Save and Cancel, boun
 The full-screen view a tap on the image opens: one image on the black photography surface, the four kind pills that reclassify it, Remove behind its one question, and the notes list read-only with the two-step delete. No add, no pager, and no sheet opens over it.
 
 **the stage block**:
-The four equal stage cards and the open stage's single image row, with the plus card at the row's end.
+The four stage tabs and the open stage's single image row, with the plus card at the row's end.
 
 **the plus card**:
 The stage row's add-images card. A press opens the picker and attaches what comes back to the stage the row is showing.

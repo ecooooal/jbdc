@@ -26,6 +26,8 @@
       --color-popover-foreground: #292724;
       --color-primary: #b38a64;
       --color-primary-foreground: #292724;
+      --color-selection: #8a6642;
+      --color-selection-foreground: #f8f6f2;
       --color-secondary: #687c68;
       --color-secondary-foreground: #ffffff;
       --color-muted: #f2ebdd;
@@ -52,6 +54,8 @@
       --color-popover-foreground: #f0eee9;
       --color-primary: #d1b18a;
       --color-primary-foreground: #292724;
+      --color-selection: #8a6642;
+      --color-selection-foreground: #f8f6f2;
       --color-secondary: #a4b69a;
       --color-secondary-foreground: #242424;
       --color-muted: #424242;
