@@ -38,7 +38,14 @@ jest.mock("react-native-reanimated", () => {
       };
     },
     withTiming: (toValue) => toValue,
-    FadeIn: { reduceMotion: () => ({}) },
+    // The Detail section's arrival cross-fades within the quiet budget; the
+    // builder only needs to stay chainable without the worklets runtime.
+    FadeIn: {
+      duration: () => ({
+        reduceMotion: () => ({}),
+      }),
+      reduceMotion: () => ({}),
+    },
     // The FAB's upward expansion sets its duration before asking to respect the
     // system's reduce-motion setting; the stand-in keeps that chain callable.
     FadeInUp: {

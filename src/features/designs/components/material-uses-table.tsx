@@ -44,7 +44,7 @@ export function MaterialUsesTable({
       </View>
 
       {uses.length === 0 ? (
-        <Text variant="muted" className="px-4 py-3">
+        <Text variant="muted" className={cn(isDetail ? "py-3" : "px-4 py-3")}>
           No materials added
         </Text>
       ) : (

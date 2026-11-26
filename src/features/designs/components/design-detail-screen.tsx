@@ -2,7 +2,7 @@ import { router } from "expo-router";
 import { ChevronLeft, EllipsisVertical, History as HistoryIcon, Pencil } from "lucide-react-native";
 import { useState } from "react";
 import { ScrollView, View } from "react-native";
-import Animated, { ZoomIn } from "react-native-reanimated";
+import Animated, { FadeIn, ReduceMotion, ZoomIn } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { DesignGallery } from "@/features/images/react";
 import { Button } from "@/shared/components/ui/button";
@@ -15,7 +15,7 @@ import {
 import { Icon } from "@/shared/components/ui/icon";
 import { Tabs, TabsContent } from "@/shared/components/ui/tabs";
 import { Text } from "@/shared/components/ui/text";
-import { DETAIL_ARRIVAL } from "@/shared/lib/motion";
+import { DETAIL_ARRIVAL, QUIET_MOTION_DURATION_MS } from "@/shared/lib/motion";
 import {
   DESIGN_SECTIONS,
   isDesignSectionTab,
@@ -51,18 +51,19 @@ function DetailDate({ label, value }: { label: string; value: string }) {
 /**
  * A label and its value, left-aligned in two columns. A field the owner has not
  * recorded keeps its row and reads `Not set`, the same word Edit uses, so the
- * sheet keeps its shape while the sections switch.
+ * sheet keeps its shape while the sections switch. Both columns share the
+ * body's leading, so a wrapped label and a wrapped value keep one baseline.
  */
 function DetailRow({ label, value }: { label: string; value: string }) {
   return (
     <View className="flex-row items-start gap-4 py-3">
-      <Text variant="muted" className="flex-[2]">
+      <Text variant="muted" className="flex-[2] leading-6">
         {label}
       </Text>
       {value ? (
-        <Text className="flex-[3]">{value}</Text>
+        <Text className="flex-[3] leading-6">{value}</Text>
       ) : (
-        <Text variant="muted" className="flex-[3]">
+        <Text variant="muted" className="flex-[3] leading-6">
           Not set
         </Text>
       )}
@@ -188,7 +189,7 @@ function DetailSection({
   fields: readonly DesignSectionFieldDefinition[];
 }) {
   return (
-    <View testID={`detail-section-${tab}`} className="gap-4">
+    <Animated.View testID={`detail-section-${tab}`} entering={SECTION_ARRIVAL} className="gap-4">
       <View>
         {fields.map(({ field, label }, index) => (
           <View key={field}>
@@ -200,7 +201,7 @@ function DetailSection({
       {tab === "specification" ? (
         <MaterialUsesTable uses={design.materialUses} variant="detail" />
       ) : null}
-    </View>
+    </Animated.View>
   );
 }
 
@@ -257,6 +258,13 @@ function DesignDetailContent({ design }: { design: DesignDetail }) {
 const DETAIL_ZOOM = ZoomIn.duration(DETAIL_ARRIVAL.zoom.duration).withInitialValues({
   transform: [{ scale: DETAIL_ARRIVAL.zoom.from }],
 });
+
+/**
+ * A section's arrival after a tab switch: the incoming sheet cross-fades
+ * inside the quiet budget, with no slide, so the two sections read as one
+ * record turning its page. Reduced motion resolves it on the spot.
+ */
+const SECTION_ARRIVAL = FadeIn.duration(QUIET_MOTION_DURATION_MS).reduceMotion(ReduceMotion.System);
 
 /**
  * Detail for one Design, opened from its Library card. The header stays fixed
