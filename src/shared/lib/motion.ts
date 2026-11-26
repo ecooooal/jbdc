@@ -15,10 +15,12 @@ export const DETAIL_ARRIVAL = {
 } as const;
 
 /**
- * A section's arrival after a tab switch: the incoming sheet cross-fades
- * inside the quiet budget, with no slide, so the two sections read as one
- * record turning its page. Reduced motion resolves it on the spot.
+ * An arrangement that replaces the one before it — a section after a tab
+ * switch, or the Library's body when its view, grouping, or emptiness changes.
+ * The incoming arrangement cross-fades inside the quiet budget, with no slide,
+ * so the change reads as the same record turning its page rather than cutting
+ * to a new one. Reduced motion resolves it on the spot.
  */
-export const SECTION_ARRIVAL = FadeIn.duration(QUIET_MOTION_DURATION_MS).reduceMotion(
+export const QUIET_ARRIVAL = FadeIn.duration(QUIET_MOTION_DURATION_MS).reduceMotion(
   ReduceMotion.System,
 );

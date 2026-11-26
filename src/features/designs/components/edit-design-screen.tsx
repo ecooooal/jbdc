@@ -16,7 +16,7 @@ import { Icon } from "@/shared/components/ui/icon";
 import { Input } from "@/shared/components/ui/input";
 import { Tabs, TabsContent } from "@/shared/components/ui/tabs";
 import { Text } from "@/shared/components/ui/text";
-import { SECTION_ARRIVAL } from "@/shared/lib/motion";
+import { QUIET_ARRIVAL } from "@/shared/lib/motion";
 import { cn } from "@/shared/lib/utils";
 import type { DesignTextEditableField } from "../lib/fields";
 import type { EditDesignRow } from "../lib/edit-design-reducer";
@@ -335,7 +335,7 @@ export function EditDesignScreen({ designId }: { designId: string }) {
               <EditSectionTabs />
               {DESIGN_SECTIONS.map(({ tab, fields }) => (
                 <TabsContent key={tab} value={tab}>
-                  <Animated.View entering={SECTION_ARRIVAL} className="gap-4">
+                  <Animated.View entering={QUIET_ARRIVAL} className="gap-4">
                     <FieldRows
                       fields={fields}
                       draft={state.draft}

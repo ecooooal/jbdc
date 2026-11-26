@@ -22,7 +22,7 @@ import {
 import { Icon } from "@/shared/components/ui/icon";
 import { Tabs, TabsContent } from "@/shared/components/ui/tabs";
 import { Text } from "@/shared/components/ui/text";
-import { DETAIL_ARRIVAL, SECTION_ARRIVAL } from "@/shared/lib/motion";
+import { DETAIL_ARRIVAL, QUIET_ARRIVAL } from "@/shared/lib/motion";
 import { cn } from "@/shared/lib/utils";
 import {
   DESIGN_SECTIONS,
@@ -237,7 +237,7 @@ function DetailSection({
   fields: readonly DesignSectionFieldDefinition[];
 }) {
   return (
-    <Animated.View testID={`detail-section-${tab}`} entering={SECTION_ARRIVAL} className="gap-4">
+    <Animated.View testID={`detail-section-${tab}`} entering={QUIET_ARRIVAL} className="gap-4">
       <View>
         {fields.map(({ field, label }, index) => (
           <View key={field}>
