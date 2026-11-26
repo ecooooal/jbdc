@@ -23,6 +23,7 @@ describe("the Material use editor", () => {
       colour: "Charcoal",
       role: "main",
       stored: WOOL_USE,
+      removeArmed: false,
       error: null,
     });
   });
@@ -257,9 +258,19 @@ describe("the Material use editor", () => {
     expect(tester.getState().materialUsePanel).toBeNull();
   });
 
-  test("removing a use declares the write instead of performing it", () => {
+  test("the first remove press only arms the editor and declares nothing", () => {
     const tester = opened();
 
+    tester.send({ type: "material-use-panel-fact", fact: { type: "remove-pressed" }, now: LATER });
+
+    expect(tester.getEffects()).toEqual([]);
+    expect(tester.getState().materialUsePanel).toMatchObject({ kind: "edit", removeArmed: true });
+  });
+
+  test("the second remove press declares the removal and disarms", () => {
+    const tester = opened();
+
+    tester.send({ type: "material-use-panel-fact", fact: { type: "remove-pressed" }, now: NOW });
     tester.send({ type: "material-use-panel-fact", fact: { type: "remove-pressed" }, now: LATER });
 
     expect(tester.getEffects()).toEqual([
@@ -270,7 +281,42 @@ describe("the Material use editor", () => {
         now: LATER,
       },
     ]);
-    expect(tester.getState().materialUsePanel).toMatchObject({ kind: "edit" });
+    expect(tester.getState().materialUsePanel).toMatchObject({ kind: "edit", removeArmed: false });
+  });
+
+  test("another edit disarms, and a fresh first and second press arms then removes", () => {
+    const tester = opened();
+
+    tester.send({ type: "material-use-panel-fact", fact: { type: "remove-pressed" }, now: NOW });
+    expect(tester.getState().materialUsePanel).toMatchObject({ removeArmed: true });
+
+    tester.send({
+      type: "material-use-panel-fact",
+      fact: { type: "role-chosen", role: "secondary" },
+      now: LATER,
+    });
+    expect(tester.getState().materialUsePanel).toMatchObject({ removeArmed: false });
+
+    tester.send({ type: "material-use-panel-fact", fact: { type: "remove-pressed" }, now: LATER });
+    expect(tester.getState().materialUsePanel).toMatchObject({ removeArmed: true });
+
+    tester.send({ type: "material-use-panel-fact", fact: { type: "remove-pressed" }, now: LATER });
+
+    expect(tester.getState().materialUsePanel).toMatchObject({ removeArmed: false });
+    expect(tester.getEffects()).toEqual([
+      {
+        type: "write-design",
+        designId: DESIGN_ID,
+        changes: { uses: [{ kind: "correct", useId: WOOL_USE.id, patch: { role: "secondary" } }] },
+        now: LATER,
+      },
+      {
+        type: "write-design",
+        designId: DESIGN_ID,
+        changes: { uses: [{ kind: "remove", useId: WOOL_USE.id }] },
+        now: LATER,
+      },
+    ]);
   });
 
   test("pressing remove with no editor open declares nothing", () => {

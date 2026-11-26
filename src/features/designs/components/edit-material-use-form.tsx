@@ -19,10 +19,17 @@ import { TaxonomySelect } from "./taxonomy-select";
  * The Edit material sheet's body. Material, colour, and role each write as soon
  * as they change, so there is no Save step; the sheet stays open until Close or
  * Remove, and the screen's live read brings the re-sorted row back. Close flushes
- * a typed colour first, as the panel always has; Remove is immediate.
+ * a typed colour first, as the panel always has.
  *
- * The visit holds this panel's draft and its stored use, and decides what each
- * gesture writes: this form only renders the state and reports what happened.
+ * "Remove from design" detaches this Material use from the design; it never
+ * deletes the Material from the owner's list. It follows the notes' two-step
+ * grammar: the first press arms the control — "Tap again to remove" — and the
+ * second writes the removal. Any other edit, a refusal, or closing the sheet
+ * disarms it, so no return visit removes on its first press.
+ *
+ * The visit holds this panel's draft, its stored use, and whether Remove is
+ * armed; it decides what each gesture writes: this form only renders the state
+ * and reports what happened.
  */
 export function EditMaterialUseForm({
   state,
@@ -35,6 +42,7 @@ export function EditMaterialUseForm({
   const materialItems = materialUseChoices(materials, state);
   const selectedMaterial =
     materialItems.find((material) => material.id === state.materialId) ?? null;
+  const removeArmed = state.removeArmed;
 
   function close(): void {
     send({ type: "material-use-panel-fact", fact: { type: "closed" } });
@@ -100,16 +108,26 @@ export function EditMaterialUseForm({
         <Button
           size="sm"
           variant="destructive"
+          accessibilityHint={
+            removeArmed
+              ? "Removes this Material use from the design"
+              : "Press twice in a row to remove this Material use from the design"
+          }
           onPress={() =>
             send({ type: "material-use-panel-fact", fact: { type: "remove-pressed" } })
           }
         >
-          <Text>Remove material</Text>
+          <Text>Remove from design</Text>
         </Button>
         <Button size="sm" variant="ghost" accessibilityLabel="Close material" onPress={close}>
           <Text>Close</Text>
         </Button>
       </SheetFooter>
+      {removeArmed ? (
+        <Text className="text-destructive text-xs" accessibilityLiveRegion="polite">
+          Tap again to remove
+        </Text>
+      ) : null}
     </SheetBody>
   );
 }

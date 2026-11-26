@@ -328,7 +328,7 @@ describe("Materials", () => {
     expect(screen.getByLabelText("Material")).toBeTruthy();
     expect(screen.getByLabelText("Colour")).toHaveDisplayValue("Charcoal");
     expect(screen.getByLabelText("Role")).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Remove material" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Remove from design" })).toBeTruthy();
   });
 
   test("a colour typed and left writes the use with no Save action", async () => {
@@ -377,7 +377,7 @@ describe("Materials", () => {
     expect(screen.getByRole("button", { name: "Add material" })).toBeTruthy();
   });
 
-  test("a use can be removed", async () => {
+  test("a use is removed after the second press of Remove from design", async () => {
     const design = newDesign();
     const wool = createMaterial(database, { name: "Wool" });
 
@@ -389,7 +389,8 @@ describe("Materials", () => {
 
     await renderEdit(design.id);
     await userEvent.press(screen.getByRole("button", { name: "Edit Wool (Charcoal)" }));
-    await userEvent.press(screen.getByRole("button", { name: "Remove material" }));
+    await userEvent.press(screen.getByRole("button", { name: "Remove from design" }));
+    await userEvent.press(screen.getByRole("button", { name: "Remove from design" }));
 
     await act(async () => {
       live.notify("design_materials");

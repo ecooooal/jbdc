@@ -172,7 +172,7 @@ describe("the Edit material sheet", () => {
 
     expect(editSheet().getByText("Edit material")).toBeTruthy();
     expect(editSheet().getByLabelText("Colour")).toHaveDisplayValue("Charcoal");
-    expect(editSheet().getByRole("button", { name: "Remove material" })).toBeTruthy();
+    expect(editSheet().getByRole("button", { name: "Remove from design" })).toBeTruthy();
     expect(editSheet().getAllByRole("button", { name: "Close material" }).length).toBeGreaterThan(
       0,
     );
@@ -193,12 +193,19 @@ describe("the Edit material sheet", () => {
     ]);
   });
 
-  test("Remove material removes the use and closes the sheet", async () => {
+  test("Remove from design arms on the first press and removes on the second", async () => {
     const { design } = designWithWoolUse();
 
     await renderEdit(design.id);
     await userEvent.press(screen.getByRole("button", { name: "Edit Wool (Charcoal)" }));
-    await userEvent.press(editSheet().getByRole("button", { name: "Remove material" }));
+    await userEvent.press(editSheet().getByRole("button", { name: "Remove from design" }));
+    await settleUseWrites();
+
+    // The first press only arms: the cue shows and the use is still recorded.
+    expect(editSheet().getByText("Tap again to remove")).toBeTruthy();
+    expect(listMaterialUses(database, design.id)).toHaveLength(1);
+
+    await userEvent.press(editSheet().getByRole("button", { name: "Remove from design" }));
     await settleUseWrites();
 
     expect(listMaterialUses(database, design.id)).toEqual([]);

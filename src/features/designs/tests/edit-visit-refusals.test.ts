@@ -187,6 +187,7 @@ describe("Material use refusals", () => {
     expect(tester.getState().materialUsePanel).toMatchObject({
       kind: "edit",
       stored: WOOL_USE,
+      removeArmed: false,
       error: "A material use needs a colour.",
     });
   });
