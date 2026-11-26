@@ -1,72 +1,24 @@
-import { PortalHost } from "@rn-primitives/portal";
-import { act, fireEvent, render, screen, userEvent } from "@testing-library/react-native";
+import { act, fireEvent, screen, userEvent } from "@testing-library/react-native";
 import { AppState } from "react-native";
-import { SafeAreaProvider } from "react-native-safe-area-context";
-import { DatabaseProvider } from "@/features/database/react";
-import { createSyncSubscribe, createTempDatabase } from "@/features/database/testing";
-import { createDesign, getDesign, writeDesign } from "@/features/designs";
-import { listMaterialUses } from "../lib/records";
-import { EditDesignScreen } from "@/features/designs/react";
+import { createDesign, getDesign } from "@/features/designs";
 import { listDesignEvents } from "@/features/history";
 import { createMaterial } from "@/features/materials";
 import { createCategory, createCollection } from "@/features/taxonomy";
+import { listMaterialUses } from "../lib/records";
+import {
+  addMaterialUse,
+  database,
+  live,
+  newDesign,
+  openRow,
+  openTab,
+  renderEdit,
+  setupEditDesignFixtures,
+} from "./edit-design-screen-fixtures";
 
 jest.mock("expo-router", () => ({ router: { back: jest.fn() } }));
 
-/** Seeds a recorded use through the visit's one write path. */
-function addMaterialUse(
-  database: ReturnType<typeof createTempDatabase>["database"],
-  designId: string,
-  input: { materialId: string; colour: string; role: "main" | "secondary" | "other" },
-  now?: number,
-) {
-  writeDesign(database, designId, { uses: [{ kind: "add", input }] }, now);
-}
-
-const INITIAL_METRICS = {
-  frame: { x: 0, y: 0, width: 390, height: 844 },
-  insets: { top: 47, left: 0, right: 0, bottom: 34 },
-};
-
-const live = createSyncSubscribe();
-
-let database: ReturnType<typeof createTempDatabase>["database"];
-let dispose: () => void;
-
-beforeEach(() => {
-  ({ database, dispose } = createTempDatabase());
-});
-
-afterEach(() => {
-  dispose();
-});
-
-async function renderEdit(designId: string) {
-  return render(
-    <SafeAreaProvider initialMetrics={INITIAL_METRICS}>
-      <DatabaseProvider database={database} subscribe={live.subscribe}>
-        <EditDesignScreen designId={designId} />
-        <PortalHost />
-      </DatabaseProvider>
-    </SafeAreaProvider>,
-  );
-}
-
-function newDesign() {
-  return createDesign(database, {
-    name: "Silk slip dress",
-    description: "Bias cut",
-  });
-}
-
-/** Opens the read-first editor for a hero field or a section row. */
-async function openRow(label: string) {
-  await userEvent.press(screen.getByRole("button", { name: label }));
-}
-
-async function openTab(name: string) {
-  await userEvent.press(screen.getByRole("tab", { name }));
-}
+setupEditDesignFixtures();
 
 describe("edit hero", () => {
   test("a name typed and left is stored with no Save action", async () => {
@@ -161,7 +113,7 @@ describe("edit hero", () => {
     expect(screen.queryByLabelText("Design journey")).toBeNull();
   });
 
-  test("tapping Category · Collection opens both pickers and Done closes them", async () => {
+  test("tapping Category · Collection opens the taxonomy sheet and Close returns to the screen", async () => {
     const category = createCategory(database, { name: "Dress" });
     const design = createDesign(database, {
       name: "Silk slip dress",
@@ -174,7 +126,7 @@ describe("edit hero", () => {
     expect(screen.getByLabelText("Category")).toBeTruthy();
     expect(screen.getByLabelText("Collection")).toBeTruthy();
 
-    await userEvent.press(screen.getByRole("button", { name: "Done" }));
+    await userEvent.press(screen.getByRole("button", { name: "Close category and collection" }));
 
     expect(screen.queryByLabelText("Category")).toBeNull();
   });
@@ -363,7 +315,7 @@ describe("Materials", () => {
     const design = newDesign();
     const wool = createMaterial(database, { name: "Wool" });
 
-    addMaterialUse(database, design.id, {
+    addMaterialUse(design.id, {
       materialId: wool.id,
       colour: "Charcoal",
       role: "main",
@@ -383,7 +335,7 @@ describe("Materials", () => {
     const design = newDesign();
     const wool = createMaterial(database, { name: "Wool" });
 
-    addMaterialUse(database, design.id, {
+    addMaterialUse(design.id, {
       materialId: wool.id,
       colour: "Charcoal",
       role: "main",
@@ -407,7 +359,7 @@ describe("Materials", () => {
     const design = newDesign();
     const wool = createMaterial(database, { name: "Wool" });
 
-    addMaterialUse(database, design.id, {
+    addMaterialUse(design.id, {
       materialId: wool.id,
       colour: "Charcoal",
       role: "main",
@@ -428,7 +380,7 @@ describe("Materials", () => {
     const design = newDesign();
     const wool = createMaterial(database, { name: "Wool" });
 
-    addMaterialUse(database, design.id, {
+    addMaterialUse(design.id, {
       materialId: wool.id,
       colour: "Charcoal",
       role: "main",
