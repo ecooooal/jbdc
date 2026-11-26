@@ -49,8 +49,9 @@ function DetailDate({ label, value }: { label: string; value: string }) {
 }
 
 /**
- * A label and its value, left-aligned in two columns. Only rendered when the
- * value exists.
+ * A label and its value, left-aligned in two columns. A field the owner has not
+ * recorded keeps its row and reads `Not set`, the same word Edit uses, so the
+ * sheet keeps its shape while the sections switch.
  */
 function DetailRow({ label, value }: { label: string; value: string }) {
   return (
@@ -58,7 +59,13 @@ function DetailRow({ label, value }: { label: string; value: string }) {
       <Text variant="muted" className="flex-[2]">
         {label}
       </Text>
-      <Text className="flex-[3]">{value}</Text>
+      {value ? (
+        <Text className="flex-[3]">{value}</Text>
+      ) : (
+        <Text variant="muted" className="flex-[3]">
+          Not set
+        </Text>
+      )}
     </View>
   );
 }
@@ -165,82 +172,46 @@ function DetailIdentity({ design }: { design: DesignDetail }) {
   );
 }
 
-function recordedRows(
-  design: DesignDetail,
-  fields: readonly DesignSectionFieldDefinition[],
-): DesignSectionFieldDefinition[] {
-  return fields.filter(({ field }) => Boolean(design[field]));
-}
-
-/** What one section records, and whether it has anything to show. */
-function sectionContent(
-  design: DesignDetail,
-  tab: DesignSectionTab,
-  fields: readonly DesignSectionFieldDefinition[],
-) {
-  const filled = recordedRows(design, fields);
-  const materialUses = tab === "specification" ? design.materialUses : [];
-
-  return { filled, materialUses, isEmpty: filled.length === 0 && materialUses.length === 0 };
-}
-
-/** One section read-only: filled rows only, or a note naming it when it has none. */
+/**
+ * One section read-only: every field in its declared order, each reading its
+ * value or `Not set`. The Specification section ends with the Material uses
+ * table, which keeps its own empty row. Nothing is hidden, so switching
+ * sections never changes the sheet's shape.
+ */
 function DetailSection({
   design,
   tab,
-  label,
   fields,
 }: {
   design: DesignDetail;
   tab: DesignSectionTab;
-  label: string;
   fields: readonly DesignSectionFieldDefinition[];
 }) {
-  const { filled, materialUses, isEmpty } = sectionContent(design, tab, fields);
-
-  if (isEmpty) {
-    return <Text variant="muted">No {label} recorded yet</Text>;
-  }
-
   return (
     <View testID={`detail-section-${tab}`} className="gap-4">
-      {filled.length > 0 ? (
-        <View>
-          {filled.map(({ field, label }, index) => (
-            <View key={field}>
-              {index > 0 ? <View className="bg-border h-hairline" /> : null}
-              <DetailRow label={label} value={design[field] ?? ""} />
-            </View>
-          ))}
-        </View>
+      <View>
+        {fields.map(({ field, label }, index) => (
+          <View key={field}>
+            {index > 0 ? <View className="bg-border h-hairline" /> : null}
+            <DetailRow label={label} value={design[field] ?? ""} />
+          </View>
+        ))}
+      </View>
+      {tab === "specification" ? (
+        <MaterialUsesTable uses={design.materialUses} variant="detail" />
       ) : null}
-      {materialUses.length > 0 ? <MaterialUsesTable uses={materialUses} variant="detail" /> : null}
     </View>
   );
 }
 
 /**
- * The two long sections read-only. A design that has recorded nothing shows no
- * tab content at all; otherwise both tabs are there, each hiding its empty
- * rows and naming the section when the whole section is empty. Detail opens on
- * the first section that has something to show.
+ * The two long sections read-only. Both tabs are always here, and each holds
+ * every field, so an empty section is a section of `Not set` rows rather than
+ * a blank panel. Detail opens on Specification.
  */
 function DetailSections({ design }: { design: DesignDetail }) {
   const [chosen, setChosen] = useState<DesignSectionTab | null>(null);
-  const recorded = DESIGN_SECTIONS.filter(
-    ({ tab, fields }) => !sectionContent(design, tab, fields).isEmpty,
-  );
-
-  if (recorded.length === 0) {
-    return (
-      <View className="gap-1">
-        <Text variant="muted">No Specification or Creative direction recorded yet</Text>
-        <Text variant="muted">Open Edit to record them</Text>
-      </View>
-    );
-  }
-
-  const tab = chosen ?? recorded[0].tab;
+  const tab = chosen ?? DESIGN_SECTIONS[0].tab;
 
   return (
     <Tabs
@@ -250,9 +221,9 @@ function DetailSections({ design }: { design: DesignDetail }) {
       }}
     >
       <SectionTabs />
-      {DESIGN_SECTIONS.map(({ tab: value, label, fields }) => (
+      {DESIGN_SECTIONS.map(({ tab: value, fields }) => (
         <TabsContent key={value} value={value}>
-          <DetailSection design={design} tab={value} label={label} fields={fields} />
+          <DetailSection design={design} tab={value} fields={fields} />
         </TabsContent>
       ))}
     </Tabs>
@@ -260,10 +231,9 @@ function DetailSections({ design }: { design: DesignDetail }) {
 }
 
 /**
- * What one Design is right now: its identity, then its images, then the
- * sections it has recorded. Name and Status are always here; the rest appears
- * only when it exists, so an unfinished Design reads as intentional rather
- * than incomplete.
+ * What one Design is right now: its identity, then its images, then both
+ * sections in full. Name and Status are always here; every field keeps its
+ * row, so the sheet's shape is the same whether the design is finished or not.
  */
 function DesignDetailContent({ design }: { design: DesignDetail }) {
   return (

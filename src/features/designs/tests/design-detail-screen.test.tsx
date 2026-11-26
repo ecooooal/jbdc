@@ -299,18 +299,30 @@ test("Detail renders the identity block and the recorded Specification read-only
   expect(screen.getByText("Bust 96 / waist 104")).toBeTruthy();
 });
 
-test("Detail hides Specification rows the owner has not recorded", async () => {
+test("Detail keeps every Specification row, marking unrecorded ones", async () => {
   const design = createDesign(database, { name: "Silk slip dress", neckline: "Boat neck" });
 
   await renderDetail(design.id);
 
-  expect(screen.getByText("Neckline")).toBeTruthy();
-  expect(screen.queryByText("Silhouette")).toBeNull();
-  expect(screen.queryByText("Measurements")).toBeNull();
-  expect(screen.queryByText("Not set")).toBeNull();
+  const section = within(screen.getByTestId("detail-section-specification"));
+
+  for (const label of [
+    "Silhouette",
+    "Neckline",
+    "Sleeve type",
+    "Garment details",
+    "Size range",
+    "Measurements",
+    "Construction notes",
+  ]) {
+    expect(section.getByText(label)).toBeTruthy();
+  }
+
+  expect(section.getByText("Boat neck")).toBeTruthy();
+  expect(section.getAllByText("Not set")).toHaveLength(6);
 });
 
-test("Detail renders recorded Creative direction rows read-only", async () => {
+test("Detail renders recorded Creative direction rows and keeps the rest", async () => {
   const design = createDesign(database, {
     name: "Sunday Afternoon",
     concept: "A slow summer day",
@@ -318,6 +330,7 @@ test("Detail renders recorded Creative direction rows read-only", async () => {
   });
 
   await renderDetail(design.id);
+  await userEvent.press(screen.getByRole("tab", { name: "Creative direction" }));
 
   // Scope to the section: the Status pill also reads Concept.
   const section = within(screen.getByTestId("detail-section-creativeDirection"));
@@ -327,28 +340,11 @@ test("Detail renders recorded Creative direction rows read-only", async () => {
   expect(section.getByText("A slow summer day")).toBeTruthy();
   expect(section.getByText("Mood")).toBeTruthy();
   expect(section.getByText("Romantic")).toBeTruthy();
-  expect(screen.queryByText("Not set")).toBeNull();
+  expect(section.getByText("Palette")).toBeTruthy();
+  expect(section.getAllByText("Not set")).toHaveLength(5);
 });
 
-test("Detail hides Creative direction rows the owner has not recorded", async () => {
-  const design = createDesign(database, {
-    name: "Sunday Afternoon",
-    silhouette: "Relaxed A-line",
-    mood: "Romantic",
-  });
-
-  await renderDetail(design.id);
-
-  await userEvent.press(screen.getByRole("tab", { name: "Creative direction" }));
-
-  // The journey rail names its own Inspiration stage, so the only one on
-  // screen is that chip: the unrecorded Inspiration row did not render.
-  expect(screen.getAllByText("Inspiration")).toHaveLength(1);
-  expect(screen.getByText("Mood")).toBeTruthy();
-  expect(screen.queryByText("Palette")).toBeNull();
-});
-
-test("an empty section names the section it has nothing for", async () => {
+test("switching to a section with nothing recorded keeps both tabs and every row", async () => {
   const design = createDesign(database, {
     name: "Sunday Afternoon",
     silhouette: "Relaxed A-line",
@@ -358,17 +354,28 @@ test("an empty section names the section it has nothing for", async () => {
 
   await userEvent.press(screen.getByRole("tab", { name: "Creative direction" }));
 
-  expect(screen.getByText("No Creative direction recorded yet")).toBeTruthy();
+  expect(screen.getByRole("tab", { name: "Specification" })).toBeTruthy();
+  expect(screen.getByRole("tab", { name: "Creative direction" })).toBeTruthy();
+
+  const section = within(screen.getByTestId("detail-section-creativeDirection"));
+
+  expect(section.getByText("Inspiration")).toBeTruthy();
+  expect(section.getByText("Palette")).toBeTruthy();
+  expect(section.getAllByText("Not set")).toHaveLength(7);
 });
 
-test("a design that has recorded nothing shows no tab content", async () => {
+test("a design that has recorded nothing still shows both sections in full", async () => {
   const design = createDesign(database, { name: "Unfinished idea" });
 
   await renderDetail(design.id);
 
-  expect(screen.getByText("No Specification or Creative direction recorded yet")).toBeTruthy();
-  expect(screen.getByText("Open Edit to record them")).toBeTruthy();
-  expect(screen.queryByText("Specification")).toBeNull();
+  expect(screen.getByRole("tab", { name: "Specification" })).toBeTruthy();
+  expect(screen.getByRole("tab", { name: "Creative direction" })).toBeTruthy();
+
+  const section = within(screen.getByTestId("detail-section-specification"));
+
+  expect(section.getAllByText("Not set")).toHaveLength(7);
+  expect(section.getByText("No materials added")).toBeTruthy();
 });
 
 test("Detail renders recorded Material uses read-only", async () => {
@@ -404,7 +411,6 @@ test("a design with only Material uses opens on Specification", async () => {
   expect(screen.getByRole("tab", { name: "Specification" })).toBeTruthy();
   expect(screen.getByText("Wool")).toBeTruthy();
   expect(screen.getByText("Charcoal")).toBeTruthy();
-  expect(screen.queryByText("No Specification or Creative direction recorded yet")).toBeNull();
 });
 
 test("Detail composes the gallery from the images module", async () => {
