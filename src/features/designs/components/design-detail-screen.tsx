@@ -10,7 +10,7 @@ import {
 import { useState } from "react";
 import { ScrollView, View } from "react-native";
 import Animated, { FadeIn, ReduceMotion, ZoomIn } from "react-native-reanimated";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { DesignGallery } from "@/features/images/react";
 import { Button } from "@/shared/components/ui/button";
 import {
@@ -128,7 +128,7 @@ function DetailActions({ designId }: { designId: string }) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button size="icon" variant="ghost" accessibilityLabel="Design actions">
+        <Button size="icon" variant="ghost" accessibilityLabel="Design actions" hitSlop={4}>
           <Icon as={EllipsisVertical} />
         </Button>
       </DropdownMenuTrigger>
@@ -169,6 +169,7 @@ function DetailHeader({ design }: { design: DesignDetail | null }) {
         size="icon"
         variant="ghost"
         accessibilityLabel="Back to Library"
+        hitSlop={4}
         onPress={() => router.back()}
       >
         <Icon as={ChevronLeft} />
@@ -322,28 +323,39 @@ const SECTION_ARRIVAL = FadeIn.duration(QUIET_MOTION_DURATION_MS).reduceMotion(R
  */
 export function DesignDetailScreen({ designId }: { designId: string }) {
   const { design, error, status } = useDesignDetail(designId);
+  // The provider measured these at launch, so the header sits below the status
+  // bar on its first frame. The native SafeAreaView measures window insets
+  // after its first layout, which lets the pushed screen paint at the top and
+  // snap down once the insets arrive.
+  const insets = useSafeAreaInsets();
 
   return (
-    <View style={{ flex: 1 }} className="bg-card">
+    <View
+      style={{
+        flex: 1,
+        paddingTop: insets.top,
+        paddingLeft: insets.left,
+        paddingRight: insets.right,
+      }}
+      className="bg-card"
+    >
       <Animated.View entering={DETAIL_ZOOM} style={{ flex: 1 }}>
-        <SafeAreaView style={{ flex: 1 }} edges={["top", "left", "right"]}>
-          <DetailHeader design={design} />
+        <DetailHeader design={design} />
 
-          {error ? (
-            <View className="px-6 pt-4">
-              <ReadError message="This design could not be loaded." error={error} />
-            </View>
-          ) : status === "loading" ? null : design ? (
-            <DesignDetailContent design={design} />
-          ) : (
-            <View className="flex-1 items-center justify-center gap-2 px-6 pb-16">
-              <Text variant="h4">Design not found</Text>
-              <Text variant="muted" className="text-center">
-                It may have been removed.
-              </Text>
-            </View>
-          )}
-        </SafeAreaView>
+        {error ? (
+          <View className="px-6 pt-4">
+            <ReadError message="This design could not be loaded." error={error} />
+          </View>
+        ) : status === "loading" ? null : design ? (
+          <DesignDetailContent design={design} />
+        ) : (
+          <View className="flex-1 items-center justify-center gap-2 px-6 pb-16">
+            <Text variant="h4">Design not found</Text>
+            <Text variant="muted" className="text-center">
+              It may have been removed.
+            </Text>
+          </View>
+        )}
       </Animated.View>
     </View>
   );
