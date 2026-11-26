@@ -145,6 +145,13 @@ components:
     rounded: "{rounded.md}"
     height: "40px"
     width: "40px"
+  button-destructive:
+    backgroundColor: "{colors.destructive}"
+    textColor: "{colors.destructive-foreground}"
+    typography: "{typography.label}"
+    rounded: "{rounded.md}"
+    height: "36px"
+    padding: "0 12px"
   input:
     backgroundColor: "{colors.background}"
     textColor: "{colors.foreground}"

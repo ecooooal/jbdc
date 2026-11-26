@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-11-26T18:55:00Z",
+  "generatedAt": "2026-11-26T19:01:00Z",
   "title": "Design System: JBDC — The Atelier Ledger",
   "extensions": {
     "colorMeta": {
@@ -193,6 +193,14 @@
       "description": "Back and header actions; transparent until pressed.",
       "html": "<button class='ds-btn-ghost' aria-label='Back'><svg width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='m15 18-6-6 6-6'/></svg></button>",
       "css": ".ds-btn-ghost { display:inline-flex; align-items:center; justify-content:center; width:40px; height:40px; border:0; border-radius:8px; background:transparent; color:#292724; cursor:pointer; } .ds-btn-ghost:active { background:#F2EBDD; } .ds-btn-ghost:focus-visible { outline:2px solid #687C68; outline-offset:2px; }"
+    },
+    {
+      "name": "Delete Button",
+      "kind": "button",
+      "refersTo": "button-destructive",
+      "description": "The one destructive control: a 16px trash glyph at rest in a 40x40 ghost icon button, Faded Thread on paper and 60% white on the photograph. Its first press replaces the glyph with the confirm word — Delete or Remove — as a Rejection Red button, and that same button fires on the second press.",
+      "html": "<div class='ds-delrow'><button class='ds-del ds-del-rest' aria-label='Delete note 1'><svg width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M3 6h18'/><path d='M8 6V4h8v2'/><path d='M19 6l-1 14H6L5 6'/><path d='M10 11v6M14 11v6'/></svg></button><button class='ds-del ds-del-armed'>Delete</button></div>",
+      "css": ".ds-delrow { display:flex; align-items:center; gap:12px; font-family:'DM Sans',sans-serif; } .ds-del { display:inline-flex; align-items:center; justify-content:center; border:0; border-radius:8px; cursor:pointer; } .ds-del-rest { width:40px; height:40px; background:transparent; color:#6E6A63; } .ds-del-rest:active { background:#F2EBDD; } .ds-del-armed { height:36px; padding:0 12px; background:#B94B45; color:#FFFFFF; font:500 14px/1.4 'DM Sans',sans-serif; } .ds-del-armed:active { background:rgba(185,75,69,0.9); } .ds-del:focus-visible { outline:2px solid #687C68; outline-offset:2px; }"
     },
     {
       "name": "Input",
