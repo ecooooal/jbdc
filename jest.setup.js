@@ -38,6 +38,9 @@ jest.mock("react-native-reanimated", () => {
       };
     },
     withTiming: (toValue) => toValue,
+    // The delete control's press dip and the stage word's shift name their
+    // curves as CSS timing functions; the transition itself never runs here.
+    cubicBezier: () => "cubic-bezier(0.23, 1, 0.32, 1)",
     // The stage tabs' selection curve is only handed to withTiming, which the
     // stand-in resolves to its target; the curve itself never runs.
     Easing: { bezier: () => (t) => t },

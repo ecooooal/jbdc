@@ -28,7 +28,7 @@ The one hook, `useReducerRunner` at `src/shared/hooks/use-reducer-runner.ts`, be
 The one destructive rule for a note or a Material use: the first press arms the target by replacing its trash with the confirm word ("Delete" or "Remove"), and the second press on that word removes it. One delete is armed at a time; closing its surface, arming another, or — in the Material sheet — any other edit disarms it. No timer, no dialog, no undo. The arming is the surface reducer's state; the control only renders it.
 
 **the delete control**:
-`src/shared/components/delete-button.tsx`: the trash the rule wears — a 16px glyph in a 40×40 ghost icon button, Faded Thread at rest. Once armed, the same button becomes the confirm word in the destructive variant, so the filled red and its foreground carry the second press on paper and on the photograph alike. The control's accessible hint promises the two presses while unarmed and names the confirming press once armed. The notes list and the Material sheet use it.
+`src/shared/components/delete-button.tsx`: the trash the rule wears — a 16px glyph in a 40×40 ghost icon button, Faded Thread at rest. Once armed, the same button becomes the confirm word in the destructive variant, so the filled red and its foreground carry the second press on paper and on the photograph alike. The control's accessible hint promises the two presses while unarmed and names the confirming press once armed. Its first press cross-fades the trash into the word in 160ms and settles the button's width around it; a press dips to 0.97 in 120ms, the one motion this control adds to the shared tonal wash, and reduced motion resolves the swap on the spot. The notes list and the Material sheet use it.
 
 ## The sheets
 

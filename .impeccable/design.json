@@ -161,6 +161,8 @@
       { "name": "press", "value": "instant tonal shift; card 0.98 dip + 5% ink wash held 120ms", "purpose": "The press itself never animates; the held beat lets the Owner see it before the route opens. Edit's editable rows take the Kraft tint alone on the system press state, with no dip and no held timer." },
       { "name": "stage-tab-fill", "value": "180ms strong ease-out", "purpose": "The journey rail's Deep Wood fill travelling to the chosen stage tab; honors Reduce Motion." },
       { "name": "stage-tab-press", "value": "scale 0.96, 110ms", "purpose": "A stage tab's content dipping on press; the fill never moves; honors Reduce Motion." },
+      { "name": "delete-swap", "value": "160ms cross-fade + width settle", "purpose": "The delete control's trash becoming the confirm word, inside the Quiet Turn budget; reduced motion resolves it on the spot." },
+      { "name": "delete-press", "value": "scale 0.97, 120ms", "purpose": "The delete control dipping on press, over its tonal wash; the one button allowed the dip because destruction answers in the hand; honors Reduce Motion." },
       { "name": "section-mark", "value": "opacity 150ms", "purpose": "Detail's wood rule and Edit's warm fill settling on the chosen section; honors Reduce Motion." },
       { "name": "section-switch", "value": "cross-fade 200ms", "purpose": "The incoming section when a Detail or Edit section tab is chosen, inside the Quiet Turn budget; honors Reduce Motion." },
       { "name": "sheet-settle", "value": "200ms", "purpose": "The floating sheet card settling at its content detent, inside the Quiet Turn budget." },
