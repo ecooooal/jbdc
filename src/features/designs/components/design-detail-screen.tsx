@@ -1,5 +1,12 @@
 import { router } from "expo-router";
-import { ChevronLeft, EllipsisVertical, History as HistoryIcon, Pencil } from "lucide-react-native";
+import {
+  ChevronLeft,
+  EllipsisVertical,
+  History as HistoryIcon,
+  Pencil,
+  Plus,
+  RotateCwClock,
+} from "lucide-react-native";
 import { useState } from "react";
 import { ScrollView, View } from "react-native";
 import Animated, { FadeIn, ReduceMotion, ZoomIn } from "react-native-reanimated";
@@ -40,18 +47,17 @@ function formatShortDate(timestamp: number): string {
   return SHORT_DATE_FORMAT.format(timestamp);
 }
 
-/**
- * A date whose own spaces never break: when the line runs out of room it
- * wraps between the two dates, never inside one.
- */
+/** A date whose own spaces never break, so a wrapping line never splits one. */
 function unbreakableDate(timestamp: number): string {
   return formatShortDate(timestamp).replaceAll(" ", "\u00A0");
 }
 
 /**
- * The record's dates on one line in the mono voice. A Design that has never
- * been written since it was created has one date, not the same date under two
- * labels; the second label appears only when the record has actually changed.
+ * The record's dates as one quiet line: a plus marks its creation and a clock
+ * turned back marks its last update, each date in the mono voice. A Design that
+ * has never been written since it was created has one date, not the same date
+ * twice. The icons stand in for the words on screen, so the row carries the
+ * words for a screen reader.
  */
 function DetailDates({
   createdAt,
@@ -62,15 +68,30 @@ function DetailDates({
   updatedAt: number;
   className?: string;
 }) {
-  // Each label is bound to its date, so a line that runs out of room breaks
-  // between the two dates rather than orphaning a label from its date.
-  const created = `Created\u00A0${unbreakableDate(createdAt)}`;
-  const updated = `Updated\u00A0${unbreakableDate(updatedAt)}`;
+  const created = formatShortDate(createdAt);
+  const updated = formatShortDate(updatedAt);
+  const label =
+    createdAt === updatedAt ? `Created ${created}` : `Created ${created}, updated ${updated}`;
+  const date = "text-muted-foreground font-mono text-xs leading-4";
+  const mark = "text-muted-foreground size-3.5";
 
   return (
-    <Text className={cn("text-muted-foreground font-mono text-xs leading-4", className)}>
-      {createdAt === updatedAt ? created : `${created} · ${updated}`}
-    </Text>
+    <View
+      accessible
+      accessibilityLabel={label}
+      className={cn("flex-row flex-wrap items-center gap-x-4 gap-y-1", className)}
+    >
+      <View className="flex-row items-center gap-1.5">
+        <Icon as={Plus} className={mark} />
+        <Text className={date}>{unbreakableDate(createdAt)}</Text>
+      </View>
+      {createdAt === updatedAt ? null : (
+        <View className="flex-row items-center gap-1.5">
+          <Icon as={RotateCwClock} className={mark} />
+          <Text className={date}>{unbreakableDate(updatedAt)}</Text>
+        </View>
+      )}
+    </View>
   );
 }
 
@@ -174,15 +195,16 @@ function DetailHeader({ design }: { design: DesignDetail | null }) {
  * description, then the record's dates as one quiet mono line. The name keeps
  * the page's full measure, so a long name wraps against the sheet's edge
  * instead of against a column of metadata; the pill follows it on the same
- * line, or drops beneath it when the name needs the width. The dates are
- * provenance, not the subject, so they sit under the description rather than
- * beside the title. The Category and Collection live in the fixed header; the
- * image block and the sections follow beneath.
+ * line, its label seated on the name's baseline rather than floating at the
+ * line box's centre, or drops beneath it when the name needs the width. The
+ * dates are provenance, not the subject, so they sit under the description
+ * rather than beside the title. The Category and Collection live in the fixed
+ * header; the image block and the sections follow beneath.
  */
 function DetailIdentity({ design }: { design: DesignDetail }) {
   return (
     <View testID="detail-identity">
-      <View className="flex-row flex-wrap items-center gap-x-2 gap-y-1">
+      <View className="flex-row flex-wrap items-baseline gap-x-2 gap-y-1">
         <Text variant="h3" className="leading-tight">
           {design.name}
         </Text>
