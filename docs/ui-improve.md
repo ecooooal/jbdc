@@ -77,8 +77,8 @@
 	- the table keeps Material / Colour / Role and gains a fourth 16px pencil column; every Material use row shows its pencil and takes the press wash, and its label stays "Edit {Material} ({colour})"
 	- `＋ Add material` is the block's last row inside the same outline, with the Plus glyph, the label, and the press wash; a press opens the Add material sheet
 	- "No materials added" stays as the block's empty row, and the inline add and edit cards retire
-	- the taxonomy sheet, the Add material sheet, the Edit material sheet, and the New material sheet all render on the shared wrapper: paper, 16px top corners, a content detent, and no drag handle
-	- every sheet opens with its title in the serif voice and one ghost Close reading "Close", labelled for its sheet: "Close category and collection", "Close add material", "Close material", "Close new material"
+	- the taxonomy sheet, the Add material sheet, the Edit material sheet, and the New material sheet all render on the shared wrapper: a floating paper card with 16px corners, an inset dashed frame, a content detent, and no drag handle
+	- every sheet opens with its title in the serif voice and one ghost X, labelled for its sheet: "Close category and collection", "Close add material", "Close material", "Close new material"
 	- Add material's footer is ghost Cancel and primary "Add to design"; Edit material's is destructive "Remove material" and ghost Close, and Remove stays immediate
 	- New material stacks above Add material: one focused name field whose Return submits, and Cancel or Close returns to Add material with its Material, Colour, and Role intact
 - The keyboard

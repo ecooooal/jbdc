@@ -153,15 +153,10 @@ components:
   card:
     backgroundColor: "{colors.surface}"
     rounded: "{rounded.xl}"
-    padding: "24px"
   card-tile:
     backgroundColor: "{colors.surface}"
     rounded: "{rounded.xl}"
     padding: "0"
-  card-inset:
-    backgroundColor: "{colors.surface-secondary}"
-    rounded: "{rounded.xl}"
-    padding: "16px"
   badge-confirmed:
     backgroundColor: "{colors.wood}"
     textColor: "{colors.wood-foreground}"
@@ -186,18 +181,34 @@ components:
     typography: "{typography.label-sm}"
     rounded: "{rounded.full}"
     padding: "2px 8px"
-  chip-stage:
+  section-index:
+    backgroundColor: "{colors.background}"
+    textColor: "{colors.foreground}"
+    typography: "{typography.body}"
+    rounded: "{rounded.lg}"
+  section-index-edit:
+    backgroundColor: "{colors.surface-secondary}"
+    textColor: "{colors.foreground}"
+    typography: "{typography.label}"
+    rounded: "{rounded.xl}"
+    padding: "4px"
+  section-index-edit-active:
+    backgroundColor: "{colors.background}"
+    textColor: "{colors.foreground}"
+    typography: "{typography.label}"
+    rounded: "{rounded.lg}"
+  stage-tabs:
     backgroundColor: "{colors.background}"
     textColor: "{colors.foreground}"
     typography: "{typography.label-sm}"
-    rounded: "{rounded.full}"
-    padding: "4px 12px 4px 4px"
-  chip-stage-active:
-    backgroundColor: "{colors.surface-secondary}"
-    textColor: "{colors.foreground}"
+    rounded: "{rounded.xl}"
+    padding: "2px"
+  stage-tab-active:
+    backgroundColor: "{colors.selection}"
+    textColor: "{colors.selection-foreground}"
     typography: "{typography.label-sm}"
-    rounded: "{rounded.full}"
-    padding: "4px 12px 4px 4px"
+    rounded: "{rounded.lg}"
+    padding: "4px 0"
   notes-button:
     backgroundColor: "{colors.overlay}"
     textColor: "{colors.overlay-foreground}"
@@ -212,7 +223,15 @@ components:
     height: "56px"
     width: "56px"
   sheet:
-    backgroundColor: "{colors.surface}"
+    backgroundColor: "{colors.sheet}"
+    textColor: "{colors.foreground}"
+    rounded: "{rounded.2xl}"
+  sheet-stacked:
+    backgroundColor: "{colors.sheet-stacked}"
+    textColor: "{colors.foreground}"
+    rounded: "{rounded.2xl}"
+  sheet-stacked-deep:
+    backgroundColor: "{colors.sheet-stacked-deep}"
     textColor: "{colors.foreground}"
     rounded: "{rounded.2xl}"
   image-detail:
@@ -230,17 +249,17 @@ JBDC is one designer's private catalog of her own clothing designs, and the inte
 
 The system is quiet archival. Depth comes from paper tonal steps and hairline borders, never from shadow play; press feedback is a tonal shift, not a bounce; motion is a short fade that honors the system Reduce Motion setting, with one small zoom-fade into a design's Detail. Color is spent on meaning only: Sanded Wood marks confirmed work and primary actions, Muslin Sage marks work in progress and active selection, Rejection Red marks what did not proceed. Everything else is paper and ink.
 
-Photography has its own surface: a full-bleed black stage where the image runs edge to edge and every control becomes a translucent-black pill with white ink. The paper world never floats over a photograph; the only thing allowed to blur is the single view's details panel, and it blurs only the cover beneath it.
+Photography has its own surfaces: the design pager's 3:4 black plate, the full-screen black image detail, and Kraft mounts where a cover is missing. The pager fits the whole image inside its stage. The paper world never floats over a photograph; the only thing allowed to blur is the single view's details panel, and it blurs only the cover beneath it. Chrome over a photograph is a translucent-black pill with white ink.
 
 The palette is live in `src/global.css`; Cormorant Garamond 600, DM Sans 400/500/700, and DM Mono 400 are bundled at the root. `docs/design-token.md` records the core paper and accent values.
 
 **Key Characteristics:**
 
-- Paper tonal hierarchy — Warm Paper page, Unbleached Paper cards, Kraft Layer insets — instead of shadows; the Design detail alone inverts the mat, Unbleached Paper underfoot and Warm Paper for its cards
+- Paper tonal hierarchy — Warm Paper page, Unbleached Paper cards, Kraft Layer mounts — instead of shadows; the Design detail alone inverts the mat, Unbleached Paper underfoot and Warm Paper for its cards
 - Cormorant Garamond titles over DM Sans body; DM Mono for dates, ids, measurements, constants
 - Two accents with fixed meanings: Sanded Wood (confirmed/primary/selection), Muslin Sage (in-development/active); red is rejection and destruction only
 - Hairline Thread Line borders everywhere; dashed frames are the signature for empty attach points and missing covers
-- Photography leads on fixed stages: a 3:4 edge-to-edge journey pager that fits the whole image, 4:5 Library covers, 3:4 journey thumbs
+- Photography leads on fixed stages: a 3:4 inset journey pager that fits the whole image, 4:5 Library covers, 3:4 journey thumbs
 - Fades ≤ 200ms, honoring Reduce Motion; nothing bounces or loops
 
 ## Colors
@@ -264,15 +283,15 @@ A warm, low-saturation paper palette whose only saturated voices are two accents
 
 - **Warm Paper** (`background`, #FFFFFF light / #242424 dark): the page behind everything. Pure white in light mode is deliberate: it is the mat the archive sits on, not a SaaS canvas. The Design detail is the one page that gives its ground to Unbleached Paper and hands the cards Warm Paper, so the record reads as a sheet laid on the mat.
 - **Unbleached Paper** (`surface`, #F8F6F2 / #303030): every resting surface content sits on — cards, tiles, sheets.
-- **Kraft Layer** (`surface-secondary`, #F2EBDD / #424242): the inset group one step into a surface — form sections, field tables, image placeholders, the fill of a selected stage chip.
+- **Kraft Layer** (`surface-secondary`, #F2EBDD / #424242): the inset group one step into a surface — form sections, field tables, image placeholders, the trough under Edit's section bar.
 - **Sheet Stack** (`sheet`, `sheet-stacked`, `sheet-stacked-deep`; #F8F6F2 → #F2EBDD → #E9DFCB light, #303030 → #383838 → #404040 dark): the plate a sheet is drawn on. The base is Unbleached Paper; each sheet opened above it takes one step of tone, so a stack reads as depth without a shadow.
 - **Ink Thread** (`foreground`, #292724 / #F0EEE9): primary text — the ink of the ledger.
 - **Faded Thread** (`foreground-secondary`, #6E6A63 / #B5B0A7): secondary text — labels, meta lines, counts, quiet descriptions, placeholders.
 - **Thread Line** (`border`, #E8E5DF / #444444): hairline borders, row dividers, and input strokes.
-- **Photography Black** (`photography`, #000000): the full-screen image detail and the ground beneath a full-bleed image. It exists only on the photography surface.
+- **Photography Black** (`photography`, #000000): the full-screen image detail and the ground of the pager plate. It exists only on the photography surface.
 - **Photography Ink** (`photography-ink`, #FFFFFF): white text and glyphs on the black surface.
-- **Photography Overlay** (`overlay`, rgba(0, 0, 0, 0.60)): the translucent pill behind stage, position, note, and notes-count chrome over an image.
-- **Overlay Ink** (`overlay-foreground`, #FFFFFF): text on a photography overlay pill.
+- **Photography Overlay** (`overlay`, rgba(0, 0, 0, 0.60)): the translucent pill behind stage, position, note, and notes-count chrome over an image, and the scrim behind a floating sheet.
+- **Overlay Ink** (`overlay-foreground`, #FFFFFF): text and glyphs on a photography overlay pill.
 
 The dark scheme is the same ledger by lamplight: paper goes near-black, accents lift instead of saturate, and Ink Thread becomes warm off-white. Both schemes are first-class; every screen is designed and checked in both.
 
@@ -304,7 +323,7 @@ The code's shadcn-style slot names resolve to this palette:
 
 **The Ink-and-Paper Rule.** Color is state, not decoration. Wood = confirmed, primary, and selection; Sage = in-progress, active, and focus; Red = rejection and destruction. No third accent hue ever enters the system; everything else is paper and ink.
 
-**The Overlay Exception.** Over photography, persistent chrome is a translucent-black pill (`rgba(0,0,0,0.6)`) with white text; muted text runs at 60% white, hairlines at 15%, fills at 10%, and unselected strokes at 40%. A menu or sheet the Owner deliberately opens may be paper; chrome that merely sits on the image may not. Nowhere else does true black appear inside the paper world.
+**The Overlay Exception.** Over photography, persistent chrome is a translucent-black pill (`rgba(0,0,0,0.6)`) with white text; muted text runs at 60% white, hairlines at 15%, fills at 10%, and unselected strokes at 40%. A menu or sheet the Owner deliberately opens may be paper; chrome that merely sits on the image may not. The same overlay tone is the scrim behind a sheet, and a dialog dims the page on 50% black; those scrims are the only black over paper.
 
 **The Detail Ground Rule.** The Design detail is the one page that inverts the mat: Unbleached Paper underfoot, Warm Paper for its cards and stage tabs. No other screen changes ground, and the inversion is light and dark alike.
 
@@ -325,7 +344,7 @@ The code's shadcn-style slot names resolve to this palette:
 - **Body** (DM Sans, 400, 16px, 1.5): descriptions, recorded values, notes, prose.
 - **Body-small** (DM Sans, 400, 14px, 1.4): meta lines, secondary copy, muted values.
 - **Label** (DM Sans, 500, 14px, 1.4): field labels, button text, stage names, materials.
-- **Label-small** (DM Sans, 500, 12px, 1.2): badges, chips, counts, micro-labels.
+- **Label-small** (DM Sans, 500, 12px, 1.2): badges, counts, stage tabs, micro-labels.
 - **Mono** (DM Mono, 400, 14px, 1.4): dates, ids, measurements, constants — anything read as data rather than prose.
 - **Mono-small** (DM Mono, 400, 12px, 1.2): note dates and other micro-data.
 
@@ -335,13 +354,13 @@ The code's shadcn-style slot names resolve to this palette:
 
 ## Layout
 
-Portrait, phone-first, native stack navigation with OS headers hidden — every screen owns its header: serif title left, icon controls right, back is a ghost chevron. Content lives inside safe-area insets on every screen, with a 24px side margin, 24px section rhythm, 16px list rhythm, and 48px of breathing room at the end of every scroll.
+Portrait, phone-first, native stack navigation with OS headers hidden — every screen owns its header. The Library opens on its control row and no title — grouping, density, and the paired Search and Filter actions; Detail names the Design's Collection over its Category, with the actions menu opposite; Edit and History carry a ghost back chevron and their names in the serif voice. Content lives inside safe-area insets on every screen, with a 24px side margin, 24px section rhythm, 16px list rhythm, and 48px of breathing room at the end of every scroll.
 
 The Library grid is density-driven, not breakpoint-driven: the Owner chooses the Library's density (persisted) — the single view at 1, or two designs per row — and the card width derives from the current viewport, so rotation reflows card width without ever breaking the column count. There are no Library breakpoints; density is a user decision, not a width decision. Four-up is not offered: a tile that narrow cannot hold the Design's name and Status pill at the type floor.
 
 Grouping is the Owner's second arrangement decision: the Library shows one flat stream, or sections under their Collection labels with a 12px gap between tiles and a 24px gap between sections. The single view walks the same ordered list. The floating action button keeps its corner at every density; the single view's panel leaves that corner clear, and the grid reserves 68px (56px button + 12px gap) below its last row.
 
-Forms and recorded sections group into inset blocks — one tonal step (Kraft Layer) or a hairline border inside the card — so a half-filled design reads as intentional rather than incomplete: empty sections simply say "Nothing recorded yet." The Design detail alone stands on Unbleached Paper and puts its stage cards back on Warm Paper. The create form and Edit open as full screens; the create form is a modal presentation, and each form ends in 48px of breathing room above the keyboard.
+Forms are plain Warm Paper: each field sits under its own label in the muted voice and is stroked with Thread Line, with no card wrapper to fill. Where records share a list, one hairline box groups them — Edit's section rows, the Material uses table, and History's entry cards — and a missing value reads `Not set` rather than vanishing. The Design detail alone stands on Unbleached Paper and puts its stage cards back on Warm Paper. The create form and Edit open as full screens; the create form is a modal presentation, and each form ends in 48px of breathing room above the keyboard.
 
 ## Elevation & Depth
 
@@ -360,17 +379,17 @@ Quiet archival: depth is read from tone, not shadow. The three paper steps (Warm
 
 ## Shapes
 
-Soft specimen-jar geometry: corners ascend with size — 6px on small details, 8px on buttons and inputs, 10px on compact thumbs, tabs, and segmented controls, 14px on cards, sections, dialogs, and menus, 16px on the top corners of a paper sheet. Status is always a full pill (9999px). The dashed frame is the system's plate signature: an empty stage, an add-image card, a missing cover, the pager with no image, and every bottom sheet's inset frame draw it — a plate that holds nothing is a hole drawn as a hole, never decorated over. The empty cover's dash uses Faded Thread (4.5:1 on Kraft) rather than the Thread Line hairline so the state is readable; the add card and empty stage use the quieter Thread Line.
+Soft specimen-jar geometry: corners ascend with size — 6px on small details, 8px on buttons and inputs, 10px on compact thumbs, tabs, and segmented controls, 14px on cards, sections, dialogs, and menus, 16px on all four corners of a floating paper sheet. Status is always a full pill (9999px). The dashed frame is the system's plate signature: an empty stage, an add-image card, a missing cover, the pager with no image, and every bottom sheet's inset frame draw it — a plate that holds nothing is a hole drawn as a hole, never decorated over. The empty cover's dash uses Faded Thread (4.5:1 on Kraft) rather than the Thread Line hairline so the state is readable; the add card and empty stage use the quieter Thread Line.
 
-Photography keeps a fixed stage: 4:5 for Library covers on tiles, 3:4 for the full-bleed journey pager and for journey thumbs, and the image detail fits the whole image inside a bounded stage. On the pager the stage is fixed and the image is fitted whole inside it — a 3:4 image fills the stage edge to edge, while a taller or wider reference keeps every edge on photography black. The layout never stretches to the image.
+Photography keeps a fixed stage: 4:5 for Library covers on tiles, 3:4 for the inset pager plate and for journey thumbs, and the image detail fits the whole image inside a bounded stage. On the pager the stage is fixed and the image is fitted whole inside it — a 3:4 image fills the plate, while a taller or wider reference keeps every edge on photography black. The layout never stretches to the image.
 
 ### Named Rules
 
-**The Pill Rule.** Pills are for state and selection — badges, stage chips, counters, toggles. Rectangles are for containers and controls. A pill never carries a sentence; a rectangle never carries a status.
+**The Pill Rule.** Pills are for state and selection — badges, counters, toggles. Rectangles are for containers and controls. A pill never carries a sentence; a rectangle never carries a status.
 
 ## Motion & Micro-interaction
 
-Motion is quiet and decelerating: overlays fade in over 200ms and out over 150ms (Reanimated, honoring the system Reduce Motion setting); accordion-style reveals take 200ms; the stage tabs' Deep Wood fill travels to its tab in 180ms on a strong ease-out; press feedback is an instant tonal shift (a button darkens to 90%) or, on a Library card, a 0.98 dip with a 5% ink wash held for 120ms before the route opens — the press itself never animates. Edit's editable rows take the same 120ms beat as the Kraft press wash alone: a tonal shift on press-in, released on press-out, with no dip and no scale. The FAB's speed-dial rows rise and fade in inside the same 200ms budget. The journey counter's stage word cross-fades with a 6px downward settle when the pager crosses into another stage. Nothing bounces, nothing loops, nothing moves for decoration. Screen-to-screen transitions are plain fades, except the Library's Detail arrival: a 0.96 to 1 zoom inside the same 200ms fade, on that route only.
+Motion is quiet and decelerating: overlays fade in over 200ms and out over 150ms (Reanimated, honoring the system Reduce Motion setting); the stage row opens and closes on the shared 200ms linear layout transition; a sheet settles in 200ms; the stage tabs' Deep Wood fill travels to its tab in 180ms on a strong ease-out; press feedback is an instant tonal shift (a button darkens to 90%) or, on a Library card, a 0.98 dip with a 5% ink wash held for 120ms before the route opens — the press itself never animates. Edit's editable rows take the Kraft press wash alone on the system press state: a tonal shift on press-in, released on press-out, with no dip, no scale, and no held timer. The FAB's speed-dial rows rise and fade in inside the same 200ms budget. The journey counter's stage word cross-fades with a 6px downward settle when the pager crosses into another stage. Switching a section cross-fades the incoming section in 200ms and settles the switcher's mark in 150ms — Detail's wood rule, Edit's warm fill — so the change reads twice over without a slide. Nothing bounces, nothing loops, nothing moves for decoration. Every route keeps the platform's default screen transition; the Library's Detail arrival is the one override: the screen fades while its content settles from a 0.96 zoom, in 200ms, on that route only.
 
 ### Named Rules
 
@@ -379,10 +398,10 @@ Motion is quiet and decelerating: overlays fade in over 200ms and out over 150ms
 ## Voice & Content Strategy
 
 - **Tone of voice:** Frank, first-person, precise — the Owner's own voice, as recorded in PRODUCT.md. No exclamation marks, no marketing warmth, no filler.
-- **Capitalization:** Sentence case everywhere — titles, buttons, labels, statuses.
+- **Capitalization:** Sentence case everywhere — titles, buttons, labels — except the Status vocabulary, whose Title Case labels (Concept, In Development, Approved, Produced, Rejected, Archived) are fixed by `GLOSSARY.md`.
 - **Terminology:** `GLOSSARY.md` is canonical and binding (Design, Specification, Creative Direction, History, Status, Material use, Library, Owner, Image note). A term not in it is not a term; its avoid-lists apply (never "photo" for an Image, never "user" for the Owner).
 - **Button and action labels:** Verb phrases naming the outcome — "Create a design", "Add images to Prototype", "Save note". Never "OK", "Submit", or "Done" alone.
-- **Empty, loading, and error states:** One quiet line plus one action — "The library is empty" / "Designs you add will appear here."; "Nothing recorded yet."; "Nothing has changed yet." Errors are plain and name what failed, in Rejection Red: "The images could not be added." / "The image could not be removed."
+- **Empty, loading, and error states:** One quiet line plus one action — "The library is empty" / "Designs you add will appear here."; a missing value reads "Not set"; History with no entries reads "Nothing has changed yet." Errors are plain and name what failed, in Rejection Red: "The images could not be added." / "The image could not be removed."
 - **Destruction:** Notes delete in two steps: the first press arms the row with "Tap again to delete" in Rejection Red, the second deletes. An image asks its one question — "Remove this image and its notes?" — with Keep and Remove.
 - **Numbers, dates, and units:** Short dates via the system formatter ("Nov 23, 2026"); History entries add hour and minute; note dates use the mono face. Saves are never announced — no toasts, no banners; History is a screen the Owner opens.
 
@@ -396,35 +415,34 @@ The library is uniwind + rn-primitives with shadcn-style slot names; every color
 - **Shape:** Rounded rectangle (8px), 40px tall, 8px internal gap, icon 20px; the small size is 36px tall and the large size 44px.
 - **Primary:** Sanded Wood fill with Ink Thread text, 16px horizontal padding.
 - **Press:** Instant tonal shift — primary darkens to 90%. Disabled is 50% opacity.
-- **Outline / Ghost / Icon:** Thread Line border on Warm Paper; ghost and icon variants are transparent until pressed, when they take the Kraft tint. Icon buttons are 40×40. Destructive is Rejection Red with white text.
+- **Outline / Ghost / Icon:** Thread Line border on Warm Paper; ghost and icon variants are transparent until pressed, when they take the Kraft tint. Icon buttons are 40×40. Destructive is Rejection Red with white in light and ink in dark.
 
 ### Status badges
 
 - **Character:** The system's state vocabulary, worn as a pill.
-- **Shape:** Full pill, 2px 8px padding, Label-small type, 1px hairline border by default.
-- **Variants:** Approved and Produced (Sanded Wood + ink), In Development (Muslin Sage + white in light, ink in dark), Rejected (Rejection Red + white), Concept and Archived (Warm Paper + Ink Thread + Thread Line border).
+- **Shape:** Full pill, 2px 8px padding, Label-small type. Concept and Archived wear the 1px Thread Line hairline; the filled variants carry no visible border.
+- **Variants:** Approved and Produced (Sanded Wood + ink), In Development (Muslin Sage + white in light, ink in dark), Rejected (Rejection Red + white in light, ink in dark), Concept and Archived (Warm Paper + Ink Thread + Thread Line border).
 
-### Chips & toggles
+### Tabs & toggles
 
-- **Density control:** Outlined segmented group drawing the two layouts — one page, or two columns — instead of numerals; the chosen segment takes the Kraft selected state. Every segment keeps a 48dp touch target while its glyph stays 20px.
-- **Section tabs:** Detail sets them as a two-column index across the sheet: the open label in Ink Thread over a 2px Sanded Wood selection rule, the other in Faded Thread over the shared Thread Line hairline. Each half is the tab's whole target, and a press takes the Kraft tint. Edit uses the filled Kraft trough with the selected segment raised on Warm Paper.
+- **Library controls:** Grouping sits under its own "Group by" label as a clear two-option select. The density switch draws the two layouts — one page, or two columns — instead of numerals; the chosen segment takes the Kraft selected state, and every segment keeps a 48dp touch target while its glyph stays 20px. Search and Filter share one outlined shell at 50% opacity and carry a "Coming soon" hint for a screen reader until their screens exist.
+- **Section tabs:** Detail sets them as a two-column index across the sheet: the open label in Ink Thread over a 2px Sanded Wood selection rule, the other in Faded Thread over the shared Thread Line hairline. Each half is the tab's whole target, and a press takes the Kraft tint. Edit sets the same two sections on one Kraft trough with the open segment raised on Warm Paper; a press moves the warm fill rather than tinting the segment. Both mark the switch by fading their wood rule or their fill in 150ms, and both switch one record in place.
 
 ### Cards
 
 - **Character:** Paper mounts for photography and records.
-- **Corner style:** 14px (10px for compact thumbs and rows).
+- **Corner style:** 14px (10px for thumbs, tabs, and the pager plate).
 - **Background:** Unbleached Paper with a Thread Line hairline and the whisper shadow.
-- **Structure:** Cover-first tiles — a 4:5 image block on top, then the Design's name in the title face and the Status pill at the bottom; the grid leaves taxonomy to the single view. List rows may carry a 64px cover, name, one meta line, and a trailing badge.
+- **Structure:** Cover-first tiles — a 4:5 image block on top, then the Design's name in the title face and the Status pill at the bottom; the grid leaves taxonomy to the single view.
 - **Press:** Whole card is the button; pressed cards dip to 0.98 and take a 5% ink wash, held 120ms before Detail opens.
-- **Insets:** Grouped records inside a card sit on a Kraft Layer block (14px radius, 16px padding) or behind a hairline border.
 
 ### Inputs / Fields
 
-- **Style:** Thread Line stroke on Warm Paper, 8px radius, 40px tall, DM Sans body type; the placeholder is Faded Thread at full strength so it clears 4.5:1 on both paper tones.
+- **Style:** Thread Line stroke on Warm Paper, 8px radius, 40px tall, DM Sans body type; the placeholder is Faded Thread, at half strength on native and at full strength on web, and the field's own label always carries the name, so a placeholder is never the only label.
 - **Focus:** On web, the stroke shifts to Sage with a 3px 25% Sage ring; native fields carry no glow.
 - **Disabled:** 50% opacity. Errors sit beneath the field in Rejection Red, 14px.
-- **Read row:** Edit reads every field before it opens. The value sits as text with one trailing 16px pencil in Faded Thread — top-right on the name and description blocks, after the value on a Specification or Creative direction row — and a press takes the Kraft press wash for the documented 120ms `press` beat, on press-in and released on press-out. The beat is reused, not re-tuned: no new duration, no dip, no scale. A value that wraps keeps its pencil on its first line, and a row that cannot change carries neither pencil nor wash.
-- **The blocks:** The name is an outlined block — Thread Line, the field radius, 16px padding, the name in the title voice and the pencil top-right — and opening it swaps in one Input in the same footprint; Description is the same block in Body type. Category and collection is one outlined block, 12px under the Status pill, showing the combined summary or "No category or collection", and it opens the taxonomy sheet. The blocks sit 16px apart. Each block is named above it in the muted voice — "Design name", "Category and collection", "Description" — so a filled block never reads as an unlabelled field. Status is the exception the grammar never touches: a pill alone on its line, outside every outline and outline group, with no pencil, no press, and no destination.
+- **Read row:** Edit reads every field before it opens. The value sits as text with one trailing 16px pencil in Faded Thread — top-right on the name and description blocks, after the value on a Specification or Creative direction row — and a press takes the Kraft press wash on press-in, released on press-out, with no dip, no scale, and no held timer. A value that wraps keeps its pencil on its first line, and a row that cannot change carries neither pencil nor wash.
+- **The blocks:** The name is an outlined block — Thread Line, the field radius, 16px padding, the name in the title voice and the pencil top-right — and opening it swaps in one Input in the same footprint; Description is the same block in Body type. Category and collection is one outlined block, 12px under the Status pill, showing the combined summary or "No category or collection", and it opens the taxonomy sheet. Each block is named 8px above it in the muted voice — "Design name", "Category and collection", "Description" — so a filled block never reads as an unlabelled field; the Category label takes 12px under the Status pill, and the Description label 16px under the Category block. Status is the exception the grammar never touches: a pill alone on its line, outside every outline and outline group, 8px under the name block, with no pencil, no press, and no destination.
 - **Keeping the keyboard:** Each row's Input is mounted underneath from the start, hidden but focusable, so a press moves focus into the next row before the previous one unmounts. Moving between text rows keeps the keyboard up; opening a sheet, leaving the screen, or switching section tabs may dismiss it.
 
 ### Selects, menus, and dialogs
@@ -446,9 +464,9 @@ The Detail's visual home, on the detail's Unbleached Paper ground: a 3:4 plate i
 
 ### Paper sheets (signature)
 
-The current image's notes open in one bottom sheet: a floating Unbleached Paper card, inset 12px from the screen's sides and lifted above the bottom safe area, its content detent following the card's measured height, with no paper card floating above the page. All four corners take the sheet's 16px radius, so the card reads as a plate laid over the screen rather than a panel joined to its edge. Every sheet is a plate: an inset dashed frame in Faded Thread, 8px inside the card's edge, so the sheet reads like the empty Cover's frame and its content sits in the gutter beside it. A sheet opened above another steps one tone deeper — Kraft, then the deep Kraft — so the stack gains depth without a shadow; the tone clamps at the deepest step. The header carries `Notes (n)` and a ghost Close; Add note expands the inline composer beneath it. The composer's field is Warm Paper on the sheet with a Thread Line stroke, and focus turns the stroke Sage; the caret and selection follow the same Sage. The composer is keyboard-aware, keeps its draft through a refusal, and disables Save while the draft is empty; only the list below scrolls, so the header and composer never leave the screen. Notes read oldest first with the same two-step delete. Note dates are Mono-small in Faded Thread, note text Body in Ink Thread, and the armed line is 12px Rejection Red.
+The current image's notes open in one bottom sheet: a floating Unbleached Paper card, inset 12px from the screen's sides, under its status bar, and above its bottom safe area, its content detent following the card's measured height, with no paper card floating above the page. All four corners take the sheet's 16px radius, so the card reads as a plate laid over the screen rather than a panel joined to its edge. Every sheet is a plate: an inset dashed frame in Faded Thread, 8px inside the card's edge, and a 16px body gutter on every side, so the frame sits the same distance from the content all the way around. A sheet opened above another steps one tone deeper — Kraft, then the deep Kraft — so the stack gains depth without a shadow; the tone clamps at the deepest step. The card settles in 200ms, inside the Quiet Turn budget, and no sheet draws a drag handle. The header carries `Notes (n)` and a ghost X; Add note expands the inline composer beneath it. The composer's field is Warm Paper on the sheet with a Thread Line stroke, and focus turns the stroke Sage; the caret and selection follow the same Sage. The composer is keyboard-aware, keeps its draft through a refusal, and disables Save while the draft is empty; only the list below scrolls, so the header and composer never leave the screen. Notes read oldest first with the same two-step delete. Note dates are Mono-small in Faded Thread, note text Body in Ink Thread, and the armed line is 12px Rejection Red.
 
-The same wrapper carries Edit's four sheets, and none of them draws a drag handle. Each opens with its title in the serif voice and one ghost Close whose visible text is "Close", labelled after its sheet — "Close category and collection", "Close add material", "Close material", "Close new material". The taxonomy sheet holds the two clearable selects, and a choice writes at once while the sheet stays open. Add material sets Material over a ghost "New material" action, then Colour and Role, and closes on a footer of ghost Cancel and primary "Add to design". Edit material writes those three fields as they change, and its footer is destructive "Remove material" beside a ghost Close. New material stacks above Add material as one focused name field whose Return submits; Cancel or Close returns to the Add sheet's Material, Colour, and Role untouched. Every sheet's fields stay above the keyboard.
+The same wrapper carries Edit's four sheets, and none of them draws a drag handle. Each opens with its title in the serif voice and one ghost X, labelled after its sheet — "Close category and collection", "Close add material", "Close material", "Close new material". The taxonomy sheet holds the two clearable selects, and a choice writes at once while the sheet stays open. Add material sets Material over a ghost "New material" action, then Colour and Role, and closes on a footer of ghost Cancel and primary "Add to design". Edit material writes those three fields as they change, and its footer is destructive "Remove material" beside a ghost Close. New material stacks above Add material as one focused name field whose Return submits; Cancel, or the header's X, returns to the Add sheet's Material, Colour, and Role untouched. Every sheet's fields stay above the keyboard.
 
 ### The image detail (signature)
 
@@ -467,8 +485,8 @@ One dashed frame for every missing Cover, drawn on a Kraft Layer mount and inset
 ### Do:
 
 - **Do** resolve every color through the slot table in Colors — wood is `primary`, sage is `secondary`, Kraft is `muted`/`accent`.
-- **Do** separate with Thread Line hairlines and group with Kraft Layer insets; let tone carry the hierarchy.
-- **Do** give every editable row one trailing pencil in Faded Thread and the 120ms Kraft press wash; Status carries neither.
+- **Do** separate with Thread Line hairlines and group with one hairline box or a Kraft mount; let tone carry the hierarchy.
+- **Do** give every editable row one trailing pencil in Faded Thread and the Kraft press wash; Status carries neither.
 - **Do** mark every empty attach point with the dashed frame — an empty stage, a missing cover, an add action — and use Faded Thread when the frame must be read against Kraft.
 - **Do** keep Cormorant for titles only, DM Sans for information, DM Mono for dates, ids, and measurements.
 - **Do** put persistent chrome over photography in translucent-black pills with white ink, and keep persistent paper chrome off the photograph.
@@ -485,4 +503,4 @@ One dashed frame for every missing Cover, drawn on a Kraft Layer mount and inset
 - **Don't** place persistent paper chrome on a photograph; use the translucent-black pill. Only a menu or sheet the Owner opens may be paper over an image.
 - **Don't** announce a save with a toast or a banner; History is a screen the Owner opens.
 - **Don't** animate an entrance longer than 200ms, or with a spring that bounces.
-- **Don't** add a second pure white or a true black to the paper world; Warm Paper is its one white, and the only black lives over photography.
+- **Don't** add a second pure white or a black fill to the paper world; Warm Paper is its one white. Black is photography's ground and the scrim behind a sheet or dialog, never a paper surface.

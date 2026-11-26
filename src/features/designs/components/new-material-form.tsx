@@ -1,5 +1,6 @@
 import { View } from "react-native";
 import { KeyboardPadding } from "@/shared/components/keyboard-padding";
+import { SheetBody } from "@/shared/components/sheet";
 import { Button } from "@/shared/components/ui/button";
 import { Input } from "@/shared/components/ui/input";
 import { Text } from "@/shared/components/ui/text";
@@ -15,7 +16,7 @@ import {
   type InlineCreationState,
 } from "../lib/inline-creation-reducer";
 import { FieldError } from "./field-error";
-import { SheetHeader } from "./sheet-header";
+import { SheetHeader } from "@/shared/components/sheet-header";
 
 /**
  * The New material sheet's body: one name field, focused when the sheet opens,
@@ -45,7 +46,7 @@ export function NewMaterialForm({
 
   return (
     <KeyboardPadding>
-      <View testID="new-material-sheet" className="gap-3 px-4 pb-4 pt-3">
+      <SheetBody testID="new-material-sheet">
         <SheetHeader
           title="New material"
           closeLabel="Close new material"
@@ -72,7 +73,7 @@ export function NewMaterialForm({
             <Text>Add to list</Text>
           </Button>
         </View>
-      </View>
+      </SheetBody>
     </KeyboardPadding>
   );
 }

@@ -1,6 +1,7 @@
 import { Plus } from "lucide-react-native";
 import { View } from "react-native";
 import { KeyboardPadding } from "@/shared/components/keyboard-padding";
+import { SheetBody } from "@/shared/components/sheet";
 import { Button } from "@/shared/components/ui/button";
 import { Icon } from "@/shared/components/ui/icon";
 import { Input } from "@/shared/components/ui/input";
@@ -12,7 +13,7 @@ import { FieldError } from "./field-error";
 import { FormField } from "./form-field";
 import { MaterialUseRoleSelect } from "./material-use-role-select";
 import { ReadError } from "./read-error";
-import { SheetHeader } from "./sheet-header";
+import { SheetHeader } from "@/shared/components/sheet-header";
 import { TaxonomySelect } from "./taxonomy-select";
 
 /**
@@ -41,7 +42,7 @@ export function AddMaterialUseForm({
 
   return (
     <KeyboardPadding>
-      <View testID="add-material-sheet" className="gap-3 px-4 pb-4 pt-3">
+      <SheetBody testID="add-material-sheet">
         <SheetHeader title="Add material" closeLabel="Close add material" onClose={close} />
 
         <FormField label="Material">
@@ -107,7 +108,7 @@ export function AddMaterialUseForm({
             <Text>Add to design</Text>
           </Button>
         </View>
-      </View>
+      </SheetBody>
     </KeyboardPadding>
   );
 }

@@ -2,7 +2,8 @@ import { Plus } from "lucide-react-native";
 import { useEffect, useRef } from "react";
 import { ScrollView, View, type ScrollViewInstance } from "react-native";
 import { KeyboardPadding } from "@/shared/components/keyboard-padding";
-import { Sheet } from "@/shared/components/sheet";
+import { Sheet, SheetBody } from "@/shared/components/sheet";
+import { SheetHeader } from "@/shared/components/sheet-header";
 import { Button } from "@/shared/components/ui/button";
 import { Icon } from "@/shared/components/ui/icon";
 import { Text } from "@/shared/components/ui/text";
@@ -55,20 +56,12 @@ export function NotesSheet({
     <Sheet open={open} onClose={() => send({ type: "notes-sheet-closed" })}>
       {open ? (
         <KeyboardPadding>
-          <View testID="notes-sheet" className="gap-3 px-4 pb-4 pt-3">
-            <View className="flex-row items-center justify-between gap-3">
-              <Text className="font-serif text-lg font-semibold leading-tight">
-                {`Notes (${notes.length})`}
-              </Text>
-              <Button
-                size="sm"
-                variant="ghost"
-                accessibilityLabel="Close notes"
-                onPress={() => send({ type: "notes-sheet-closed" })}
-              >
-                <Text>Close</Text>
-              </Button>
-            </View>
+          <SheetBody testID="notes-sheet">
+            <SheetHeader
+              title={`Notes (${notes.length})`}
+              closeLabel="Close notes"
+              onClose={() => send({ type: "notes-sheet-closed" })}
+            />
 
             {composer ? (
               <View className="gap-3">
@@ -119,7 +112,7 @@ export function NotesSheet({
                 onDeletePress={(noteId) => send({ type: "image-note-delete-pressed", noteId })}
               />
             </ScrollView>
-          </View>
+          </SheetBody>
         </KeyboardPadding>
       ) : null}
     </Sheet>

@@ -2,18 +2,21 @@ import { router } from "expo-router";
 import { ChevronLeft } from "lucide-react-native";
 import { useEffect, useRef } from "react";
 import { AppState, Keyboard, Pressable, View, type TextInputInstance } from "react-native";
+import Animated from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 import type { DesignEditableField } from "@/features/designs";
 import { DESIGN_NAME_MAX_LENGTH } from "../lib/records";
 import { taxonomyLabel } from "@/features/taxonomy";
 import { useTaxonomy } from "@/features/taxonomy/react";
-import { Sheet } from "@/shared/components/sheet";
+import { Sheet, SheetBody } from "@/shared/components/sheet";
+import { SheetHeader } from "@/shared/components/sheet-header";
 import { Button } from "@/shared/components/ui/button";
 import { Icon } from "@/shared/components/ui/icon";
 import { Input } from "@/shared/components/ui/input";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/components/ui/tabs";
+import { Tabs, TabsContent } from "@/shared/components/ui/tabs";
 import { Text } from "@/shared/components/ui/text";
+import { SECTION_ARRIVAL } from "@/shared/lib/motion";
 import { cn } from "@/shared/lib/utils";
 import type { DesignTextEditableField } from "../lib/fields";
 import type { EditDesignRow } from "../lib/edit-design-reducer";
@@ -28,7 +31,7 @@ import { MaterialUseSheets } from "./material-use-sheets";
 import { MaterialUsesSection } from "./material-uses-section";
 import { ReadError } from "./read-error";
 import { RowPencil } from "./row-pencil";
-import { SheetHeader } from "./sheet-header";
+import { EditSectionTabs } from "./section-tabs";
 import { TaxonomySelect } from "./taxonomy-select";
 
 /**
@@ -329,16 +332,10 @@ export function EditDesignScreen({ designId }: { designId: string }) {
                 if (isDesignSectionTab(value)) changeTab(value);
               }}
             >
-              <TabsList className="h-auto w-full rounded-xl p-1">
-                {DESIGN_SECTIONS.map(({ tab, label }) => (
-                  <TabsTrigger key={tab} value={tab} className="min-h-10 flex-1 rounded-lg px-3">
-                    <Text className="text-center">{label}</Text>
-                  </TabsTrigger>
-                ))}
-              </TabsList>
+              <EditSectionTabs />
               {DESIGN_SECTIONS.map(({ tab, fields }) => (
                 <TabsContent key={tab} value={tab}>
-                  <View className="gap-4">
+                  <Animated.View entering={SECTION_ARRIVAL} className="gap-4">
                     <FieldRows
                       fields={fields}
                       draft={state.draft}
@@ -355,7 +352,7 @@ export function EditDesignScreen({ designId }: { designId: string }) {
                         send={send}
                       />
                     ) : null}
-                  </View>
+                  </Animated.View>
                 </TabsContent>
               ))}
             </Tabs>
@@ -363,7 +360,7 @@ export function EditDesignScreen({ designId }: { designId: string }) {
 
           <Sheet open={state.editing === "taxonomy"} onClose={closeRow}>
             {state.editing === "taxonomy" ? (
-              <View testID="taxonomy-sheet" className="gap-3 px-4 pb-4 pt-3">
+              <SheetBody testID="taxonomy-sheet">
                 <SheetHeader
                   title="Category and collection"
                   closeLabel="Close category and collection"
@@ -400,7 +397,7 @@ export function EditDesignScreen({ designId }: { designId: string }) {
                   />
                   {fieldError("collectionId")}
                 </FormField>
-              </View>
+              </SheetBody>
             ) : null}
           </Sheet>
 

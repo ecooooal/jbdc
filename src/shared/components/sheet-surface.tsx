@@ -17,15 +17,9 @@ export function sheetTone(depth: number): (typeof TONES)[number] {
 }
 
 /**
- * A bottom sheet's paper: its fill, stepped by stack depth, and the inset
- * dashed frame that draws every sheet as a plate. The frame is inset from the
- * card's edge and pointer-transparent, so it sits in the gutter beside the
- * sheet's content and never catches a gesture. It is Faded Thread rather than
- * a Thread Line hairline, the same readable dash the empty Cover uses.
- *
- * The native host fills this element the full size of the floating card and
- * clips it to all four corners, so it survives a content height that shrinks
- * while the sheet is open.
+ * A bottom sheet's paper fill, stepped by stack depth. The native host renders
+ * it behind the content and clips it to the card's shape, so it may extend
+ * past the card without showing; it carries no border for that reason.
  */
 export function SheetSurface({ depth }: { depth: number }) {
   return (
@@ -36,11 +30,29 @@ export function SheetSurface({ depth }: { depth: number }) {
       pointerEvents="none"
       accessibilityElementsHidden
       importantForAccessibility="no-hide-descendants"
-    >
-      <View
-        testID="sheet-frame"
-        className="border-muted-foreground absolute inset-2 rounded-xl border border-dashed"
-      />
-    </View>
+    />
+  );
+}
+
+/**
+ * The sheet's inset dashed frame, drawn as a plate. It lives in `SheetBody`
+ * rather than the surface: the surface is sized against the host's whole sheet
+ * and can extend below the floating card, which would clip the bottom border
+ * away. The body ends at the card, so all four sides sit the same distance from
+ * the edge.
+ *
+ * It is Faded Thread rather than a Thread Line hairline, the same readable
+ * dash the empty Cover uses, and it is pointer-transparent so it never catches
+ * a gesture.
+ */
+export function SheetFrame() {
+  return (
+    <View
+      testID="sheet-frame"
+      pointerEvents="none"
+      accessibilityElementsHidden
+      importantForAccessibility="no-hide-descendants"
+      className="border-muted-foreground absolute inset-2 rounded-xl border border-dashed"
+    />
   );
 }

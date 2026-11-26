@@ -153,15 +153,10 @@ components:
   card:
     backgroundColor: "{colors.surface}"
     rounded: "{rounded.xl}"
-    padding: "24px"
   card-tile:
     backgroundColor: "{colors.surface}"
     rounded: "{rounded.xl}"
     padding: "0"
-  card-inset:
-    backgroundColor: "{colors.surface-secondary}"
-    rounded: "{rounded.xl}"
-    padding: "16px"
   badge-confirmed:
     backgroundColor: "{colors.wood}"
     textColor: "{colors.wood-foreground}"
@@ -186,18 +181,22 @@ components:
     typography: "{typography.label-sm}"
     rounded: "{rounded.full}"
     padding: "2px 8px"
-  chip-stage:
+  section-index:
     backgroundColor: "{colors.background}"
     textColor: "{colors.foreground}"
-    typography: "{typography.label-sm}"
-    rounded: "{rounded.full}"
-    padding: "4px 12px 4px 4px"
-  chip-stage-active:
+    typography: "{typography.body}"
+    rounded: "{rounded.lg}"
+  section-index-edit:
     backgroundColor: "{colors.surface-secondary}"
     textColor: "{colors.foreground}"
-    typography: "{typography.label-sm}"
-    rounded: "{rounded.full}"
-    padding: "4px 12px 4px 4px"
+    typography: "{typography.label}"
+    rounded: "{rounded.xl}"
+    padding: "4px"
+  section-index-edit-active:
+    backgroundColor: "{colors.background}"
+    textColor: "{colors.foreground}"
+    typography: "{typography.label}"
+    rounded: "{rounded.lg}"
   stage-tabs:
     backgroundColor: "{colors.background}"
     textColor: "{colors.foreground}"
@@ -224,7 +223,15 @@ components:
     height: "56px"
     width: "56px"
   sheet:
-    backgroundColor: "{colors.surface}"
+    backgroundColor: "{colors.sheet}"
+    textColor: "{colors.foreground}"
+    rounded: "{rounded.2xl}"
+  sheet-stacked:
+    backgroundColor: "{colors.sheet-stacked}"
+    textColor: "{colors.foreground}"
+    rounded: "{rounded.2xl}"
+  sheet-stacked-deep:
+    backgroundColor: "{colors.sheet-stacked-deep}"
     textColor: "{colors.foreground}"
     rounded: "{rounded.2xl}"
   image-detail:
@@ -243,11 +250,11 @@ Radius: sm 6px, md 8px, lg 10px, xl 14px, 2xl 16px, full 9999px
 North Star: "The Atelier Ledger"
 Rules:
 - The Ink-and-Paper Rule. Color is state, not decoration.
-- The Overlay Exception. Over photography, persistent chrome is a translucent-black pill; only a menu or sheet the Owner opens may be paper.
+- The Overlay Exception. Over photography, persistent chrome is a translucent-black pill; only a menu or sheet the Owner opens may be paper, and the same tone is the scrim behind a sheet; a dialog dims the page on 50% black.
 - The Two Voices Rule. Cormorant speaks only for titles — the names of screens, designs, and dialogs.
 - The Flat-Archive Rule. A surface's importance is read from its tone, never from its shadow.
 - The Single-View Carve-Out. The single view's details panel is the one surface that blurs — only the photography beneath it; no card, sheet, bar, or control blurs.
-- The Pill Rule. Pills are for state and selection — badges, stage chips, counters, toggles.
+- The Pill Rule. Pills are for state and selection — badges, counters, toggles.
 - The Quiet Turn Rule. Motion never announces — it only arrives and leaves, in 200ms or less.
 - The Detail Ground Rule. The Design detail alone stands on Unbleached Paper; its cards return to Warm Paper.
 Elevation:
@@ -261,14 +268,14 @@ Don't:
 - Don't place persistent paper chrome on a photograph; use the translucent-black pill. Only a menu or sheet the Owner opens may be paper over an image.
 - Don't announce a save with a toast or a banner; History is a screen the Owner opens.
 - Don't animate an entrance longer than 200ms, or with a spring that bounces.
-- Don't add a second pure white or a true black to the paper world; Warm Paper is its one white, and the only black lives over photography.
+- Don't add a second pure white or a black fill to the paper world; Warm Paper is its one white. Black is photography's ground and the scrim behind a sheet or dialog, never a paper surface.
 Do:
 - Do resolve every color through the slot table in Colors — wood is `primary`, sage is `secondary`, Kraft is `muted`/`accent`.
-- Do separate with Thread Line hairlines and group with Kraft Layer insets; let tone carry the hierarchy.
-- Do give every editable row one trailing pencil in Faded Thread and the 120ms Kraft press wash; Status carries neither.
+- Do separate with Thread Line hairlines and group with one hairline box or a Kraft mount; let tone carry the hierarchy.
+- Do give every editable row one trailing pencil in Faded Thread and the Kraft press wash; Status carries neither.
 - Do mark every empty attach point with the dashed frame — an empty stage, a missing cover, an add action.
 - Do keep Cormorant for titles only, DM Sans for information, DM Mono for dates, ids, and measurements.
-- (+5 more)
+- (+4 more)
 Map: docs/design-token.md
 Map: src/global.css
 Map: GLOSSARY.md

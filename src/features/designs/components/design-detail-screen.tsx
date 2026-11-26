@@ -9,7 +9,7 @@ import {
 } from "lucide-react-native";
 import { useState } from "react";
 import { ScrollView, View } from "react-native";
-import Animated, { FadeIn, ReduceMotion, ZoomIn } from "react-native-reanimated";
+import Animated, { ZoomIn } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { DesignGallery } from "@/features/images/react";
 import { Button } from "@/shared/components/ui/button";
@@ -22,7 +22,7 @@ import {
 import { Icon } from "@/shared/components/ui/icon";
 import { Tabs, TabsContent } from "@/shared/components/ui/tabs";
 import { Text } from "@/shared/components/ui/text";
-import { DETAIL_ARRIVAL, QUIET_MOTION_DURATION_MS } from "@/shared/lib/motion";
+import { DETAIL_ARRIVAL, SECTION_ARRIVAL } from "@/shared/lib/motion";
 import { cn } from "@/shared/lib/utils";
 import {
   DESIGN_SECTIONS,
@@ -307,13 +307,6 @@ function DesignDetailContent({ design }: { design: DesignDetail }) {
 const DETAIL_ZOOM = ZoomIn.duration(DETAIL_ARRIVAL.zoom.duration).withInitialValues({
   transform: [{ scale: DETAIL_ARRIVAL.zoom.from }],
 });
-
-/**
- * A section's arrival after a tab switch: the incoming sheet cross-fades
- * inside the quiet budget, with no slide, so the two sections read as one
- * record turning its page. Reduced motion resolves it on the spot.
- */
-const SECTION_ARRIVAL = FadeIn.duration(QUIET_MOTION_DURATION_MS).reduceMotion(ReduceMotion.System);
 
 /**
  * Detail for one Design, opened from its Library card. The header stays fixed

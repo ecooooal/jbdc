@@ -1,5 +1,6 @@
 import { View } from "react-native";
 import { KeyboardPadding } from "@/shared/components/keyboard-padding";
+import { SheetBody } from "@/shared/components/sheet";
 import { Button } from "@/shared/components/ui/button";
 import { Input } from "@/shared/components/ui/input";
 import { Text } from "@/shared/components/ui/text";
@@ -13,7 +14,7 @@ import { FieldError } from "./field-error";
 import { FormField } from "./form-field";
 import { MaterialUseRoleSelect } from "./material-use-role-select";
 import { ReadError } from "./read-error";
-import { SheetHeader } from "./sheet-header";
+import { SheetHeader } from "@/shared/components/sheet-header";
 import { TaxonomySelect } from "./taxonomy-select";
 
 /**
@@ -43,7 +44,7 @@ export function EditMaterialUseForm({
 
   return (
     <KeyboardPadding>
-      <View testID="edit-material-sheet" className="gap-3 px-4 pb-4 pt-3">
+      <SheetBody testID="edit-material-sheet">
         <SheetHeader title="Edit material" closeLabel="Close material" onClose={close} />
 
         <FormField label="Material">
@@ -112,7 +113,7 @@ export function EditMaterialUseForm({
             <Text>Close</Text>
           </Button>
         </View>
-      </View>
+      </SheetBody>
     </KeyboardPadding>
   );
 }
