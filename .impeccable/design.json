@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-11-26T14:19:44Z",
+  "generatedAt": "2026-11-26T18:55:00Z",
   "title": "Design System: JBDC — The Atelier Ledger",
   "extensions": {
     "colorMeta": {
@@ -21,6 +21,12 @@
         "displayName": "Rejection Red",
         "canonical": "#B94B45",
         "tonalRamp": ["#3F1917", "#5E2622", "#7D332E", "#9B4039", "#B94B45", "#CE716B", "#E19A95", "#F1C5C2"]
+      },
+      "destructive-on-photography": {
+        "role": "destructive",
+        "displayName": "Photography Red",
+        "canonical": "#E27770",
+        "tonalRamp": ["#4A1F1C", "#6B2E29", "#8C3D36", "#B05A52", "#E27770", "#E9948E", "#F2B7B2", "#F9DAD7"]
       },
       "background": {
         "role": "neutral",
@@ -133,8 +139,8 @@
     },
     "typographyMeta": {
       "display": { "displayName": "Display", "purpose": "A Design's name on the single-view empty plate." },
-      "title": { "displayName": "Title", "purpose": "Screen titles and a Design's name on Detail and Library tiles." },
-      "subtitle": { "displayName": "Subtitle", "purpose": "Detail Collection, empty-state headings, second-order titles." },
+      "title": { "displayName": "Title", "purpose": "History and New design titles, a Design's name on Detail and in the single view's panel, and a Library tile's name." },
+      "subtitle": { "displayName": "Subtitle", "purpose": "The Detail and Edit headers, empty-state headings, second-order titles." },
       "title-sm": { "displayName": "Title small", "purpose": "Sheet and dialog titles." },
       "body": { "displayName": "Body", "purpose": "Descriptions, recorded values, notes, prose." },
       "body-sm": { "displayName": "Body small", "purpose": "Meta lines, secondary copy, muted values." },
@@ -144,8 +150,9 @@
       "mono-sm": { "displayName": "Mono small", "purpose": "Note dates and other micro-data." }
     },
     "shadows": [
-      { "name": "whisper", "value": "0 1px 3px 0 rgba(0,0,0,0.05), 0 1px 2px -1px rgba(0,0,0,0.05)", "purpose": "Resting cards, buttons, inputs, selects, and the FAB's paper action rows — barely there." },
-      { "name": "dialog", "value": "0 10px 15px -3px rgba(0,0,0,0.05), 0 4px 6px -4px rgba(0,0,0,0.05)", "purpose": "The centered dialog, the deepest point in the system." }
+      { "name": "whisper", "value": "0 1px 3px 0 rgba(0,0,0,0.05), 0 1px 2px -1px rgba(0,0,0,0.05)", "purpose": "Resting cards, buttons, inputs, selects, the density switch, and the FAB's paper action rows — barely there." },
+      { "name": "dialog", "value": "0 10px 15px -3px rgba(0,0,0,0.05), 0 4px 6px -4px rgba(0,0,0,0.05)", "purpose": "The centered dialog and alert, and the dropdown menus that open above the page — the deepest point in the system." },
+      { "name": "popover", "value": "0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -2px rgba(0,0,0,0.05)", "purpose": "The create form's Select popup — one step shallower than the dialog, so a choice list reads as a list rather than a decision." }
     ],
     "motion": [
       { "name": "overlay-enter", "value": "fade 200ms ease-out", "purpose": "Overlays, dialogs, and menus arriving; honors Reduce Motion." },
@@ -193,7 +200,7 @@
       "refersTo": "input",
       "description": "A paper field with a hairline stroke; focus is carried by the stroke and a subtle ring.",
       "html": "<input class='ds-input' placeholder='Design name' />",
-      "css": ".ds-input { box-sizing:border-box; width:100%; height:40px; padding:0 12px; border:1px solid #E8E5DF; border-radius:8px; background:#FFFFFF; color:#292724; font:400 16px/1.5 'DM Sans',sans-serif; box-shadow:0 1px 3px 0 rgba(0,0,0,0.05), 0 1px 2px -1px rgba(0,0,0,0.05); } .ds-input::placeholder { color:#6E6A63; } .ds-input:focus-visible { outline:none; border-color:#687C68; box-shadow:0 0 0 3px rgba(104,124,104,0.25); } .ds-input:disabled { opacity:0.5; }"
+      "css": ".ds-input { box-sizing:border-box; width:100%; height:40px; padding:0 12px; border:1px solid #E8E5DF; border-radius:8px; background:#FFFFFF; color:#292724; font:400 16px/1.5 'DM Sans',sans-serif; box-shadow:0 1px 3px 0 rgba(0,0,0,0.05), 0 1px 2px -1px rgba(0,0,0,0.05); } .ds-input::placeholder { color:#6E6A63; } .ds-input:focus-visible { outline:none; border-color:#687C68; box-shadow:0 0 0 3px rgba(104,124,104,0.5); } .ds-input:disabled { opacity:0.5; }"
     },
     {
       "name": "Read Row",
@@ -208,7 +215,7 @@
       "refersTo": "badge-confirmed",
       "description": "The state vocabulary as pills: approved and produced (wood), in development (sage), rejected (red), concept or archived (Thread Line hairline). Filled variants carry no visible border; the hairline belongs to Concept and Archived. Text is white in light and ink in dark on sage and red.",
       "html": "<span class='ds-badge ds-badge-wood'>Approved</span> <span class='ds-badge ds-badge-sage'>In Development</span> <span class='ds-badge ds-badge-red'>Rejected</span> <span class='ds-badge ds-badge-outline'>Concept</span>",
-      "css": ".ds-badge { display:inline-flex; align-items:center; border:1px solid transparent; border-radius:9999px; padding:2px 8px; font:500 12px/1.2 'DM Sans',sans-serif; } .ds-badge-wood { background:#B38A64; color:#292724; } .ds-badge-sage { background:#687C68; color:#FFFFFF; } .ds-badge-red { background:#B94B45; color:#FFFFFF; } .ds-badge-outline { background:#FFFFFF; border-color:#E8E5DF; color:#292724; }"
+      "css": ".ds-badge { display:inline-flex; align-items:center; border:1px solid transparent; border-radius:9999px; padding:2px 8px; font:500 12px/1.2 'DM Sans',sans-serif; } .ds-badge-wood { background:#B38A64; color:#292724; } .ds-badge-sage { background:#687C68; color:#FFFFFF; } .ds-badge-red { background:#B94B45; color:#FFFFFF; } .ds-badge-outline { background:transparent; border-color:#E8E5DF; color:#292724; }"
     },
     {
       "name": "Library Tile Card",
@@ -217,6 +224,14 @@
       "description": "A cover-first paper mount: 4:5 cover, then the name in the title face and the status pill at the bottom.",
       "html": "<div class='ds-tile'><div class='ds-tile-cover'><span class='ds-tile-cover-label'>4:5 cover</span></div><div class='ds-tile-body'><div class='ds-tile-name'>Sunday Afternoon</div><span class='ds-badge ds-badge-sage'>In Development</span></div></div>",
       "css": ".ds-tile { position:relative; display:flex; flex-direction:column; width:220px; overflow:hidden; border:1px solid #E8E5DF; border-radius:14px; background:#F8F6F2; box-shadow:0 1px 3px 0 rgba(0,0,0,0.05), 0 1px 2px -1px rgba(0,0,0,0.05); cursor:pointer; } .ds-tile:active { transform:scale(0.98); } .ds-tile:active::after { content:''; position:absolute; inset:0; border-radius:14px; background:rgba(41,39,36,0.05); pointer-events:none; } .ds-tile-cover { display:flex; align-items:flex-end; justify-content:flex-end; aspect-ratio:4/5; padding:8px; background:#F2EBDD; } .ds-tile-cover-label { color:#6E6A63; font:500 10px/1 'DM Sans',sans-serif; } .ds-tile-body { display:flex; flex-direction:column; gap:8px; padding:12px; } .ds-tile-name { color:#292724; font:600 24px/1.17 'Cormorant Garamond',Georgia,serif; letter-spacing:-0.025em; } .ds-badge { display:inline-flex; align-items:center; border:1px solid #E8E5DF; border-radius:9999px; padding:2px 8px; font:500 12px/1.2 'DM Sans',sans-serif; } .ds-badge-sage { background:#687C68; border-color:transparent; color:#FFFFFF; }"
+    },
+    {
+      "name": "Single View Page",
+      "kind": "custom",
+      "refersTo": "card-tile",
+      "description": "The Library at density 1: one full-page Design, its details panel frosting only the photography beneath it, and a position pill holding the top-right corner. A Design with no Cover swaps the photograph for the named plate and a plain paper caption.",
+      "html": "<div class='ds-sv'><div class='ds-sv-cover'><svg viewBox='0 0 320 520' preserveAspectRatio='xMidYMid slice' role='img' aria-label='Single view cover'><rect width='320' height='520' fill='#3A3733'/><circle cx='160' cy='86' r='16' fill='#D9C3AB'/><path d='M160 104l64 54-24 28-20-13v154h-40V173l-20 13-24-28z' fill='#D9C3AB'/></svg></div><span class='ds-sv-counter'>3 / 12</span><div class='ds-sv-panel'><div class='ds-sv-name'>Sunday Afternoon</div><div class='ds-sv-record'><span class='ds-sv-badge'>In Development</span><span class='ds-sv-taxonomy'>Outerwear · Fall 2026</span></div></div></div>",
+      "css": ".ds-sv { position:relative; width:320px; height:480px; overflow:hidden; border-radius:14px; background:#F8F6F2; font-family:'DM Sans',sans-serif; } .ds-sv-cover { position:absolute; inset:0; } .ds-sv-cover svg { display:block; width:100%; height:100%; } .ds-sv-counter { position:absolute; top:16px; right:16px; padding:4px 12px; border-radius:9999px; background:rgba(0,0,0,0.6); color:#FFFFFF; font:600 12px/1.2 'DM Sans',sans-serif; } .ds-sv-panel { position:absolute; left:0; right:0; bottom:0; display:flex; flex-direction:column; gap:8px; padding:16px 24px 36px; background:rgba(255,255,255,0.6); backdrop-filter:blur(8px); } .ds-sv-name { color:#292724; font:600 24px/1.25 'Cormorant Garamond',Georgia,serif; letter-spacing:-0.025em; } .ds-sv-record { display:flex; flex-wrap:wrap; align-items:center; gap:8px; padding-right:64px; } .ds-sv-badge { border:1px solid transparent; border-radius:9999px; padding:2px 8px; background:#687C68; color:#FFFFFF; font:500 12px/1.2 'DM Sans',sans-serif; } .ds-sv-taxonomy { color:#6E6A63; font:400 14px/1.4 'DM Mono',monospace; }"
     },
     {
       "name": "Journey Rail",

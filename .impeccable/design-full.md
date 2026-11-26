@@ -177,13 +177,11 @@ components:
     rounded: "{rounded.full}"
     padding: "2px 8px"
   badge-neutral:
-    backgroundColor: "{colors.background}"
     textColor: "{colors.foreground}"
     typography: "{typography.label-sm}"
     rounded: "{rounded.full}"
     padding: "2px 8px"
   section-index:
-    backgroundColor: "{colors.background}"
     textColor: "{colors.foreground}"
     typography: "{typography.body}"
     rounded: "{rounded.lg}"
@@ -341,8 +339,8 @@ The code's shadcn-style slot names resolve to this palette:
 ### Hierarchy
 
 - **Display** (Cormorant, 600, 30px, 1.25, −0.025em): the Design's name on the single-view empty plate — the page's content when there is no cover.
-- **Title** (Cormorant, 600, 24px, 1.25, −0.025em): screen titles, a Design's name on Detail and on a Library tile.
-- **Subtitle** (Cormorant, 600, 20px, 1.25, −0.025em): the Detail header's Collection, empty-state headings, and other second-order titles.
+- **Title** (Cormorant, 600, 24px, 1.25, −0.025em): the History and New design screen titles, a Design's name on Detail and in the single view's panel, and a Library tile's name, which tightens to 28px leading to sit closer to its Status pill.
+- **Subtitle** (Cormorant, 600, 20px, 1.25, −0.025em): the Detail and Edit headers, empty-state headings, and other second-order titles.
 - **Title-small** (Cormorant, 600, 18px, 1.25): sheet and dialog titles.
 - **Body** (DM Sans, 400, 16px, 1.5): descriptions, recorded values, notes, prose.
 - **Body-small** (DM Sans, 400, 14px, 1.4): meta lines, secondary copy, muted values.
@@ -361,18 +359,18 @@ Portrait, phone-first, native stack navigation with OS headers hidden — every 
 
 The Library grid is density-driven, not breakpoint-driven: the Owner chooses the Library's density (persisted) — the single view at 1, or two designs per row — and the card width derives from the current viewport, so rotation reflows card width without ever breaking the column count. There are no Library breakpoints; density is a user decision, not a width decision. Four-up is not offered: a tile that narrow cannot hold the Design's name and Status pill at the type floor.
 
-Grouping is the Owner's second arrangement decision: the Library shows one flat stream, or sections under their Collection labels with a 12px gap between tiles and a 24px gap between sections. The single view walks the same ordered list. The floating action button keeps its corner at every density; the single view's panel leaves that corner clear, and the grid reserves 68px (56px button + 12px gap) below its last row.
+Grouping is the Owner's second arrangement decision: the Library shows one flat stream, or sections under their Collection labels with a 12px gap between tiles and a 24px gap between sections. The single view walks the same ordered list, holding the top-right corner with its position pill while the panel holds the bottom. The floating action button keeps its corner at every density; the single view's panel leaves that corner clear, and the grid reserves 68px (56px button + 12px gap) below its last row.
 
 Forms are plain Warm Paper: each field sits under its own label in the muted voice and is stroked with Thread Line, with no card wrapper to fill. Where records share a list, one hairline box groups them — Edit's section rows, the Material uses table, and History's entry cards — and a missing value reads `Not set` rather than vanishing. The Design detail alone stands on Unbleached Paper and puts its stage cards back on Warm Paper. The create form and Edit open as full screens; the create form is a modal presentation, and each form ends in 48px of breathing room above the keyboard.
 
 ## Elevation & Depth
 
-Quiet archival: depth is read from tone, not shadow. The three paper steps (Warm Paper → Unbleached Paper → Kraft Layer) plus Thread Line hairlines carry all hierarchy. Shadows are a 5% black whisper — `0 1px 3px 0 rgba(0,0,0,0.05), 0 1px 2px -1px rgba(0,0,0,0.05)` on resting cards, buttons, inputs, and selects; the centered dialog alone lifts further (`0 10px 15px -3px rgba(0,0,0,0.05), 0 4px 6px -4px rgba(0,0,0,0.05)`). Nothing floats to demand attention.
+Quiet archival: depth is read from tone, not shadow. The three paper steps (Warm Paper → Unbleached Paper → Kraft Layer) plus Thread Line hairlines carry all hierarchy. Shadows are a 5% black whisper — `0 1px 3px 0 rgba(0,0,0,0.05), 0 1px 2px -1px rgba(0,0,0,0.05)` on resting cards, buttons, inputs, selects, and the density switch; the centered dialog, its alert, and the menus that open above the page lift further (`0 10px 15px -3px rgba(0,0,0,0.05), 0 4px 6px -4px rgba(0,0,0,0.05)`), and the create form's Select popup takes a shallower step (`0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -2px rgba(0,0,0,0.05)`). Nothing floats to demand attention.
 
 ### Shadow Vocabulary
 
-- **Whisper** (`0 1px 3px 0 rgba(0,0,0,0.05), 0 1px 2px -1px rgba(0,0,0,0.05)`): resting cards, buttons, inputs, selects, and the FAB's paper action rows — barely there.
-- **Dialog** (`0 10px 15px -3px rgba(0,0,0,0.05), 0 4px 6px -4px rgba(0,0,0,0.05)`): the centered dialog, the deepest point in the system.
+- **Whisper** (`0 1px 3px 0 rgba(0,0,0,0.05), 0 1px 2px -1px rgba(0,0,0,0.05)`): resting cards, buttons, inputs, selects, the density switch, and the FAB's paper action rows — barely there.
+- **Dialog** (`0 10px 15px -3px rgba(0,0,0,0.05), 0 4px 6px -4px rgba(0,0,0,0.05)`): the centered dialog and alert, and the dropdown menus that open above the page — the deepest point in the system. The create form's Select popup lifts on the smaller **Popover** step (`0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -2px rgba(0,0,0,0.05)`), so a choice list reads as a list rather than a decision.
 
 ### Named Rules
 
@@ -382,7 +380,7 @@ Quiet archival: depth is read from tone, not shadow. The three paper steps (Warm
 
 ## Shapes
 
-Soft specimen-jar geometry: corners ascend with size — 6px on small details, 8px on buttons and inputs, 10px on compact thumbs, tabs, and segmented controls, 14px on cards, sections, dialogs, and menus, 16px on all four corners of a floating paper sheet. Status is always a full pill (9999px). The dashed frame is the system's plate signature: an empty stage, an add-image card, a missing cover, the pager with no image, and every bottom sheet's inset frame draw it — a plate that holds nothing is a hole drawn as a hole, never decorated over. The empty cover's dash uses Faded Thread (4.5:1 on Kraft) rather than the Thread Line hairline so the state is readable; the add card and empty stage use the quieter Thread Line.
+Soft specimen-jar geometry: corners ascend with size — 6px on small details, 8px on buttons and inputs, 10px on compact thumbs, tabs, and segmented controls, 14px on cards, sections, dialogs, and menus, 16px on all four corners of a floating paper sheet. Status is always a full pill (9999px). The dashed frame is the system's plate signature: an empty stage, an add-image card, a missing cover, the pager with no image, and every bottom sheet's inset frame draw it — a plate that holds nothing is a hole drawn as a hole, never decorated over. The frames that state an absence — a missing cover, an empty pager, a sheet's plate, a loading gallery — use Faded Thread (4.5:1 on Kraft) rather than the Thread Line hairline so the state is readable; the add card and a missing thumb, which invite a press rather than report a state, use the quieter Thread Line.
 
 Photography keeps a fixed stage: 4:5 for Library covers on tiles, 3:4 for the inset pager plate and for journey thumbs, and the image detail fits the whole image inside a bounded stage. On the pager the stage is fixed and the image is fitted whole inside it — a 3:4 image fills the plate, while a taller or wider reference keeps every edge on photography black. The layout never stretches to the image.
 
@@ -405,7 +403,7 @@ Motion is quiet and decelerating: overlays fade in over 200ms and out over 150ms
 - **Terminology:** `GLOSSARY.md` is canonical and binding (Design, Specification, Creative Direction, History, Status, Material use, Library, Owner, Image note). A term not in it is not a term; its avoid-lists apply (never "photo" for an Image, never "user" for the Owner).
 - **Button and action labels:** Verb phrases naming the outcome — "Create a design", "Add images to Prototype", "Save note". Never "OK", "Submit", or "Done" alone.
 - **Empty, loading, and error states:** One quiet line plus one action — "The library is empty" / "Designs you add will appear here."; a missing value reads "Not set"; History with no entries reads "Nothing has changed yet." Errors are plain and name what failed, in Rejection Red: "The images could not be added." / "The image could not be removed."
-- **Destruction:** Notes and Material uses delete in two steps: the first press arms the control with "Tap again to delete" (or "Tap again to remove") in Rejection Red, the second deletes. An image asks its one question — "Remove this image and its notes?" — with Keep and Remove.
+- **Destruction:** Notes delete in two steps: the first press arms the row with "Tap again to delete" in Rejection Red, the second deletes. An image asks its one question — "Remove this image and its notes?" — with Keep and Remove.
 - **Numbers, dates, and units:** Short dates via the system formatter ("Nov 23, 2026"); History entries add hour and minute; note dates use the mono face. Saves are never announced — no toasts, no banners; History is a screen the Owner opens.
 
 ## Components
@@ -419,13 +417,12 @@ The library is uniwind + rn-primitives with shadcn-style slot names; every color
 - **Primary:** Sanded Wood fill with Ink Thread text, 16px horizontal padding.
 - **Press:** Instant tonal shift — primary darkens to 90%. Disabled is 50% opacity.
 - **Outline / Ghost / Icon:** Thread Line border on Warm Paper; ghost and icon variants are transparent until pressed, when they take the Kraft tint. Icon buttons are 40×40. Destructive is Rejection Red with white in light and ink in dark.
-- **Delete:** the one destructive control: a 16px trash glyph in a 40×40 ghost icon button, Faded Thread at rest and Rejection Red once armed (Photography Red on the photograph), with its two-press cue beside or below it. No delete fires on the first press.
 
 ### Status badges
 
 - **Character:** The system's state vocabulary, worn as a pill.
 - **Shape:** Full pill, 2px 8px padding, Label-small type. Concept and Archived wear the 1px Thread Line hairline; the filled variants carry no visible border.
-- **Variants:** Approved and Produced (Sanded Wood + ink), In Development (Muslin Sage + white in light, ink in dark), Rejected (Rejection Red + white in light, ink in dark), Concept and Archived (Warm Paper + Ink Thread + Thread Line border).
+- **Variants:** Approved and Produced (Sanded Wood + ink), In Development (Muslin Sage + white in light, ink in dark), Rejected (Rejection Red + white in light, ink in dark), Concept and Archived (no fill of their own + Ink Thread + Thread Line hairline, so they read on whatever paper holds them).
 
 ### Tabs & toggles
 
@@ -443,7 +440,7 @@ The library is uniwind + rn-primitives with shadcn-style slot names; every color
 ### Inputs / Fields
 
 - **Style:** Thread Line stroke on Warm Paper, 8px radius, 40px tall, DM Sans body type; the placeholder is Faded Thread, at half strength on native and at full strength on web, and the field's own label always carries the name, so a placeholder is never the only label.
-- **Focus:** On web, the stroke shifts to Sage with a 3px 25% Sage ring; native fields carry no glow.
+- **Focus:** On web, the stroke shifts to Sage with a 3px 50% Sage ring; native fields carry no glow.
 - **Disabled:** 50% opacity. Errors sit beneath the field in Rejection Red, 14px.
 - **Read row:** Edit reads every field before it opens. The value sits as text with one trailing 16px pencil in Faded Thread — top-right on the name and description blocks, after the value on a Specification or Creative direction row — and a press takes the Kraft press wash on press-in, released on press-out, with no dip, no scale, and no held timer. A value that wraps keeps its pencil on its first line, and a row that cannot change carries neither pencil nor wash.
 - **The blocks:** The name is an outlined block — Thread Line, the field radius, 16px padding, the name in the title voice and the pencil top-right — and opening it swaps in one Input in the same footprint; Description is the same block in Body type. Category and collection is one outlined block, 12px under the Status pill, showing the combined summary or "No category or collection", and it opens the taxonomy sheet. Each block is named 8px above it in the muted voice — "Design name", "Category and collection", "Description" — so a filled block never reads as an unlabelled field; the Category label takes 12px under the Status pill, and the Description label 16px under the Category block. Status is the exception the grammar never touches: a pill alone on its line, outside every outline and outline group, 8px under the name block, with no pencil, no press, and no destination.
@@ -451,7 +448,8 @@ The library is uniwind + rn-primitives with shadcn-style slot names; every color
 
 ### Selects, menus, and dialogs
 
-- **Select trigger:** The input's paper, stroke, 8px radius, and 40px height, with a 16px Faded Thread chevron. The popup is Unbleached Paper with a Thread Line hairline, 8px radius, and a 5% shadow.
+- **Select trigger:** The input's paper, stroke, 8px radius, and 40px height, with a 16px Faded Thread chevron. The popup is Unbleached Paper with a Thread Line hairline, 8px radius, and the Popover shadow.
+- **Actions menu:** The Detail's kebab opens the History and Edit rows on Unbleached Paper at 8px radius with the Dialog shadow; each row is an icon and its label, and a press takes the Kraft tint.
 - **Dialogs:** Centered on a 50% black overlay, Warm Paper content at 10px radius, 24px padding, a Thread Line border, the dialog shadow, and a ghost close X top-right; fading in 200ms, out 150ms.
 
 ### History
@@ -479,6 +477,10 @@ A full-screen black photography surface with white ink. The stage label sits top
 ### The Library's floating action
 
 One 56px Sanded Wood circle with a 24px glyph in the corner at every density. Opened, it stacks named paper rows above it — Settings (disabled, "Coming soon" pill), the light/dark theme flip, and Add design — each a 48dp-minimum row at 10px radius with a Thread Line border and the 5% whisper. The rows rise and fade in inside the quiet budget; a tap outside, an action, leaving the route, backgrounding the app, or Android Back shuts them.
+
+### The single view (signature)
+
+The Library at density 1: one full-page Design at a time, on a bounded horizontal pager that opens on the first and stops at both ends. The Cover fills the page edge to edge. Over photography a details panel frosts only the image beneath it — a 60% Warm Paper layer at blur intensity 50 — carrying the Design's name in the title voice, then its Status pill beside the one taxonomy line in the mono face; the record row stops short of the FAB's corner, and the panel's bottom padding clears the home indicator. A Design with no Cover keeps the same page with the named plate: the dashed frame is inset on Kraft and ends above a plain paper caption with a Thread Line above it, so the plate's frame is never clipped. The position counter holds the top-right as a pill reading `3 / 12` — translucent black with white ink over photography, Kraft with Ink Thread over the plate — and it is chrome, not a control.
 
 ### Empty covers
 

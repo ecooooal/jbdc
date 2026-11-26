@@ -177,13 +177,11 @@ components:
     rounded: "{rounded.full}"
     padding: "2px 8px"
   badge-neutral:
-    backgroundColor: "{colors.background}"
     textColor: "{colors.foreground}"
     typography: "{typography.label-sm}"
     rounded: "{rounded.full}"
     padding: "2px 8px"
   section-index:
-    backgroundColor: "{colors.background}"
     textColor: "{colors.foreground}"
     typography: "{typography.body}"
     rounded: "{rounded.lg}"
@@ -244,40 +242,34 @@ components:
 
 <!-- impeccable:design-map -->
 Name: JBDC — Fashion Design Catalog
-Colors: primary: wood #B38A64; secondary: green #687C68; neutral: background #FFFFFF; destructive: destructive #B94B45; neutral: surface #F8F6F2; neutral: surface-secondary #F2EBDD; neutral: photography #000000; neutral: overlay rgba(0, 0, 0, 0.60) (+8 more)
+Colors: primary: wood #B38A64; secondary: green #687C68; neutral: background #FFFFFF; destructive: destructive #B94B45; primary: selection #8A6642; neutral: surface #F8F6F2 (+16 more in the sidecar)
 Fonts: Cormorant Garamond (display, title, subtitle, title-sm); DM Sans (body, body-sm, label, label-sm); DM Mono (mono, mono-sm)
 Spacing: xs 4px, sm 8px, md 12px, lg 16px, xl 24px, 2xl 48px, grid-gap 12px, screen-margin 24px
 Radius: sm 6px, md 8px, lg 10px, xl 14px, 2xl 16px, full 9999px
 North Star: "The Atelier Ledger"
 Rules:
 - The Ink-and-Paper Rule. Color is state, not decoration.
-- The Overlay Exception. Over photography, persistent chrome is a translucent-black pill; only a menu or sheet the Owner opens may be paper, and the same tone is the scrim behind a sheet; a dialog dims the page on 50% black.
+- The Detail Ground Rule. The Design detail is the one page that inverts the mat: Unbleached Paper underfoot, Warm Paper for its cards and stage tabs.
 - The Two Voices Rule. Cormorant speaks only for titles — the names of screens, designs, and dialogs.
 - The Flat-Archive Rule. A surface's importance is read from its tone, never from its shadow.
-- The Single-View Carve-Out. The single view's details panel is the one surface that blurs — only the photography beneath it; no card, sheet, bar, or control blurs.
 - The Pill Rule. Pills are for state and selection — badges, counters, toggles.
 - The Quiet Turn Rule. Motion never announces — it only arrives and leaves, in 200ms or less.
-- The Detail Ground Rule. The Design detail alone stands on Unbleached Paper; its cards return to Warm Paper.
 Elevation:
 - Whisper: 0 1px 3px 0 rgba(0,0,0,0.05), 0 1px 2px -1px rgba(0,0,0,0.05)
-- Dialog: 0 10px 15px -3px rgba(0,0,0,0.05), 0 4px 6px -4px rgba(0,0,0,0.05) — the centered dialog, the deepest point in the system.
+- Dialog: 0 10px 15px -3px rgba(0,0,0,0.05), 0 4px 6px -4px rgba(0,0,0,0.05)
 Don't:
 - Don't introduce any accent hue beyond wood, sage, and red.
 - Don't lift a card with a shadow heavier than the 5% whisper; no glass, no gradients, no blur backdrops — the single view's details panel may blur only the photography beneath it.
 - Don't set a status in anything but a pill — never a rectangle, a banner, or a colored row.
 - Don't fill an empty stage with illustration or icon decoration; the dashed frame is the empty state.
-- Don't place persistent paper chrome on a photograph; use the translucent-black pill. Only a menu or sheet the Owner opens may be paper over an image.
+- Don't place persistent paper chrome on a photograph; use the translucent-black pill.
 - Don't announce a save with a toast or a banner; History is a screen the Owner opens.
 - Don't animate an entrance longer than 200ms, or with a spring that bounces.
-- Don't add a second pure white or a black fill to the paper world; Warm Paper is its one white. Black is photography's ground and the scrim behind a sheet or dialog, never a paper surface.
+- Don't add a second pure white or a black fill to the paper world; Warm Paper is its one white.
 Do:
 - Do resolve every color through the slot table in Colors — wood is `primary`, sage is `secondary`, Kraft is `muted`/`accent`.
-- Do separate with Thread Line hairlines and group with one hairline box or a Kraft mount; let tone carry the hierarchy.
-- Do give every editable row one trailing pencil in Faded Thread and the Kraft press wash; Status carries neither.
-- Do mark every empty attach point with the dashed frame — an empty stage, a missing cover, an add action.
-- Do keep Cormorant for titles only, DM Sans for information, DM Mono for dates, ids, and measurements.
-- (+4 more)
-Map: docs/design-token.md
+- (+8 more)
 Map: src/global.css
+Map: docs/design-token.md
 Map: GLOSSARY.md
 Full: .impeccable/design-full.md (read a section when you need its detail)
