@@ -21,6 +21,12 @@ async function openAddSheet() {
   await userEvent.press(screen.getByRole("button", { name: "Add material" }));
 }
 
+/** The Material trigger opens its own sheet above Add material; the option picks it. */
+async function chooseMaterial(name: string) {
+  await userEvent.press(addSheet().getByRole("button", { name: "Material" }));
+  await userEvent.press(addSheet().getByRole("button", { name }));
+}
+
 function addSheet() {
   return within(screen.getByTestId("add-material-sheet"));
 }
@@ -78,9 +84,9 @@ describe("the Add material sheet", () => {
 
     await renderEdit(design.id);
     await openAddSheet();
-    await userEvent.press(addSheet().getByRole("button", { name: "Wool" }));
+    await chooseMaterial("Wool");
     await fireEvent.changeText(addSheet().getByLabelText("Colour"), "Ivory");
-    await userEvent.press(addSheet().getByRole("button", { name: "Secondary" }));
+    await userEvent.press(addSheet().getByRole("radio", { name: "Secondary" }));
     await userEvent.press(addSheet().getByRole("button", { name: "Add to design" }));
     await settleUseWrites();
 
@@ -97,7 +103,7 @@ describe("the Add material sheet", () => {
 
     await renderEdit(design.id);
     await openAddSheet();
-    await userEvent.press(addSheet().getByRole("button", { name: "Wool" }));
+    await chooseMaterial("Wool");
     await fireEvent.changeText(addSheet().getByLabelText("Colour"), "Ivory");
     await userEvent.press(addSheet().getByRole("button", { name: "Cancel" }));
 
@@ -128,7 +134,7 @@ describe("the New material sheet", () => {
     await act(async () => live.notify("materials"));
 
     expect(screen.queryByTestId("new-material-sheet")).toBeNull();
-    expect(addSheet().getByRole("button", { name: "Silk crêpe" })).toBeTruthy();
+    expect(addSheet().getByText("Silk crêpe")).toBeTruthy();
 
     // The created Material is selected at once, so confirming uses it.
     await fireEvent.changeText(addSheet().getByLabelText("Colour"), "Ivory");
@@ -147,9 +153,9 @@ describe("the New material sheet", () => {
 
     await renderEdit(design.id);
     await openAddSheet();
-    await userEvent.press(addSheet().getByRole("button", { name: "Wool" }));
+    await chooseMaterial("Wool");
     await fireEvent.changeText(addSheet().getByLabelText("Colour"), "Ivory");
-    await userEvent.press(addSheet().getByRole("button", { name: "Secondary" }));
+    await userEvent.press(addSheet().getByRole("radio", { name: "Secondary" }));
     await userEvent.press(addSheet().getByRole("button", { name: "New material" }));
     await userEvent.press(newMaterialSheet().getByRole("button", { name: "Cancel" }));
 
@@ -175,10 +181,10 @@ describe("the Edit material sheet", () => {
     expect(editSheet().getByText("Edit material")).toBeTruthy();
     expect(editSheet().getByTestId("sheet-body-scroll")).toBeTruthy();
     expect(editSheet().getByLabelText("Colour")).toHaveDisplayValue("Charcoal");
+    expect(editSheet().getByRole("radio", { name: "Main" })).toBeChecked();
     expect(editSheet().getByRole("button", { name: "Remove from design" })).toBeTruthy();
-    expect(editSheet().getAllByRole("button", { name: "Close material" }).length).toBeGreaterThan(
-      0,
-    );
+    // The header's X is the sheet's only close.
+    expect(editSheet().getByRole("button", { name: "Close material" })).toBeTruthy();
   });
 
   test("Close writes the typed colour and returns to the screen", async () => {
@@ -187,7 +193,7 @@ describe("the Edit material sheet", () => {
     await renderEdit(design.id);
     await userEvent.press(screen.getByRole("button", { name: "Edit Wool (Charcoal)" }));
     await fireEvent.changeText(editSheet().getByLabelText("Colour"), "Black");
-    await userEvent.press(editSheet().getAllByRole("button", { name: "Close material" })[0]);
+    await userEvent.press(editSheet().getByRole("button", { name: "Close material" }));
     await settleUseWrites();
 
     expect(screen.queryByTestId("edit-material-sheet")).toBeNull();

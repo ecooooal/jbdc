@@ -9,10 +9,10 @@ import { canAddMaterialUse, type AddMaterialUseState } from "../lib/add-material
 import type { EditDesignGesture } from "../lib/edit-design-reducer";
 import { FieldError } from "./field-error";
 import { FormField } from "./form-field";
-import { MaterialUseRoleSelect } from "./material-use-role-select";
+import { MaterialUseRolePicker } from "./material-use-role-picker";
 import { ReadError } from "./read-error";
 import { SheetHeader } from "@/shared/components/sheet-header";
-import { TaxonomySelect } from "./taxonomy-select";
+import { ChoiceSheet } from "./choice-sheet";
 
 /**
  * The Add material sheet's body. Material and role are chosen; the colour is
@@ -43,7 +43,7 @@ export function AddMaterialUseForm({
       <SheetHeader title="Add material" closeLabel="Close add material" onClose={close} />
 
       <FormField label="Material">
-        <TaxonomySelect
+        <ChoiceSheet
           label="Material"
           placeholder="No material"
           value={selectedMaterial}
@@ -80,7 +80,7 @@ export function AddMaterialUseForm({
       </FormField>
 
       <FormField label="Role">
-        <MaterialUseRoleSelect
+        <MaterialUseRolePicker
           value={state.role}
           onChange={(role) =>
             send({ type: "material-use-panel-fact", fact: { type: "role-chosen", role } })

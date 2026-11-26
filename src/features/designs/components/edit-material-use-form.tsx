@@ -1,8 +1,11 @@
+import { Trash2 } from "lucide-react-native";
 import { SheetBody, SheetFooter } from "@/shared/components/sheet";
 import { Button } from "@/shared/components/ui/button";
+import { Icon } from "@/shared/components/ui/icon";
 import { Input } from "@/shared/components/ui/input";
 import { Text } from "@/shared/components/ui/text";
 import { useMaterials } from "@/features/materials/react";
+import { cn } from "@/shared/lib/utils";
 import {
   materialUseChoices,
   type EditDesignGesture,
@@ -10,19 +13,21 @@ import {
 } from "../lib/edit-design-reducer";
 import { FieldError } from "./field-error";
 import { FormField } from "./form-field";
-import { MaterialUseRoleSelect } from "./material-use-role-select";
+import { MaterialUseRolePicker } from "./material-use-role-picker";
 import { ReadError } from "./read-error";
 import { SheetHeader } from "@/shared/components/sheet-header";
 import { TaxonomySelect } from "./taxonomy-select";
 
 /**
  * The Edit material sheet's body. Material, colour, and role each write as soon
- * as they change, so there is no Save step; the sheet stays open until Close or
- * Remove, and the screen's live read brings the re-sorted row back. Close flushes
- * a typed colour first, as the panel always has.
+ * as they change, so there is no Save step; the sheet stays open until the
+ * header's X, which is its only close, and the screen's live read brings the
+ * re-sorted row back. Closing flushes a typed colour first, as the panel always
+ * has.
  *
  * "Remove from design" detaches this Material use from the design; it never
- * deletes the Material from the owner's list. It follows the notes' two-step
+ * deletes the Material from the owner's list. It wears the notes' trash, in
+ * Faded Thread at rest and Rejection Red once armed, and follows their two-step
  * grammar: the first press arms the control — "Tap again to remove" — and the
  * second writes the removal. Any other edit, a refusal, or closing the sheet
  * disarms it, so no return visit removes on its first press.
@@ -91,7 +96,7 @@ export function EditMaterialUseForm({
       </FormField>
 
       <FormField label="Role">
-        <MaterialUseRoleSelect
+        <MaterialUseRolePicker
           value={state.role}
           onChange={(role) =>
             send({ type: "material-use-panel-fact", fact: { type: "role-chosen", role } })
@@ -104,10 +109,16 @@ export function EditMaterialUseForm({
       ) : null}
       {state.error ? <FieldError message={state.error} /> : null}
 
-      <SheetFooter className="justify-between">
+      <SheetFooter>
+        {removeArmed ? (
+          <Text className="text-destructive text-xs" accessibilityLiveRegion="polite">
+            Tap again to remove
+          </Text>
+        ) : null}
         <Button
-          size="sm"
-          variant="destructive"
+          size="icon"
+          variant="ghost"
+          accessibilityLabel="Remove from design"
           accessibilityHint={
             removeArmed
               ? "Removes this Material use from the design"
@@ -117,17 +128,12 @@ export function EditMaterialUseForm({
             send({ type: "material-use-panel-fact", fact: { type: "remove-pressed" } })
           }
         >
-          <Text>Remove from design</Text>
-        </Button>
-        <Button size="sm" variant="ghost" accessibilityLabel="Close material" onPress={close}>
-          <Text>Close</Text>
+          <Icon
+            as={Trash2}
+            className={cn(removeArmed ? "text-destructive" : "text-muted-foreground")}
+          />
         </Button>
       </SheetFooter>
-      {removeArmed ? (
-        <Text className="text-destructive text-xs" accessibilityLiveRegion="polite">
-          Tap again to remove
-        </Text>
-      ) : null}
     </SheetBody>
   );
 }

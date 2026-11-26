@@ -368,7 +368,7 @@ describe("Materials", () => {
     await renderEdit(design.id);
     await userEvent.press(screen.getByRole("button", { name: "Edit Wool (Charcoal)" }));
     await fireEvent.changeText(screen.getByLabelText("Colour"), "Black");
-    await userEvent.press(screen.getAllByRole("button", { name: "Close material" })[0]);
+    await userEvent.press(screen.getByRole("button", { name: "Close material" }));
 
     expect(listMaterialUses(database, design.id)).toEqual([
       expect.objectContaining({ materialName: "Wool", colour: "Black", role: "main" }),
