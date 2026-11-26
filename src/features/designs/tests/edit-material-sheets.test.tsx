@@ -62,6 +62,7 @@ describe("the Add material sheet", () => {
     await openAddSheet();
 
     expect(addSheet().getByText("Add material")).toBeTruthy();
+    expect(addSheet().getByTestId("sheet-body-scroll")).toBeTruthy();
     expect(addSheet().getByLabelText("Material")).toBeTruthy();
     expect(addSheet().getByLabelText("Colour")).toBeTruthy();
     expect(addSheet().getByLabelText("Role")).toBeTruthy();
@@ -115,6 +116,7 @@ describe("the New material sheet", () => {
 
     // Both sheets are open: the New material sheet sits above the Add material one.
     expect(screen.getByTestId("add-material-sheet")).toBeTruthy();
+    expect(newMaterialSheet().getByTestId("sheet-body-scroll")).toBeTruthy();
     expect(newMaterialSheet().getByLabelText("New material name")).toBeTruthy();
     expect(newMaterialSheet().getByRole("button", { name: "Close new material" })).toBeTruthy();
 
@@ -171,6 +173,7 @@ describe("the Edit material sheet", () => {
     await userEvent.press(screen.getByRole("button", { name: "Edit Wool (Charcoal)" }));
 
     expect(editSheet().getByText("Edit material")).toBeTruthy();
+    expect(editSheet().getByTestId("sheet-body-scroll")).toBeTruthy();
     expect(editSheet().getByLabelText("Colour")).toHaveDisplayValue("Charcoal");
     expect(editSheet().getByRole("button", { name: "Remove from design" })).toBeTruthy();
     expect(editSheet().getAllByRole("button", { name: "Close material" }).length).toBeGreaterThan(

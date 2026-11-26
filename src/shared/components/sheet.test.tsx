@@ -2,7 +2,7 @@ import { act, render, screen, userEvent } from "@testing-library/react-native";
 import type { ReactNode } from "react";
 import { Text } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-import { Sheet } from "./sheet";
+import { Sheet, SheetBody } from "./sheet";
 
 const INITIAL_METRICS = {
   frame: { x: 0, y: 0, width: 390, height: 844 },
@@ -215,4 +215,36 @@ test("a drag to the closed detent asks the surface to close", async () => {
   await userEvent.press(screen.getByLabelText("Drag to the closed detent"));
 
   expect(onClose).toHaveBeenCalledTimes(1);
+});
+
+test("a scrolling body keeps the plate around rows that move inside it", async () => {
+  await renderSheet(
+    <Sheet open onClose={jest.fn()}>
+      <SheetBody testID="form-sheet" scroll>
+        <Text>Widened the shoulder.</Text>
+      </SheetBody>
+    </Sheet>,
+  );
+
+  const body = screen.getByTestId("form-sheet");
+  // The plate is decorative, so it is hidden from the accessibility tree.
+  const frame = screen.getByTestId("sheet-frame", { includeHiddenElements: true });
+
+  // The plate stays in the body, outside the rows that scroll.
+  expect(body).toContainElement(frame);
+  expect(body).toContainElement(screen.getByTestId("sheet-body-scroll"));
+  expect(screen.getByText("Widened the shoulder.")).toBeTruthy();
+});
+
+test("a body that does not ask to scroll keeps its rows in place", async () => {
+  await renderSheet(
+    <Sheet open onClose={jest.fn()}>
+      <SheetBody testID="form-sheet">
+        <Text>Widened the shoulder.</Text>
+      </SheetBody>
+    </Sheet>,
+  );
+
+  expect(screen.queryByTestId("sheet-body-scroll")).toBeNull();
+  expect(screen.getByText("Widened the shoulder.")).toBeTruthy();
 });

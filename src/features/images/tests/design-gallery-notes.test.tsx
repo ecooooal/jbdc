@@ -62,6 +62,8 @@ test("the notes button opens one sheet with every note and its date", async () =
   expect(sheet.getByText("First pass was fitted.")).toBeTruthy();
   expect(sheet.getByText("Widened the shoulder.")).toBeTruthy();
   expect(sheet.getAllByText("Jan 1, 1970")).toHaveLength(2);
+  // Only the list scrolls, so the count and Close above it never leave the screen.
+  expect(sheet.queryByTestId("sheet-body-scroll")).toBeNull();
 });
 
 test("the Add note row expands the inline composer", async () => {

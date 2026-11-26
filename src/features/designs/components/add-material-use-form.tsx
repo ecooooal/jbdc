@@ -39,7 +39,7 @@ export function AddMaterialUseForm({
   }
 
   return (
-    <SheetBody testID="add-material-sheet">
+    <SheetBody testID="add-material-sheet" scroll>
       <SheetHeader title="Add material" closeLabel="Close add material" onClose={close} />
 
       <FormField label="Material">

@@ -49,7 +49,7 @@ export function EditMaterialUseForm({
   }
 
   return (
-    <SheetBody testID="edit-material-sheet">
+    <SheetBody testID="edit-material-sheet" scroll>
       <SheetHeader title="Edit material" closeLabel="Close material" onClose={close} />
 
       <FormField label="Material">

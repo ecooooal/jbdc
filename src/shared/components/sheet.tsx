@@ -4,7 +4,7 @@ import {
   type SurfaceStyle,
 } from "@swmansion/react-native-bottom-sheet";
 import { type ReactNode, useEffect, useId, useState } from "react";
-import { View, type ColorValue } from "react-native";
+import { ScrollView, View, type ColorValue } from "react-native";
 import { KeyboardController, KeyboardEvents } from "react-native-keyboard-controller";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useResolveClassNames } from "uniwind";
@@ -164,22 +164,54 @@ export function Sheet({
  * so the title gains a little more air below it than the fields get between
  * them, and `SheetFooter` adds the rest above the closing row.
  *
+ * A body whose rows can outgrow the card asks for `scroll`, and then only its
+ * rows move: the plate and the gutter stay where they are, and the sheet hugs
+ * the rows until they reach the card's edge. That is what keeps a form's first
+ * field and its footer reachable at the largest text scale, on the shortest
+ * screen, with the keys up. The notes sheet keeps its own arrangement — only
+ * its list scrolls, under a header that stays put — and so does not ask for it.
+ *
+ * The rows are a scroll view that shrinks to the card, never one that fills it:
+ * the sheet's content detent is measured from this body, so a filling scroll
+ * view would resolve every sheet to the full height it could reach. The host's
+ * own scroll coordination is left alone; a drag that starts in the rows is
+ * delivered to the sheet at the rows' edge, as with any native scrollable.
+ *
  * Sheets pass their test id through because each body is still the surface's
  * own; everything else about it belongs to the wrapper.
  */
 export function SheetBody({
   testID,
   className,
+  scroll = false,
   children,
 }: {
   testID?: string;
   className?: string;
+  /** Let the rows scroll inside the plate when they outgrow the card. */
+  scroll?: boolean;
   children?: ReactNode;
 }) {
+  if (!scroll) {
+    return (
+      <View testID={testID} className={cn("gap-4 p-4", className)}>
+        <SheetFrame />
+        {children}
+      </View>
+    );
+  }
+
   return (
-    <View testID={testID} className={cn("gap-4 p-4", className)}>
+    <View testID={testID} className={cn("shrink p-4", className)}>
       <SheetFrame />
-      {children}
+      <ScrollView
+        testID="sheet-body-scroll"
+        className="shrink"
+        contentContainerClassName="gap-4"
+        keyboardShouldPersistTaps="handled"
+      >
+        {children}
+      </ScrollView>
     </View>
   );
 }

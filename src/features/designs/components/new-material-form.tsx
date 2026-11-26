@@ -43,7 +43,7 @@ export function NewMaterialForm({
   }
 
   return (
-    <SheetBody testID="new-material-sheet">
+    <SheetBody testID="new-material-sheet" scroll>
       <SheetHeader
         title="New material"
         closeLabel="Close new material"
