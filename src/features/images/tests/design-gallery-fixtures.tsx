@@ -11,6 +11,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { render, fireEvent } from "@testing-library/react-native";
 import { Dimensions } from "react-native";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 import type { ImageKind } from "@/features/database";
 import { DatabaseProvider } from "@/features/database/react";
 import { createSyncSubscribe, createTempDatabase } from "@/features/database/testing";
@@ -90,13 +91,20 @@ export async function renderGallery(
   imageStore: ImageStore = store,
 ) {
   const view = await render(
-    <DatabaseProvider database={database} subscribe={live.subscribe}>
-      <ImageStoreProvider store={imageStore}>
-        <ImagePickerProvider picker={picker}>
-          <DesignGallery designId={designId} />
-        </ImagePickerProvider>
-      </ImageStoreProvider>
-    </DatabaseProvider>,
+    <SafeAreaProvider
+      initialMetrics={{
+        frame: { x: 0, y: 0, width: 390, height: 844 },
+        insets: { top: 47, left: 0, right: 0, bottom: 34 },
+      }}
+    >
+      <DatabaseProvider database={database} subscribe={live.subscribe}>
+        <ImageStoreProvider store={imageStore}>
+          <ImagePickerProvider picker={picker}>
+            <DesignGallery designId={designId} />
+          </ImagePickerProvider>
+        </ImageStoreProvider>
+      </DatabaseProvider>
+    </SafeAreaProvider>,
   );
 
   // The pager sizes its pages from the plate it was given, so a rendered

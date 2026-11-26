@@ -5,6 +5,9 @@ colors:
   background: "#FFFFFF"
   surface: "#F8F6F2"
   surface-secondary: "#F2EBDD"
+  sheet: "#F8F6F2"
+  sheet-stacked: "#F2EBDD"
+  sheet-stacked-deep: "#E9DFCB"
   foreground: "#292724"
   foreground-secondary: "#6E6A63"
   border: "#E8E5DF"
@@ -24,6 +27,9 @@ colors:
     background: "#242424"
     surface: "#303030"
     surface-secondary: "#424242"
+    sheet: "#303030"
+    sheet-stacked: "#383838"
+    sheet-stacked-deep: "#404040"
     foreground: "#F0EEE9"
     foreground-secondary: "#B5B0A7"
     border: "#444444"
@@ -259,6 +265,7 @@ A warm, low-saturation paper palette whose only saturated voices are two accents
 - **Warm Paper** (`background`, #FFFFFF light / #242424 dark): the page behind everything. Pure white in light mode is deliberate: it is the mat the archive sits on, not a SaaS canvas. The Design detail is the one page that gives its ground to Unbleached Paper and hands the cards Warm Paper, so the record reads as a sheet laid on the mat.
 - **Unbleached Paper** (`surface`, #F8F6F2 / #303030): every resting surface content sits on — cards, tiles, sheets.
 - **Kraft Layer** (`surface-secondary`, #F2EBDD / #424242): the inset group one step into a surface — form sections, field tables, image placeholders, the fill of a selected stage chip.
+- **Sheet Stack** (`sheet`, `sheet-stacked`, `sheet-stacked-deep`; #F8F6F2 → #F2EBDD → #E9DFCB light, #303030 → #383838 → #404040 dark): the plate a sheet is drawn on. The base is Unbleached Paper; each sheet opened above it takes one step of tone, so a stack reads as depth without a shadow.
 - **Ink Thread** (`foreground`, #292724 / #F0EEE9): primary text — the ink of the ledger.
 - **Faded Thread** (`foreground-secondary`, #6E6A63 / #B5B0A7): secondary text — labels, meta lines, counts, quiet descriptions, placeholders.
 - **Thread Line** (`border`, #E8E5DF / #444444): hairline borders, row dividers, and input strokes.
@@ -276,6 +283,7 @@ The code's shadcn-style slot names resolve to this palette:
 | `background` | Warm Paper |
 | `foreground`, `card-foreground`, `popover-foreground` | Ink Thread |
 | `card`, `popover` | Unbleached Paper |
+| `sheet`, `sheet-stacked`, `sheet-stacked-deep` | Sheet Stack, base through two steps |
 | `muted`, `accent` | Kraft Layer |
 | `muted-foreground` | Faded Thread |
 | `primary` | Sanded Wood |
@@ -346,13 +354,13 @@ Quiet archival: depth is read from tone, not shadow. The three paper steps (Warm
 
 ### Named Rules
 
-**The Flat-Archive Rule.** A surface's importance is read from its tone, never from its shadow. If a shadow exists at all it stays ≤ 5% black; glass effects, large blurs, and decorative drop shadows do not enter this system.
+**The Flat-Archive Rule.** A surface's importance is read from its tone, never from its shadow. If a shadow exists at all it stays ≤ 5% black; glass effects, large blurs, and decorative drop shadows do not enter this system. A sheet opened above another takes one tone step deeper in light and one step lighter in dark, so the stack reads as depth in both appearances without gaining a shadow.
 
 **The Single-View Carve-Out.** The single view's details panel is the one surface allowed to blur, and it blurs only the photography directly beneath it — a frost at intensity 50 over a 60% paper panel. No card, sheet, bar, menu, or control blurs; nothing blurred sits over a paper surface.
 
 ## Shapes
 
-Soft specimen-jar geometry: corners ascend with size — 6px on small details, 8px on buttons and inputs, 10px on compact thumbs, tabs, and segmented controls, 14px on cards, sections, dialogs, and menus, 16px on the top corners of a paper sheet. Status is always a full pill (9999px). Dashed borders are the system's signature for emptiness: an empty stage, an add-image card, a missing cover, and the pager with no image all show the same dashed frame — a hole is drawn as a hole, never decorated over. The empty cover's dash uses Faded Thread (4.5:1 on Kraft) rather than the Thread Line hairline so the state is readable; the add card and empty stage use the quieter Thread Line.
+Soft specimen-jar geometry: corners ascend with size — 6px on small details, 8px on buttons and inputs, 10px on compact thumbs, tabs, and segmented controls, 14px on cards, sections, dialogs, and menus, 16px on the top corners of a paper sheet. Status is always a full pill (9999px). The dashed frame is the system's plate signature: an empty stage, an add-image card, a missing cover, the pager with no image, and every bottom sheet's inset frame draw it — a plate that holds nothing is a hole drawn as a hole, never decorated over. The empty cover's dash uses Faded Thread (4.5:1 on Kraft) rather than the Thread Line hairline so the state is readable; the add card and empty stage use the quieter Thread Line.
 
 Photography keeps a fixed stage: 4:5 for Library covers on tiles, 3:4 for the full-bleed journey pager and for journey thumbs, and the image detail fits the whole image inside a bounded stage. On the pager the stage is fixed and the image is fitted whole inside it — a 3:4 image fills the stage edge to edge, while a taller or wider reference keeps every edge on photography black. The layout never stretches to the image.
 
@@ -438,7 +446,7 @@ The Detail's visual home, on the detail's Unbleached Paper ground: a 3:4 plate i
 
 ### Paper sheets (signature)
 
-The current image's notes open in one bottom sheet: Unbleached Paper, 16px top corners only, a content detent that follows its measured height, and no paper card floating above the page. The header carries `Notes (n)` and a ghost Close; Add note expands the inline composer beneath it. The composer's field is Warm Paper on the sheet with a Thread Line stroke, and focus turns the stroke Sage; the caret and selection follow the same Sage. The composer is keyboard-aware, keeps its draft through a refusal, and disables Save while the draft is empty; only the list below scrolls, so the header and composer never leave the screen. Notes read oldest first with the same two-step delete. Note dates are Mono-small in Faded Thread, note text Body in Ink Thread, and the armed line is 12px Rejection Red.
+The current image's notes open in one bottom sheet: a floating Unbleached Paper card, inset 12px from the screen's sides and lifted above the bottom safe area, its content detent following the card's measured height, with no paper card floating above the page. All four corners take the sheet's 16px radius, so the card reads as a plate laid over the screen rather than a panel joined to its edge. Every sheet is a plate: an inset dashed frame in Faded Thread, 8px inside the card's edge, so the sheet reads like the empty Cover's frame and its content sits in the gutter beside it. A sheet opened above another steps one tone deeper — Kraft, then the deep Kraft — so the stack gains depth without a shadow; the tone clamps at the deepest step. The header carries `Notes (n)` and a ghost Close; Add note expands the inline composer beneath it. The composer's field is Warm Paper on the sheet with a Thread Line stroke, and focus turns the stroke Sage; the caret and selection follow the same Sage. The composer is keyboard-aware, keeps its draft through a refusal, and disables Save while the draft is empty; only the list below scrolls, so the header and composer never leave the screen. Notes read oldest first with the same two-step delete. Note dates are Mono-small in Faded Thread, note text Body in Ink Thread, and the armed line is 12px Rejection Red.
 
 The same wrapper carries Edit's four sheets, and none of them draws a drag handle. Each opens with its title in the serif voice and one ghost Close whose visible text is "Close", labelled after its sheet — "Close category and collection", "Close add material", "Close material", "Close new material". The taxonomy sheet holds the two clearable selects, and a choice writes at once while the sheet stays open. Add material sets Material over a ghost "New material" action, then Colour and Role, and closes on a footer of ghost Cancel and primary "Add to design". Edit material writes those three fields as they change, and its footer is destructive "Remove material" beside a ghost Close. New material stacks above Add material as one focused name field whose Return submits; Cancel or Close returns to the Add sheet's Material, Colour, and Role untouched. Every sheet's fields stay above the keyboard.
 

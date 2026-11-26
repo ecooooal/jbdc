@@ -13,6 +13,9 @@
     background: "#FFFFFF",
     surface: "#F8F6F2",
     surfaceSecondary: "#F2EBDD",
+    sheet: "#F8F6F2",
+    sheetStacked: "#F2EBDD",
+    sheetStackedDeep: "#E9DFCB",
 
     foreground: "#292724",
     foregroundSecondary: "#6E6A63",
@@ -35,6 +38,9 @@
     background: "#242424",
     surface: "#303030",
     surfaceSecondary: "#424242",
+    sheet: "#303030",
+    sheetStacked: "#383838",
+    sheetStackedDeep: "#404040",
 
     foreground: "#F0EEE9",
     foregroundSecondary: "#B5B0A7",

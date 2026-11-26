@@ -24,6 +24,9 @@
       --color-card-foreground: #292724;
       --color-popover: #f8f6f2;
       --color-popover-foreground: #292724;
+      --color-sheet: #f8f6f2;
+      --color-sheet-stacked: #f2ebdd;
+      --color-sheet-stacked-deep: #e9dfcb;
       --color-primary: #b38a64;
       --color-primary-foreground: #292724;
       --color-selection: #8a6642;
@@ -52,6 +55,9 @@
       --color-card-foreground: #f0eee9;
       --color-popover: #303030;
       --color-popover-foreground: #f0eee9;
+      --color-sheet: #303030;
+      --color-sheet-stacked: #383838;
+      --color-sheet-stacked-deep: #404040;
       --color-primary: #d1b18a;
       --color-primary-foreground: #292724;
       --color-selection: #8a6642;
