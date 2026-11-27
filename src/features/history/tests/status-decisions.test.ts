@@ -1,7 +1,13 @@
 import { randomUUID } from "node:crypto";
 import { DESIGN_STATUSES } from "@/features/database";
 import { createTempDatabase } from "@/features/database/testing";
-import { changeStatus, createDesign, designStatusLabel, getDesign } from "@/features/designs";
+import {
+  changeStatus,
+  createDesign,
+  designStatusLabel,
+  getDesign,
+  recordDecision,
+} from "@/features/designs";
 import { listDesignEvents } from "@/features/history";
 
 let database: ReturnType<typeof createTempDatabase>["database"];
@@ -187,5 +193,82 @@ describe("the Status label rule", () => {
       "Rejected",
       "Archived",
     ]);
+  });
+});
+
+describe("the designs later-decision write", () => {
+  /** A rejected Design, the state in which the owner adds a later decision. */
+  function rejectedDesign() {
+    const design = createDesign(database, { name: "Silk slip dress" }, 10);
+
+    changeStatus(
+      database,
+      design.id,
+      { status: "rejected", reason: "Too costly", potentialImprovements: null },
+      20,
+    );
+
+    return design;
+  }
+
+  test("writes one decision Event with no Status diff and moves updatedAt", () => {
+    const design = rejectedDesign();
+
+    const result = recordDecision(
+      database,
+      design.id,
+      { reason: "  The fringe shed  ", potentialImprovements: "  Try a tighter weave  " },
+      30,
+    );
+
+    expect(result).toEqual({
+      kind: "stored",
+      design: expect.objectContaining({ status: "rejected", updatedAt: 30 }),
+    });
+    expect(getDesign(database, design.id)).toMatchObject({ updatedAt: 30 });
+
+    const events = listDesignEvents(database, design.id);
+
+    expect(events.map(({ kind }) => kind)).toEqual(["decision", "decision"]);
+    expect(events[0]).toEqual(
+      expect.objectContaining({
+        kind: "decision",
+        reason: "The fringe shed",
+        potentialImprovements: "Try a tighter weave",
+        diff: null,
+        createdAt: 30,
+      }),
+    );
+    expect(events[1]).toMatchObject({
+      reason: "Too costly",
+      diff: { status: { from: "concept", to: "rejected" } },
+    });
+  });
+
+  test("a blank pair writes nothing", () => {
+    const design = rejectedDesign();
+
+    expect(
+      recordDecision(database, design.id, { reason: "   ", potentialImprovements: "  " }, 30),
+    ).toEqual({
+      kind: "stored",
+      design: expect.objectContaining({ status: "rejected", updatedAt: 20 }),
+    });
+    expect(getDesign(database, design.id)).toMatchObject({ updatedAt: 20 });
+    expect(listDesignEvents(database, design.id)).toHaveLength(1);
+  });
+
+  test("a write for a missing Design reports design-missing and writes no Event", () => {
+    const missing = randomUUID();
+
+    expect(
+      recordDecision(
+        database,
+        missing,
+        { reason: "Too costly", potentialImprovements: "Try a wool blend" },
+        20,
+      ),
+    ).toEqual({ kind: "design-missing" });
+    expect(listDesignEvents(database, missing)).toEqual([]);
   });
 });

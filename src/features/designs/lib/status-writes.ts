@@ -88,3 +88,42 @@ export function changeStatus(
     return { kind: "stored", design: { ...current, status: change.status, updatedAt: now } };
   });
 }
+
+/**
+ * Records a later Decision: the why added to, or corrected after, a Design's
+ * rejection. It writes one `decision` Event with no Status diff and moves the
+ * Design's `updatedAt` in the same transaction, so the earlier Event stays
+ * exactly as written. Both fields blank writes nothing; a missing Design
+ * answers `design-missing` and writes nothing.
+ */
+export function recordDecision(
+  database: Database,
+  designId: string,
+  decision: DecisionFields,
+  now: number = Date.now(),
+): StatusWriteResult {
+  const reason = normalizeOptionalText(decision.reason);
+  const potentialImprovements = normalizeOptionalText(decision.potentialImprovements);
+
+  return database.transaction((tx) => {
+    const current = designFrom(tx, designId);
+
+    if (!current) return { kind: "design-missing" };
+    if (reason === null && potentialImprovements === null) {
+      return { kind: "stored", design: current };
+    }
+
+    tx.update(designs).set({ updatedAt: now }).where(eq(designs.id, designId)).run();
+    appendStatusEvent(tx, {
+      id: database.newId(),
+      designId,
+      kind: "decision",
+      reason,
+      potentialImprovements,
+      diff: null,
+      createdAt: now,
+    });
+
+    return { kind: "stored", design: { ...current, updatedAt: now } };
+  });
+}
