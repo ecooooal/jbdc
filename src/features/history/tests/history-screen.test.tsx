@@ -119,3 +119,12 @@ test("a design with no Events says so plainly", async () => {
 
   expect(screen.getByText("Nothing has changed yet.")).toBeTruthy();
 });
+
+test("the subtitle names every recorded change rather than visits", async () => {
+  const design = createDesign(database, { name: "Silk slip dress" }, 10);
+
+  await renderHistory(design.id);
+
+  expect(screen.getByText("Every recorded change, newest first.")).toBeTruthy();
+  expect(screen.queryByText(/entry per visit/i)).toBeNull();
+});
