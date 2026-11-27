@@ -1,6 +1,6 @@
 import { BlurTargetView, BlurView } from "expo-blur";
 import { Image } from "expo-image";
-import { useRef, type ComponentRef, type RefObject } from "react";
+import { useRef, type ComponentRef, type ReactNode, type RefObject } from "react";
 import { View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { DesignStatusBadge } from "@/features/designs/react";
@@ -21,29 +21,25 @@ type BlurTarget = RefObject<ComponentRef<typeof View> | null>;
 /** Where the panel sits: pinned across the page's bottom edge. */
 const PANEL_POSITION = { position: "absolute", bottom: 0, left: 0, right: 0 } as const;
 
-/**
- * The panel over the photography: the Design's name in the serif title face,
- * then its Status pill beside the one taxonomy line in the mono face. This is
- * the design system's one blur, and it frosts only the image beneath it. Over
- * a plate there is nothing to frost: the plate already names the Design, so
- * the panel becomes a plain paper caption with a Thread Line above it,
- * carrying only the record — Status and taxonomy — and never running over the
- * plate's frame. Its bottom padding clears the home indicator, its record row
- * stops short of the FAB's corner, and it lets touches through so a swipe can
- * start anywhere on the page.
- */
-function SingleViewPanel({
-  design,
-  blurTarget,
-  overPhotography,
-}: {
-  design: LibraryDesign;
+/** What a page's panel needs to know about the page beneath it. */
+export type SingleViewPageFrame = {
   blurTarget: BlurTarget;
   /** True only when a Cover lies beneath the panel; a plate is paper. */
   overPhotography: boolean;
-}) {
+};
+
+/**
+ * The panel's plate: the page's bottom gutter and its one blur. Over a plate
+ * there is nothing to frost, so the panel is a plain paper caption with a
+ * Thread Line above it; over photography it frosts only the image beneath it.
+ * It lets touches through, so a swipe can start anywhere on the page.
+ */
+export function SingleViewPanelSurface({
+  blurTarget,
+  overPhotography,
+  children,
+}: SingleViewPageFrame & { children: ReactNode }) {
   const insets = useSafeAreaInsets();
-  const taxonomy = taxonomyLine(design);
   const details = (
     <View
       className={cn(
@@ -52,17 +48,7 @@ function SingleViewPanel({
       )}
       style={{ paddingBottom: insets.bottom + 20 }}
     >
-      {overPhotography ? (
-        <Text variant="h3" numberOfLines={2}>
-          {design.name}
-        </Text>
-      ) : null}
-      <View className="flex-row flex-wrap items-center gap-2 pr-16">
-        <DesignStatusBadge status={design.status} />
-        {taxonomy ? (
-          <Text className="text-muted-foreground font-mono text-sm leading-5">{taxonomy}</Text>
-        ) : null}
-      </View>
+      {children}
     </View>
   );
 
@@ -90,21 +76,52 @@ function SingleViewPanel({
 }
 
 /**
- * One Design as a single-view page: its Cover fills the frame edge to edge,
- * and the blurred panel states what the Owner is looking at. A Design with no
- * Cover keeps the same page with the named plate: the plate is inset so its
- * dashed frame stays whole at every edge, and it ends above the paper caption
- * rather than under it, so nothing clips the empty state.
+ * The Library's details panel: the Design's name in the serif title face over
+ * a Cover, then its Status pill beside the one taxonomy line in the mono face.
+ * The panel's bottom padding clears the home indicator, and its record row
+ * stops short of the FAB's corner over photography.
  */
-export function SingleViewPage({
+function SingleViewPanel({
+  design,
+  blurTarget,
+  overPhotography,
+}: { design: LibraryDesign } & SingleViewPageFrame) {
+  const taxonomy = taxonomyLine(design);
+
+  return (
+    <SingleViewPanelSurface blurTarget={blurTarget} overPhotography={overPhotography}>
+      {overPhotography ? (
+        <Text variant="h3" numberOfLines={2}>
+          {design.name}
+        </Text>
+      ) : null}
+      <View className="flex-row flex-wrap items-center gap-2 pr-16">
+        <DesignStatusBadge status={design.status} />
+        {taxonomy ? (
+          <Text className="text-muted-foreground font-mono text-sm leading-5">{taxonomy}</Text>
+        ) : null}
+      </View>
+    </SingleViewPanelSurface>
+  );
+}
+
+/**
+ * The single view page's shell: the Design's Cover filling the frame edge to
+ * edge, or the named plate when it has none, with a panel pinned beneath.
+ * A coverless page keeps the plate inset so its dashed frame stays whole and
+ * ends above the paper caption rather than under it.
+ */
+export function SingleViewPageShell({
   design,
   width,
   press,
+  panel,
 }: {
   design: LibraryDesign;
   /** The page's exact width in dp, so a paged list lines its pages up. */
   width: number;
   press: PressHighlightHandlers;
+  panel: (frame: SingleViewPageFrame) => ReactNode;
 }) {
   const uri = useImageUri(design.cover);
   const blurTarget = useRef<ComponentRef<typeof View> | null>(null);
@@ -116,7 +133,7 @@ export function SingleViewPage({
           <EmptyCover name={design.name} size="page" className="flex-1" />
         </PressHighlight>
 
-        <SingleViewPanel design={design} blurTarget={blurTarget} overPhotography={false} />
+        {panel({ blurTarget, overPhotography: false })}
       </View>
     );
   }
@@ -139,7 +156,32 @@ export function SingleViewPage({
         </PressHighlight>
       </BlurTargetView>
 
-      <SingleViewPanel design={design} blurTarget={blurTarget} overPhotography />
+      {panel({ blurTarget, overPhotography: true })}
     </View>
+  );
+}
+
+/**
+ * One Design as a single-view page: its Cover fills the frame, and the
+ * blurred panel states what the Owner is looking at. A Design with no Cover
+ * keeps the same page with the named plate.
+ */
+export function SingleViewPage({
+  design,
+  width,
+  press,
+}: {
+  design: LibraryDesign;
+  /** The page's exact width in dp, so a paged list lines its pages up. */
+  width: number;
+  press: PressHighlightHandlers;
+}) {
+  return (
+    <SingleViewPageShell
+      design={design}
+      width={width}
+      press={press}
+      panel={(frame) => <SingleViewPanel design={design} {...frame} />}
+    />
   );
 }

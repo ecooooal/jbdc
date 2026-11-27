@@ -98,15 +98,22 @@ The images module's one function for every image write — attach, reclassify, r
 **the missing-adapters guard**:
 The two images perform bodies' answer when an adapter is missing. The gallery's perform body, with no image store or picker available, cannot attempt an attach and says nothing on the stage row; the image detail's performer hands its possibly-null store to the write path, so a removal without one answers `store-failed`.
 
+## The Library's views
+
+The domain glossary owns Library and Rejected designs; these are the code's names for how the screen switches between and arranges them.
+
+**the view control**:
+The Library header's one control: an outlined button named for the view the screen is showing — *Library* or *Rejected designs* — that opens the menu holding both of the Library's arrangement choices. *Group by* is the radio inside it: *Design*, the flat, most recently updated first stream, or *Collection*, designs gathered under their Collection. *View* is the `Rejected designs` checkbox: checking it switches the same screen to the rejected, non-deleted Designs, newest first, each with its Cover, taxonomy, and latest Decision's reason and date; unchecking it, or the empty view's "View the library", returns to the active Library. Grouping persists behind its settings key; the view never does, so a launch opens the active Library.
+
 ## The Library's preferences
 
 Device-local choices the settings store keeps. The domain glossary owns Library and Collection; these are the code's names for how the Library arranges itself.
 
 **grouping**:
-The Library's ordering choice, labelled "Group by" in the header: *Design*, the flat, most recently updated first stream, or *Collection*, designs gathered under their Collection — the freshest Collection first, "No collection" last. Stored behind its own settings key, validated on read.
+The Library's ordering choice, labelled "Group by" in the view control: *Design*, the flat, most recently updated first stream, or *Collection*, designs gathered under their Collection — the freshest Collection first, "No collection" last. Stored behind its own settings key, validated on read. Both views keep it.
 
 **single view**:
-The Library at density 1: one Design per page, its Cover filling the frame beneath a details panel, paged horizontally in the grouping's order and bounded at the first and last Design. A Design with no Cover keeps the page's shape with the dashed placeholder, and the panel blurs only photography.
+The Library at density 1: one Design per page, its Cover filling the frame beneath a details panel, paged horizontally in the grouping's order and bounded at the first and last Design. A Design with no Cover keeps the page's shape with the dashed placeholder, and the panel blurs only photography. The same pager serves the rejected view, where the panel carries the latest Decision's date and full reason and no Status pill.
 
 **theme**:
 The Owner's app-wide appearance choice: *light*, *dark*, or *follow-system*, the default until she chooses. Stored behind its own settings key and validated on read, so nothing stored means the system's appearance. The root applies it through the styling engine and the navigation theme, so every surface and the navigation chrome follow it.
@@ -115,4 +122,4 @@ _Note_: the palettes live in `src/global.css`; `src/shared/lib/theme.ts` derives
 ## The Library's FAB
 
 **the FAB**:
-The Library's floating action button in the bottom corner, a speed-dial: collapsed it holds its actions shut; expanded it stacks add design, the theme toggle, and the disabled settings action above the corner within the quiet motion budget, clearing the single view's details panel. It owns add now that the header carries no create button. Any exit shuts it — a tap outside, choosing an action, leaving the route, backgrounding the app, or Android's Back — so a return never finds it open.
+The Library's floating action button in the bottom corner, a speed-dial: collapsed it holds its actions shut; expanded it stacks add design, the theme toggle, and the disabled settings action above the corner within the quiet motion budget, clearing the single view's details panel. It owns add now that the header carries no create button, and add is hidden while the rejected view is on while the theme and settings actions stay. Any exit shuts it — a tap outside, choosing an action, leaving the route, backgrounding the app, or Android's Back — so a return never finds it open.

@@ -1,6 +1,6 @@
 import { router } from "expo-router";
 import { Plus, Search, SlidersHorizontal } from "lucide-react-native";
-import { useCallback } from "react";
+import { useCallback, type ReactNode } from "react";
 import { ScrollView, useWindowDimensions, View } from "react-native";
 import Animated from "react-native-reanimated";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
@@ -16,7 +16,11 @@ import {
   LIBRARY_SIDE_PADDING,
   libraryGrid,
 } from "../lib/grid";
-import { groupLibraryDesigns, orderedLibraryDesigns } from "../lib/grouping";
+import {
+  groupLibraryDesigns,
+  orderedLibraryDesigns,
+  type LibraryArrangement,
+} from "../lib/grouping";
 import {
   createInitialLibraryScreenState,
   libraryScreenReducer,
@@ -31,7 +35,10 @@ import { DensityControl } from "./density-control";
 import { LibraryCard } from "./library-card";
 import { FAB_SCROLL_CLEARANCE, LibraryFab } from "./library-fab";
 import type { PressHighlightHandlers } from "./press-highlight";
+import { RejectedCard } from "./rejected-card";
+import { RejectedSingleViewPage } from "./rejected-single-view-page";
 import { SingleView } from "./single-view";
+import { SingleViewPage } from "./single-view-page";
 import { ViewControl } from "./view-control";
 
 /** The heading of the trailing group for designs in no Collection. */
@@ -52,16 +59,16 @@ function chunk<T>(items: readonly T[], size: number): T[][] {
 }
 
 /** One section's grid: its designs chunked into two-per-row tiles. */
-function SectionGrid({
+function SectionGrid<T extends LibraryDesign>({
   designs,
   columns,
   cardWidth,
-  pressFor,
+  renderCard,
 }: {
-  designs: readonly LibraryDesign[];
+  designs: readonly T[];
   columns: number;
   cardWidth: number;
-  pressFor: (designId: string) => PressHighlightHandlers;
+  renderCard: (design: T) => ReactNode;
 }) {
   return (
     <View style={{ gap: LIBRARY_GRID_GAP }}>
@@ -74,11 +81,102 @@ function SectionGrid({
         >
           {row.map((design) => (
             <View key={design.id} style={{ width: cardWidth }}>
-              <LibraryCard design={design} press={pressFor(design.id)} />
+              {renderCard(design)}
             </View>
           ))}
         </View>
       ))}
+    </View>
+  );
+}
+
+/** The density-2 body: the flat stream, or one grid under each Collection header. */
+function DesignGrid<T extends LibraryDesign>({
+  arrangement,
+  columns,
+  cardWidth,
+  renderCard,
+}: {
+  arrangement: LibraryArrangement<T>;
+  columns: number;
+  cardWidth: number;
+  renderCard: (design: T) => ReactNode;
+}) {
+  if (arrangement.kind === "grouped") {
+    return (
+      <View className="gap-6">
+        {arrangement.sections.map((section) => (
+          <View
+            key={section.collection ?? NO_COLLECTION_KEY}
+            testID={`library-section-${section.collection ?? NO_COLLECTION_KEY}`}
+            className="gap-3"
+          >
+            <View className="flex-row items-center gap-3">
+              <Text role="heading" className="text-muted-foreground text-xs font-medium">
+                {section.collection ?? NO_COLLECTION_LABEL}
+              </Text>
+              <View className="bg-border h-px flex-1" />
+            </View>
+            <SectionGrid
+              designs={section.designs}
+              columns={columns}
+              cardWidth={cardWidth}
+              renderCard={renderCard}
+            />
+          </View>
+        ))}
+      </View>
+    );
+  }
+
+  return (
+    <View className="gap-6">
+      <SectionGrid
+        designs={arrangement.designs}
+        columns={columns}
+        cardWidth={cardWidth}
+        renderCard={renderCard}
+      />
+    </View>
+  );
+}
+
+/** The active Library's empty state: the way to add the first Design. */
+function LibraryEmptyState() {
+  return (
+    <View
+      className="flex-1 items-center justify-center gap-5 pb-16"
+      style={{ paddingHorizontal: LIBRARY_SIDE_PADDING }}
+    >
+      <View className="items-center gap-2">
+        <Text variant="h4">The library is empty</Text>
+        <Text variant="muted" className="text-center">
+          Designs you add will appear here.
+        </Text>
+      </View>
+      <Button onPress={() => router.push("/designs/new")}>
+        <Icon as={Plus} />
+        <Text>Create a design</Text>
+      </Button>
+    </View>
+  );
+}
+
+/**
+ * The rejected view's empty state: it names what is absent and offers the one
+ * way back to the Library. Add does not appear here — nothing has been
+ * rejected, and a new Design is the active Library's work.
+ */
+function RejectedEmptyState({ onViewLibrary }: { onViewLibrary: () => void }) {
+  return (
+    <View
+      className="flex-1 items-center justify-center gap-5 pb-16"
+      style={{ paddingHorizontal: LIBRARY_SIDE_PADDING }}
+    >
+      <Text variant="h4">Nothing has been rejected</Text>
+      <Button variant="outline" onPress={onViewLibrary}>
+        <Text>View the library</Text>
+      </Button>
     </View>
   );
 }
@@ -117,13 +215,15 @@ function SearchFilterActions() {
 }
 
 /**
- * The Library screen: at density 1, the single view paging one Design at a
- * time; at 2, the grid of active designs; or the empty state offering create.
- * The chosen density decides between the pager and the grid, and the card
- * width follows the viewport, so rotating the device reflows the grid instead
- * of breaking it. The chosen grouping decides whether the grid is one flat
- * stream or sections under their Collection labels, and the pager walks the
- * same ordered list.
+ * The Library screen, in the session view the header's control names. The
+ * active Library shows the designs the Owner is working on; the Rejected
+ * designs shows the rejected, non-deleted ones with the reason of their latest
+ * Decision. Each view is the single view paging one Design at a time at
+ * density 1, the grid at 2, or its own empty state; the chosen density decides
+ * between the pager and the grid, and the card width follows the viewport, so
+ * rotating the device reflows the grid instead of breaking it. The chosen
+ * grouping decides whether a grid is one flat stream or sections under their
+ * Collection labels, and the pager walks the same ordered list in either view.
  *
  * The view, the grouping, and emptiness each replace the whole body, so a
  * change arrives with the world's quiet fade rather than cutting between two
@@ -174,12 +274,11 @@ export function LibraryScreen() {
   );
 
   // The view decides which read the screen shows; both reads stay subscribed,
-  // so switching back is already up to date.
+  // so switching back is already up to date. Each view keeps the chosen
+  // grouping, and the pager walks the arrangement's order.
   const active = state.view === "rejected" ? rejected : library;
-  const arrangement =
-    state.view === "rejected"
-      ? groupLibraryDesigns(rejected.designs, grouping)
-      : groupLibraryDesigns(library.designs, grouping);
+  const libraryArrangement = groupLibraryDesigns(library.designs, grouping);
+  const rejectedArrangement = groupLibraryDesigns(rejected.designs, grouping);
   const isEmpty = active.status === "ready" && active.designs.length === 0;
 
   const pressFor = (designId: string): PressHighlightHandlers => ({
@@ -230,27 +329,39 @@ export function LibraryScreen() {
             className="flex-1"
           >
             {isEmpty ? (
-              <View
-                className="flex-1 items-center justify-center gap-5 pb-16"
-                style={{ paddingHorizontal: LIBRARY_SIDE_PADDING }}
-              >
-                <View className="items-center gap-2">
-                  <Text variant="h4">The library is empty</Text>
-                  <Text variant="muted" className="text-center">
-                    Designs you add will appear here.
-                  </Text>
-                </View>
-                <Button onPress={() => router.push("/designs/new")}>
-                  <Icon as={Plus} />
-                  <Text>Create a design</Text>
-                </Button>
-              </View>
+              state.view === "rejected" ? (
+                <RejectedEmptyState
+                  onViewLibrary={() => dispatch({ type: "library-view-tapped" })}
+                />
+              ) : (
+                <LibraryEmptyState />
+              )
             ) : density === 1 ? (
-              <SingleView
-                designs={orderedLibraryDesigns(arrangement)}
-                width={screenWidth}
-                pressFor={pressFor}
-              />
+              state.view === "rejected" ? (
+                <SingleView
+                  designs={orderedLibraryDesigns(rejectedArrangement)}
+                  width={screenWidth}
+                  renderPage={(design) => (
+                    <RejectedSingleViewPage
+                      design={design}
+                      width={screenWidth}
+                      press={pressFor(design.id)}
+                    />
+                  )}
+                />
+              ) : (
+                <SingleView
+                  designs={orderedLibraryDesigns(libraryArrangement)}
+                  width={screenWidth}
+                  renderPage={(design) => (
+                    <SingleViewPage
+                      design={design}
+                      width={screenWidth}
+                      press={pressFor(design.id)}
+                    />
+                  )}
+                />
+              )
             ) : (
               <View className="flex-1" style={{ paddingHorizontal: LIBRARY_SIDE_PADDING }}>
                 <ScrollView
@@ -258,41 +369,24 @@ export function LibraryScreen() {
                   showsVerticalScrollIndicator={false}
                   contentContainerStyle={{ paddingBottom: insets.bottom + FAB_SCROLL_CLEARANCE }}
                 >
-                  {arrangement.kind === "grouped" ? (
-                    <View className="gap-6">
-                      {arrangement.sections.map((section) => (
-                        <View
-                          key={section.collection ?? NO_COLLECTION_KEY}
-                          testID={`library-section-${section.collection ?? NO_COLLECTION_KEY}`}
-                          className="gap-3"
-                        >
-                          <View className="flex-row items-center gap-3">
-                            <Text
-                              role="heading"
-                              className="text-muted-foreground text-xs font-medium"
-                            >
-                              {section.collection ?? NO_COLLECTION_LABEL}
-                            </Text>
-                            <View className="bg-border h-px flex-1" />
-                          </View>
-                          <SectionGrid
-                            designs={section.designs}
-                            columns={columns}
-                            cardWidth={cardWidth}
-                            pressFor={pressFor}
-                          />
-                        </View>
-                      ))}
-                    </View>
+                  {state.view === "rejected" ? (
+                    <DesignGrid
+                      arrangement={rejectedArrangement}
+                      columns={columns}
+                      cardWidth={cardWidth}
+                      renderCard={(design) => (
+                        <RejectedCard design={design} press={pressFor(design.id)} />
+                      )}
+                    />
                   ) : (
-                    <View className="gap-6">
-                      <SectionGrid
-                        designs={arrangement.designs}
-                        columns={columns}
-                        cardWidth={cardWidth}
-                        pressFor={pressFor}
-                      />
-                    </View>
+                    <DesignGrid
+                      arrangement={libraryArrangement}
+                      columns={columns}
+                      cardWidth={cardWidth}
+                      renderCard={(design) => (
+                        <LibraryCard design={design} press={pressFor(design.id)} />
+                      )}
+                    />
                   )}
                 </ScrollView>
               </View>
@@ -301,7 +395,12 @@ export function LibraryScreen() {
         )}
       </View>
 
-      <LibraryFab bottom={fabBottom} open={state.actionsOpen} send={dispatch} />
+      <LibraryFab
+        bottom={fabBottom}
+        open={state.actionsOpen}
+        showAdd={state.view !== "rejected"}
+        send={dispatch}
+      />
     </SafeAreaView>
   );
 }

@@ -1,18 +1,18 @@
-import { act, fireEvent, render, screen, userEvent, within } from "@testing-library/react-native";
+import { act, fireEvent, screen, userEvent, within } from "@testing-library/react-native";
 import { router, useFocusEffect } from "expo-router";
 import type { ReactNode } from "react";
 import { AppState, BackHandler } from "react-native";
-import { SafeAreaProvider } from "react-native-safe-area-context";
 import { Uniwind } from "uniwind";
-import { DatabaseProvider } from "@/features/database/react";
-import { createSyncSubscribe, createTempDatabase } from "@/features/database/testing";
-import { changeStatus, createDesign } from "@/features/designs";
+import { createTempDatabase } from "@/features/database/testing";
 import { listLibraryDesigns } from "@/features/library";
-import { LibraryScreen } from "@/features/library/react";
 import type { Grouping } from "@/features/settings";
-import { ThemeChoiceProvider } from "@/features/settings/react";
-import { createCollection } from "@/features/taxonomy";
 import { PRESS_HIGHLIGHT_HOLD_MS } from "../lib/library-screen-reducer";
+import {
+  rejectDesign,
+  renderLibraryScreen,
+  seedCollections,
+  seedStream,
+} from "./library-screen-fixtures";
 
 jest.mock("expo-router", () => ({ router: { push: jest.fn() }, useFocusEffect: jest.fn() }));
 
@@ -32,13 +32,6 @@ jest.mock("@/shared/components/ui/dropdown-menu", () => {
   };
 });
 
-const INITIAL_METRICS = {
-  frame: { x: 0, y: 0, width: 390, height: 844 },
-  insets: { top: 47, left: 0, right: 0, bottom: 34 },
-};
-
-const live = createSyncSubscribe();
-
 let database: ReturnType<typeof createTempDatabase>["database"];
 let dispose: () => void;
 
@@ -55,15 +48,7 @@ afterEach(() => {
 });
 
 async function renderLibrary() {
-  return render(
-    <SafeAreaProvider initialMetrics={INITIAL_METRICS}>
-      <DatabaseProvider database={database} subscribe={live.subscribe}>
-        <ThemeChoiceProvider>
-          <LibraryScreen />
-        </ThemeChoiceProvider>
-      </DatabaseProvider>
-    </SafeAreaProvider>,
-  );
+  return renderLibraryScreen(database);
 }
 
 test("the empty view names the Library, not the Catalog", async () => {
@@ -74,7 +59,7 @@ test("the empty view names the Library, not the Catalog", async () => {
 });
 
 test("the menu's Group by remembers the choice", async () => {
-  seedCollections();
+  seedCollections(database);
   const first = await renderLibrary();
 
   expect(screen.getByRole("radio", { name: "Design" })).toBeChecked();
@@ -96,8 +81,8 @@ test("the menu's Group by remembers the choice", async () => {
 });
 
 test("the view control shows the active Library and switches to the rejected cards", async () => {
-  seedStream();
-  rejectDesign("Rejected coat", "The fabric cost too much", 4000);
+  seedStream(database);
+  rejectDesign(database, "Rejected coat", "The fabric cost too much", 4000);
 
   await renderLibrary();
 
@@ -111,8 +96,8 @@ test("the view control shows the active Library and switches to the rejected car
 });
 
 test("unchecking Rejected designs returns the control and the screen to the Library", async () => {
-  seedStream();
-  rejectDesign("Rejected coat", "The fabric cost too much", 4000);
+  seedStream(database);
+  rejectDesign(database, "Rejected coat", "The fabric cost too much", 4000);
 
   await renderLibrary();
   await toggleRejectedDesigns();
@@ -135,7 +120,7 @@ test("the search and filter placeholders render disabled and say they are coming
 });
 
 test("the header carries no create button; the FAB owns add", async () => {
-  seedStream();
+  seedStream(database);
 
   await renderLibrary();
 
@@ -143,7 +128,7 @@ test("the header carries no create button; the FAB owns add", async () => {
 });
 
 test("the FAB expands into add, theme, and settings actions", async () => {
-  seedStream();
+  seedStream(database);
   const user = userEvent.setup();
 
   await renderLibrary();
@@ -195,7 +180,7 @@ test("the FAB's theme action persists the chosen mode and applies it", async () 
 
 test("an outside tap closes the FAB instead of reaching the card below", async () => {
   const user = userEvent.setup();
-  seedStream();
+  seedStream(database);
 
   await renderLibrary();
   await user.press(screen.getByRole("button", { name: "More actions" }));
@@ -215,7 +200,7 @@ test("leaving the Library closes the FAB", async () => {
   });
 
   const user = userEvent.setup();
-  seedStream();
+  seedStream(database);
 
   await renderLibrary();
   await user.press(screen.getByRole("button", { name: "More actions" }));
@@ -232,7 +217,7 @@ test("backgrounding the app closes the FAB", async () => {
   // listener, so the test reads the handler it recorded instead of replacing it.
   const addEventListener = AppState.addEventListener as unknown as jest.Mock;
   const user = userEvent.setup();
-  seedStream();
+  seedStream(database);
 
   await renderLibrary();
   await user.press(screen.getByRole("button", { name: "More actions" }));
@@ -260,7 +245,7 @@ test("the system Back closes the open FAB and stays on the Library", async () =>
   }) as never);
 
   const user = userEvent.setup();
-  seedStream();
+  seedStream(database);
 
   await renderLibrary();
   await user.press(screen.getByRole("button", { name: "More actions" }));
@@ -278,7 +263,7 @@ test("the system Back closes the open FAB and stays on the Library", async () =>
 
 test("the content behind the open actions is hidden from assistive tech", async () => {
   const user = userEvent.setup();
-  seedStream();
+  seedStream(database);
 
   await renderLibrary();
 
@@ -292,13 +277,6 @@ test("the content behind the open actions is hidden from assistive tech", async 
   expect(content).toHaveProp("importantForAccessibility", "no-hide-descendants");
   expect(content).toHaveProp("accessibilityElementsHidden", true);
 });
-
-/** Three designs with no Collection, freshest first as the default read orders them. */
-function seedStream() {
-  createDesign(database, { name: "Freshest dress" }, 3000);
-  createDesign(database, { name: "Middle skirt" }, 2000);
-  createDesign(database, { name: "Oldest coat" }, 1000);
-}
 
 /** The width of one single-view page in the pager's settle events. */
 const PAGE_WIDTH = 390;
@@ -333,7 +311,7 @@ function expectPageNames(names: readonly string[]) {
 }
 
 test("density 1 pages the first Design full-screen instead of listing it", async () => {
-  seedStream();
+  seedStream(database);
   const user = userEvent.setup();
 
   await renderLibrary();
@@ -348,7 +326,7 @@ test("density 1 pages the first Design full-screen instead of listing it", async
 });
 
 test("a swipe settles on its page and both edges stop the pager", async () => {
-  seedStream();
+  seedStream(database);
   const user = userEvent.setup();
 
   await renderLibrary();
@@ -372,7 +350,7 @@ test("a swipe settles on its page and both edges stop the pager", async () => {
 });
 
 test("the pager walks the grouping selector's order, not the read's", async () => {
-  seedCollections();
+  seedCollections(database);
   const user = userEvent.setup();
 
   await renderLibrary();
@@ -388,19 +366,6 @@ test("the pager walks the grouping selector's order, not the read's", async () =
     "No season dress",
   ]);
 });
-
-/** Two Collections, four designs in Spring, one in none; Spring is freshest, then Autumn. */
-function seedCollections() {
-  const spring = createCollection(database, { name: "Spring" }, 1);
-  const autumn = createCollection(database, { name: "Autumn" }, 2);
-
-  createDesign(database, { name: "Autumn coat", collectionId: autumn.id }, 1000);
-  createDesign(database, { name: "Spring scarf", collectionId: spring.id }, 500);
-  createDesign(database, { name: "Spring skirt", collectionId: spring.id }, 2000);
-  createDesign(database, { name: "No season dress" }, 3000);
-  createDesign(database, { name: "Spring blouse", collectionId: spring.id }, 4000);
-  createDesign(database, { name: "Spring dress", collectionId: spring.id }, 1500);
-}
 
 /** The labels the picker shows, so the seam hands over what a pick would. */
 const GROUPING_LABELS: Record<Grouping, string> = {
@@ -422,20 +387,8 @@ async function toggleRejectedDesigns() {
   await fireEvent.press(screen.getByRole("checkbox", { name: "Rejected designs" }));
 }
 
-/** Rejects a design through the Status write, with its reason and timestamp. */
-function rejectDesign(name: string, reason: string | null, now: number) {
-  const design = createDesign(database, { name }, now - 1);
-
-  changeStatus(
-    database,
-    design.id,
-    { status: "rejected", reason, potentialImprovements: null },
-    now,
-  );
-}
-
 test("The Collection grouping regroups the density-2 grid under Collection headers", async () => {
-  seedCollections();
+  seedCollections(database);
 
   await renderLibrary();
 
@@ -463,7 +416,7 @@ test("The Collection grouping regroups the density-2 grid under Collection heade
 });
 
 test("The Collection grouping reads each Collection heading before its Designs", async () => {
-  seedCollections();
+  seedCollections(database);
 
   await renderLibrary();
   await chooseGrouping("per-collection");
@@ -487,7 +440,7 @@ test("The Collection grouping reads each Collection heading before its Designs",
 });
 
 test("the density control offers the single view and two designs per row", async () => {
-  seedStream();
+  seedStream(database);
 
   await renderLibrary();
 
@@ -500,7 +453,7 @@ test("the density control offers the single view and two designs per row", async
 });
 
 test("the FAB keeps one corner when the density changes", async () => {
-  seedStream();
+  seedStream(database);
   const user = userEvent.setup();
 
   await renderLibrary();
@@ -516,7 +469,7 @@ test("the FAB keeps one corner when the density changes", async () => {
 const DENSITY_LABELS = ["Two designs per row", "Single view"] as const;
 
 test("a tap on a card at every density opens its Detail", async () => {
-  seedStream();
+  seedStream(database);
   const user = userEvent.setup();
   const freshest = listLibraryDesigns(database).find((design) => design.name === "Freshest dress");
 

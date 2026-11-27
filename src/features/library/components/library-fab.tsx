@@ -71,15 +71,19 @@ export const FAB_SCROLL_CLEARANCE = 56 + 12;
  *
  * The Library owns whether the actions are open; this component only sends
  * what happened. Any exit shuts them: a tap outside, choosing an action,
- * leaving the route, backgrounding the app, or Android's Back.
+ * leaving the route, backgrounding the app, or Android's Back. Add belongs to
+ * the active Library alone, so the rejected view hides that row and keeps the
+ * theme and settings actions it shares.
  */
 export function LibraryFab({
   bottom,
   open,
+  showAdd,
   send,
 }: {
   bottom: number;
   open: boolean;
+  showAdd: boolean;
   send: (event: LibraryScreenEvent) => void;
 }) {
   const { scheme } = useAppTheme();
@@ -154,12 +158,14 @@ export function LibraryFab({
                   send({ type: "fab-action-taken", action: "theme", scheme: nextScheme })
                 }
               />
-              <FabAction
-                label="Add design"
-                accessibilityLabel="Add design"
-                icon={Plus}
-                onPress={() => send({ type: "fab-action-taken", action: "add" })}
-              />
+              {showAdd ? (
+                <FabAction
+                  label="Add design"
+                  accessibilityLabel="Add design"
+                  icon={Plus}
+                  onPress={() => send({ type: "fab-action-taken", action: "add" })}
+                />
+              ) : null}
             </View>
           </NativeOnlyAnimatedView>
         ) : null}
