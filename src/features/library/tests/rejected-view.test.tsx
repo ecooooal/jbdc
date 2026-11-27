@@ -4,7 +4,7 @@ import { createTempDatabase } from "@/features/database/testing";
 import { createCollection } from "@/features/taxonomy";
 import { rejectDesign, renderLibraryScreen, seedStream } from "./library-screen-fixtures";
 
-jest.mock("expo-router", () => ({ router: { push: jest.fn() }, useFocusEffect: jest.fn() }));
+jest.mock("expo-router", () => ({ router: { push: jest.fn() } }));
 
 // The native dropdown's portal waits for a trigger measurement Jest never
 // fires. Render its rows inline, inside the real root and items, so the tests
@@ -152,25 +152,18 @@ test("the empty rejected view reads Nothing has been rejected and returns to the
   expect(screen.queryByText("Nothing has been rejected")).toBeNull();
 });
 
-test("the rejected view hides Add from the FAB and keeps theme and settings", async () => {
-  const user = userEvent.setup();
-
+test("the rejected view hides the FAB and keeps the header's settings gear", async () => {
   seedStream(database);
   rejectDesign(database, "Rejected coat", "Too costly", 4000);
 
   await renderLibraryScreen(database);
 
-  await user.press(screen.getByRole("button", { name: "More actions" }));
-
   expect(screen.getByRole("button", { name: "Add design" })).toBeTruthy();
 
-  await user.press(screen.getByRole("button", { name: "Close actions" }));
   await showRejectedDesigns();
-  await user.press(screen.getByRole("button", { name: "More actions" }));
 
   expect(screen.queryByRole("button", { name: "Add design" })).toBeNull();
-  expect(screen.getByRole("button", { name: "Switch to dark theme" })).toBeTruthy();
-  expect(screen.getByRole("button", { name: "Settings" })).toBeDisabled();
+  expect(screen.getByRole("button", { name: "Settings" })).toBeEnabled();
 });
 
 test("the single view shows the full reason, the decision date, and no Status pill", async () => {
@@ -182,7 +175,7 @@ test("the single view shows the full reason, the decision date, and no Status pi
   rejectDesign(database, "Rejected coat", reason, rejectedAt);
 
   await renderLibraryScreen(database);
-  await user.press(screen.getByLabelText("Single view"));
+  await user.press(screen.getByRole("switch", { name: "Single view" }));
   await showRejectedDesigns();
 
   expect(screen.getByTestId("single-view")).toBeTruthy();

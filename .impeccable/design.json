@@ -150,7 +150,7 @@
       "mono-sm": { "displayName": "Mono small", "purpose": "Note dates and other micro-data." }
     },
     "shadows": [
-      { "name": "whisper", "value": "0 1px 3px 0 rgba(0,0,0,0.05), 0 1px 2px -1px rgba(0,0,0,0.05)", "purpose": "Resting cards, buttons, inputs, selects, the density switch, and the FAB's paper action rows — barely there." },
+      { "name": "whisper", "value": "0 1px 3px 0 rgba(0,0,0,0.05), 0 1px 2px -1px rgba(0,0,0,0.05)", "purpose": "Resting cards, buttons, inputs, and selects — barely there." },
       { "name": "dialog", "value": "0 10px 15px -3px rgba(0,0,0,0.05), 0 4px 6px -4px rgba(0,0,0,0.05)", "purpose": "The centered dialog and alert, and the dropdown menus that open above the page — the deepest point in the system." }
     ],
     "motion": [
@@ -166,8 +166,7 @@
       { "name": "section-switch", "value": "cross-fade 200ms", "purpose": "The incoming section when a Detail or Edit section tab is chosen, inside the Quiet Turn budget; honors Reduce Motion." },
       { "name": "sheet-settle", "value": "200ms", "purpose": "The floating sheet card settling at its content detent, inside the Quiet Turn budget." },
       { "name": "detail-arrival", "value": "fade + 0.96 to 1 zoom, 200ms ease-out", "purpose": "The Library's Detail route only; every other route keeps its default transition. Honors Reduce Motion." },
-      { "name": "stage-word", "value": "200ms fade with a 6px downward settle", "purpose": "The journey counter's stage name when the pager crosses into another stage. Honors Reduce Motion." },
-      { "name": "fab-rise", "value": "fade + rise 200ms ease-out", "purpose": "The Library FAB's paper action rows opening. Honors Reduce Motion." }
+      { "name": "stage-word", "value": "200ms fade with a 6px downward settle", "purpose": "The journey counter's stage name when the pager crosses into another stage. Honors Reduce Motion." }
     ]
   },
   "components": [

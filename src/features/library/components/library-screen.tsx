@@ -31,12 +31,12 @@ import {
 import type { LibraryDesign } from "../lib/query";
 import { useLibraryDesigns } from "../lib/use-library-designs";
 import { useRejectedDesigns } from "../lib/use-rejected-designs";
-import { DensityControl } from "./density-control";
 import { LibraryCard } from "./library-card";
 import { FAB_SCROLL_CLEARANCE, LibraryFab } from "./library-fab";
 import type { PressHighlightHandlers } from "./press-highlight";
 import { RejectedCard } from "./rejected-card";
 import { RejectedSingleViewPage } from "./rejected-single-view-page";
+import { SettingsMenu } from "./settings-menu";
 import { SingleView } from "./single-view";
 import { SingleViewPage } from "./single-view-page";
 import { ViewControl } from "./view-control";
@@ -188,8 +188,8 @@ function RejectedEmptyState({ onViewLibrary }: { onViewLibrary: () => void }) {
 
 /**
  * Search and filter, drawn as one paired control until their screens exist:
- * the two actions share the density control's outlined shell, and each says
- * why it does nothing yet.
+ * the two actions share one outlined shell, and each says why it does nothing
+ * yet.
  */
 function SearchFilterActions() {
   return (
@@ -239,7 +239,7 @@ export function LibraryScreen() {
   const rejected = useRejectedDesigns();
   const { density, setDensity } = useCardDensity();
   const { grouping, setGrouping } = useGrouping();
-  const { setTheme } = useAppTheme();
+  const { scheme, setTheme } = useAppTheme();
   const { width: viewportWidth } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const screenWidth = Math.max(0, viewportWidth - insets.left - insets.right);
@@ -248,7 +248,6 @@ export function LibraryScreen() {
 
   // The press declares its own beats: the held highlight waits out its timer
   // and sends the elapsed fact back, and the open effect carries the Design.
-  // The FAB's chosen action likewise declares the route or theme it opens.
   const perform = useCallback(
     (effect: LibraryScreenEffect, dispatch: (event: LibraryScreenEvent) => void) => {
       switch (effect.type) {
@@ -261,15 +260,9 @@ export function LibraryScreen() {
         case "open-design":
           router.push({ pathname: "/designs/[id]", params: { id: effect.designId } });
           return;
-        case "open-create-screen":
-          router.push("/designs/new");
-          return;
-        case "apply-theme":
-          setTheme(effect.scheme);
-          return;
       }
     },
-    [setTheme],
+    [],
   );
 
   const [state, dispatch] = useReducerRunner(
@@ -299,28 +292,27 @@ export function LibraryScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1 }} className="bg-background" edges={["top", "left", "right"]}>
-      <View
-        testID="library-content"
-        className="flex-1"
-        accessibilityElementsHidden={state.actionsOpen}
-        importantForAccessibility={state.actionsOpen ? "no-hide-descendants" : "auto"}
-      >
+      <View testID="library-content" className="flex-1">
         <View className="pt-6" style={{ paddingHorizontal: LIBRARY_SIDE_PADDING }}>
-          {/* Two stable bands: the view that names the screen, then the controls
-              that shape how it is read. The bands do not change between the
-              Library and the rejected view, so switching views never moves the
-              body; the display row groups density with search and filter, and
-              grows with the system text size instead of dropping one of them. */}
-          <View className="z-10 items-start gap-3">
+          {/* One row: the view that names the screen, then the controls that
+              shape how it is read. The actions keep their right edge, and the
+              row wraps only when the system text size outgrows the width;
+              search and filter stay beside the settings gear. */}
+          <View className="z-10 w-full flex-row flex-wrap items-center gap-3">
             <ViewControl
               view={state.view}
               grouping={grouping}
               onViewChange={(checked) => dispatch({ type: "rejected-designs-checked", checked })}
               onGroupingChange={setGrouping}
             />
-            <View className="w-full flex-row items-center justify-end gap-3">
-              <DensityControl density={density} onChange={setDensity} />
+            <View className="ms-auto flex-row items-center gap-3">
               <SearchFilterActions />
+              <SettingsMenu
+                density={density}
+                onDensityChange={setDensity}
+                scheme={scheme}
+                onThemeChange={setTheme}
+              />
             </View>
           </View>
 
@@ -405,12 +397,9 @@ export function LibraryScreen() {
         )}
       </View>
 
-      <LibraryFab
-        bottom={fabBottom}
-        open={state.actionsOpen}
-        showAdd={state.view !== "rejected"}
-        send={dispatch}
-      />
+      {state.view !== "rejected" ? (
+        <LibraryFab bottom={fabBottom} onAdd={() => router.push("/designs/new")} />
+      ) : null}
     </SafeAreaView>
   );
 }

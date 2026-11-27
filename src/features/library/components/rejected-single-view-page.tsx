@@ -42,7 +42,7 @@ function RejectedPanel({
           {design.name}
         </Text>
       ) : null}
-      <View className="flex-row flex-wrap items-center gap-2 pr-16">
+      <View className="flex-row flex-wrap items-center gap-2">
         {decidedAt ? (
           <Text className="text-muted-foreground font-mono text-xs leading-4">{decidedAt}</Text>
         ) : null}
@@ -50,9 +50,8 @@ function RejectedPanel({
           <Text className="text-muted-foreground font-mono text-sm leading-5">{taxonomy}</Text>
         ) : null}
       </View>
-      {/* The reason is the panel's last line, so it reserves the FAB's corner
-          the same way the Library's record row does. */}
-      <Text className="pr-16">{design.reason ?? NO_REASON_RECORDED}</Text>
+      {/* No FAB sits over this view, so the reason keeps the panel's full width. */}
+      <Text>{design.reason ?? NO_REASON_RECORDED}</Text>
     </SingleViewPanelSurface>
   );
 }
