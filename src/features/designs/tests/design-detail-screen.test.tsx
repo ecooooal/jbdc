@@ -91,16 +91,17 @@ test("the header carries one kebab trigger and no text actions", async () => {
   expect(header.queryByRole("button", { name: "Edit design" })).toBeNull();
 });
 
-test("the kebab holds History and Edit as menu rows", async () => {
+test("the kebab holds History, Edit, and Change status as menu rows", async () => {
   const design = createDesign(database, { name: "Silk slip dress" });
 
   await renderDetail(design.id);
 
   const header = headerRegion();
 
-  expect(header.getAllByRole("menuitem")).toHaveLength(2);
+  expect(header.getAllByRole("menuitem")).toHaveLength(3);
   expect(header.getByRole("menuitem", { name: "History" })).toBeTruthy();
   expect(header.getByRole("menuitem", { name: "Edit" })).toBeTruthy();
+  expect(header.getByRole("menuitem", { name: "Change status" })).toBeTruthy();
 });
 
 test("choosing History in the header pushes the History route", async () => {

@@ -1,6 +1,7 @@
 import { router } from "expo-router";
 import {
   ChevronLeft,
+  CircleDot,
   EllipsisVertical,
   History as HistoryIcon,
   Pencil,
@@ -32,10 +33,12 @@ import {
 } from "../lib/sections";
 import type { DesignDetail } from "../lib/records";
 import { useDesignDetail } from "../lib/use-design-detail";
+import { useDesignDetailSurface } from "../lib/use-design-detail-surface";
 import { DesignStatusBadge } from "./design-status-badge";
 import { MaterialUsesTable } from "./material-uses-table";
 import { ReadError } from "./read-error";
 import { SectionTabs } from "./section-tabs";
+import { StatusSheet } from "./status-sheet";
 
 const SHORT_DATE_FORMAT = new Intl.DateTimeFormat(undefined, {
   year: "numeric",
@@ -120,11 +123,17 @@ function DetailRow({ label, value }: { label: string; value: string }) {
 
 /**
  * The header's one action area: a kebab that opens the shared menu with the
- * Design's History and Edit routes. Each row is an icon and its label. The
- * native menu renders in a portal, so Jest renders its rows through the
- * primitive's root instead of opening it.
+ * Design's History and Edit routes and the status sheet. Each row is an icon
+ * and its label. The native menu renders in a portal, so Jest renders its rows
+ * through the primitive's root instead of opening it.
  */
-function DetailActions({ designId }: { designId: string }) {
+function DetailActions({
+  designId,
+  onChangeStatus,
+}: {
+  designId: string;
+  onChangeStatus: () => void;
+}) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -149,6 +158,10 @@ function DetailActions({ designId }: { designId: string }) {
           <Icon as={Pencil} className="size-4" />
           <Text>Edit</Text>
         </DropdownMenuItem>
+        <DropdownMenuItem textValue="Change status" onPress={onChangeStatus}>
+          <Icon as={CircleDot} className="size-4" />
+          <Text>Change status</Text>
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );
@@ -162,7 +175,13 @@ function DetailActions({ designId }: { designId: string }) {
  * its lines instead of truncating. An absent Collection or Category is named
  * ("No collection", "No category") so the header never reads as a gap.
  */
-function DetailHeader({ design }: { design: DesignDetail | null }) {
+function DetailHeader({
+  design,
+  onChangeStatus,
+}: {
+  design: DesignDetail | null;
+  onChangeStatus: () => void;
+}) {
   return (
     <View testID="detail-header" className="flex-row items-start gap-2 px-4 pt-2">
       <Button
@@ -186,7 +205,7 @@ function DetailHeader({ design }: { design: DesignDetail | null }) {
         ) : null}
       </View>
 
-      {design ? <DetailActions designId={design.id} /> : null}
+      {design ? <DetailActions designId={design.id} onChangeStatus={onChangeStatus} /> : null}
     </View>
   );
 }
@@ -312,15 +331,25 @@ const DETAIL_ZOOM = ZoomIn.duration(DETAIL_ARRIVAL.zoom.duration).withInitialVal
  * Detail for one Design, opened from its Library card. The header stays fixed
  * above the scrolling content; the body opens on the identity block and
  * subscribes to the record, so later edits show here without reopening the
- * screen. Back returns to the Library.
+ * screen. The kebab's Change status opens the status sheet, whose decisions
+ * live in the Detail surface reducer; a write lands through the live read.
+ * Back returns to the Library.
  */
 export function DesignDetailScreen({ designId }: { designId: string }) {
   const { design, error, status } = useDesignDetail(designId);
+  const [surface, send] = useDesignDetailSurface(designId);
   // The provider measured these at launch, so the header sits below the status
   // bar on its first frame. The native SafeAreaView measures window insets
   // after its first layout, which lets the pushed screen paint at the top and
   // snap down once the insets arrive.
   const insets = useSafeAreaInsets();
+
+  /** The sheet opens on the Status the live read holds; the reducer keeps it. */
+  function openStatusSheet(): void {
+    if (!design) return;
+
+    send({ type: "status-sheet-opened", status: design.status });
+  }
 
   return (
     <View
@@ -333,7 +362,7 @@ export function DesignDetailScreen({ designId }: { designId: string }) {
       className="bg-card"
     >
       <Animated.View entering={DETAIL_ZOOM} style={{ flex: 1 }}>
-        <DetailHeader design={design} />
+        <DetailHeader design={design} onChangeStatus={openStatusSheet} />
 
         {error ? (
           <View className="px-6 pt-4">
@@ -349,6 +378,8 @@ export function DesignDetailScreen({ designId }: { designId: string }) {
             </Text>
           </View>
         )}
+
+        <StatusSheet sheet={surface.statusSheet} send={send} />
       </Animated.View>
     </View>
   );

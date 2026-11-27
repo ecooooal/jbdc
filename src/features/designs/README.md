@@ -25,8 +25,8 @@ uses recorded on it, and the screens that show and edit it. Public entries are
 | New Design | `lib/new-design-form-reducer.ts` |
 | Detail — the status sheet: its open state, the checked row, the rejection draft | `lib/design-detail-reducer.ts` |
 
-`use-edit-visit.ts` runs the Edit reducer's effects; `use-design-detail.ts`
-is Detail's live read.
+`use-edit-visit.ts` runs the Edit reducer's effects; `use-design-detail-surface.ts`
+runs Detail's status sheet; `use-design-detail.ts` is Detail's live read.
 
 ## The Material use path
 
@@ -63,3 +63,4 @@ aligned with that diff, so it imports no part of History.
 - `components/material-use-sheets.tsx` — the Add material and Edit material sheets, with the New material sheet stacked above Add.
 - `components/add-material-use-form.tsx`, `edit-material-use-form.tsx`, `new-material-form.tsx` — the three Material sheets' bodies.
 - `components/design-status-badge.tsx` — a Status badge. The hero image and its journey belong to the `images` module's gallery; Detail composes `DesignGallery` above its text.
+- `components/status-sheet.tsx` — Detail's status sheet: the offered Statuses with the current one checked. It only renders the surface's state and sends it what happened.
