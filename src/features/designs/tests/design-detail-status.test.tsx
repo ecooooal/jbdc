@@ -1,11 +1,8 @@
-import { fireEvent, render, screen, userEvent, within } from "@testing-library/react-native";
+import { fireEvent, screen, userEvent, within } from "@testing-library/react-native";
 import type { ReactNode } from "react";
-import { SafeAreaProvider } from "react-native-safe-area-context";
-import { DatabaseProvider } from "@/features/database/react";
-import { createSyncSubscribe, createTempDatabase } from "@/features/database/testing";
 import { changeStatus, createDesign, getDesign } from "@/features/designs";
-import { DesignDetailScreen } from "@/features/designs/react";
 import { listDesignEvents } from "@/features/history";
+import { database, renderDetail, setupDesignDetailFixtures } from "./design-detail-fixtures";
 
 jest.mock("expo-router", () => ({
   router: { back: jest.fn(), push: jest.fn() },
@@ -26,34 +23,7 @@ jest.mock("@/shared/components/ui/dropdown-menu", () => {
   };
 });
 
-const INITIAL_METRICS = {
-  frame: { x: 0, y: 0, width: 390, height: 844 },
-  insets: { top: 47, left: 0, right: 0, bottom: 34 },
-};
-
-const live = createSyncSubscribe();
-
-let database: ReturnType<typeof createTempDatabase>["database"];
-let dispose: () => void;
-
-beforeEach(() => {
-  ({ database, dispose } = createTempDatabase());
-  jest.clearAllMocks();
-});
-
-afterEach(() => {
-  dispose();
-});
-
-async function renderDetail(designId: string) {
-  return render(
-    <SafeAreaProvider initialMetrics={INITIAL_METRICS}>
-      <DatabaseProvider database={database} subscribe={live.subscribe}>
-        <DesignDetailScreen designId={designId} />
-      </DatabaseProvider>
-    </SafeAreaProvider>,
-  );
-}
+setupDesignDetailFixtures();
 
 /** The status sheet's body, once Change status has opened it. */
 function statusSheet() {
