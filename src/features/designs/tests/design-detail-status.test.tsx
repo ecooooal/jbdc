@@ -110,8 +110,8 @@ test("pressing Rejected expands empty Reason and Potential improvements fields",
   await userEvent.press(statusSheet().getByRole("button", { name: "Rejected" }));
 
   expect(screen.getByTestId("status-sheet")).toBeTruthy();
-  expect(statusSheet().getByLabelText("Reason")).toHaveDisplayValue("");
-  expect(statusSheet().getByLabelText("Potential improvements")).toHaveDisplayValue("");
+  expect(statusSheet().getByLabelText("Reason (optional)")).toHaveDisplayValue("");
+  expect(statusSheet().getByLabelText("Potential improvements (optional)")).toHaveDisplayValue("");
   expect(statusSheet().getByRole("button", { name: "Reject design" })).toBeTruthy();
 });
 
@@ -121,7 +121,10 @@ test("dismissing the expanded rejection writes nothing", async () => {
   await renderDetail(design.id);
   await openStatusSheet();
   await userEvent.press(statusSheet().getByRole("button", { name: "Rejected" }));
-  await fireEvent.changeText(statusSheet().getByLabelText("Reason"), "The fabric cost too much");
+  await fireEvent.changeText(
+    statusSheet().getByLabelText("Reason (optional)"),
+    "The fabric cost too much",
+  );
   await userEvent.press(statusSheet().getByRole("button", { name: "Close status" }));
 
   expect(screen.queryByTestId("status-sheet")).toBeNull();
@@ -135,9 +138,12 @@ test("Reject design writes one decision carrying the why and closes", async () =
   await renderDetail(design.id);
   await openStatusSheet();
   await userEvent.press(statusSheet().getByRole("button", { name: "Rejected" }));
-  await fireEvent.changeText(statusSheet().getByLabelText("Reason"), "The fabric cost too much");
   await fireEvent.changeText(
-    statusSheet().getByLabelText("Potential improvements"),
+    statusSheet().getByLabelText("Reason (optional)"),
+    "The fabric cost too much",
+  );
+  await fireEvent.changeText(
+    statusSheet().getByLabelText("Potential improvements (optional)"),
     "Try the wool blend",
   );
   await userEvent.press(statusSheet().getByRole("button", { name: "Reject design" }));

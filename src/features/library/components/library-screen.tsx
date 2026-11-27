@@ -173,7 +173,12 @@ function RejectedEmptyState({ onViewLibrary }: { onViewLibrary: () => void }) {
       className="flex-1 items-center justify-center gap-5 pb-16"
       style={{ paddingHorizontal: LIBRARY_SIDE_PADDING }}
     >
-      <Text variant="h4">Nothing has been rejected</Text>
+      <View className="items-center gap-2">
+        <Text variant="h4">Nothing has been rejected</Text>
+        <Text variant="muted" className="text-center">
+          Designs you reject will appear here.
+        </Text>
+      </View>
       <Button variant="outline" onPress={onViewLibrary}>
         <Text>View the library</Text>
       </Button>
@@ -301,15 +306,20 @@ export function LibraryScreen() {
         importantForAccessibility={state.actionsOpen ? "no-hide-descendants" : "auto"}
       >
         <View className="pt-6" style={{ paddingHorizontal: LIBRARY_SIDE_PADDING }}>
-          <View className="z-10 flex-row flex-wrap items-end gap-3">
+          {/* Two stable bands: the view that names the screen, then the controls
+              that shape how it is read. The bands do not change between the
+              Library and the rejected view, so switching views never moves the
+              body; the display row groups density with search and filter, and
+              grows with the system text size instead of dropping one of them. */}
+          <View className="z-10 items-start gap-3">
             <ViewControl
               view={state.view}
               grouping={grouping}
               onViewChange={(checked) => dispatch({ type: "rejected-designs-checked", checked })}
               onGroupingChange={setGrouping}
             />
-            <DensityControl density={density} onChange={setDensity} />
-            <View className="ml-auto">
+            <View className="w-full flex-row items-center justify-end gap-3">
+              <DensityControl density={density} onChange={setDensity} />
               <SearchFilterActions />
             </View>
           </View>

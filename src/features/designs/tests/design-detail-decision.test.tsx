@@ -117,8 +117,10 @@ test("Add a decision opens the decision sheet prefilled from the latest decision
   await userEvent.press(decisionBlock().getByRole("button", { name: "Add a decision" }));
 
   expect(decisionSheet().getByText("Add a decision")).toBeTruthy();
-  expect(decisionSheet().getByLabelText("Reason")).toHaveDisplayValue("The fabric cost too much");
-  expect(decisionSheet().getByLabelText("Potential improvements")).toHaveDisplayValue(
+  expect(decisionSheet().getByLabelText("Reason (optional)")).toHaveDisplayValue(
+    "The fabric cost too much",
+  );
+  expect(decisionSheet().getByLabelText("Potential improvements (optional)")).toHaveDisplayValue(
     "Try the wool blend",
   );
 });
@@ -131,8 +133,10 @@ test("a rejected Design with no decision opens an empty decision sheet", async (
   await renderDetail(design.id);
   await userEvent.press(decisionBlock().getByRole("button", { name: "Add a decision" }));
 
-  expect(decisionSheet().getByLabelText("Reason")).toHaveDisplayValue("");
-  expect(decisionSheet().getByLabelText("Potential improvements")).toHaveDisplayValue("");
+  expect(decisionSheet().getByLabelText("Reason (optional)")).toHaveDisplayValue("");
+  expect(decisionSheet().getByLabelText("Potential improvements (optional)")).toHaveDisplayValue(
+    "",
+  );
 });
 
 test("Save decision is disabled while both fields are empty and enables once either has text", async () => {
@@ -147,14 +151,17 @@ test("Save decision is disabled while both fields are empty and enables once eit
 
   expect(save()).toBeDisabled();
 
-  await fireEvent.changeText(decisionSheet().getByLabelText("Reason"), "The fringe shed");
+  await fireEvent.changeText(
+    decisionSheet().getByLabelText("Reason (optional)"),
+    "The fringe shed",
+  );
   expect(save()).toBeEnabled();
 
-  await fireEvent.changeText(decisionSheet().getByLabelText("Reason"), "");
+  await fireEvent.changeText(decisionSheet().getByLabelText("Reason (optional)"), "");
   expect(save()).toBeDisabled();
 
   await fireEvent.changeText(
-    decisionSheet().getByLabelText("Potential improvements"),
+    decisionSheet().getByLabelText("Potential improvements (optional)"),
     "Try a tighter weave",
   );
   expect(save()).toBeEnabled();
@@ -167,9 +174,12 @@ test("saving a decision appends one Event with no Status diff and the block foll
 
   await renderDetail(design.id);
   await userEvent.press(decisionBlock().getByRole("button", { name: "Add a decision" }));
-  await fireEvent.changeText(decisionSheet().getByLabelText("Reason"), "The fringe shed");
   await fireEvent.changeText(
-    decisionSheet().getByLabelText("Potential improvements"),
+    decisionSheet().getByLabelText("Reason (optional)"),
+    "The fringe shed",
+  );
+  await fireEvent.changeText(
+    decisionSheet().getByLabelText("Potential improvements (optional)"),
     "Try a tighter weave",
   );
   await userEvent.press(decisionSheet().getByRole("button", { name: "Save decision" }));
@@ -202,7 +212,10 @@ test("dismissing the decision sheet writes nothing and keeps the block", async (
 
   await renderDetail(design.id);
   await userEvent.press(decisionBlock().getByRole("button", { name: "Add a decision" }));
-  await fireEvent.changeText(decisionSheet().getByLabelText("Reason"), "The fringe shed");
+  await fireEvent.changeText(
+    decisionSheet().getByLabelText("Reason (optional)"),
+    "The fringe shed",
+  );
   await userEvent.press(decisionSheet().getByRole("button", { name: "Close decision" }));
 
   expect(screen.queryByTestId("decision-sheet")).toBeNull();

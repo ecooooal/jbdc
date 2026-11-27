@@ -42,8 +42,8 @@ export function DecisionSheet({
 
           <SheetFooter>
             <Button
-              size="sm"
               disabled={!canSaveDecision(draft)}
+              hitSlop={4}
               onPress={() => send({ type: "save-decision-pressed" })}
             >
               <Text>Save decision</Text>

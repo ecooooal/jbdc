@@ -54,7 +54,7 @@ export function StatusSheet({
               />
 
               <SheetFooter>
-                <Button size="sm" onPress={() => send({ type: "reject-pressed" })}>
+                <Button hitSlop={4} onPress={() => send({ type: "reject-pressed" })}>
                   <Text>Reject design</Text>
                 </Button>
               </SheetFooter>

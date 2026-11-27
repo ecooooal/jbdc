@@ -40,7 +40,7 @@ export function DecisionBlock({
         <Text variant="muted">Potential improvements: {latest.potentialImprovements}</Text>
       ) : null}
       {design.status === "rejected" ? (
-        <Button size="sm" variant="outline" className="self-start" onPress={onAddDecision}>
+        <Button variant="outline" className="self-start" hitSlop={4} onPress={onAddDecision}>
           <Text>Add a decision</Text>
         </Button>
       ) : null}

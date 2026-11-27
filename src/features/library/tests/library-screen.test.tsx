@@ -86,11 +86,11 @@ test("the view control shows the active Library and switches to the rejected car
 
   await renderLibrary();
 
-  expect(screen.getByRole("button", { name: "Library" })).toBeTruthy();
+  expect(screen.getByRole("button", { name: "View: Library" })).toBeTruthy();
 
   await toggleRejectedDesigns();
 
-  expect(screen.getByRole("button", { name: "Rejected designs" })).toBeTruthy();
+  expect(screen.getByRole("button", { name: "View: Rejected designs" })).toBeTruthy();
   expect(screen.queryByText("Freshest dress")).toBeNull();
   expect(screen.getByText("Rejected coat")).toBeTruthy();
 });
@@ -103,7 +103,7 @@ test("unchecking Rejected designs returns the control and the screen to the Libr
   await toggleRejectedDesigns();
   await toggleRejectedDesigns();
 
-  expect(screen.getByRole("button", { name: "Library" })).toBeTruthy();
+  expect(screen.getByRole("button", { name: "View: Library" })).toBeTruthy();
   expect(screen.getByText("Freshest dress")).toBeTruthy();
   expect(screen.queryByText("Rejected coat")).toBeNull();
 });

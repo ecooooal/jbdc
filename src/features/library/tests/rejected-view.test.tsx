@@ -121,6 +121,7 @@ test("the empty rejected view reads Nothing has been rejected and returns to the
   await showRejectedDesigns();
 
   expect(screen.getByText("Nothing has been rejected")).toBeTruthy();
+  expect(screen.getByText("Designs you reject will appear here.")).toBeTruthy();
   expect(screen.queryByText("The library is empty")).toBeNull();
   expect(screen.queryByRole("button", { name: "Create a design" })).toBeNull();
 
