@@ -11,11 +11,13 @@
  *   pnpm device ui [filter]
  *   pnpm device tap "More actions"
  *   pnpm device tap "Rejected" --wait 2000
+ *   pnpm device tap "Dark mode" --shot /tmp/opencode/dark.png
  *   pnpm device swipe up 0.4
  *   pnpm device text "Revisit the seam"
  *   pnpm device key BACK
  *   pnpm device font 2.0
  *   pnpm device shot /tmp/opencode/screen.png
+ *   pnpm device shot /tmp/opencode/menu.png --crop "[310,460][1014,807]"
  *   pnpm device state
  *   pnpm device db backup /tmp/opencode/jbdc.db
  *   pnpm device db restore /tmp/opencode/jbdc.db
@@ -33,6 +35,28 @@ let screen;
 const DATABASE = "jbdc.db";
 const DATABASE_SUFFIXES = ["", "-wal", "-shm"];
 const DEFAULT_DATABASE_BACKUP = "/tmp/opencode/jbdc.db";
+const DEFAULT_SHOT = "/tmp/opencode/screen.png";
+
+/** How long to let a tap's press feedback clear before watching for its result. */
+const PRESS_SETTLE_MS = 700;
+
+/** The beat between screenshots, long enough for a frame to render. */
+const FRAME_BEAT_MS = 120;
+
+/** How long a tap's capture waits for the change, and for the change to hold still. */
+const CHANGE_TIMEOUT_MS = 5000;
+const FRAME_STILL_TIMEOUT_MS = 2000;
+
+/** A raw `screencap` starts with width, height, pixel format, and colorspace. */
+const RAW_HEADER_BYTES = 16;
+
+/** The share of the screen the status bar and the navigation bar take. */
+const CONTENT_TOP = 0.07;
+const CONTENT_BOTTOM = 0.05;
+
+const TAP_USAGE =
+  'Usage: pnpm device tap "<label>" [--wait <ms>] [--shot <path>] [--crop <region>]';
+const SHOT_USAGE = "Usage: pnpm device shot [path] [--crop x,y,w,h | [x1,y1][x2,y2]]";
 
 /** The development build's application id, as `app.json` declares it. */
 function appPackage() {
@@ -93,6 +117,8 @@ function nodes() {
       className: attribute(tag, "class").split(".").at(-1),
       bounds: attribute(tag, "bounds"),
       clickable: attribute(tag, "clickable") === "true",
+      checked: attribute(tag, "checked") === "true",
+      selected: attribute(tag, "selected") === "true",
     }))
     .filter((node) => node.label);
 }
@@ -109,10 +135,15 @@ function list(filter) {
   const visible = nodes().filter((node) => !needle || node.label.toLowerCase().includes(needle));
 
   for (const node of visible) {
-    const flags = node.clickable ? "\ttap" : "";
+    const flags = [node.clickable && "tap", node.checked && "checked", node.selected && "selected"]
+      .filter(Boolean)
+      .map((flag) => `\t${flag}`)
+      .join("");
     console.log(`${node.label}\t${node.className}\t${node.bounds}${flags}`);
   }
-  if (visible.length === 0) console.error(`No label matches "${filter}".`);
+  if (visible.length === 0) {
+    console.error(needle ? `No label matches "${filter}".` : "No nodes on screen.");
+  }
 }
 
 function matches(label) {
@@ -128,9 +159,11 @@ function matches(label) {
 
 /**
  * Tap the one node whose label matches. With `--wait`, a sheet or a screen
- * that is still animating gets time to expose its labels before the tap.
+ * that is still animating gets time to expose its labels before the tap. With
+ * `--shot`, the screen is captured once the tap has changed it; `--crop`
+ * narrows that capture to a region.
  */
-async function tap(label, waitMs = 0) {
+async function tap(label, waitMs = 0, capture = {}) {
   const deadline = Date.now() + waitMs;
   let found = matches(label);
 
@@ -155,13 +188,142 @@ async function tap(label, waitMs = 0) {
     process.exit(1);
   }
 
+  // The app's pixels before the tap, so the capture can tell the result apart
+  // from the screen the tap started from.
+  const baseline = capture.path ? contentPixels(rawFrame()) : null;
+
   adb(["shell", "input", "tap", String(point.x), String(point.y)]);
   console.log(`tapped "${found[0].label}" at ${point.x},${point.y}`);
+
+  if (capture.path) await shot(capture.path, { baseline, crop: capture.crop });
 }
 
-function shot(path = "/tmp/opencode/screen.png") {
-  writeFileSync(path, adb(["exec-out", "screencap", "-p"]));
+/**
+ * Wait for the tap's result: the press feedback passes, the app's pixels leave
+ * the frame the tap started from, then they hold still. False when the pixels
+ * never change. The system bars are excluded, because the clock and battery
+ * animate on their own and would pass for a tap's result.
+ */
+async function waitForChange(baseline) {
+  await new Promise((resolve) => setTimeout(resolve, PRESS_SETTLE_MS));
+
+  const deadline = Date.now() + CHANGE_TIMEOUT_MS;
+
+  while (Date.now() < deadline) {
+    if (!contentPixels(rawFrame()).equals(baseline)) return waitForStill();
+    await new Promise((resolve) => setTimeout(resolve, FRAME_BEAT_MS));
+  }
+
+  return false;
+}
+
+/** Wait until two frames a beat apart match; false when the screen keeps moving. */
+async function waitForStill() {
+  const deadline = Date.now() + FRAME_STILL_TIMEOUT_MS;
+  let previous = null;
+
+  while (Date.now() < deadline) {
+    const current = contentPixels(rawFrame());
+    if (previous && current.equals(previous)) return true;
+    previous = current;
+    await new Promise((resolve) => setTimeout(resolve, FRAME_BEAT_MS));
+  }
+
+  return false;
+}
+
+/**
+ * The app's pixels from a raw `screencap`, without the status and navigation
+ * bars. The raw header is width, height, pixel format, and colorspace.
+ */
+function contentPixels(raw) {
+  const width = raw.readUInt32LE(0);
+  const height = raw.readUInt32LE(4);
+  const top = Math.round(height * CONTENT_TOP);
+  const bottom = Math.round(height * (1 - CONTENT_BOTTOM));
+  return raw.subarray(RAW_HEADER_BYTES + width * 4 * top, RAW_HEADER_BYTES + width * 4 * bottom);
+}
+
+/**
+ * The region `--crop` takes: `x,y,w,h`, or the bounds `pnpm device ui` prints.
+ */
+function parseCrop(value) {
+  const bounds = value?.match(/^\[(\d+),(\d+)\]\[(\d+),(\d+)\]$/);
+  if (bounds) {
+    const [x1, y1, x2, y2] = bounds.slice(1).map(Number);
+    return { x: x1, y: y1, width: x2 - x1, height: y2 - y1 };
+  }
+
+  const parts = value?.split(",").map(Number);
+  if (
+    !parts ||
+    parts.length !== 4 ||
+    parts.some((part) => !Number.isInteger(part) || part < 0) ||
+    parts[2] === 0 ||
+    parts[3] === 0
+  ) {
+    throw new Error(`A crop is x,y,w,h or [x1,y1][x2,y2], not "${value ?? ""}". ${SHOT_USAGE}`);
+  }
+
+  const [x, y, width, height] = parts;
+  return { x, y, width, height };
+}
+
+/** Crop a capture with ImageMagick; the region is read off `png:-`. */
+function cropImage(image, region, path) {
+  try {
+    execFileSync(
+      "magick",
+      [
+        "png:-",
+        "-crop",
+        `${region.width}x${region.height}+${region.x}+${region.y}`,
+        "+repage",
+        path,
+      ],
+      { input: image },
+    );
+  } catch (error) {
+    if (error.code === "ENOENT") {
+      throw new Error("ImageMagick is missing: run `brew install imagemagick`.");
+    }
+    if (error.status) {
+      throw new Error(`ImageMagick could not crop the capture. Check the region, ${SHOT_USAGE}`);
+    }
+    throw error;
+  }
+}
+
+async function shot(path = DEFAULT_SHOT, { baseline, crop } = {}) {
+  let image;
+
+  if (baseline) {
+    if (await waitForChange(baseline)) {
+      image = frame();
+    } else {
+      console.error(
+        "warning: the screen never settled on the tap's result; the capture may be stale or mid-transition.",
+      );
+      image = frame();
+    }
+  } else {
+    image = frame();
+  }
+
+  if (crop) cropImage(image, crop, path);
+  else writeFileSync(path, image);
+
   console.log(path);
+}
+
+/** The frame on screen now, as the PNG bytes `screencap` writes. */
+function frame() {
+  return adb(["exec-out", "screencap", "-p"]);
+}
+
+/** The same frame as raw pixels, for comparing without decoding a PNG. */
+function rawFrame() {
+  return adb(["exec-out", "screencap"]);
 }
 
 function state() {
@@ -322,17 +484,67 @@ function restoreDb(path = DEFAULT_DATABASE_BACKUP) {
   console.log(`restored ${DATABASE} from ${path}`);
 }
 
+/** Read `args` as a label plus `--wait`, `--shot`, and `--crop`. */
+function tapOptions(args) {
+  let label;
+  let wait = 0;
+  let shotPath;
+  let crop;
+
+  for (let index = 0; index < args.length; index += 1) {
+    const arg = args[index];
+    if (arg === "--wait" || arg === "--shot" || arg === "--crop") {
+      index += 1;
+      const value = args[index];
+      if (value === undefined || value.startsWith("--")) {
+        throw new Error(`${arg} needs a value. ${TAP_USAGE}`);
+      }
+      if (arg === "--wait") wait = Math.max(0, Number(value) || 0);
+      else if (arg === "--shot") shotPath = value;
+      else crop = parseCrop(value);
+      continue;
+    }
+    if (arg.startsWith("-")) throw new Error(`Unknown option "${arg}". ${TAP_USAGE}`);
+    if (label !== undefined) throw new Error(`Unexpected "${arg}". ${TAP_USAGE}`);
+    label = arg;
+  }
+
+  if (!label) throw new Error(TAP_USAGE);
+  if (crop && !shotPath) throw new Error(`--crop needs --shot. ${TAP_USAGE}`);
+  return { label, wait, shotPath, crop };
+}
+
+/** Read `args` as an optional path plus `--crop`. */
+function shotOptions(args) {
+  let path;
+  let crop;
+
+  for (let index = 0; index < args.length; index += 1) {
+    const arg = args[index];
+    if (arg === "--crop") {
+      index += 1;
+      const value = args[index];
+      if (value === undefined || value.startsWith("--")) {
+        throw new Error(`--crop needs a region. ${SHOT_USAGE}`);
+      }
+      crop = parseCrop(value);
+      continue;
+    }
+    if (arg.startsWith("-")) throw new Error(`Unknown option "${arg}". ${SHOT_USAGE}`);
+    if (path !== undefined) throw new Error(`Unexpected "${arg}". ${SHOT_USAGE}`);
+    path = arg;
+  }
+
+  return { path, crop };
+}
+
 switch (command) {
   case "ui":
     list(args[0]);
     break;
   case "tap": {
-    const waitIndex = args.indexOf("--wait");
-    if (!args[0] || args[0].startsWith("--")) {
-      throw new Error('Usage: pnpm device tap "<label>" [--wait <ms>]');
-    }
-    const wait = Number(args[waitIndex + 1] ?? 0);
-    await tap(args[0], Number.isFinite(wait) ? Math.max(0, wait) : 0);
+    const { label, wait, shotPath, crop } = tapOptions(args);
+    await tap(label, wait, { path: shotPath, crop });
     break;
   }
   case "swipe":
@@ -347,9 +559,11 @@ switch (command) {
   case "font":
     setFont(args[0]);
     break;
-  case "shot":
-    shot(args[0]);
+  case "shot": {
+    const { path, crop } = shotOptions(args);
+    await shot(path, { crop });
     break;
+  }
   case "state":
     state();
     break;
