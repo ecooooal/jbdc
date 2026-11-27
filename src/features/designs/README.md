@@ -12,8 +12,9 @@ uses recorded on it, and the screens that show and edit it. Public entries are
 | The two tab sections Edit and Detail show | `lib/sections.ts` |
 | The Specification and Creative direction field lists | `lib/specification-fields.ts`, `lib/creative-direction-fields.ts` |
 | Reading and writing a Design, and its Material uses | `lib/records.ts` |
+| A Status move, and the one Event a rejection records | `lib/status-writes.ts` |
 | Whether a write changes anything, and whether a visit records an Event | `lib/records.ts` (`isUnchanged`), `history/lib/events.ts` (`recordEdit`) |
-| Role labels, name limits, whitespace-to-null, Status labels | `lib/material-use-role.ts`, `lib/limits.ts`, `lib/optional-text.ts`, `lib/status.ts` |
+| Role labels, name limits, whitespace-to-null, the one Status label rule | `lib/material-use-role.ts`, `lib/limits.ts`, `lib/optional-text.ts`, `lib/status.ts` |
 
 ## One reducer per surface
 

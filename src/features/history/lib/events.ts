@@ -3,6 +3,7 @@ import type {
   Database,
   DatabaseHandle,
   DesignEventKind,
+  DesignStatus,
   ImageKind,
   LiveReadDeclaration,
 } from "@/features/database";
@@ -27,6 +28,12 @@ import type { HistoryLine } from "./lines";
 export type DesignFieldChange = {
   from: string | null;
   to: string | null;
+};
+
+/** One Status move, recorded under the diff's `status` key. */
+export type StatusMove = {
+  from: DesignStatus;
+  to: DesignStatus;
 };
 
 /** One Material use a visit added, removed, or corrected, as History reads it back. */
@@ -95,6 +102,8 @@ export type MaterialUseLine = HistoryLine;
  * images module's own immediate Event, never by a visit.
  */
 export type DesignEditDiff = Partial<Record<DesignEditableField, DesignFieldChange>> & {
+  /** The move a `status_change`, or a rejection's `decision`, records. */
+  status?: StatusMove;
   materials?: MaterialUsesDiff;
   images?: ImageChangeDiff;
 };

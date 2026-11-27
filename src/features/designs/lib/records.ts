@@ -568,7 +568,7 @@ export function getDesign(database: Database, id: string): Design | null {
   return designFrom(database.db, id);
 }
 
-function designFrom(db: DatabaseHandle, id: string): Design | null {
+export function designFrom(db: DatabaseHandle, id: string): Design | null {
   return (
     db
       .select(designColumns)
