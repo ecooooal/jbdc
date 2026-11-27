@@ -166,8 +166,8 @@ components:
     rounded: "{rounded.xl}"
     padding: "0"
   badge-confirmed:
-    backgroundColor: "{colors.wood}"
-    textColor: "{colors.wood-foreground}"
+    backgroundColor: "{colors.selection}"
+    textColor: "{colors.selection-foreground}"
     typography: "{typography.label-sm}"
     rounded: "{rounded.full}"
     padding: "2px 8px"
@@ -253,7 +253,7 @@ components:
 
 JBDC is one designer's private catalog of her own clothing designs, and the interface reads as her bound studio notebook: warm paper surfaces, a wood-toned accent for the things that matter, serif titles like specimen labels. The photography is the artwork; the chrome is the furniture around it. The feel is warm, unhurried, precise — a working archive, not a showcase.
 
-The system is quiet archival. Depth comes from paper tonal steps and hairline borders, never from shadow play; press feedback is a tonal shift, not a bounce; motion is a short fade that honors the system Reduce Motion setting, with one small zoom-fade into a design's Detail. Color is spent on meaning only: Sanded Wood marks confirmed work and the marks that carry selection, its deeper Deep Wood fills the labelled primary action and the chosen row, Muslin Sage marks work in progress and focus, and Rejection Red marks what did not proceed. Everything else is paper and ink.
+The system is quiet archival. Depth comes from paper tonal steps and hairline borders, never from shadow play; press feedback is a tonal shift, not a bounce; motion is a short fade that honors the system Reduce Motion setting, with one small zoom-fade into a design's Detail. Color is spent on meaning only: Sanded Wood carries the marks that say chosen — the selected thumb, the Detail section rule, the radio and checkbox — and its deeper Deep Wood fills the labelled primary action, the chosen row, and the pill of finished work; Muslin Sage marks work in progress and focus; and Rejection Red marks what did not proceed. Everything else is paper and ink.
 
 Photography has its own surfaces: the design pager's 3:4 black plate, the full-screen black image detail, and Kraft mounts where a cover is missing. The pager fits the whole image inside its stage. The paper world never floats over a photograph; the only thing allowed to blur is the single view's details panel, and it blurs only the cover beneath it. Chrome over a photograph is a translucent-black pill with white ink.
 
@@ -263,7 +263,7 @@ The palette is live in `src/global.css`; Cormorant Garamond 600, DM Sans 400/500
 
 - Paper tonal hierarchy — Warm Paper page, Unbleached Paper cards, Kraft Layer mounts — instead of shadows; the Design detail alone inverts the mat, Unbleached Paper underfoot and Warm Paper for its cards
 - Cormorant Garamond titles over DM Sans body; DM Mono for dates, ids, measurements, constants
-- Two accents with fixed meanings: Sanded Wood for confirmed work and marks, its deeper Deep Wood for selection and labelled primary actions; Muslin Sage for in-development and focus; red is rejection and destruction only
+- Two accents with fixed meanings: Sanded Wood for the marks that carry selection, its deeper Deep Wood for selected fills, the finished-work pill, and labelled primary actions; Muslin Sage for in-development and focus; red is rejection and destruction only
 - Hairline Thread Line borders everywhere; dashed frames are the signature for empty attach points and missing covers
 - Photography leads on fixed stages: a 3:4 inset journey pager that fits the whole image, 4:5 Library covers, 3:4 journey thumbs
 - Fades ≤ 200ms, honoring Reduce Motion; nothing bounces or loops
@@ -274,7 +274,7 @@ A warm, low-saturation paper palette whose only saturated voices are two accents
 
 ### Primary
 
-- **Sanded Wood** (`wood`, #B38A64 light / #D1B18A dark): the single primary accent. Marks rather than labels: the selected thumb's mark, the Detail section rule, the radio and checkbox marks, and every selection mark that is not a fill. Ink Thread text sits on it in both modes. Rare by design — well under 10% of any screen.
+- **Sanded Wood** (`wood`, #B38A64 light / #D1B18A dark): the single primary accent. Marks rather than labels: the selected thumb's mark, the Detail section rule, the radio and checkbox marks, and every selection mark that is not a fill. It never carries a label — text goes on Deep Wood. Rare by design — well under 10% of any screen.
 - **Deep Wood** (`selection`, #8A6642 both schemes): Sanded Wood one shade deeper, the fill under selected text in light and dark alike: the selected stage tab, Edit's selected section tab, the Approved and Produced status badge, the chosen row in a choice or status sheet, the Library's FAB, and every labelled primary action. It exists because a mid-tone wood cannot carry either its own ink or a light ink at 12px, which is what a button's or a badge's label is; the deeper fill takes Unbleached Paper text at 4.8:1. It is not a second accent, and it never appears as a half-tone or a gradient.
 
 ### Secondary
@@ -329,7 +329,7 @@ The code's shadcn-style slot names resolve to this palette:
 
 ### Named Rules
 
-**The Ink-and-Paper Rule.** Color is state, not decoration. Wood = confirmed, primary, and selection; Sage = in-progress, active, and focus; Red = rejection and destruction. No third accent hue ever enters the system; everything else is paper and ink.
+**The Ink-and-Paper Rule.** Color is state, not decoration. Wood = the marks that carry selection and the finished-work status, plus the primary action; Sage = in-progress, active, and focus; Red = rejection and destruction. No third accent hue ever enters the system; everything else is paper and ink.
 
 **The Overlay Exception.** Over photography, persistent chrome is a translucent-black pill (`rgba(0,0,0,0.6)`) with white text; muted text runs at 60% white, hairlines at 15%, fills at 10%, and unselected strokes at 40%. A menu or sheet the Owner deliberately opens may be paper; chrome that merely sits on the image may not. The same overlay tone is the scrim behind a sheet, and a dialog dims the page on 50% black; those scrims are the only black over paper.
 
@@ -422,7 +422,7 @@ The library is uniwind + rn-primitives with shadcn-style slot names; every color
 
 - **Character:** Calm, workmanlike, never loud.
 - **Shape:** Rounded rectangle (8px), 40px tall, 8px internal gap, icon 20px; the small size is 36px tall and the large size 44px.
-- **Primary:** Deep Wood fill with Unbleached Paper text, 16px horizontal padding. Sanded Wood stays for marks and icon fills — a 14px label on its mid-tone sits at the edge of legibility.
+- **Primary:** Deep Wood fill with Unbleached Paper text, 16px horizontal padding. Sanded Wood stays for the marks — the selected thumb, the section rule, the radio and checkbox — because a 14px label on its mid-tone sits at the edge of legibility.
 - **Press:** Instant tonal shift — primary darkens to 90%. Disabled is 50% opacity.
 - **Outline / Ghost / Icon:** Thread Line border on Warm Paper; ghost and icon variants are transparent until pressed, when they take the Kraft tint. Icon buttons are 40×40. Destructive is Rejection Red with white in light and ink in dark.
 - **Delete:** the one destructive control: a 16px trash glyph in a 40×40 ghost icon button, Faded Thread at rest. On the first press the glyph is replaced by the confirm word — "Delete" or "Remove" — in a Rejection Red destructive button, and that same button deletes on the second press. No delete fires on the first press, and no separate cue pretends to be the button.
@@ -431,7 +431,7 @@ The library is uniwind + rn-primitives with shadcn-style slot names; every color
 
 - **Character:** The system's state vocabulary, worn as a pill.
 - **Shape:** Full pill, 2px 8px padding, Label-small type. Concept and Archived wear the 1px Thread Line hairline; the filled variants carry no visible border.
-- **Variants:** Approved and Produced (Sanded Wood + ink), In Development (Muslin Sage + white in light, ink in dark), Rejected (Rejection Red + white in light, ink in dark), Concept and Archived (no fill of their own + Ink Thread + Thread Line hairline, so they read on whatever paper holds them).
+- **Variants:** Approved and Produced (Deep Wood + Unbleached Paper ink), In Development (Muslin Sage + white in light, ink in dark), Rejected (Rejection Red + white in light, ink in dark), Concept and Archived (no fill of their own + Ink Thread + Thread Line hairline, so they read on whatever paper holds them).
 
 ### Tabs & toggles
 

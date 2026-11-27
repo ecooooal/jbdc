@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-11-27T22:40:26Z",
+  "generatedAt": "2026-11-27T23:53:43Z",
   "title": "Design System: JBDC — The Atelier Ledger",
   "extensions": {
     "colorMeta": {
@@ -174,7 +174,7 @@
       "name": "Primary Button",
       "kind": "button",
       "refersTo": "button-primary",
-      "description": "The labelled primary action: Deep Wood with Unbleached Paper ink, the one fill in the system that carries light text. Sanded Wood keeps the icon fills and marks.",
+      "description": "The labelled primary action: Deep Wood with Unbleached Paper ink, the one fill in the system that carries light text. Sanded Wood keeps the marks — the selected thumb, the section rule, the radio and checkbox.",
       "html": "<button class='ds-btn-primary'>Create a design</button>",
       "css": ".ds-btn-primary { display:inline-flex; align-items:center; justify-content:center; gap:8px; height:40px; padding:0 16px; border:0; border-radius:8px; background:#8A6642; color:#F8F6F2; font:500 14px/1.4 'DM Sans',sans-serif; box-shadow:0 1px 3px 0 rgba(0,0,0,0.05), 0 1px 2px -1px rgba(0,0,0,0.05); cursor:pointer; } .ds-btn-primary:active { background:rgba(138,102,66,0.9); } .ds-btn-primary:focus-visible { outline:2px solid #687C68; outline-offset:2px; } .ds-btn-primary:disabled { opacity:0.5; }"
     },
@@ -282,17 +282,17 @@
   ],
   "narrative": {
     "northStar": "The Atelier Ledger",
-    "overview": "JBDC is one designer's private catalog of her own clothing designs, and the interface reads as her bound studio notebook: warm paper surfaces, a wood-toned accent for the things that matter, serif titles like specimen labels. The photography is the artwork; the chrome is the furniture around it. The feel is warm, unhurried, precise — a working archive, not a showcase.\n\nThe system is quiet archival. Depth comes from paper tonal steps and hairline borders, never from shadow play; press feedback is a tonal shift, not a bounce; motion is a short fade that honors the system Reduce Motion setting, with one small zoom-fade into a design's Detail. Color is spent on meaning only: Sanded Wood marks confirmed work and the marks that carry selection, its deeper Deep Wood fills the labelled primary action and the chosen row, Muslin Sage marks work in progress and focus, and Rejection Red marks what did not proceed. Everything else is paper and ink.\n\nPhotography has its own surfaces: the design pager's 3:4 black plate, the full-screen black image detail, and Kraft mounts where a cover is missing. The pager fits the whole image inside its stage. The paper world never floats over a photograph; the only thing allowed to blur is the single view's details panel, and it blurs only the cover beneath it. Chrome over a photograph is a translucent-black pill with white ink.",
+    "overview": "JBDC is one designer's private catalog of her own clothing designs, and the interface reads as her bound studio notebook: warm paper surfaces, a wood-toned accent for the things that matter, serif titles like specimen labels. The photography is the artwork; the chrome is the furniture around it. The feel is warm, unhurried, precise — a working archive, not a showcase.\n\nThe system is quiet archival. Depth comes from paper tonal steps and hairline borders, never from shadow play; press feedback is a tonal shift, not a bounce; motion is a short fade that honors the system Reduce Motion setting, with one small zoom-fade into a design's Detail. Color is spent on meaning only: Sanded Wood carries the marks that say chosen — the selected thumb, the Detail section rule, the radio and checkbox — and its deeper Deep Wood fills the labelled primary action, the chosen row, and the pill of finished work; Muslin Sage marks work in progress and focus; and Rejection Red marks what did not proceed. Everything else is paper and ink.\n\nPhotography has its own surfaces: the design pager's 3:4 black plate, the full-screen black image detail, and Kraft mounts where a cover is missing. The pager fits the whole image inside its stage. The paper world never floats over a photograph; the only thing allowed to blur is the single view's details panel, and it blurs only the cover beneath it. Chrome over a photograph is a translucent-black pill with white ink.",
     "keyCharacteristics": [
       "Paper tonal hierarchy — Warm Paper page, Unbleached Paper cards, Kraft Layer mounts — instead of shadows; the Design detail alone inverts the mat, Unbleached Paper underfoot and Warm Paper for its cards",
       "Cormorant Garamond titles over DM Sans body; DM Mono for dates, ids, measurements, constants",
-      "Two accents with fixed meanings: Sanded Wood for confirmed work and marks, its deeper Deep Wood for selection and labelled primary actions; Muslin Sage for in-development and focus; red is rejection and destruction only",
+      "Two accents with fixed meanings: Sanded Wood for the marks that carry selection, its deeper Deep Wood for selected fills, the finished-work pill, and labelled primary actions; Muslin Sage for in-development and focus; red is rejection and destruction only",
       "Hairline Thread Line borders everywhere; dashed frames are the signature for empty attach points and missing covers",
       "Photography leads on fixed stages: a 3:4 inset journey pager that fits the whole image, 4:5 Library covers, 3:4 journey thumbs",
       "Fades ≤ 200ms, honoring Reduce Motion; nothing bounces or loops"
     ],
     "rules": [
-      { "name": "The Ink-and-Paper Rule", "body": "Color is state, not decoration. Wood = confirmed, primary, and selection; Sage = in-progress, active, and focus; Red = rejection and destruction. No third accent hue ever enters the system; everything else is paper and ink.", "section": "colors" },
+      { "name": "The Ink-and-Paper Rule", "body": "Color is state, not decoration. Wood = the marks that carry selection and the finished-work status, plus the primary action; Sage = in-progress, active, and focus; Red = rejection and destruction. No third accent hue ever enters the system; everything else is paper and ink.", "section": "colors" },
       { "name": "The Overlay Exception", "body": "Over photography, persistent chrome is a translucent-black pill (rgba(0,0,0,0.6)) with white text; muted text runs at 60% white, hairlines at 15%, fills at 10%, and unselected strokes at 40%. A menu or sheet the Owner deliberately opens may be paper; chrome that merely sits on the image may not. The same overlay tone is the scrim behind a sheet, and a dialog dims the page on 50% black; those scrims are the only black over paper.", "section": "colors" },
       { "name": "The Detail Ground Rule", "body": "The Design detail is the one page that inverts the mat: Unbleached Paper underfoot, Warm Paper for its cards and stage tabs. No other screen changes ground, and the inversion is light and dark alike.", "section": "colors" },
       { "name": "The Two Voices Rule", "body": "Cormorant speaks only for titles — the names of screens, designs, and dialogs. Anything the Owner reads as information is DM Sans; anything read as data is DM Mono. Cormorant body text is forbidden.", "section": "typography" },
