@@ -199,8 +199,8 @@ components:
     rounded: "{rounded.xl}"
     padding: "4px"
   section-index-edit-active:
-    backgroundColor: "{colors.background}"
-    textColor: "{colors.foreground}"
+    backgroundColor: "{colors.selection}"
+    textColor: "{colors.selection-foreground}"
     typography: "{typography.label}"
     rounded: "{rounded.lg}"
   stage-tabs:

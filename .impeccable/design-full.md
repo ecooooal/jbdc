@@ -199,8 +199,8 @@ components:
     rounded: "{rounded.xl}"
     padding: "4px"
   section-index-edit-active:
-    backgroundColor: "{colors.background}"
-    textColor: "{colors.foreground}"
+    backgroundColor: "{colors.selection}"
+    textColor: "{colors.selection-foreground}"
     typography: "{typography.label}"
     rounded: "{rounded.lg}"
   stage-tabs:
@@ -435,7 +435,7 @@ The library is uniwind + rn-primitives with shadcn-style slot names; every color
 ### Tabs & toggles
 
 - **Library controls:** Grouping sits under its own "Group by" label as a clear two-option select. The density switch draws the two layouts — one page, or two columns — instead of numerals; the chosen segment takes the Kraft selected state, and every segment keeps a 48dp touch target while its glyph stays 20px. Search and Filter share one outlined shell at 50% opacity and carry a "Coming soon" hint for a screen reader until their screens exist.
-- **Section tabs:** Detail sets them as a two-column index across the sheet: the open label in Ink Thread over a 2px Sanded Wood selection rule, the other in Faded Thread over the shared Thread Line hairline. Each half is the tab's whole target, and a press takes the Kraft tint. Edit sets the same two sections on one Kraft trough with the open segment filled solid Deep Wood under Unbleached Paper ink; a press fades that fill in rather than tinting the segment. Both mark the switch by fading their wood rule or their fill in 150ms, and both switch one record in place.
+- **Section tabs:** Detail sets them as a two-column index across the sheet: the open label in Ink Thread over a 2px Sanded Wood selection rule, the other in Faded Thread over the shared Thread Line hairline. Each half is the tab's whole target, and a press takes the Kraft tint. Edit sets the same two sections on one Kraft trough with the open segment filled solid Deep Wood under Unbleached Paper ink; a press fades that fill in rather than tinting the segment. Both mark the switch by fading their wood rule or their fill in 150ms, and both switch one record in place. At an accessibility text scale of 1.5 or more the halves can no longer hold their labels, so both switchers stack one section per row; no label ever breaks inside a word.
 
 ### Cards
 

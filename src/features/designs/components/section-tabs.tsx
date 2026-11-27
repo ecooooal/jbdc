@@ -1,7 +1,7 @@
 import * as TabsPrimitive from "@rn-primitives/tabs";
 import type { ReactNode } from "react";
 import { useEffect } from "react";
-import { View } from "react-native";
+import { useWindowDimensions, View } from "react-native";
 import Animated, {
   ReduceMotion,
   useAnimatedStyle,
@@ -18,6 +18,18 @@ import { DESIGN_SECTIONS } from "../lib/sections";
  * section switchers take it, so a switch reads the same on either screen.
  */
 const TAB_SELECTION_DURATION_MS = 150;
+
+/**
+ * At 1.5 and above the two half-width labels outgrow their halves and Android
+ * breaks them inside a word. Both switchers then give a section the full row,
+ * so every label stays whole; the default sizes keep the side-by-side index.
+ */
+const STACKED_SECTION_TABS_FONT_SCALE = 1.5;
+
+function useStackedSectionTabs() {
+  const { fontScale } = useWindowDimensions();
+  return fontScale >= STACKED_SECTION_TABS_FONT_SCALE;
+}
 
 /** A tab's selection, 0 or 1, easing into the value the root reports. */
 function useSelection(selected: boolean) {
@@ -38,10 +50,19 @@ function useSelection(selected: boolean) {
 /**
  * One tab of Detail's section index: a full-height half of the index, its
  * label set in the body voice and its selection marked by a wood rule on the
- * shared baseline. The whole half is the target, and a press takes the Kraft
- * tint instead of moving. The root supplies the selected value.
+ * shared baseline. At accessibility text sizes the half becomes a full row.
+ * The whole tab is the target, and a press takes the Kraft tint instead of
+ * moving. The root supplies the selected value.
  */
-function SectionTab({ value, children }: { value: string; children: ReactNode }) {
+function SectionTab({
+  value,
+  children,
+  stacked,
+}: {
+  value: string;
+  children: ReactNode;
+  stacked: boolean;
+}) {
   const { value: activeValue } = TabsPrimitive.useRootContext();
   const selected = activeValue === value;
   const rule = useSelection(selected);
@@ -49,7 +70,10 @@ function SectionTab({ value, children }: { value: string; children: ReactNode })
   return (
     <TabsPrimitive.Trigger
       value={value}
-      className="relative min-h-12 flex-1 items-center justify-start rounded-lg px-3 pb-3 pt-3 active:bg-accent"
+      className={cn(
+        "relative min-h-12 items-center justify-start rounded-lg px-3 pb-3 pt-3 active:bg-accent",
+        stacked ? "w-full flex-none" : "flex-1",
+      )}
     >
       <Text
         className={cn(
@@ -72,14 +96,17 @@ function SectionTab({ value, children }: { value: string; children: ReactNode })
 /**
  * The Detail's section switcher: a two-column index laid across the sheet,
  * not Edit's filled bar. The open section is inked and medium over a wood
- * rule; the other stays faded on the shared Thread Line. The shared Tabs root
- * and content still own the state.
+ * rule; the other stays faded on the shared Thread Line. At accessibility
+ * text sizes the index stacks so no label breaks inside a word. The shared
+ * Tabs root and content still own the state.
  */
 export function SectionTabs() {
+  const stacked = useStackedSectionTabs();
+
   return (
-    <TabsPrimitive.List className="flex flex-row items-stretch">
+    <TabsPrimitive.List className={cn("flex items-stretch", stacked ? "flex-col" : "flex-row")}>
       {DESIGN_SECTIONS.map(({ tab, label }) => (
-        <SectionTab key={tab} value={tab}>
+        <SectionTab key={tab} value={tab} stacked={stacked}>
           {label}
         </SectionTab>
       ))}
@@ -91,10 +118,19 @@ export function SectionTabs() {
  * One tab of Edit's section bar: its label centred on the Deep Wood fill that
  * carries the selection, which fades up from the Kraft track as the tab opens
  * — Detail's beat, drawn as a fill instead of a rule. The chosen label takes
- * Unbleached Paper ink, the one ink the system sets on Deep Wood. The whole
- * tab is the target, and the fill takes no presses.
+ * Unbleached Paper ink, the one ink the system sets on Deep Wood. At
+ * accessibility text sizes the segment becomes a full row. The whole tab is
+ * the target, and the fill takes no presses.
  */
-function EditSectionTab({ value, children }: { value: string; children: ReactNode }) {
+function EditSectionTab({
+  value,
+  children,
+  stacked,
+}: {
+  value: string;
+  children: ReactNode;
+  stacked: boolean;
+}) {
   const { value: activeValue } = TabsPrimitive.useRootContext();
   const selected = activeValue === value;
   const fill = useSelection(selected);
@@ -102,7 +138,10 @@ function EditSectionTab({ value, children }: { value: string; children: ReactNod
   return (
     <TabsPrimitive.Trigger
       value={value}
-      className="relative min-h-10 flex-1 items-center justify-center rounded-lg px-3"
+      className={cn(
+        "relative min-h-10 items-center justify-center rounded-lg px-3",
+        stacked ? "w-full flex-none" : "flex-1",
+      )}
     >
       <Animated.View
         pointerEvents="none"
@@ -124,13 +163,21 @@ function EditSectionTab({ value, children }: { value: string; children: ReactNod
 /**
  * The Edit's section switcher: both sections on one Kraft track, the open one
  * filled solid Deep Wood beneath Unbleached Paper ink, under the same shared
- * Tabs root and content the Detail uses.
+ * Tabs root and content the Detail uses. At accessibility text sizes the
+ * segments stack, each with the fill's full width, so labels stay whole.
  */
 export function EditSectionTabs() {
+  const stacked = useStackedSectionTabs();
+
   return (
-    <TabsPrimitive.List className="bg-muted flex w-full flex-row items-center rounded-xl p-1">
+    <TabsPrimitive.List
+      className={cn(
+        "bg-muted flex w-full items-center rounded-xl p-1",
+        stacked ? "flex-col gap-1" : "flex-row",
+      )}
+    >
       {DESIGN_SECTIONS.map(({ tab, label }) => (
-        <EditSectionTab key={tab} value={tab}>
+        <EditSectionTab key={tab} value={tab} stacked={stacked}>
           {label}
         </EditSectionTab>
       ))}
