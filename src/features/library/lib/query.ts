@@ -1,9 +1,10 @@
-import { and, desc, inArray, isNull } from "drizzle-orm";
+import { and, desc, eq, inArray, isNull, sql } from "drizzle-orm";
 import {
   categories,
   collections,
   declareLiveRead,
   DESIGN_STATUSES,
+  designEvents,
   designs,
   images,
   type Database,
@@ -141,5 +142,112 @@ export type LibraryRows = {
 export const libraryDesignsRead = declareLiveRead<LibraryRows>({
   tables: [designs, categories, collections, images],
   read: (database) => ({ designs: listLibraryDesigns(database) }),
+  empty: { designs: [] },
+});
+
+/**
+ * One rejected Design with the why of its latest Decision: the reason it was
+ * rejected, and when that reason was recorded. A Design rejected before the
+ * Decision reader existed, or whose latest Decision recorded no reason, has
+ * nulls rather than an invented one.
+ */
+export type RejectedDesign = LibraryDesign & {
+  status: Extract<DesignStatus, "rejected">;
+  reason: string | null;
+  /** When the latest Decision was recorded; null when the Design has none. */
+  decidedAt: number | null;
+};
+
+/** The latest Decision of each Design, as the rejected view reads it. */
+type LatestDecision = {
+  reason: string | null;
+  decidedAt: number;
+};
+
+/** The rejected designs' query: the Rejected Status only, most recently updated first. */
+function rejectedDesignsQuery(database: Database) {
+  return database.db
+    .select({
+      id: designs.id,
+      name: designs.name,
+      categoryId: designs.categoryId,
+      collectionId: designs.collectionId,
+      status: designs.status,
+      updatedAt: designs.updatedAt,
+    })
+    .from(designs)
+    .where(and(eq(designs.status, "rejected"), isNull(designs.deletedAt)))
+    .orderBy(desc(designs.updatedAt));
+}
+
+/**
+ * Each Design's latest Decision, newest first. Equal timestamps fall back to
+ * insertion order, the same order History reads Events in, so a later Decision
+ * written in the same millisecond still wins.
+ */
+function latestDecisionsFor(
+  database: Database,
+  designIds: readonly string[],
+): Map<string, LatestDecision> {
+  const latest = new Map<string, LatestDecision>();
+
+  if (designIds.length === 0) return latest;
+
+  const rows = database.db
+    .select({
+      designId: designEvents.designId,
+      reason: designEvents.reason,
+      createdAt: designEvents.createdAt,
+    })
+    .from(designEvents)
+    .where(and(inArray(designEvents.designId, [...designIds]), eq(designEvents.kind, "decision")))
+    .orderBy(desc(designEvents.createdAt), desc(sql`design_events.rowid`))
+    .all();
+
+  for (const row of rows) {
+    if (!latest.has(row.designId)) {
+      latest.set(row.designId, { reason: row.reason ?? null, decidedAt: row.createdAt });
+    }
+  }
+
+  return latest;
+}
+
+/**
+ * Runs the rejected query once. A row keeps the Library's shape — name, Cover,
+ * taxonomy, Status, update — and adds the latest Decision's reason and time.
+ */
+export function listRejectedDesigns(database: Database): RejectedDesign[] {
+  const rows = withTaxonomyNames(database, rejectedDesignsQuery(database).all());
+  const latest = latestDecisionsFor(
+    database,
+    rows.map((row) => row.id),
+  );
+
+  return rows.map((row) => {
+    const decision = latest.get(row.id);
+
+    return {
+      ...row,
+      status: "rejected",
+      reason: decision?.reason ?? null,
+      decidedAt: decision?.decidedAt ?? null,
+    };
+  });
+}
+
+/** The one row shape the rejected live read produces, before status. */
+export type RejectedDesignRows = {
+  designs: RejectedDesign[];
+};
+
+/**
+ * The rejected view's read: the rejected query's rows and every table it reads.
+ * A new or edited Design, a recorded Decision, a Cover change, and a taxonomy
+ * rename or delete all re-run it (ADR-0005).
+ */
+export const rejectedDesignsRead = declareLiveRead<RejectedDesignRows>({
+  tables: [designs, designEvents, images, categories, collections],
+  read: (database) => ({ designs: listRejectedDesigns(database) }),
   empty: { designs: [] },
 });
