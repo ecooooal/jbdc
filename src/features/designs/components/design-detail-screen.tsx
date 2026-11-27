@@ -34,6 +34,7 @@ import {
 import type { DesignDetail } from "../lib/records";
 import { useDesignDetail } from "../lib/use-design-detail";
 import { useDesignDetailSurface } from "../lib/use-design-detail-surface";
+import { DecisionBlock } from "./decision-block";
 import { DesignStatusBadge } from "./design-status-badge";
 import { MaterialUsesTable } from "./material-uses-table";
 import { ReadError } from "./read-error";
@@ -300,15 +301,26 @@ function DetailSections({ design }: { design: DesignDetail }) {
 }
 
 /**
- * What one Design is right now: its identity, then its images, then both
- * sections in full. Name and Status are always here; every field keeps its
- * row, so the sheet's shape is the same whether the design is finished or not.
+ * What one Design is right now: its identity, its latest Decision, then its
+ * images, then both sections in full. Name and Status are always here; every
+ * field keeps its row, so the sheet's shape is the same whether the design is
+ * finished or not. The decision block sits between identity and images because
+ * the why outranks the pictures: a rejected Design reads its reason before its
+ * gallery.
  */
-function DesignDetailContent({ design }: { design: DesignDetail }) {
+function DesignDetailContent({
+  design,
+  onAddDecision,
+}: {
+  design: DesignDetail;
+  onAddDecision: () => void;
+}) {
   return (
     <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
       <View className="gap-6 px-6 pb-12 pt-2">
         <DetailIdentity design={design} />
+
+        <DecisionBlock design={design} onAddDecision={onAddDecision} />
 
         <DesignGallery designId={design.id} />
 
@@ -351,6 +363,9 @@ export function DesignDetailScreen({ designId }: { designId: string }) {
     send({ type: "status-sheet-opened", status: design.status });
   }
 
+  /** The decision sheet lands with its own step; the block's action is here. */
+  function openDecisionSheet(): void {}
+
   return (
     <View
       style={{
@@ -369,7 +384,7 @@ export function DesignDetailScreen({ designId }: { designId: string }) {
             <ReadError message="This design could not be loaded." error={error} />
           </View>
         ) : status === "loading" ? null : design ? (
-          <DesignDetailContent design={design} />
+          <DesignDetailContent design={design} onAddDecision={openDecisionSheet} />
         ) : (
           <View className="flex-1 items-center justify-center gap-2 px-6 pb-16">
             <Text variant="h4">Design not found</Text>
