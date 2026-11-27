@@ -1,11 +1,12 @@
 import { act, fireEvent, render, screen, userEvent, within } from "@testing-library/react-native";
 import { router, useFocusEffect } from "expo-router";
+import type { ReactNode } from "react";
 import { AppState, BackHandler } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { Uniwind } from "uniwind";
 import { DatabaseProvider } from "@/features/database/react";
 import { createSyncSubscribe, createTempDatabase } from "@/features/database/testing";
-import { createDesign } from "@/features/designs";
+import { changeStatus, createDesign } from "@/features/designs";
 import { listLibraryDesigns } from "@/features/library";
 import { LibraryScreen } from "@/features/library/react";
 import type { Grouping } from "@/features/settings";
@@ -14,6 +15,22 @@ import { createCollection } from "@/features/taxonomy";
 import { PRESS_HIGHLIGHT_HOLD_MS } from "../lib/library-screen-reducer";
 
 jest.mock("expo-router", () => ({ router: { push: jest.fn() }, useFocusEffect: jest.fn() }));
+
+// The native dropdown's portal waits for a trigger measurement Jest never
+// fires. Render its rows inline, inside the real root and items, so the tests
+// reach the grouping radio and the view checkbox the way the Detail menu's
+// rows are tested.
+jest.mock("@/shared/components/ui/dropdown-menu", () => {
+  const actual = jest.requireActual("@/shared/components/ui/dropdown-menu");
+  const React = jest.requireActual<typeof import("react")>("react");
+  const { View } = jest.requireActual<typeof import("react-native")>("react-native");
+
+  return {
+    ...actual,
+    DropdownMenuContent: ({ children }: { children?: ReactNode }) =>
+      React.createElement(View, null, children),
+  };
+});
 
 const INITIAL_METRICS = {
   frame: { x: 0, y: 0, width: 390, height: 844 },
@@ -56,16 +73,15 @@ test("the empty view names the Library, not the Catalog", async () => {
   expect(screen.queryByText(/catalog/i)).toBeNull();
 });
 
-test("the grouping dropdown remembers the choice", async () => {
+test("the menu's Group by remembers the choice", async () => {
   seedCollections();
   const first = await renderLibrary();
 
-  expect(screen.getByRole("combobox", { name: "Group by" })).toBeTruthy();
-  expect(screen.getByText("Design")).toBeTruthy();
+  expect(screen.getByRole("radio", { name: "Design" })).toBeChecked();
 
   await chooseGrouping("per-collection");
 
-  expect(screen.getByText("Collection")).toBeTruthy();
+  expect(screen.getByRole("radio", { name: "Collection" })).toBeChecked();
 
   const spring = within(screen.getByTestId("library-section-Spring"));
 
@@ -76,7 +92,35 @@ test("the grouping dropdown remembers the choice", async () => {
 
   await renderLibrary();
 
-  expect(screen.getByText("Collection")).toBeTruthy();
+  expect(screen.getByRole("radio", { name: "Collection" })).toBeChecked();
+});
+
+test("the view control shows the active Library and switches to the rejected cards", async () => {
+  seedStream();
+  rejectDesign("Rejected coat", "The fabric cost too much", 4000);
+
+  await renderLibrary();
+
+  expect(screen.getByRole("button", { name: "Library" })).toBeTruthy();
+
+  await toggleRejectedDesigns();
+
+  expect(screen.getByRole("button", { name: "Rejected designs" })).toBeTruthy();
+  expect(screen.queryByText("Freshest dress")).toBeNull();
+  expect(screen.getByText("Rejected coat")).toBeTruthy();
+});
+
+test("unchecking Rejected designs returns the control and the screen to the Library", async () => {
+  seedStream();
+  rejectDesign("Rejected coat", "The fabric cost too much", 4000);
+
+  await renderLibrary();
+  await toggleRejectedDesigns();
+  await toggleRejectedDesigns();
+
+  expect(screen.getByRole("button", { name: "Library" })).toBeTruthy();
+  expect(screen.getByText("Freshest dress")).toBeTruthy();
+  expect(screen.queryByText("Rejected coat")).toBeNull();
 });
 
 test("the search and filter placeholders render disabled and say they are coming", async () => {
@@ -365,15 +409,29 @@ const GROUPING_LABELS: Record<Grouping, string> = {
 };
 
 /**
- * Opens the grouping choice through its primitive, which Jest cannot do: the
- * native Select positions its portal from the trigger's measure callback, and
- * the test renderer never fires it. Firing the handler is the documented seam.
+ * Picks a grouping through the menu's radio. The menu's content is rendered
+ * inline by this file's mock, so the row is reachable without opening the
+ * native portal, the same seam the Detail menu's rows use.
  */
 async function chooseGrouping(grouping: Grouping) {
-  await fireEvent(screen.getByRole("combobox", { name: "Group by" }), "valueChange", {
-    value: grouping,
-    label: GROUPING_LABELS[grouping],
-  });
+  await fireEvent.press(screen.getByRole("radio", { name: GROUPING_LABELS[grouping] }));
+}
+
+/** Checks, or unchecks, the header menu's Rejected designs view. */
+async function toggleRejectedDesigns() {
+  await fireEvent.press(screen.getByRole("checkbox", { name: "Rejected designs" }));
+}
+
+/** Rejects a design through the Status write, with its reason and timestamp. */
+function rejectDesign(name: string, reason: string | null, now: number) {
+  const design = createDesign(database, { name }, now - 1);
+
+  changeStatus(
+    database,
+    design.id,
+    { status: "rejected", reason, potentialImprovements: null },
+    now,
+  );
 }
 
 test("The Collection grouping regroups the density-2 grid under Collection headers", async () => {

@@ -26,12 +26,13 @@ import {
 } from "../lib/library-screen-reducer";
 import type { LibraryDesign } from "../lib/query";
 import { useLibraryDesigns } from "../lib/use-library-designs";
+import { useRejectedDesigns } from "../lib/use-rejected-designs";
 import { DensityControl } from "./density-control";
-import { GroupingSelect } from "./grouping-select";
 import { LibraryCard } from "./library-card";
 import { FAB_SCROLL_CLEARANCE, LibraryFab } from "./library-fab";
 import type { PressHighlightHandlers } from "./press-highlight";
 import { SingleView } from "./single-view";
+import { ViewControl } from "./view-control";
 
 /** The heading of the trailing group for designs in no Collection. */
 const NO_COLLECTION_LABEL = "No collection";
@@ -129,7 +130,8 @@ function SearchFilterActions() {
  * arrangements.
  */
 export function LibraryScreen() {
-  const { designs, error, status } = useLibraryDesigns();
+  const library = useLibraryDesigns();
+  const rejected = useRejectedDesigns();
   const { density, setDensity } = useCardDensity();
   const { grouping, setGrouping } = useGrouping();
   const { setTheme } = useAppTheme();
@@ -138,8 +140,6 @@ export function LibraryScreen() {
   const screenWidth = Math.max(0, viewportWidth - insets.left - insets.right);
   const contentWidth = Math.max(0, screenWidth - LIBRARY_HORIZONTAL_PADDING);
   const { columns, cardWidth } = libraryGrid(density, contentWidth);
-  const arrangement = groupLibraryDesigns(designs, grouping);
-  const isEmpty = status === "ready" && designs.length === 0;
 
   // The press declares its own beats: the held highlight waits out its timer
   // and sends the elapsed fact back, and the open effect carries the Design.
@@ -173,6 +173,15 @@ export function LibraryScreen() {
     perform,
   );
 
+  // The view decides which read the screen shows; both reads stay subscribed,
+  // so switching back is already up to date.
+  const active = state.view === "rejected" ? rejected : library;
+  const arrangement =
+    state.view === "rejected"
+      ? groupLibraryDesigns(rejected.designs, grouping)
+      : groupLibraryDesigns(library.designs, grouping);
+  const isEmpty = active.status === "ready" && active.designs.length === 0;
+
   const pressFor = (designId: string): PressHighlightHandlers => ({
     pressed: state.press?.designId === designId,
     onPressIn: () => dispatch({ type: "press-started", designId }),
@@ -194,22 +203,29 @@ export function LibraryScreen() {
       >
         <View className="pt-6" style={{ paddingHorizontal: LIBRARY_SIDE_PADDING }}>
           <View className="z-10 flex-row flex-wrap items-end gap-3">
-            <GroupingSelect grouping={grouping} onChange={setGrouping} />
+            <ViewControl
+              view={state.view}
+              grouping={grouping}
+              onViewChange={(checked) => dispatch({ type: "rejected-designs-checked", checked })}
+              onGroupingChange={setGrouping}
+            />
             <DensityControl density={density} onChange={setDensity} />
             <View className="ml-auto">
               <SearchFilterActions />
             </View>
           </View>
 
-          {error ? <Text className="text-destructive mt-6">{error.message}</Text> : null}
+          {active.error ? (
+            <Text className="text-destructive mt-6">{active.error.message}</Text>
+          ) : null}
         </View>
 
-        {status === "loading" ? null : (
+        {active.status === "loading" ? null : (
           <Animated.View
             // A different view, a different grouping, or the first (or last)
             // Design replaces the whole body, so it arrives with the world's
             // quiet fade instead of cutting between two arrangements.
-            key={`${density}:${grouping}:${isEmpty}`}
+            key={`${state.view}:${density}:${grouping}:${isEmpty}`}
             entering={QUIET_ARRIVAL}
             className="flex-1"
           >

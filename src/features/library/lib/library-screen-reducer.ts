@@ -5,17 +5,26 @@ export const PRESS_HIGHLIGHT_SCALE = 0.98;
 export const PRESS_HIGHLIGHT_HOLD_MS = 120;
 
 /**
- * The Library's two decisions: a touch-down dips one card and a completed tap
- * holds that highlight for a beat before the Design opens, and the FAB's
- * actions are open or shut. The press phase is the whole rule, so the
- * highlight stays up while the held beat runs and a tap that lands meanwhile
- * opens nothing a second time. The actions are a speed-dial: their own tap
- * toggles them, and every exit from the screen. a tap outside, choosing an
- * action, leaving the route, or backgrounding the app, shuts them.
+ * Which catalog view the Library is showing: the active Library, or the
+ * Rejected designs. Session-only — a launch always opens the active Library.
+ */
+export type LibraryView = "library" | "rejected";
+
+/**
+ * The Library's three decisions: a touch-down dips one card and a completed tap
+ * holds that highlight for a beat before the Design opens, the FAB's actions
+ * are open or shut, and the session shows the Library or its rejected designs.
+ * The press phase is the whole rule, so the highlight stays up while the held
+ * beat runs and a tap that lands meanwhile opens nothing a second time. The
+ * actions are a speed-dial: their own tap toggles them, and every exit from the
+ * screen. a tap outside, choosing an action, leaving the route, or backgrounding
+ * the app, shuts them. The view is a fact about the session, not a preference:
+ * nothing stores it.
  */
 export type LibraryScreenState = {
   press: { designId: string; phase: "down" | "holding" } | null;
   actionsOpen: boolean;
+  view: LibraryView;
 };
 
 /** What the Owner did — facts naming the Design or the exit that happened. */
@@ -28,6 +37,8 @@ export type LibraryScreenEvent =
   | { type: "fab-dismissed" }
   | { type: "fab-action-taken"; action: "add" }
   | { type: "fab-action-taken"; action: "theme"; scheme: "light" | "dark" }
+  | { type: "rejected-designs-checked"; checked: boolean }
+  | { type: "library-view-tapped" }
   | { type: "library-left" }
   | { type: "app-backgrounded" };
 
@@ -44,9 +55,9 @@ export type LibraryScreenResult = {
   effects: LibraryScreenEffect[];
 };
 
-/** Nothing is pressed and the actions are shut until the Owner acts. */
+/** Nothing is pressed, the actions are shut, and the active Library is showing. */
 export function createInitialLibraryScreenState(): LibraryScreenState {
-  return { press: null, actionsOpen: false };
+  return { press: null, actionsOpen: false, view: "library" };
 }
 
 /** Shut the actions if they were open; an already-shut menu asks for nothing. */
@@ -68,6 +79,10 @@ function closeActions(state: LibraryScreenState): LibraryScreenResult {
  * them declares the work it opens. An action taken after the menu has already
  * shut asks for nothing, so a double tap cannot open two routes or apply the
  * theme twice.
+ *
+ * The view follows the header's control: its checkbox fact names the state the
+ * Owner checked, and the empty rejected view's one action returns to the
+ * Library. Nothing else switches views.
  */
 export function libraryScreenReducer(
   state: LibraryScreenState,
@@ -119,5 +134,16 @@ export function libraryScreenReducer(
             ? [{ type: "open-create-screen" }]
             : [{ type: "apply-theme", scheme: event.scheme }],
       };
+
+    case "rejected-designs-checked":
+      return {
+        state: { ...state, view: event.checked ? "rejected" : "library" },
+        effects: [],
+      };
+
+    case "library-view-tapped":
+      return state.view === "library"
+        ? { state, effects: [] }
+        : { state: { ...state, view: "library" }, effects: [] };
   }
 }

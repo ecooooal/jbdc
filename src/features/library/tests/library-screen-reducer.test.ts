@@ -31,6 +31,7 @@ describe("pressing a Library card", () => {
     expect(tester.getState()).toEqual({
       actionsOpen: false,
       press: { designId: DESIGN_ID, phase: "down" },
+      view: "library",
     });
     expect(tester.getEffects()).toEqual([]);
 
@@ -46,6 +47,7 @@ describe("pressing a Library card", () => {
     expect(tester.getState()).toEqual({
       actionsOpen: false,
       press: { designId: DESIGN_ID, phase: "holding" },
+      view: "library",
     });
     expect(tester.getEffects()).toEqual([{ type: "hold-cards-open", designId: DESIGN_ID }]);
   });
@@ -59,6 +61,7 @@ describe("pressing a Library card", () => {
     expect(tester.getState()).toEqual({
       actionsOpen: false,
       press: { designId: DESIGN_ID, phase: "holding" },
+      view: "library",
     });
     expect(tester.getEffects()).toEqual([{ type: "hold-cards-open", designId: DESIGN_ID }]);
   });
@@ -72,6 +75,7 @@ describe("pressing a Library card", () => {
     expect(tester.getState()).toEqual({
       actionsOpen: false,
       press: { designId: DESIGN_ID, phase: "holding" },
+      view: "library",
     });
     expect(tester.getEffects()).toEqual([{ type: "hold-cards-open", designId: DESIGN_ID }]);
   });
@@ -98,8 +102,55 @@ describe("pressing a Library card", () => {
     expect(tester.getState()).toEqual({
       actionsOpen: false,
       press: { designId: DESIGN_ID, phase: "holding" },
+      view: "library",
     });
     expect(tester.getEffects()).toEqual([{ type: "hold-cards-open", designId: DESIGN_ID }]);
+  });
+});
+
+describe("the session view", () => {
+  test("a fresh session opens the active Library", () => {
+    expect(createInitialLibraryScreenState()).toEqual({
+      actionsOpen: false,
+      press: null,
+      view: "library",
+    });
+  });
+
+  test("checking Rejected designs switches the same screen to the rejected view", () => {
+    const tester = library({ type: "rejected-designs-checked", checked: true });
+
+    expect(tester.getState()).toEqual({
+      ...createInitialLibraryScreenState(),
+      view: "rejected",
+    });
+    expect(tester.getEffects()).toEqual([]);
+  });
+
+  test("unchecking Rejected designs switches back to the Library", () => {
+    const tester = library(
+      { type: "rejected-designs-checked", checked: true },
+      { type: "rejected-designs-checked", checked: false },
+    );
+
+    expect(tester.getState()).toEqual(createInitialLibraryScreenState());
+    expect(tester.getEffects()).toEqual([]);
+  });
+
+  test("the empty view's View the library returns to the Library", () => {
+    const tester = library(
+      { type: "rejected-designs-checked", checked: true },
+      { type: "library-view-tapped" },
+    );
+
+    expect(tester.getState()).toEqual(createInitialLibraryScreenState());
+    expect(tester.getEffects()).toEqual([]);
+  });
+
+  test("a new session still opens the active Library after one switched views", () => {
+    library({ type: "rejected-designs-checked", checked: true });
+
+    expect(createInitialLibraryScreenState().view).toBe("library");
   });
 });
 
