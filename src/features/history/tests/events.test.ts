@@ -10,14 +10,13 @@ import { createTempDatabase } from "@/features/database/testing";
 import { expectLiveReadReruns } from "@/features/database/testing-live";
 import type { DesignFields, MaterialUse } from "@/features/designs";
 import { createDesign, writeDesign } from "@/features/designs";
+import { listDesignEvents, recordEdit, recordImageChange } from "@/features/history";
 import {
+  designHistoryRead,
   diffDesignFields,
   diffMaterialUses,
-  listDesignEvents,
-  recordEdit,
-  recordImageChange,
-} from "@/features/history";
-import { designHistoryRead, materialUseLines } from "../lib/events";
+  materialUseLines,
+} from "../lib/events";
 import { createMaterial } from "@/features/materials";
 import { createCategory, createCollection } from "@/features/taxonomy";
 

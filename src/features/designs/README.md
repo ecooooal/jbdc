@@ -12,7 +12,7 @@ uses recorded on it, and the screens that show and edit it. Public entries are
 | The two tab sections Edit and Detail show | `lib/sections.ts` |
 | The Specification and Creative direction field lists | `lib/specification-fields.ts`, `lib/creative-direction-fields.ts` |
 | Reading and writing a Design, and its Material uses | `lib/records.ts` |
-| Whether a visit changed anything — the diff History stores | `history/lib/events.ts` (`recordEdit`) |
+| Whether a write changes anything, and whether a visit records an Event | `lib/records.ts` (`isUnchanged`), `history/lib/events.ts` (`recordEdit`) |
 | Role labels, name limits, whitespace-to-null, Status labels | `lib/material-use-role.ts`, `lib/limits.ts`, `lib/optional-text.ts`, `lib/status.ts` |
 
 ## One reducer per surface
@@ -44,8 +44,9 @@ one outcome per declared change, `refused` with the field it refused, or
 outcome folds back into the visit's record of what it stored, so a refused write
 leaves the panel's choices on screen and never reaches that record. At close the
 visit hands History the row and its uses as it found them and as the writes left
-them; History's diff — the same rule the write path used — decides whether that
-is worth an Event.
+them; History's diff decides whether that is worth an Event. The write decides
+for itself whether it needs a statement at all, by a private predicate kept
+aligned with that diff, so it imports no part of History.
 
 ## Screens and pieces
 
