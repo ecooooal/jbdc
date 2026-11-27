@@ -25,19 +25,24 @@ export type StatusSheetState = {
 };
 
 /**
- * Detail's decisions: the status sheet and the decision sheet that can be open
- * over it, and the Design every write it declares names. The two sheets cannot
- * be reached together, but each keeps its own open state and draft. The section
- * tab stays the component's own presentation and is not here
- * (docs/FRONTEND_STATE.md).
+ * The one sheet open over Detail: the status sheet with the Status it checks
+ * and, once Rejected is pressed, the why form expanded in place; or the later
+ * decision sheet's draft. One field holds whichever is open, so the two sheets
+ * cannot be represented together (docs/FRONTEND_STATE.md).
+ */
+export type DesignDetailPanel =
+  ({ kind: "status" } & StatusSheetState) | { kind: "decision"; draft: DecisionDraft };
+
+/**
+ * Detail's decisions: the one sheet open over it and the Design every write it
+ * declares names. The section tab stays the component's own presentation and
+ * is not here (docs/FRONTEND_STATE.md).
  */
 export type DesignDetailState = {
   /** The Design this surface acts on; every effect names it. */
   designId: string;
-  /** The open status sheet, or null while it is closed. */
-  statusSheet: StatusSheetState | null;
-  /** The open decision sheet's draft, or null while it is closed. */
-  decisionSheet: DecisionDraft | null;
+  /** The one sheet open over Detail, or null while both are closed. */
+  panel: DesignDetailPanel | null;
 };
 
 export type DesignDetailEvent =
@@ -68,7 +73,7 @@ export type DesignDetailResult = {
 
 /** A surface that has opened nothing yet. */
 export function createInitialDesignDetailState(designId: string): DesignDetailState {
-  return { designId, statusSheet: null, decisionSheet: null };
+  return { designId, panel: null };
 }
 
 function only(state: DesignDetailState): DesignDetailResult {
@@ -102,37 +107,41 @@ export function designDetailReducer(
     case "status-sheet-opened":
       return only({
         ...state,
-        statusSheet: { current: event.status, rejection: null },
+        panel: { kind: "status", current: event.status, rejection: null },
       });
 
     case "status-sheet-closed":
       // Every dismiss — the X, the scrim, a drag, Android's Back — drops the
-      // form and writes nothing, even after Rejected expanded it.
-      return only({ ...state, statusSheet: null });
+      // form and writes nothing, even after Rejected expanded it. Only the
+      // status sheet's own close touches its panel.
+      if (state.panel?.kind !== "status") return only(state);
+
+      return only({ ...state, panel: null });
 
     case "status-row-pressed": {
-      const sheet = state.statusSheet;
+      const panel = state.panel;
 
-      if (!sheet) return only(state);
+      if (panel?.kind !== "status") return only(state);
 
       // The checked row is the Status the Design already has: the sheet closes
       // and the write path is not asked for a no-op.
-      if (event.status === sheet.current) return only({ ...state, statusSheet: null });
+      if (event.status === panel.current) return only({ ...state, panel: null });
 
       if (event.status === "rejected") {
         // Rejecting is the one row that asks why first. It expands an empty
         // form and writes nothing until Reject design is pressed.
         return only({
           ...state,
-          statusSheet: {
-            current: sheet.current,
+          panel: {
+            kind: "status",
+            current: panel.current,
             rejection: { reason: "", potentialImprovements: "" },
           },
         });
       }
 
       return {
-        state: { ...state, statusSheet: null },
+        state: { ...state, panel: null },
         effects: [
           {
             type: "change-status",
@@ -144,31 +153,31 @@ export function designDetailReducer(
     }
 
     case "rejection-field-changed": {
-      const sheet = state.statusSheet;
+      const panel = state.panel;
 
-      if (!sheet?.rejection) return only(state);
+      if (panel?.kind !== "status" || !panel.rejection) return only(state);
 
       return only({
         ...state,
-        statusSheet: {
-          ...sheet,
-          rejection: { ...sheet.rejection, [event.field]: event.value },
+        panel: {
+          ...panel,
+          rejection: { ...panel.rejection, [event.field]: event.value },
         },
       });
     }
 
     case "reject-pressed": {
-      const sheet = state.statusSheet;
+      const panel = state.panel;
 
-      if (!sheet?.rejection) return only(state);
+      if (panel?.kind !== "status" || !panel.rejection) return only(state);
 
       return {
-        state: { ...state, statusSheet: null },
+        state: { ...state, panel: null },
         effects: [
           {
             type: "change-status",
             designId: state.designId,
-            change: { status: "rejected", ...sheet.rejection },
+            change: { status: "rejected", ...panel.rejection },
           },
         ],
       };
@@ -176,42 +185,49 @@ export function designDetailReducer(
 
     case "decision-sheet-opened":
       // The latest decision is the prefill; a Design with none opens an empty
-      // form, the same fields the rejection form expands.
+      // form, the same fields the rejection form expands. Opening it replaces
+      // whichever panel was open.
       return only({
         ...state,
-        decisionSheet: {
-          reason: event.latest?.reason ?? "",
-          potentialImprovements: event.latest?.potentialImprovements ?? "",
+        panel: {
+          kind: "decision",
+          draft: {
+            reason: event.latest?.reason ?? "",
+            potentialImprovements: event.latest?.potentialImprovements ?? "",
+          },
         },
       });
 
     case "decision-sheet-closed":
-      // Every dismiss drops the draft and writes nothing.
-      return only({ ...state, decisionSheet: null });
+      // Every dismiss drops the draft and writes nothing. Only the decision
+      // sheet's own close touches its panel.
+      if (state.panel?.kind !== "decision") return only(state);
+
+      return only({ ...state, panel: null });
 
     case "decision-field-changed": {
-      const draft = state.decisionSheet;
+      const panel = state.panel;
 
-      if (!draft) return only(state);
+      if (panel?.kind !== "decision") return only(state);
 
       return only({
         ...state,
-        decisionSheet: { ...draft, [event.field]: event.value },
+        panel: { ...panel, draft: { ...panel.draft, [event.field]: event.value } },
       });
     }
 
     case "save-decision-pressed": {
-      const draft = state.decisionSheet;
+      const panel = state.panel;
 
-      if (!draft) return only(state);
+      if (panel?.kind !== "decision") return only(state);
 
       return {
-        state: { ...state, decisionSheet: null },
+        state: { ...state, panel: null },
         effects: [
           {
             type: "record-decision",
             designId: state.designId,
-            decision: draft,
+            decision: panel.draft,
           },
         ],
       };

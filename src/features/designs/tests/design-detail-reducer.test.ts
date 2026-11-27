@@ -31,7 +31,11 @@ describe("the Detail surface's status sheet", () => {
   test("opening it checks the Design's current Status and declares no write", () => {
     const tester = opened("approved");
 
-    expect(tester.getState().statusSheet).toEqual({ current: "approved", rejection: null });
+    expect(tester.getState().panel).toEqual({
+      kind: "status",
+      current: "approved",
+      rejection: null,
+    });
     expect(tester.getEffects()).toEqual([]);
   });
 
@@ -43,7 +47,7 @@ describe("the Detail surface's status sheet", () => {
     expect(tester.getEffects()).toEqual([
       { type: "change-status", designId: DESIGN_ID, change: { status: "approved" } },
     ]);
-    expect(tester.getState().statusSheet).toBeNull();
+    expect(tester.getState().panel).toBeNull();
   });
 
   test("the checked row declares no write and closes the sheet", () => {
@@ -52,7 +56,7 @@ describe("the Detail surface's status sheet", () => {
     tester.send({ type: "status-row-pressed", status: "approved" });
 
     expect(tester.getEffects()).toEqual([]);
-    expect(tester.getState().statusSheet).toBeNull();
+    expect(tester.getState().panel).toBeNull();
   });
 
   test("the checked Rejected row closes without expanding the form", () => {
@@ -61,7 +65,7 @@ describe("the Detail surface's status sheet", () => {
     tester.send({ type: "status-row-pressed", status: "rejected" });
 
     expect(tester.getEffects()).toEqual([]);
-    expect(tester.getState().statusSheet).toBeNull();
+    expect(tester.getState().panel).toBeNull();
   });
 
   test("the Rejected row expands an empty form without a write", () => {
@@ -69,7 +73,8 @@ describe("the Detail surface's status sheet", () => {
 
     tester.send({ type: "status-row-pressed", status: "rejected" });
 
-    expect(tester.getState().statusSheet).toEqual({
+    expect(tester.getState().panel).toEqual({
+      kind: "status",
       current: "concept",
       rejection: { reason: "", potentialImprovements: "" },
     });
@@ -82,7 +87,7 @@ describe("the Detail surface's status sheet", () => {
     tester.send({ type: "status-row-pressed", status: "rejected" });
     tester.send({ type: "status-sheet-closed" });
 
-    expect(tester.getState().statusSheet).toBeNull();
+    expect(tester.getState().panel).toBeNull();
     expect(tester.getEffects()).toEqual([]);
   });
 
@@ -101,9 +106,12 @@ describe("the Detail surface's status sheet", () => {
       value: "Try the wool blend",
     });
 
-    expect(tester.getState().statusSheet?.rejection).toEqual({
-      reason: "The fabric cost too much",
-      potentialImprovements: "Try the wool blend",
+    expect(tester.getState().panel).toMatchObject({
+      kind: "status",
+      rejection: {
+        reason: "The fabric cost too much",
+        potentialImprovements: "Try the wool blend",
+      },
     });
     expect(tester.getEffects()).toEqual([]);
   });
@@ -135,7 +143,7 @@ describe("the Detail surface's status sheet", () => {
         },
       },
     ]);
-    expect(tester.getState().statusSheet).toBeNull();
+    expect(tester.getState().panel).toBeNull();
   });
 
   test("a rejection with both fields left empty still declares one write", () => {
@@ -155,6 +163,17 @@ describe("the Detail surface's status sheet", () => {
 });
 
 describe("the Detail surface's decision sheet", () => {
+  test("opening the decision sheet replaces the status sheet, so both are never open", () => {
+    const tester = opened("concept");
+
+    tester.send({ type: "decision-sheet-opened", latest: null });
+
+    expect(tester.getState().panel).toEqual({
+      kind: "decision",
+      draft: { reason: "", potentialImprovements: "" },
+    });
+  });
+
   test("Add a decision opens the sheet prefilled from the latest decision", () => {
     const tester = statusSheet();
 
@@ -166,9 +185,12 @@ describe("the Detail surface's decision sheet", () => {
       },
     });
 
-    expect(tester.getState().decisionSheet).toEqual({
-      reason: "The fabric cost too much",
-      potentialImprovements: "Try the wool blend",
+    expect(tester.getState().panel).toEqual({
+      kind: "decision",
+      draft: {
+        reason: "The fabric cost too much",
+        potentialImprovements: "Try the wool blend",
+      },
     });
     expect(tester.getEffects()).toEqual([]);
   });
@@ -178,9 +200,9 @@ describe("the Detail surface's decision sheet", () => {
 
     tester.send({ type: "decision-sheet-opened", latest: null });
 
-    expect(tester.getState().decisionSheet).toEqual({
-      reason: "",
-      potentialImprovements: "",
+    expect(tester.getState().panel).toEqual({
+      kind: "decision",
+      draft: { reason: "", potentialImprovements: "" },
     });
     expect(tester.getEffects()).toEqual([]);
   });
@@ -211,9 +233,12 @@ describe("the Detail surface's decision sheet", () => {
       value: "Try a tighter weave",
     });
 
-    expect(tester.getState().decisionSheet).toEqual({
-      reason: "The fringe shed",
-      potentialImprovements: "Try a tighter weave",
+    expect(tester.getState().panel).toEqual({
+      kind: "decision",
+      draft: {
+        reason: "The fringe shed",
+        potentialImprovements: "Try a tighter weave",
+      },
     });
     expect(tester.getEffects()).toEqual([]);
   });
@@ -225,7 +250,7 @@ describe("the Detail surface's decision sheet", () => {
     tester.send({ type: "decision-field-changed", field: "reason", value: "The fringe shed" });
     tester.send({ type: "decision-sheet-closed" });
 
-    expect(tester.getState().decisionSheet).toBeNull();
+    expect(tester.getState().panel).toBeNull();
     expect(tester.getEffects()).toEqual([]);
   });
 
@@ -254,6 +279,6 @@ describe("the Detail surface's decision sheet", () => {
         },
       },
     ]);
-    expect(tester.getState().decisionSheet).toBeNull();
+    expect(tester.getState().panel).toBeNull();
   });
 });

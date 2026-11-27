@@ -2,17 +2,7 @@ import { View } from "react-native";
 import { Button } from "@/shared/components/ui/button";
 import { Text } from "@/shared/components/ui/text";
 import type { DesignDetail } from "../lib/records";
-
-const SHORT_DATE_FORMAT = new Intl.DateTimeFormat(undefined, {
-  year: "numeric",
-  month: "short",
-  day: "numeric",
-});
-
-/** A date whose own spaces never break, so a wrapping line never splits one. */
-function unbreakableDate(timestamp: number): string {
-  return SHORT_DATE_FORMAT.format(timestamp).replaceAll(" ", "\u00A0");
-}
+import { unbreakableDate } from "../lib/short-date";
 
 /**
  * The Design's latest Decision as a dated record, directly under the identity

@@ -32,6 +32,7 @@ import {
   type DesignSectionTab,
 } from "../lib/sections";
 import type { DesignDetail } from "../lib/records";
+import { formatShortDate, unbreakableDate } from "../lib/short-date";
 import { useDesignDetail } from "../lib/use-design-detail";
 import { useDesignDetailSurface } from "../lib/use-design-detail-surface";
 import { DecisionBlock } from "./decision-block";
@@ -41,21 +42,6 @@ import { MaterialUsesTable } from "./material-uses-table";
 import { ReadError } from "./read-error";
 import { SectionTabs } from "./section-tabs";
 import { StatusSheet } from "./status-sheet";
-
-const SHORT_DATE_FORMAT = new Intl.DateTimeFormat(undefined, {
-  year: "numeric",
-  month: "short",
-  day: "numeric",
-});
-
-function formatShortDate(timestamp: number): string {
-  return SHORT_DATE_FORMAT.format(timestamp);
-}
-
-/** A date whose own spaces never break, so a wrapping line never splits one. */
-function unbreakableDate(timestamp: number): string {
-  return formatShortDate(timestamp).replaceAll(" ", "\u00A0");
-}
 
 /**
  * The record's dates as one quiet line: a plus marks its creation and a clock
@@ -357,6 +343,10 @@ export function DesignDetailScreen({ designId }: { designId: string }) {
   // after its first layout, which lets the pushed screen paint at the top and
   // snap down once the insets arrive.
   const insets = useSafeAreaInsets();
+  // One panel holds whichever sheet is open, so each sheet receives only the
+  // panel of its own kind.
+  const statusPanel = surface.panel?.kind === "status" ? surface.panel : null;
+  const decisionDraft = surface.panel?.kind === "decision" ? surface.panel.draft : null;
 
   /** The sheet opens on the Status the live read holds; the reducer keeps it. */
   function openStatusSheet(): void {
@@ -400,8 +390,8 @@ export function DesignDetailScreen({ designId }: { designId: string }) {
           </View>
         )}
 
-        <StatusSheet sheet={surface.statusSheet} send={send} />
-        <DecisionSheet draft={surface.decisionSheet} send={send} />
+        <StatusSheet sheet={statusPanel} send={send} />
+        <DecisionSheet draft={decisionDraft} send={send} />
       </Animated.View>
     </View>
   );

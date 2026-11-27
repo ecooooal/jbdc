@@ -121,6 +121,10 @@ const RETIRED = [
     phrase: "one entry per visit",
     replacement: "every recorded change, newest first",
   },
+  {
+    phrase: "RejectionDraft",
+    replacement: "DecisionDraft",
+  },
 ];
 
 /** Where prose and code are scanned; root-level Markdown is added below. */

@@ -135,6 +135,31 @@ test("a rejected Design with no decision opens an empty decision sheet", async (
   expect(decisionSheet().getByLabelText("Potential improvements")).toHaveDisplayValue("");
 });
 
+test("Save decision is disabled while both fields are empty and enables once either has text", async () => {
+  const design = createDesign(database, { name: "Silk slip dress" });
+
+  database.db.update(designs).set({ status: "rejected" }).where(eq(designs.id, design.id)).run();
+
+  await renderDetail(design.id);
+  await userEvent.press(decisionBlock().getByRole("button", { name: "Add a decision" }));
+
+  const save = () => decisionSheet().getByRole("button", { name: "Save decision" });
+
+  expect(save()).toBeDisabled();
+
+  await fireEvent.changeText(decisionSheet().getByLabelText("Reason"), "The fringe shed");
+  expect(save()).toBeEnabled();
+
+  await fireEvent.changeText(decisionSheet().getByLabelText("Reason"), "");
+  expect(save()).toBeDisabled();
+
+  await fireEvent.changeText(
+    decisionSheet().getByLabelText("Potential improvements"),
+    "Try a tighter weave",
+  );
+  expect(save()).toBeEnabled();
+});
+
 test("saving a decision appends one Event with no Status diff and the block follows it", async () => {
   const design = createDesign(database, { name: "Silk slip dress" }, DECIDED_AT - 1000);
 
