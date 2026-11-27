@@ -1,4 +1,4 @@
-import { render, screen, userEvent, within } from "@testing-library/react-native";
+import { fireEvent, render, screen, userEvent, within } from "@testing-library/react-native";
 import type { ReactNode } from "react";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { DatabaseProvider } from "@/features/database/react";
@@ -130,4 +130,71 @@ test("pressing the checked Status closes without a write", async () => {
   expect(screen.queryByTestId("status-sheet")).toBeNull();
   expect(getDesign(database, design.id)).toEqual(design);
   expect(listDesignEvents(database, design.id)).toEqual([]);
+});
+
+test("pressing Rejected expands empty Reason and Potential improvements fields", async () => {
+  const design = createDesign(database, { name: "Silk slip dress" });
+
+  await renderDetail(design.id);
+  await openStatusSheet();
+  await userEvent.press(statusSheet().getByRole("button", { name: "Rejected" }));
+
+  expect(screen.getByTestId("status-sheet")).toBeTruthy();
+  expect(statusSheet().getByLabelText("Reason")).toHaveDisplayValue("");
+  expect(statusSheet().getByLabelText("Potential improvements")).toHaveDisplayValue("");
+  expect(statusSheet().getByRole("button", { name: "Reject design" })).toBeTruthy();
+});
+
+test("dismissing the expanded rejection writes nothing", async () => {
+  const design = createDesign(database, { name: "Silk slip dress" });
+
+  await renderDetail(design.id);
+  await openStatusSheet();
+  await userEvent.press(statusSheet().getByRole("button", { name: "Rejected" }));
+  await fireEvent.changeText(statusSheet().getByLabelText("Reason"), "The fabric cost too much");
+  await userEvent.press(statusSheet().getByRole("button", { name: "Close status" }));
+
+  expect(screen.queryByTestId("status-sheet")).toBeNull();
+  expect(getDesign(database, design.id)).toMatchObject({ status: "concept" });
+  expect(listDesignEvents(database, design.id)).toEqual([]);
+});
+
+test("Reject design writes one decision carrying the why and closes", async () => {
+  const design = createDesign(database, { name: "Silk slip dress" }, 10);
+
+  await renderDetail(design.id);
+  await openStatusSheet();
+  await userEvent.press(statusSheet().getByRole("button", { name: "Rejected" }));
+  await fireEvent.changeText(statusSheet().getByLabelText("Reason"), "The fabric cost too much");
+  await fireEvent.changeText(
+    statusSheet().getByLabelText("Potential improvements"),
+    "Try the wool blend",
+  );
+  await userEvent.press(statusSheet().getByRole("button", { name: "Reject design" }));
+
+  expect(screen.queryByTestId("status-sheet")).toBeNull();
+  expect(getDesign(database, design.id)).toMatchObject({ status: "rejected" });
+  expect(listDesignEvents(database, design.id)).toEqual([
+    expect.objectContaining({
+      kind: "decision",
+      reason: "The fabric cost too much",
+      potentialImprovements: "Try the wool blend",
+      diff: { status: { from: "concept", to: "rejected" } },
+    }),
+  ]);
+});
+
+test("a blank rejection writes one decision with no reason", async () => {
+  const design = createDesign(database, { name: "Silk slip dress" }, 10);
+
+  await renderDetail(design.id);
+  await openStatusSheet();
+  await userEvent.press(statusSheet().getByRole("button", { name: "Rejected" }));
+  await userEvent.press(statusSheet().getByRole("button", { name: "Reject design" }));
+
+  expect(screen.queryByTestId("status-sheet")).toBeNull();
+  expect(getDesign(database, design.id)).toMatchObject({ status: "rejected" });
+  expect(listDesignEvents(database, design.id)).toEqual([
+    expect.objectContaining({ kind: "decision", reason: null, potentialImprovements: null }),
+  ]);
 });
