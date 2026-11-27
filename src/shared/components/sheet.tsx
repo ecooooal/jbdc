@@ -158,11 +158,12 @@ export function Sheet({
  * away. The body's box ends at the card, so all four sides sit the same
  * distance from the edge.
  *
- * Sixteen points of padding leaves the same air between the frame and the
- * content on every side, and the same sixteen between one field and the next —
- * the sheet's own list rhythm. The header's control is taller than its title,
- * so the title gains a little more air below it than the fields get between
- * them, and `SheetFooter` adds the rest above the closing row.
+ * Twenty-four points of padding stands the content sixteen clear of the
+ * dashed frame on every side — a section's distance, the same the dialogs use —
+ * so the frame reads as the plate's rim rather than a second border crowding
+ * every field. Fields keep sixteen between them, the sheet's own list rhythm.
+ * `SheetHeader` and `SheetFooter` each add eight to that gap, so the title and
+ * the closing row sit a section's distance from what they bracket.
  *
  * A body whose rows can outgrow the card asks for `scroll`, and then only its
  * rows move: the plate and the gutter stay where they are, and the sheet hugs
@@ -194,7 +195,7 @@ export function SheetBody({
 }) {
   if (!scroll) {
     return (
-      <View testID={testID} className={cn("gap-4 p-4", className)}>
+      <View testID={testID} className={cn("gap-4 p-6", className)}>
         <SheetFrame />
         {children}
       </View>
@@ -202,7 +203,7 @@ export function SheetBody({
   }
 
   return (
-    <View testID={testID} className={cn("shrink p-4", className)}>
+    <View testID={testID} className={cn("shrink p-6", className)}>
       <SheetFrame />
       <ScrollView
         testID="sheet-body-scroll"

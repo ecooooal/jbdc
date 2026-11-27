@@ -10,6 +10,10 @@ import { Text } from "@/shared/components/ui/text";
  * translation and the sheet's title keeps the row to itself. Each sheet names
  * itself in the X's accessibility label, so a screen reader never hears a bare
  * "Close" four ways.
+ *
+ * Its eight points of trailing air join the body's sixteen-point gap, so the
+ * title stands one section clear of the first field while the fields keep their
+ * closer rhythm — the sheet's opening reads as a header, not another row.
  */
 export function SheetHeader({
   title,
@@ -21,7 +25,7 @@ export function SheetHeader({
   onClose: () => void;
 }) {
   return (
-    <View className="flex-row items-center justify-between gap-3">
+    <View className="flex-row items-center justify-between gap-3 pb-2">
       <Text className="font-serif text-lg font-semibold leading-tight">{title}</Text>
       <Button
         size="icon"
