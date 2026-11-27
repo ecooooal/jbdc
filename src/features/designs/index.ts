@@ -1,8 +1,8 @@
 /**
  * Designs — the Design record module. It owns the editable field set, name
  * validation, identity and timestamps on create, the `search_text` every
- * identity write rebuilds, the Status move and the Events a rejection and a
- * later decision record, and the one Status label rule.
+ * edit rebuilds, the Status move and the Events a rejection and a later
+ * decision record, and the one Status label rule.
  */
 export { DESIGN_EDITABLE_FIELDS, DESIGN_IDENTITY_FIELDS, designFieldLabel } from "./lib/fields";
 export type { DesignEditableField } from "./lib/fields";
