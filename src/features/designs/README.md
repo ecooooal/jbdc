@@ -23,6 +23,7 @@ uses recorded on it, and the screens that show and edit it. Public entries are
 | Edit — the visit: drafts, open row, tabs, Material use panel, close | `lib/edit-design-reducer.ts` |
 | The add-Material-use editor | `lib/add-material-use-reducer.ts` |
 | New Design | `lib/new-design-form-reducer.ts` |
+| Detail — the status sheet: its open state, the checked row, the rejection draft | `lib/design-detail-reducer.ts` |
 
 `use-edit-visit.ts` runs the Edit reducer's effects; `use-design-detail.ts`
 is Detail's live read.
