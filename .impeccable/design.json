@@ -221,9 +221,9 @@
       "name": "Status Badges",
       "kind": "chip",
       "refersTo": "badge-confirmed",
-      "description": "The state vocabulary as pills: approved and produced (wood), in development (sage), rejected (red), concept or archived (Thread Line hairline). Filled variants carry no visible border; the hairline belongs to Concept and Archived. Text is white in light and ink in dark on sage and red.",
+      "description": "The state vocabulary as pills: approved and produced (deep wood), in development (sage), rejected (red), concept or archived (Thread Line hairline). Filled variants carry no visible border; the hairline belongs to Concept and Archived. Every filled pill carries light text at 12px: Unbleached Paper on deep wood, and white in light and ink in dark on sage and red.",
       "html": "<span class='ds-badge ds-badge-wood'>Approved</span> <span class='ds-badge ds-badge-sage'>In Development</span> <span class='ds-badge ds-badge-red'>Rejected</span> <span class='ds-badge ds-badge-outline'>Concept</span>",
-      "css": ".ds-badge { display:inline-flex; align-items:center; border:1px solid transparent; border-radius:9999px; padding:2px 8px; font:500 12px/1.2 'DM Sans',sans-serif; } .ds-badge-wood { background:#B38A64; color:#292724; } .ds-badge-sage { background:#687C68; color:#FFFFFF; } .ds-badge-red { background:#B94B45; color:#FFFFFF; } .ds-badge-outline { background:transparent; border-color:#E8E5DF; color:#292724; }"
+      "css": ".ds-badge { display:inline-flex; align-items:center; border:1px solid transparent; border-radius:9999px; padding:2px 8px; font:500 12px/1.2 'DM Sans',sans-serif; } .ds-badge-wood { background:#8A6642; color:#F8F6F2; } .ds-badge-sage { background:#687C68; color:#FFFFFF; } .ds-badge-red { background:#B94B45; color:#FFFFFF; } .ds-badge-outline { background:transparent; border-color:#E8E5DF; color:#292724; }"
     },
     {
       "name": "Library Tile Card",

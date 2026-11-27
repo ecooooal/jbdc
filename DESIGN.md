@@ -166,8 +166,8 @@ components:
     rounded: "{rounded.xl}"
     padding: "0"
   badge-confirmed:
-    backgroundColor: "{colors.wood}"
-    textColor: "{colors.wood-foreground}"
+    backgroundColor: "{colors.selection}"
+    textColor: "{colors.selection-foreground}"
     typography: "{typography.label-sm}"
     rounded: "{rounded.full}"
     padding: "2px 8px"

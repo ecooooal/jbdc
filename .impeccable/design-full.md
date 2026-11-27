@@ -274,8 +274,8 @@ A warm, low-saturation paper palette whose only saturated voices are two accents
 
 ### Primary
 
-- **Sanded Wood** (`wood`, #B38A64 light / #D1B18A dark): the single primary accent. Marks rather than labels: the Approved and Produced status badge, the selected thumb's mark, the Detail section rule, the radio and checkbox marks, and every selection mark that is not a fill. Ink Thread text sits on it in both modes. Rare by design — well under 10% of any screen.
-- **Deep Wood** (`selection`, #8A6642 both schemes): Sanded Wood one shade deeper, the fill under selected text in light and dark alike: the selected stage tab, Edit's selected section tab, the chosen row in a choice or status sheet, the Library's FAB, and every labelled primary action. It exists because a mid-tone wood cannot carry either its own ink or a light ink at 12px, which is what a button's label is; the deeper fill takes Unbleached Paper text at 4.8:1. It is not a second accent, and it never appears as a half-tone or a gradient.
+- **Sanded Wood** (`wood`, #B38A64 light / #D1B18A dark): the single primary accent. Marks rather than labels: the selected thumb's mark, the Detail section rule, the radio and checkbox marks, and every selection mark that is not a fill. Ink Thread text sits on it in both modes. Rare by design — well under 10% of any screen.
+- **Deep Wood** (`selection`, #8A6642 both schemes): Sanded Wood one shade deeper, the fill under selected text in light and dark alike: the selected stage tab, Edit's selected section tab, the Approved and Produced status badge, the chosen row in a choice or status sheet, the Library's FAB, and every labelled primary action. It exists because a mid-tone wood cannot carry either its own ink or a light ink at 12px, which is what a button's or a badge's label is; the deeper fill takes Unbleached Paper text at 4.8:1. It is not a second accent, and it never appears as a half-tone or a gradient.
 
 ### Secondary
 
