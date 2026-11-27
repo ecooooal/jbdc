@@ -1,4 +1,5 @@
 import { DeleteButton } from "@/shared/components/delete-button";
+import { Keyboard } from "react-native";
 import { SheetBody, SheetFooter } from "@/shared/components/sheet";
 import { Button } from "@/shared/components/ui/button";
 import { Input } from "@/shared/components/ui/input";
@@ -49,6 +50,7 @@ export function EditMaterialUseForm({
   const removeArmed = state.removeArmed;
 
   function close(): void {
+    Keyboard.dismiss();
     send({ type: "material-use-panel-fact", fact: { type: "closed" } });
   }
 

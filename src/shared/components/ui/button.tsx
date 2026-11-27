@@ -13,9 +13,13 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
+        // A labelled primary takes Deep Wood with Unbleached Paper ink: the
+        // mid-tone Sanded Wood cannot hold small text at a readable contrast,
+        // and the system already reserves Deep Wood for the one fill that
+        // carries light text (the selected stage tab).
         default: cn(
-          "bg-primary active:bg-primary/90 shadow-sm shadow-black/5",
-          Platform.select({ web: "hover:bg-primary/90" }),
+          "bg-selection active:bg-selection/90 shadow-sm shadow-black/5",
+          Platform.select({ web: "hover:bg-selection/90" }),
         ),
         destructive: cn(
           "bg-destructive active:bg-destructive/90 shadow-sm shadow-black/5",
@@ -61,7 +65,7 @@ const buttonTextVariants = cva(
   {
     variants: {
       variant: {
-        default: "text-primary-foreground",
+        default: "text-selection-foreground",
         destructive: "text-destructive-foreground",
         outline: cn(
           "group-active:text-accent-foreground",

@@ -1,6 +1,6 @@
 import { act, render, screen, userEvent } from "@testing-library/react-native";
 import type { ReactNode } from "react";
-import { Text } from "react-native";
+import { Keyboard, Text } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { Sheet, SheetBody } from "./sheet";
 
@@ -247,4 +247,52 @@ test("a body that does not ask to scroll keeps its rows in place", async () => {
 
   expect(screen.queryByTestId("sheet-body-scroll")).toBeNull();
   expect(screen.getByText("Widened the shoulder.")).toBeTruthy();
+});
+
+test("a closing sheet puts the keyboard away once the card has settled", async () => {
+  jest.useFakeTimers();
+  const dismiss = jest.spyOn(Keyboard, "dismiss").mockImplementation(() => {});
+
+  try {
+    const sheet = (open: boolean) => (
+      <SafeAreaProvider initialMetrics={INITIAL_METRICS}>
+        <Sheet open={open} onClose={jest.fn()}>
+          <Text>Widened the shoulder.</Text>
+        </Sheet>
+      </SafeAreaProvider>
+    );
+
+    const { rerender } = await render(sheet(true));
+    await rerender(sheet(false));
+
+    // The card keeps its own turn before the keys are asked to leave.
+    expect(dismiss).not.toHaveBeenCalled();
+
+    await act(() => jest.advanceTimersByTime(200));
+
+    expect(dismiss).toHaveBeenCalledTimes(1);
+  } finally {
+    dismiss.mockRestore();
+    jest.useRealTimers();
+  }
+});
+
+test("a sheet that mounts closed leaves the keyboard alone", async () => {
+  jest.useFakeTimers();
+  const dismiss = jest.spyOn(Keyboard, "dismiss").mockImplementation(() => {});
+
+  try {
+    await renderSheet(
+      <Sheet open={false} onClose={jest.fn()}>
+        <Text>Widened the shoulder.</Text>
+      </Sheet>,
+    );
+
+    await act(() => jest.advanceTimersByTime(500));
+
+    expect(dismiss).not.toHaveBeenCalled();
+  } finally {
+    dismiss.mockRestore();
+    jest.useRealTimers();
+  }
 });

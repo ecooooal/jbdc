@@ -3,8 +3,8 @@ import {
   type ModalDetent,
   type SurfaceStyle,
 } from "@swmansion/react-native-bottom-sheet";
-import { type ReactNode, useEffect, useId, useState } from "react";
-import { ScrollView, View, type ColorValue } from "react-native";
+import { type ReactNode, useEffect, useId, useRef, useState } from "react";
+import { Keyboard, ScrollView, View, type ColorValue } from "react-native";
 import { KeyboardController, KeyboardEvents } from "react-native-keyboard-controller";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useResolveClassNames } from "uniwind";
@@ -111,6 +111,23 @@ export function Sheet({
   const keyboardLift = useKeyboardLift();
   const id = useId();
   const depth = useSheetDepth(id, open);
+
+  // A closed sheet leaves no field behind, so the keys go with it. Android
+  // hands focus back to whatever field the page had focused before the sheet
+  // opened, which raises the keyboard again the instant the sheet's own field
+  // unmounts; dismissing once the card has settled puts it away for good. Only
+  // a real close counts, so a sheet that mounts closed never takes the keyboard
+  // from a field the owner is already typing in.
+  const wasOpen = useRef(open);
+  useEffect(() => {
+    const closed = wasOpen.current && !open;
+    wasOpen.current = open;
+    if (!closed) return;
+
+    const timer = setTimeout(() => Keyboard.dismiss(), SHEET_SETTLE_MS);
+    return () => clearTimeout(timer);
+  }, [open]);
+
   // The closed detent ignores insets; the open one floats the card clear of
   // the screen's sides and above the home indicator or gesture bar, and keeps
   // the same gap under the status bar when the content grows tall. An open

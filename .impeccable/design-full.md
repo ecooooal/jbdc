@@ -114,15 +114,15 @@ spacing:
   screen-margin: "24px"
 components:
   button-primary:
-    backgroundColor: "{colors.wood}"
-    textColor: "{colors.wood-foreground}"
+    backgroundColor: "{colors.selection}"
+    textColor: "{colors.selection-foreground}"
     typography: "{typography.label}"
     rounded: "{rounded.md}"
     height: "40px"
     padding: "0 16px"
   button-primary-sm:
-    backgroundColor: "{colors.wood}"
-    textColor: "{colors.wood-foreground}"
+    backgroundColor: "{colors.selection}"
+    textColor: "{colors.selection-foreground}"
     typography: "{typography.label}"
     rounded: "{rounded.md}"
     height: "36px"
@@ -274,8 +274,8 @@ A warm, low-saturation paper palette whose only saturated voices are two accents
 
 ### Primary
 
-- **Sanded Wood** (`wood`, #B38A64 light / #D1B18A dark): the single primary accent. Primary actions, the Approved and Produced status badge, the selected journey tab's and thumb's mark, and selection marks. Ink Thread text sits on it in both modes. Rare by design — well under 10% of any screen.
-- **Deep Wood** (`selection`, #8A6642 both schemes): Sanded Wood one shade deeper, the fill under selected text in light and dark alike. It exists because a mid-tone wood cannot carry either its own ink or a light ink at 12px; the deeper fill takes Unbleached Paper text at 4.8:1. It is not a second accent, and it never appears as a half-tone or a gradient.
+- **Sanded Wood** (`wood`, #B38A64 light / #D1B18A dark): the single primary accent. Marks rather than labels: the Approved and Produced status badge, the selected thumb's mark, the Detail section rule, the FAB, and every selection mark. Ink Thread text sits on it in both modes. Rare by design — well under 10% of any screen.
+- **Deep Wood** (`selection`, #8A6642 both schemes): Sanded Wood one shade deeper, the fill under selected text in light and dark alike: the selected stage tab, and every labelled primary action. It exists because a mid-tone wood cannot carry either its own ink or a light ink at 12px, which is what a button's label is; the deeper fill takes Unbleached Paper text at 4.8:1. It is not a second accent, and it never appears as a half-tone or a gradient.
 
 ### Secondary
 
@@ -421,7 +421,7 @@ The library is uniwind + rn-primitives with shadcn-style slot names; every color
 
 - **Character:** Calm, workmanlike, never loud.
 - **Shape:** Rounded rectangle (8px), 40px tall, 8px internal gap, icon 20px; the small size is 36px tall and the large size 44px.
-- **Primary:** Sanded Wood fill with Ink Thread text, 16px horizontal padding.
+- **Primary:** Deep Wood fill with Unbleached Paper text, 16px horizontal padding. Sanded Wood stays for marks and icon fills — a 14px label on its mid-tone sits at the edge of legibility.
 - **Press:** Instant tonal shift — primary darkens to 90%. Disabled is 50% opacity.
 - **Outline / Ghost / Icon:** Thread Line border on Warm Paper; ghost and icon variants are transparent until pressed, when they take the Kraft tint. Icon buttons are 40×40. Destructive is Rejection Red with white in light and ink in dark.
 - **Delete:** the one destructive control: a 16px trash glyph in a 40×40 ghost icon button, Faded Thread at rest. On the first press the glyph is replaced by the confirm word — "Delete" or "Remove" — in a Rejection Red destructive button, and that same button deletes on the second press. No delete fires on the first press, and no separate cue pretends to be the button.
@@ -476,7 +476,7 @@ The Detail's visual home, on the detail's Unbleached Paper ground: a 3:4 plate i
 
 The current image's notes open in one bottom sheet: a floating Unbleached Paper card, inset 12px from the screen's sides, under its status bar, and above its bottom safe area, its content detent following the card's measured height, with no paper card floating above the page. All four corners take the sheet's 16px radius, so the card reads as a plate laid over the screen rather than a panel joined to its edge. Every sheet is a plate: an inset dashed frame in Faded Thread, 8px inside the card's edge, and a 24px body gutter on every side, so the frame stands 16px clear of the content all the way around and reads as the plate's rim rather than a second border beside every field. Fields keep 16px between them; the title and the closing row each stand a 24px section clear of what they bracket. A sheet opened above another steps one tone deeper — Kraft, then the deep Kraft — so the stack gains depth without a shadow; the tone clamps at the deepest step. The card settles in 200ms, inside the Quiet Turn budget, and no sheet draws a drag handle. The header carries `Notes (n)` and a ghost X; Add note expands the inline composer beneath it. The composer's field is Warm Paper on the sheet with a Thread Line stroke, and focus turns the stroke Sage; the caret and selection follow the same Sage. The composer is keyboard-aware, keeps its draft through a refusal, and disables Save while the draft is empty; only the list below scrolls, so the header and composer never leave the screen. Notes read oldest first with the same two-step delete. Note dates are Mono-small in Faded Thread, note text Body in Ink Thread, and an armed note's trash becomes a Rejection Red "Delete" button.
 
-The same wrapper carries Edit's four sheets and the choice sheets they open, and none of them draws a drag handle. Each opens with its title in the serif voice and one ghost X, labelled after its sheet — "Close category and collection", "Close add material", "Close material", "Close new material". The taxonomy sheet holds Category and Collection as two select-shelled fields; a field opens its own choice sheet above it — one tone deeper, the options in one Thread Line box, the chosen row checked on the trailing edge and the row that clears the choice in Faded Thread — and a choice writes at once while both sheets stay open. Add material sets Material, which opens the same choice sheet, over a ghost "New material" action, then Colour and Role — the three roles drawn as one radio row each inside a Thread Line box, the mark trailing where the choice lists keep their check — and closes on a footer of ghost Cancel and primary "Add to design". Edit material writes those three fields as they change and is left by its header's X or its footer's Done, which flushes the typed colour; the notes' two-step trash sits at the footer's leading edge, Faded Thread at rest and becoming the Rejection Red "Remove" button once armed. New material stacks above Add material as one focused name field whose Return submits; Cancel, or the header's X, returns to the Add sheet's Material, Colour, and Role untouched. Opening a choice sheet dismisses the keyboard first, so a picker never slides up under keys the Colour field already raised. Every sheet's fields stay above the keyboard.
+The same wrapper carries Edit's four sheets and the choice sheets they open, and none of them draws a drag handle. Each opens with its title in the serif voice and one ghost X, labelled after its sheet — "Close category and collection", "Close add material", "Close material", "Close new material". The taxonomy sheet holds Category and Collection as two select-shelled fields; a field opens its own choice sheet above it — one tone deeper, the options in one Thread Line box, the chosen row checked on the trailing edge and the row that clears the choice in Faded Thread — and a choice writes at once while both sheets stay open. A choice sheet pins its title and X above a list that scrolls alone, so a long list never carries the way out off the top, and the title counts what the field offers, so a list clipped at the plate edge still says how much sits below it. Closing that sheet, or any sheet, takes the keyboard with it — even when the page beneath still holds the field that opened it. Add material sets Material, which opens the same choice sheet, over a ghost "New material" action, then Colour and Role — the three roles drawn as one radio row each inside a Thread Line box, the mark trailing where the choice lists keep their check — and closes on a footer of ghost Cancel and primary "Add to design". Edit material writes those three fields as they change and is left by its header's X or its footer's Done, which flushes the typed colour; the notes' two-step trash sits at the footer's leading edge, Faded Thread at rest and becoming the Rejection Red "Remove" button once armed. New material stacks above Add material as one focused name field whose Return submits; Cancel, or the header's X, returns to the Add sheet's Material, Colour, and Role untouched. Opening a choice sheet dismisses the keyboard first, so a picker never slides up under keys the Colour field already raised. Every sheet's fields stay above the keyboard.
 
 ### The image detail (signature)
 

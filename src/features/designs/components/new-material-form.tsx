@@ -1,3 +1,4 @@
+import { Keyboard } from "react-native";
 import { SheetBody, SheetFooter } from "@/shared/components/sheet";
 import { Button } from "@/shared/components/ui/button";
 import { Input } from "@/shared/components/ui/input";
@@ -34,6 +35,9 @@ export function NewMaterialForm({
   const database = useDatabase();
 
   function create(): void {
+    // The field is about to leave on success; a refusal keeps the sheet and the
+    // name, with the message where the keys were.
+    Keyboard.dismiss();
     onFact(
       inlineCreationResult(
         () => createMaterial(database, { name: inline.name }),
@@ -42,13 +46,14 @@ export function NewMaterialForm({
     );
   }
 
+  function close(): void {
+    Keyboard.dismiss();
+    onFact({ type: "closed" });
+  }
+
   return (
     <SheetBody testID="new-material-sheet" scroll>
-      <SheetHeader
-        title="New material"
-        closeLabel="Close new material"
-        onClose={() => onFact({ type: "closed" })}
-      />
+      <SheetHeader title="New material" closeLabel="Close new material" onClose={close} />
 
       <Input
         value={inline.name}
@@ -63,7 +68,7 @@ export function NewMaterialForm({
       {inline.error ? <FieldError message={inline.error} /> : null}
 
       <SheetFooter>
-        <Button size="sm" variant="ghost" onPress={() => onFact({ type: "closed" })}>
+        <Button size="sm" variant="ghost" onPress={close}>
           <Text>Cancel</Text>
         </Button>
         <Button size="sm" onPress={create}>

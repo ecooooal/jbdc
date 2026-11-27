@@ -1,6 +1,6 @@
 import { Plus } from "lucide-react-native";
 import { useEffect, useRef } from "react";
-import { ScrollView, View, type ScrollViewInstance } from "react-native";
+import { Keyboard, ScrollView, View, type ScrollViewInstance } from "react-native";
 import { Sheet, SheetBody } from "@/shared/components/sheet";
 import { SheetHeader } from "@/shared/components/sheet-header";
 import { Button } from "@/shared/components/ui/button";
@@ -38,6 +38,24 @@ export function NotesSheet({
   const lastNoteId = notes.at(-1)?.id;
   const previousLastNoteId = useRef(lastNoteId);
 
+  /** The sheet is about to drop the field it was focused on. */
+  function closeSheet(): void {
+    Keyboard.dismiss();
+    send({ type: "notes-sheet-closed" });
+  }
+
+  /** Saving or cancelling collapses the composer, so its field leaves with the keys. */
+  function closeComposer(): void {
+    Keyboard.dismiss();
+    send({ type: "image-note-composer-closed" });
+  }
+
+  /** The write may keep the composer open with its draft; the keys still go. */
+  function saveNote(): void {
+    Keyboard.dismiss();
+    send({ type: "image-note-save-pressed" });
+  }
+
   // A stored note arrives through the live read while the sheet is open; move
   // the list to it so the owner sees what she just wrote without closing the
   // sheet. The last note's id, not the count, says one arrived: a read that
@@ -52,13 +70,13 @@ export function NotesSheet({
   }, [lastNoteId]);
 
   return (
-    <Sheet open={open} onClose={() => send({ type: "notes-sheet-closed" })}>
+    <Sheet open={open} onClose={closeSheet}>
       {open ? (
         <SheetBody testID="notes-sheet">
           <SheetHeader
             title={`Notes (${notes.length})`}
             closeLabel="Close notes"
-            onClose={() => send({ type: "notes-sheet-closed" })}
+            onClose={closeSheet}
           />
 
           {composer ? (
@@ -77,7 +95,7 @@ export function NotesSheet({
                   size="sm"
                   variant="ghost"
                   accessibilityLabel="Cancel note"
-                  onPress={() => send({ type: "image-note-composer-closed" })}
+                  onPress={closeComposer}
                 >
                   <Text>Cancel</Text>
                 </Button>
@@ -85,7 +103,7 @@ export function NotesSheet({
                   size="sm"
                   accessibilityLabel="Save note"
                   disabled={composer.draft.trim().length === 0}
-                  onPress={() => send({ type: "image-note-save-pressed" })}
+                  onPress={saveNote}
                 >
                   <Text>Save note</Text>
                 </Button>

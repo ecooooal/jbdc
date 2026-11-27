@@ -1,5 +1,5 @@
 import { X } from "lucide-react-native";
-import { View } from "react-native";
+import { Keyboard, View } from "react-native";
 import { Button } from "@/shared/components/ui/button";
 import { Icon } from "@/shared/components/ui/icon";
 import { Text } from "@/shared/components/ui/text";
@@ -14,6 +14,10 @@ import { Text } from "@/shared/components/ui/text";
  * Its eight points of trailing air join the body's sixteen-point gap, so the
  * title stands one section clear of the first field while the fields keep their
  * closer rhythm — the sheet's opening reads as a header, not another row.
+ *
+ * The X puts the keys away before it asks to close: the sheet drops the field it
+ * was focused on, and Android would otherwise leave the keyboard standing over
+ * the page the close just revealed.
  */
 export function SheetHeader({
   title,
@@ -24,6 +28,11 @@ export function SheetHeader({
   closeLabel: string;
   onClose: () => void;
 }) {
+  function close(): void {
+    Keyboard.dismiss();
+    onClose();
+  }
+
   return (
     <View className="flex-row items-center justify-between gap-3 pb-2">
       <Text className="font-serif text-lg font-semibold leading-tight">{title}</Text>
@@ -32,7 +41,7 @@ export function SheetHeader({
         variant="ghost"
         accessibilityLabel={closeLabel}
         hitSlop={4}
-        onPress={onClose}
+        onPress={close}
       >
         <Icon as={X} />
       </Button>
