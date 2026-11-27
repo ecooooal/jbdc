@@ -55,7 +55,10 @@ function RejectedTile({ design }: { design: RejectedDesign }) {
 /**
  * One rejected Design at density 2. The whole card is one button, the same
  * press rule the Library's cards use: pressing dips and tints, then opens that
- * Design. The single view gives the same Design its own page.
+ * Design. The card's accessible name carries the reason the tile shows — or
+ * that none was recorded — because the reason is the archive's point and the
+ * child text is grouped under the button's own label. The single view gives
+ * the same Design its own page.
  */
 export function RejectedCard({
   design,
@@ -66,7 +69,7 @@ export function RejectedCard({
 }) {
   return (
     <PressHighlight
-      accessibilityLabel={design.name}
+      accessibilityLabel={`${design.name}, ${design.reason ?? NO_REASON_RECORDED}`}
       className="flex-1"
       overlayClassName="rounded-xl"
       {...press}

@@ -129,13 +129,15 @@ export function designDetailReducer(
 
       if (event.status === "rejected") {
         // Rejecting is the one row that asks why first. It expands an empty
-        // form and writes nothing until Reject design is pressed.
+        // form and writes nothing until Reject design is pressed. The rows
+        // stay visible when it does, so pressing Rejected again must keep the
+        // draft it already holds rather than clearing what the owner typed.
         return only({
           ...state,
           panel: {
             kind: "status",
             current: panel.current,
-            rejection: { reason: "", potentialImprovements: "" },
+            rejection: panel.rejection ?? { reason: "", potentialImprovements: "" },
           },
         });
       }

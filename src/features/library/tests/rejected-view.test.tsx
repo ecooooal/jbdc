@@ -75,6 +75,27 @@ test("a rejected card with a blank reason reads No reason recorded", async () =>
   expect(screen.getByText("No reason recorded")).toBeTruthy();
 });
 
+test("a rejected card announces its reason as part of the one tap target", async () => {
+  seedStream(database);
+  rejectDesign(database, "Rejected coat", "The fabric cost too much", 4000);
+
+  await renderLibraryScreen(database);
+  await showRejectedDesigns();
+
+  expect(
+    screen.getByRole("button", { name: "Rejected coat, The fabric cost too much" }),
+  ).toBeTruthy();
+});
+
+test("a rejected card with no reason announces that none was recorded", async () => {
+  rejectDesign(database, "Rejected coat", null, 4000);
+
+  await renderLibraryScreen(database);
+  await showRejectedDesigns();
+
+  expect(screen.getByRole("button", { name: "Rejected coat, No reason recorded" })).toBeTruthy();
+});
+
 test("the rejected view orders designs by their most recent update, newest first", async () => {
   rejectDesign(database, "Oldest coat", "Too costly", 1000);
   rejectDesign(database, "Newest coat", "Too costly", 3000);

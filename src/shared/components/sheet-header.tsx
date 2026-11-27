@@ -35,7 +35,9 @@ export function SheetHeader({
 
   return (
     <View className="flex-row items-center justify-between gap-3 pb-2">
-      <Text className="font-serif text-lg font-semibold leading-tight">{title}</Text>
+      {/* The title takes the row's free width and wraps: a fixed-width title
+          would let Android clip a longer name at the paint, not the layout. */}
+      <Text className="min-w-0 flex-1 font-serif text-lg font-semibold leading-tight">{title}</Text>
       <Button
         size="icon"
         variant="ghost"

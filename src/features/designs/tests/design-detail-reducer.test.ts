@@ -81,6 +81,37 @@ describe("the Detail surface's status sheet", () => {
     expect(tester.getEffects()).toEqual([]);
   });
 
+  test("pressing Rejected again keeps its form and the typed draft", () => {
+    const tester = opened("concept");
+
+    tester.send({ type: "status-row-pressed", status: "rejected" });
+    tester.send({
+      type: "rejection-field-changed",
+      field: "reason",
+      value: "The fabric cost too much",
+    });
+    tester.send({ type: "status-row-pressed", status: "rejected" });
+
+    expect(tester.getState().panel).toMatchObject({
+      kind: "status",
+      current: "concept",
+      rejection: { reason: "The fabric cost too much" },
+    });
+    expect(tester.getEffects()).toEqual([]);
+  });
+
+  test("another Status row pressed while the form is open writes and closes", () => {
+    const tester = opened("concept");
+
+    tester.send({ type: "status-row-pressed", status: "rejected" });
+    tester.send({ type: "status-row-pressed", status: "approved" });
+
+    expect(tester.getEffects()).toEqual([
+      { type: "change-status", designId: DESIGN_ID, change: { status: "approved" } },
+    ]);
+    expect(tester.getState().panel).toBeNull();
+  });
+
   test("dismissing the expanded Rejected row drops the form and writes nothing", () => {
     const tester = opened("concept");
 

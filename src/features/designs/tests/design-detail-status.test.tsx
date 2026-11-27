@@ -115,6 +115,28 @@ test("pressing Rejected expands empty Reason and Potential improvements fields",
   expect(statusSheet().getByRole("button", { name: "Reject design" })).toBeTruthy();
 });
 
+test("expanding Rejected keeps all five Status rows and the current check", async () => {
+  const design = createDesign(database, { name: "Silk slip dress" }, 10);
+
+  changeStatus(database, design.id, { status: "approved" }, 20);
+
+  await renderDetail(design.id);
+  await openStatusSheet();
+  await userEvent.press(statusSheet().getByRole("button", { name: "Rejected" }));
+
+  for (const name of ["Concept", "In Development", "Approved", "Produced", "Rejected"]) {
+    expect(statusSheet().getByRole("button", { name })).toBeTruthy();
+  }
+
+  expect(
+    statusSheet().getByRole("button", { name: "Approved" }).props.accessibilityState,
+  ).toMatchObject({ selected: true });
+  expect(
+    statusSheet().getByRole("button", { name: "Rejected" }).props.accessibilityState,
+  ).toMatchObject({ expanded: true });
+  expect(statusSheet().getByLabelText("Reason (optional)")).toHaveDisplayValue("");
+});
+
 test("dismissing the expanded rejection writes nothing", async () => {
   const design = createDesign(database, { name: "Silk slip dress" });
 

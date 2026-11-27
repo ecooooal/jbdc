@@ -50,7 +50,9 @@ function RejectedPanel({
           <Text className="text-muted-foreground font-mono text-sm leading-5">{taxonomy}</Text>
         ) : null}
       </View>
-      <Text>{design.reason ?? NO_REASON_RECORDED}</Text>
+      {/* The reason is the panel's last line, so it reserves the FAB's corner
+          the same way the Library's record row does. */}
+      <Text className="pr-16">{design.reason ?? NO_REASON_RECORDED}</Text>
     </SingleViewPanelSurface>
   );
 }

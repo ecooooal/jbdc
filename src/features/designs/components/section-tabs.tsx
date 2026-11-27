@@ -88,10 +88,11 @@ export function SectionTabs() {
 }
 
 /**
- * One tab of Edit's section bar: its label centred on the paper fill that
+ * One tab of Edit's section bar: its label centred on the Deep Wood fill that
  * carries the selection, which fades up from the Kraft track as the tab opens
- * — Detail's beat, drawn as a fill instead of a rule. The whole tab is the
- * target, and the fill takes no presses.
+ * — Detail's beat, drawn as a fill instead of a rule. The chosen label takes
+ * Unbleached Paper ink, the one ink the system sets on Deep Wood. The whole
+ * tab is the target, and the fill takes no presses.
  */
 function EditSectionTab({ value, children }: { value: string; children: ReactNode }) {
   const { value: activeValue } = TabsPrimitive.useRootContext();
@@ -106,17 +107,24 @@ function EditSectionTab({ value, children }: { value: string; children: ReactNod
       <Animated.View
         pointerEvents="none"
         style={fill}
-        className="bg-background absolute inset-0 rounded-lg"
+        className="bg-selection absolute inset-0 rounded-lg"
       />
-      <Text className="text-center text-sm font-medium">{children}</Text>
+      <Text
+        className={cn(
+          "text-center text-sm font-medium",
+          selected ? "text-selection-foreground" : "text-foreground",
+        )}
+      >
+        {children}
+      </Text>
     </TabsPrimitive.Trigger>
   );
 }
 
 /**
  * The Edit's section switcher: both sections on one Kraft track, the open one
- * lifted on a paper fill that arrives as the index moves, under the same
- * shared Tabs root and content the Detail uses.
+ * filled solid Deep Wood beneath Unbleached Paper ink, under the same shared
+ * Tabs root and content the Detail uses.
  */
 export function EditSectionTabs() {
   return (
