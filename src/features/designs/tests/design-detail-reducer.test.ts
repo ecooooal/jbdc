@@ -1,6 +1,7 @@
 import type { DesignStatus } from "@/features/database";
 import { createReducerTester } from "@/shared/testing/reducer-tester";
 import {
+  canSaveDecision,
   createInitialDesignDetailState,
   designDetailReducer,
   type DesignDetailEffect,
@@ -150,5 +151,109 @@ describe("the Detail surface's status sheet", () => {
         change: { status: "rejected", reason: "", potentialImprovements: "" },
       },
     ]);
+  });
+});
+
+describe("the Detail surface's decision sheet", () => {
+  test("Add a decision opens the sheet prefilled from the latest decision", () => {
+    const tester = statusSheet();
+
+    tester.send({
+      type: "decision-sheet-opened",
+      latest: {
+        reason: "The fabric cost too much",
+        potentialImprovements: "Try the wool blend",
+      },
+    });
+
+    expect(tester.getState().decisionSheet).toEqual({
+      reason: "The fabric cost too much",
+      potentialImprovements: "Try the wool blend",
+    });
+    expect(tester.getEffects()).toEqual([]);
+  });
+
+  test("Add a decision with no latest decision opens an empty form", () => {
+    const tester = statusSheet();
+
+    tester.send({ type: "decision-sheet-opened", latest: null });
+
+    expect(tester.getState().decisionSheet).toEqual({
+      reason: "",
+      potentialImprovements: "",
+    });
+    expect(tester.getEffects()).toEqual([]);
+  });
+
+  test("Save decision is disabled while both trimmed fields are empty", () => {
+    expect(canSaveDecision({ reason: "", potentialImprovements: "" })).toBe(false);
+    expect(canSaveDecision({ reason: "   ", potentialImprovements: "\n\t" })).toBe(false);
+  });
+
+  test("Save decision is enabled when either field has text", () => {
+    expect(canSaveDecision({ reason: "The fringe shed", potentialImprovements: "" })).toBe(true);
+    expect(canSaveDecision({ reason: "", potentialImprovements: "Try a tighter weave" })).toBe(
+      true,
+    );
+    expect(canSaveDecision({ reason: "   ", potentialImprovements: " Try a tighter weave " })).toBe(
+      true,
+    );
+  });
+
+  test("typing a decision field keeps the draft and declares no write", () => {
+    const tester = statusSheet();
+
+    tester.send({ type: "decision-sheet-opened", latest: null });
+    tester.send({ type: "decision-field-changed", field: "reason", value: "The fringe shed" });
+    tester.send({
+      type: "decision-field-changed",
+      field: "potentialImprovements",
+      value: "Try a tighter weave",
+    });
+
+    expect(tester.getState().decisionSheet).toEqual({
+      reason: "The fringe shed",
+      potentialImprovements: "Try a tighter weave",
+    });
+    expect(tester.getEffects()).toEqual([]);
+  });
+
+  test("dismissing the decision sheet drops the draft and writes nothing", () => {
+    const tester = statusSheet();
+
+    tester.send({ type: "decision-sheet-opened", latest: null });
+    tester.send({ type: "decision-field-changed", field: "reason", value: "The fringe shed" });
+    tester.send({ type: "decision-sheet-closed" });
+
+    expect(tester.getState().decisionSheet).toBeNull();
+    expect(tester.getEffects()).toEqual([]);
+  });
+
+  test("Save decision declares one write carrying the why and closes the sheet", () => {
+    const tester = statusSheet();
+
+    tester.send({
+      type: "decision-sheet-opened",
+      latest: { reason: "The fabric cost too much", potentialImprovements: null },
+    });
+    tester.send({ type: "decision-field-changed", field: "reason", value: "The fringe shed" });
+    tester.send({
+      type: "decision-field-changed",
+      field: "potentialImprovements",
+      value: "Try a tighter weave",
+    });
+    tester.send({ type: "save-decision-pressed" });
+
+    expect(tester.getEffects()).toEqual([
+      {
+        type: "record-decision",
+        designId: DESIGN_ID,
+        decision: {
+          reason: "The fringe shed",
+          potentialImprovements: "Try a tighter weave",
+        },
+      },
+    ]);
+    expect(tester.getState().decisionSheet).toBeNull();
   });
 });

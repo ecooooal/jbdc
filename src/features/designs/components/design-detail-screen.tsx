@@ -35,6 +35,7 @@ import type { DesignDetail } from "../lib/records";
 import { useDesignDetail } from "../lib/use-design-detail";
 import { useDesignDetailSurface } from "../lib/use-design-detail-surface";
 import { DecisionBlock } from "./decision-block";
+import { DecisionSheet } from "./decision-sheet";
 import { DesignStatusBadge } from "./design-status-badge";
 import { MaterialUsesTable } from "./material-uses-table";
 import { ReadError } from "./read-error";
@@ -343,9 +344,10 @@ const DETAIL_ZOOM = ZoomIn.duration(DETAIL_ARRIVAL.zoom.duration).withInitialVal
  * Detail for one Design, opened from its Library card. The header stays fixed
  * above the scrolling content; the body opens on the identity block and
  * subscribes to the record, so later edits show here without reopening the
- * screen. The kebab's Change status opens the status sheet, whose decisions
- * live in the Detail surface reducer; a write lands through the live read.
- * Back returns to the Library.
+ * screen. The kebab's Change status opens the status sheet and the block's Add
+ * a decision opens the decision sheet; both sheets' decisions live in the
+ * Detail surface reducer, and a write lands through the live read. Back
+ * returns to the Library.
  */
 export function DesignDetailScreen({ designId }: { designId: string }) {
   const { design, error, status } = useDesignDetail(designId);
@@ -363,8 +365,12 @@ export function DesignDetailScreen({ designId }: { designId: string }) {
     send({ type: "status-sheet-opened", status: design.status });
   }
 
-  /** The decision sheet lands with its own step; the block's action is here. */
-  function openDecisionSheet(): void {}
+  /** The sheet opens on the latest decision the live read holds; the reducer keeps it. */
+  function openDecisionSheet(): void {
+    if (!design) return;
+
+    send({ type: "decision-sheet-opened", latest: design.latestDecision });
+  }
 
   return (
     <View
@@ -395,6 +401,7 @@ export function DesignDetailScreen({ designId }: { designId: string }) {
         )}
 
         <StatusSheet sheet={surface.statusSheet} send={send} />
+        <DecisionSheet draft={surface.decisionSheet} send={send} />
       </Animated.View>
     </View>
   );

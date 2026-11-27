@@ -1,11 +1,13 @@
 import type { DesignStatus } from "@/features/database";
-import type { StatusChange } from "./status-writes";
+import type { DecisionFields, StatusChange } from "./status-writes";
 
 /**
- * The why a rejection records while its form is showing. Both fields are
- * optional and start empty; the write path turns blank text into null.
+ * The why a rejection or a later decision records while its sheet is showing.
+ * Both fields are optional; the rejection form starts them empty and the
+ * decision sheet starts them prefilled from the latest decision. The write
+ * path turns blank text into null.
  */
-export type RejectionDraft = {
+export type DecisionDraft = {
   reason: string;
   potentialImprovements: string;
 };
@@ -19,38 +21,45 @@ export type StatusSheetState = {
   /** The checked row, and the row a press writes nothing for. */
   current: DesignStatus;
   /** The why fields once Rejected is pressed; null while the rows are showing. */
-  rejection: RejectionDraft | null;
+  rejection: DecisionDraft | null;
 };
 
 /**
- * Detail's decisions: the one status sheet that can be open over it, and the
- * Design every write it declares names. The section tab stays the component's
- * own presentation and is not here (docs/FRONTEND_STATE.md).
+ * Detail's decisions: the status sheet and the decision sheet that can be open
+ * over it, and the Design every write it declares names. The two sheets cannot
+ * be reached together, but each keeps its own open state and draft. The section
+ * tab stays the component's own presentation and is not here
+ * (docs/FRONTEND_STATE.md).
  */
 export type DesignDetailState = {
   /** The Design this surface acts on; every effect names it. */
   designId: string;
   /** The open status sheet, or null while it is closed. */
   statusSheet: StatusSheetState | null;
+  /** The open decision sheet's draft, or null while it is closed. */
+  decisionSheet: DecisionDraft | null;
 };
 
 export type DesignDetailEvent =
   | { type: "status-sheet-opened"; status: DesignStatus }
   | { type: "status-sheet-closed" }
   | { type: "status-row-pressed"; status: DesignStatus }
-  | { type: "rejection-field-changed"; field: keyof RejectionDraft; value: string }
-  | { type: "reject-pressed" };
+  | { type: "rejection-field-changed"; field: keyof DecisionDraft; value: string }
+  | { type: "reject-pressed" }
+  | { type: "decision-sheet-opened"; latest: DecisionFields | null }
+  | { type: "decision-sheet-closed" }
+  | { type: "decision-field-changed"; field: keyof DecisionDraft; value: string }
+  | { type: "save-decision-pressed" };
 
 /**
- * The work the status sheet asks for. One effect carries the whole choice, the
+ * The work a sheet asks for. One status effect carries the whole choice, the
  * why included, so the runner calls the one write path with what the owner
- * chose rather than deciding which change kind it is.
+ * chose rather than deciding which change kind it is. A later decision is its
+ * own write: one `decision` Event with no Status diff.
  */
-export type DesignDetailEffect = {
-  type: "change-status";
-  designId: string;
-  change: StatusChange;
-};
+export type DesignDetailEffect =
+  | { type: "change-status"; designId: string; change: StatusChange }
+  | { type: "record-decision"; designId: string; decision: DecisionFields };
 
 export type DesignDetailResult = {
   state: DesignDetailState;
@@ -59,7 +68,7 @@ export type DesignDetailResult = {
 
 /** A surface that has opened nothing yet. */
 export function createInitialDesignDetailState(designId: string): DesignDetailState {
-  return { designId, statusSheet: null };
+  return { designId, statusSheet: null, decisionSheet: null };
 }
 
 function only(state: DesignDetailState): DesignDetailResult {
@@ -67,11 +76,23 @@ function only(state: DesignDetailState): DesignDetailResult {
 }
 
 /**
- * The Detail surface's rules: opening and closing the status sheet, the row
- * an owner presses, and the rejection form Rejected expands. A non-rejected
- * press that moves the Design closes the sheet and declares one write; the
- * checked row closes with no write; Rejected expands its why form and writes
- * nothing until `reject-pressed`.
+ * A decision sheet's Save has something to write when either field holds text
+ * once trimmed. The control is disabled while both are blank, so the owner
+ * cannot record an empty Event.
+ */
+export function canSaveDecision(draft: DecisionDraft): boolean {
+  return draft.reason.trim() !== "" || draft.potentialImprovements.trim() !== "";
+}
+
+/**
+ * The Detail surface's rules: opening and closing the status sheet, the row an
+ * owner presses, the rejection form Rejected expands, and the later-decision
+ * sheet the block's action opens. A non-rejected press that moves the Design
+ * closes the sheet and declares one write; the checked row closes with no
+ * write; Rejected expands its why form and writes nothing until
+ * `reject-pressed`. The decision sheet opens prefilled from the latest
+ * decision — empty when there is none — and its Save declares one write with no
+ * Status move.
  */
 export function designDetailReducer(
   state: DesignDetailState,
@@ -148,6 +169,49 @@ export function designDetailReducer(
             type: "change-status",
             designId: state.designId,
             change: { status: "rejected", ...sheet.rejection },
+          },
+        ],
+      };
+    }
+
+    case "decision-sheet-opened":
+      // The latest decision is the prefill; a Design with none opens an empty
+      // form, the same fields the rejection form expands.
+      return only({
+        ...state,
+        decisionSheet: {
+          reason: event.latest?.reason ?? "",
+          potentialImprovements: event.latest?.potentialImprovements ?? "",
+        },
+      });
+
+    case "decision-sheet-closed":
+      // Every dismiss drops the draft and writes nothing.
+      return only({ ...state, decisionSheet: null });
+
+    case "decision-field-changed": {
+      const draft = state.decisionSheet;
+
+      if (!draft) return only(state);
+
+      return only({
+        ...state,
+        decisionSheet: { ...draft, [event.field]: event.value },
+      });
+    }
+
+    case "save-decision-pressed": {
+      const draft = state.decisionSheet;
+
+      if (!draft) return only(state);
+
+      return {
+        state: { ...state, decisionSheet: null },
+        effects: [
+          {
+            type: "record-decision",
+            designId: state.designId,
+            decision: draft,
           },
         ],
       };

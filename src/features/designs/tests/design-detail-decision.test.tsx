@@ -1,8 +1,9 @@
-import { screen, within } from "@testing-library/react-native";
+import { act, fireEvent, screen, userEvent, within } from "@testing-library/react-native";
 import { eq } from "drizzle-orm";
 import { designs } from "@/features/database";
-import { changeStatus, createDesign } from "@/features/designs";
-import { database, renderDetail, setupDesignDetailFixtures } from "./design-detail-fixtures";
+import { changeStatus, createDesign, getDesign } from "@/features/designs";
+import { listDesignEvents } from "@/features/history";
+import { database, live, renderDetail, setupDesignDetailFixtures } from "./design-detail-fixtures";
 
 jest.mock("expo-router", () => ({
   router: { back: jest.fn(), push: jest.fn() },
@@ -100,4 +101,86 @@ test("the decision block sits directly under the identity block, above the galle
   expect(block.parent).toBe(identity.parent);
   expect(siblings.indexOf(block)).toBe(siblings.indexOf(identity) + 1);
   expect(siblings.indexOf(gallery)).toBe(siblings.indexOf(block) + 1);
+});
+
+/** The decision sheet's body, once the block's action has opened it. */
+function decisionSheet() {
+  return within(screen.getByTestId("decision-sheet"));
+}
+
+test("Add a decision opens the decision sheet prefilled from the latest decision", async () => {
+  const design = createDesign(database, { name: "Silk slip dress" }, DECIDED_AT - 1000);
+
+  reject(design.id, "The fabric cost too much", "Try the wool blend");
+
+  await renderDetail(design.id);
+  await userEvent.press(decisionBlock().getByRole("button", { name: "Add a decision" }));
+
+  expect(decisionSheet().getByText("Add a decision")).toBeTruthy();
+  expect(decisionSheet().getByLabelText("Reason")).toHaveDisplayValue("The fabric cost too much");
+  expect(decisionSheet().getByLabelText("Potential improvements")).toHaveDisplayValue(
+    "Try the wool blend",
+  );
+});
+
+test("a rejected Design with no decision opens an empty decision sheet", async () => {
+  const design = createDesign(database, { name: "Silk slip dress" });
+
+  database.db.update(designs).set({ status: "rejected" }).where(eq(designs.id, design.id)).run();
+
+  await renderDetail(design.id);
+  await userEvent.press(decisionBlock().getByRole("button", { name: "Add a decision" }));
+
+  expect(decisionSheet().getByLabelText("Reason")).toHaveDisplayValue("");
+  expect(decisionSheet().getByLabelText("Potential improvements")).toHaveDisplayValue("");
+});
+
+test("saving a decision appends one Event with no Status diff and the block follows it", async () => {
+  const design = createDesign(database, { name: "Silk slip dress" }, DECIDED_AT - 1000);
+
+  reject(design.id, "The fabric cost too much", "Try the wool blend");
+
+  await renderDetail(design.id);
+  await userEvent.press(decisionBlock().getByRole("button", { name: "Add a decision" }));
+  await fireEvent.changeText(decisionSheet().getByLabelText("Reason"), "The fringe shed");
+  await fireEvent.changeText(
+    decisionSheet().getByLabelText("Potential improvements"),
+    "Try a tighter weave",
+  );
+  await userEvent.press(decisionSheet().getByRole("button", { name: "Save decision" }));
+
+  expect(screen.queryByTestId("decision-sheet")).toBeNull();
+  expect(getDesign(database, design.id)).toMatchObject({ status: "rejected" });
+
+  const events = listDesignEvents(database, design.id);
+
+  expect(events).toHaveLength(2);
+  expect(events[0]).toEqual(
+    expect.objectContaining({
+      kind: "decision",
+      reason: "The fringe shed",
+      potentialImprovements: "Try a tighter weave",
+      diff: null,
+    }),
+  );
+
+  await act(async () => live.notify("design_events"));
+
+  expect(decisionBlock().getByText("Rejected · The fringe shed")).toBeTruthy();
+  expect(decisionBlock().getByText("Potential improvements: Try a tighter weave")).toBeTruthy();
+});
+
+test("dismissing the decision sheet writes nothing and keeps the block", async () => {
+  const design = createDesign(database, { name: "Silk slip dress" }, DECIDED_AT - 1000);
+
+  reject(design.id, "The fabric cost too much");
+
+  await renderDetail(design.id);
+  await userEvent.press(decisionBlock().getByRole("button", { name: "Add a decision" }));
+  await fireEvent.changeText(decisionSheet().getByLabelText("Reason"), "The fringe shed");
+  await userEvent.press(decisionSheet().getByRole("button", { name: "Close decision" }));
+
+  expect(screen.queryByTestId("decision-sheet")).toBeNull();
+  expect(listDesignEvents(database, design.id)).toHaveLength(1);
+  expect(decisionBlock().getByText("Rejected · The fabric cost too much")).toBeTruthy();
 });

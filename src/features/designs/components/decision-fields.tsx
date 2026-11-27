@@ -1,20 +1,21 @@
 import { Input } from "@/shared/components/ui/input";
-import type { RejectionDraft } from "../lib/design-detail-reducer";
+import type { DecisionDraft } from "../lib/design-detail-reducer";
 import { FormField } from "./form-field";
 
 /**
  * The why a decision records: an optional Reason and an optional Potential
  * improvements, in the sheet's one order. The rejection form and the decision
  * sheet share these fields; the surface owns the draft, so the fields only
- * render what the owner has typed and report each change. Both start empty for
- * a rejection, and the write path stores blank text as null.
+ * render what the owner has typed and report each change. A rejection starts
+ * them empty and a later decision starts them prefilled; the write path stores
+ * blank text as null.
  */
 export function DecisionFields({
   value,
   onChange,
 }: {
-  value: RejectionDraft;
-  onChange: (field: keyof RejectionDraft, value: string) => void;
+  value: DecisionDraft;
+  onChange: (field: keyof DecisionDraft, value: string) => void;
 }) {
   return (
     <>

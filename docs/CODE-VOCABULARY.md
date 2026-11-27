@@ -47,6 +47,9 @@ The one destructive rule for a note or a Material use: the first press arms the 
 **the decision block**:
 `components/decision-block.tsx`: the Design screen's latest Decision, directly under the identity block and above the gallery. It reads `Latest decision · <date>` in the mono voice from the newest `decision` Event, then `Rejected · <reason>` or `Rejected · no reason recorded`, then `Potential improvements: <text>` when the Event recorded any. It is the Event's record, not the Design's current Status, so a revived Design keeps the dated rejection. `Add a decision` sits in the block only while the Design is Rejected; a rejected Design with no decision Event shows the no-reason line and the action with no date.
 
+**the decision sheet**:
+`components/decision-sheet.tsx`: Detail's later-decision form on the shared wrapper, opened by the block's `Add a decision`. It is titled `Add a decision`, and its Reason and Potential improvements are the status sheet's shared fields, prefilled from the latest Decision — empty when there is none — and editable. `Save decision` is disabled while both trimmed fields are empty and enabled as soon as either holds text; saving closes the sheet and writes one `decision` Event with no Status diff, and the block updates through the live read. Any dismiss drops the drafts and writes nothing.
+
 **the taxonomy sheet**:
 Edit's Category and Collection sheet on the shared wrapper: the title "Category and collection", the two fields that each open a choice sheet, and a Close labelled "Close category and collection". A choice sends `choice-chosen` and writes at once while both sheets stay open; Close sends `row-closed`. Its open state is the visit's `editing: "taxonomy"`, so no component boolean sits beside it.
 
