@@ -8,11 +8,5 @@
  * (`DESIGN_EDITABLE_FIELDS`). History holds no visit state: the Edit screen
  * owns the snapshot (ADR-0004).
  */
-export {
-  diffDesignFields,
-  diffMaterialUses,
-  listDesignEvents,
-  recordEdit,
-  recordImageChange,
-} from "./lib/events";
+export { listDesignEvents, recordEdit, recordImageChange } from "./lib/events";
 export type { DesignEvent } from "./lib/events";

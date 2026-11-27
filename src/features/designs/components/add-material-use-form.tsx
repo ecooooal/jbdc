@@ -1,4 +1,5 @@
 import { Plus } from "lucide-react-native";
+import { Keyboard } from "react-native";
 import { SheetBody, SheetFooter } from "@/shared/components/sheet";
 import { Button } from "@/shared/components/ui/button";
 import { Icon } from "@/shared/components/ui/icon";
@@ -35,7 +36,17 @@ export function AddMaterialUseForm({
   const canAdd = canAddMaterialUse(state);
 
   function close(): void {
+    Keyboard.dismiss();
     send({ type: "material-use-panel-fact", fact: { type: "closed" } });
+  }
+
+  /**
+   * The keys go before the write: on a completed add the sheet leaves, and on a
+   * refusal the error now sits where the keyboard would have covered it.
+   */
+  function addToDesign(): void {
+    Keyboard.dismiss();
+    send({ type: "material-use-add-confirmed" });
   }
 
   return (
@@ -97,11 +108,7 @@ export function AddMaterialUseForm({
         <Button size="sm" variant="ghost" onPress={close}>
           <Text>Cancel</Text>
         </Button>
-        <Button
-          size="sm"
-          disabled={!canAdd}
-          onPress={() => send({ type: "material-use-add-confirmed" })}
-        >
+        <Button size="sm" disabled={!canAdd} onPress={addToDesign}>
           <Text>Add to design</Text>
         </Button>
       </SheetFooter>

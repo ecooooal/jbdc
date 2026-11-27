@@ -14,7 +14,6 @@ import {
   MATERIAL_USE_ROLES,
   materials,
 } from "@/features/database";
-import { diffDesignFields, diffMaterialUses } from "@/features/history";
 import { readMaterialNamesFrom } from "@/features/materials";
 import { readTaxonomyNamesFrom, taxonomyLabel } from "@/features/taxonomy";
 import { CREATIVE_DIRECTION_FIELDS } from "./creative-direction-fields";
@@ -314,6 +313,36 @@ function storedColour(raw: string): string | null {
 }
 
 /**
+ * Whether a write would store exactly what the row and its uses already hold.
+ * History's Diff decides what an Event records; this predicate only decides
+ * whether the write needs a statement, so its Material comparison must stay
+ * aligned with that Diff: keyed by id, compared on Material, colour, and role,
+ * while order, resolved names, and timestamps are ignored.
+ */
+function isUnchanged(
+  current: Design,
+  next: Design,
+  beforeUses: readonly MaterialUse[],
+  afterUses: readonly MaterialUse[],
+): boolean {
+  if (DESIGN_EDITABLE_FIELDS.some((field) => current[field] !== next[field])) return false;
+  if (beforeUses.length !== afterUses.length) return false;
+
+  const beforeById = new Map(beforeUses.map((use) => [use.id, use]));
+
+  return afterUses.every((use) => {
+    const previous = beforeById.get(use.id);
+
+    return (
+      previous !== undefined &&
+      previous.materialId === use.materialId &&
+      previous.colour === use.colour &&
+      previous.role === use.role
+    );
+  });
+}
+
+/**
  * Writes one Design and returns it. A name is the only required input; a blank,
  * whitespace-only, or over-long name throws before anything is written. The
  * Category and Collection are optional and arrive as the ids the pickers chose;
@@ -471,8 +500,7 @@ export function writeDesign(
     }
 
     const materialUses = working.sort(compareMaterialUses);
-    const unchanged =
-      !diffDesignFields(current, next) && !diffMaterialUses(beforeUses, materialUses);
+    const unchanged = isUnchanged(current, next, beforeUses, materialUses);
     const stored: Design = unchanged ? current : { ...next, updatedAt: now };
     const outcomes: ChangeOutcome[] = [
       ...(changes.fields ? [{ kind: "fields" as const, design: stored }] : []),

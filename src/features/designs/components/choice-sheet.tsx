@@ -1,6 +1,6 @@
 import { Check, ChevronDown } from "lucide-react-native";
 import { useState } from "react";
-import { Keyboard, Pressable, View } from "react-native";
+import { Keyboard, Pressable, ScrollView, View } from "react-native";
 import { Sheet, SheetBody } from "@/shared/components/sheet";
 import { SheetHeader } from "@/shared/components/sheet-header";
 import { Icon } from "@/shared/components/ui/icon";
@@ -116,41 +116,47 @@ export function ChoiceSheet<T extends { id: string; name: string }>({
 
       <Sheet open={open} onClose={close}>
         {open ? (
-          <SheetBody scroll>
+          <SheetBody testID="choice-sheet">
             <SheetHeader
-              title={label}
+              title={`${label} (${items.length})`}
               closeLabel={`Close ${label.toLowerCase()}`}
               onClose={close}
             />
 
-            <View className="border-border overflow-hidden rounded-xl border">
-              {entries.map((entry, index) => (
-                <Pressable
-                  key={entry.key}
-                  accessibilityRole="button"
-                  accessibilityLabel={entry.label}
-                  accessibilityState={{ selected: entry.chosen }}
-                  onPress={entry.onPress}
-                  className={cn(
-                    "active:bg-accent flex min-h-11 flex-row items-center justify-between gap-3 px-4 py-3",
-                    index > 0 && "border-border border-t",
-                  )}
-                >
-                  <Text
-                    numberOfLines={2}
+            {/* Only the options scroll: the title and its X stay put, so a long
+                list never carries the way out of the sheet off the top. The
+                title counts the entries, so a list clipped at the plate edge
+                still says how much sits below it. */}
+            <ScrollView accessibilityLabel={label} keyboardShouldPersistTaps="handled">
+              <View className="border-border overflow-hidden rounded-xl border">
+                {entries.map((entry, index) => (
+                  <Pressable
+                    key={entry.key}
+                    accessibilityRole="button"
+                    accessibilityLabel={entry.label}
+                    accessibilityState={{ selected: entry.chosen }}
+                    onPress={entry.onPress}
                     className={cn(
-                      "flex-1",
-                      entry.quiet ? "text-muted-foreground" : entry.chosen && "font-medium",
+                      "active:bg-accent flex min-h-11 flex-row items-center justify-between gap-3 px-4 py-3",
+                      index > 0 && "border-border border-t",
                     )}
                   >
-                    {entry.label}
-                  </Text>
-                  <View className="w-4 items-center">
-                    {entry.chosen ? <Icon as={Check} className="text-foreground size-4" /> : null}
-                  </View>
-                </Pressable>
-              ))}
-            </View>
+                    <Text
+                      numberOfLines={2}
+                      className={cn(
+                        "flex-1",
+                        entry.quiet ? "text-muted-foreground" : entry.chosen && "font-medium",
+                      )}
+                    >
+                      {entry.label}
+                    </Text>
+                    <View className="w-4 items-center">
+                      {entry.chosen ? <Icon as={Check} className="text-foreground size-4" /> : null}
+                    </View>
+                  </Pressable>
+                ))}
+              </View>
+            </ScrollView>
           </SheetBody>
         ) : null}
       </Sheet>

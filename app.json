@@ -48,7 +48,12 @@
           "cameraPermission": "JBDC uses your camera only to photograph a design you attach.",
           "microphonePermission": false
         }
-      ]
+      ],
+      "expo-font",
+      "expo-image",
+      "expo-sqlite",
+      "expo-status-bar",
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true,
