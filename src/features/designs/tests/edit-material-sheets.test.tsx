@@ -12,8 +12,6 @@ import {
 
 jest.mock("expo-router", () => ({ router: { back: jest.fn() } }));
 
-jest.mock("@/shared/components/ui/select", () => jest.requireActual("./taxonomy-select-mock"));
-
 setupEditDesignFixtures();
 
 /** The block's last row is the one way into the Add material sheet. */

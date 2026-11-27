@@ -19,19 +19,18 @@ type Entry = {
 
 /**
  * A picker drawn as its own sheet above the sheet it sits on: Edit's Category,
- * Collection, and Material choices. The trigger is the select's shell — Warm
- * Paper, Thread Line stroke, the field radius and height, a Faded Thread
- * chevron — and the options open on the shared wrapper, one tone deeper than the
- * sheet beneath, so the stack reads without a second popover.
+ * Collection, and Material choices, and the create form's taxonomy fields. The
+ * trigger is the select's shell — Warm Paper, Thread Line stroke, the field
+ * radius and height, a Faded Thread chevron — and the options open on the
+ * shared wrapper, one tone deeper than the sheet beneath, so the stack reads
+ * without a second popover.
  *
  * Opening dismisses the keyboard first. A Material picker sits beside a Colour
  * field that may already hold the keys, and a sheet that slides up under them
  * would push its own list off the card.
  *
  * It keeps only whether it is open: a choice is reported as the field's fact,
- * which the surface's reducer owns, and this control decides nothing. The create
- * form keeps the popover select because it is a modal route, and a sheet opened
- * from inside one cannot climb above it.
+ * which the surface's reducer owns, and this control decides nothing.
  */
 export function ChoiceSheet<T extends { id: string; name: string }>({
   label,

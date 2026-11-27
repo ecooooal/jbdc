@@ -15,17 +15,21 @@ export type NewDesignFormState = {
   /** The owner's choices. The rows themselves stay in `useTaxonomy`. */
   categoryId: string | null;
   collectionId: string | null;
-  /** The one inline form, when the owner is adding an entry to either list. */
+  /** The one Category and Collection sheet: the only way into either picker. */
+  taxonomyOpen: boolean;
+  /** The one new-entry sheet, stacked above the taxonomy sheet. */
   inline: InlineCreationState;
-  /** Which picker opened it; the slice itself knows no entry kinds. */
+  /** Which list the new-entry sheet belongs to; the slice knows no entry kinds. */
   inlineKind: InlineCreationKind | null;
-  /** The collection's optional year while its inline form is open. */
+  /** The collection's optional year while its new-entry sheet is open. */
   inlineYear: string;
   error: string | null;
 };
 
 export type NewDesignFormEvent =
   | { type: "name-changed"; name: string }
+  | { type: "taxonomy-opened" }
+  | { type: "taxonomy-closed" }
   | { type: "category-chosen"; categoryId: string | null }
   | { type: "collection-chosen"; collectionId: string | null }
   | { type: "inline-opened"; kind: InlineCreationKind }
@@ -38,6 +42,7 @@ export function createInitialNewDesignFormState(): NewDesignFormState {
     name: "",
     categoryId: null,
     collectionId: null,
+    taxonomyOpen: false,
     inline: createInitialInlineCreationState(),
     inlineKind: null,
     inlineYear: "",
@@ -68,10 +73,10 @@ export function collectionYearFromInput(input: string): number | null {
 }
 
 /**
- * The create form's decisions: the name draft, the two optional selections, and
- * the one inline entry being added. The slice owns the inline panel's facts;
- * this reducer only remembers which picker opened it and selects the id a
- * completed create reports.
+ * The create form's decisions: the name draft, the one taxonomy sheet that
+ * holds both optional selections, and the new-entry sheet stacked above it.
+ * The slice owns the new-entry sheet's facts; this reducer only remembers which
+ * list opened it and selects the id a completed create reports.
  */
 export function newDesignFormReducer(
   state: NewDesignFormState,
@@ -80,6 +85,18 @@ export function newDesignFormReducer(
   switch (event.type) {
     case "name-changed":
       return { ...state, name: event.name, error: null };
+    case "taxonomy-opened":
+      return { ...state, taxonomyOpen: true };
+    case "taxonomy-closed":
+      // The new-entry sheet sits above the taxonomy sheet, so it cannot outlive
+      // it: closing the parent takes the draft and its extra field with it.
+      return {
+        ...state,
+        taxonomyOpen: false,
+        inline: createInitialInlineCreationState(),
+        inlineKind: null,
+        inlineYear: "",
+      };
     case "category-chosen":
       return { ...state, categoryId: event.categoryId };
     case "collection-chosen":

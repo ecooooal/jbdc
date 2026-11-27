@@ -15,8 +15,6 @@ import {
 
 jest.mock("expo-router", () => ({ router: { back: jest.fn() } }));
 
-jest.mock("@/shared/components/ui/select", () => jest.requireActual("./taxonomy-select-mock"));
-
 setupEditDesignFixtures();
 
 const SPECIFICATION_LABELS = [

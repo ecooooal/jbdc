@@ -45,7 +45,7 @@ function AppNavigator() {
       <NavigationBar style={scheme === "dark" ? "light" : "dark"} />
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="index" />
-        <Stack.Screen name="designs/new" options={{ presentation: "modal" }} />
+        <Stack.Screen name="designs/new" />
         <Stack.Screen name="designs/[id]/index" options={DETAIL_ARRIVAL.screen} />
         <Stack.Screen name="designs/[id]/edit" />
         <Stack.Screen name="designs/[id]/history" />

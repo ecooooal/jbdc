@@ -54,10 +54,10 @@ aligned with that diff, so it imports no part of History.
 
 - `components/edit-design-screen.tsx`, `components/design-detail-screen.tsx` — the two screens.
 - `components/section-tabs.tsx` — Detail's section index: two full-width label halves on the shared Tabs root, the open one inked over a wood rule on the shared hairline; Edit keeps its filled bar.
-- `components/new-design-form.tsx` — create: name, Category, Collection.
+- `components/new-design-form.tsx` — create: name, then the one Category and Collection sheet.
 - `components/field-rows.tsx` — one section's read-first rows; `form-field.tsx` is a single labelled input.
-- `components/taxonomy-select.tsx` — the create form's Category/Collection popover select with None; `choice-sheet.tsx` — Edit's trigger and its stacked choice sheet; `material-use-role-picker.tsx` — the Role choice.
-- `components/inline-creation-panel.tsx` — create a Category or Collection without leaving the form.
+- `components/taxonomy-field.tsx` — one Category or Collection list: its label, the picker's shell, and the surface's own action beneath it; `choice-sheet.tsx` — the picker trigger and its stacked choice sheet; `material-use-role-picker.tsx` — the Role choice.
+- `components/new-taxonomy-form.tsx` — the New category and New collection sheets, stacked above the create form's taxonomy sheet.
 - `components/material-uses-table.tsx` — the rows Detail and Edit share; Edit adds the pencil column and the last `Add material` row.
 - `components/material-uses-section.tsx` — Edit's Materials block: the uses table, whose last row opens the Add material sheet.
 - `components/material-use-sheets.tsx` — the Add material and Edit material sheets, with the New material sheet stacked above Add.

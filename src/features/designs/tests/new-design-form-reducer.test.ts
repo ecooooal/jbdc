@@ -15,16 +15,65 @@ function send(state: NewDesignFormState, ...events: NewDesignFormEvent[]): NewDe
 }
 
 describe("new design form reducer", () => {
-  test("starts with no name, no taxonomy, and no inline form", () => {
+  test("starts with no name, no taxonomy, and no sheet", () => {
     expect(createInitialNewDesignFormState()).toEqual({
       name: "",
       categoryId: null,
       collectionId: null,
+      taxonomyOpen: false,
       inline: { open: false, name: "", error: null },
       inlineKind: null,
       inlineYear: "",
       error: null,
     });
+  });
+
+  test("the taxonomy sheet opens and closes without touching the selections", () => {
+    const chosen = send(
+      createInitialNewDesignFormState(),
+      { type: "category-chosen", categoryId: DRESS },
+      { type: "taxonomy-opened" },
+    );
+
+    expect(chosen.taxonomyOpen).toBe(true);
+    expect(chosen.categoryId).toBe(DRESS);
+
+    const closed = send(chosen, { type: "taxonomy-closed" });
+
+    expect(closed.taxonomyOpen).toBe(false);
+    expect(closed.categoryId).toBe(DRESS);
+  });
+
+  test("closing the taxonomy sheet takes the new-entry sheet with it", () => {
+    const nested = send(
+      createInitialNewDesignFormState(),
+      { type: "taxonomy-opened" },
+      { type: "inline-opened", kind: "collection" },
+      { type: "inline-year-changed", year: "2028" },
+      { type: "inline-fact", fact: { type: "name-changed", name: "Resort" } },
+    );
+
+    expect(nested.taxonomyOpen).toBe(true);
+    expect(nested.inline.open).toBe(true);
+
+    const closed = send(nested, { type: "taxonomy-closed" });
+
+    expect(closed.taxonomyOpen).toBe(false);
+    expect(closed.inline).toEqual({ open: false, name: "", error: null });
+    expect(closed.inlineKind).toBeNull();
+    expect(closed.inlineYear).toBe("");
+  });
+
+  test("closing the new-entry sheet keeps the taxonomy sheet open", () => {
+    const closed = send(
+      createInitialNewDesignFormState(),
+      { type: "taxonomy-opened" },
+      { type: "inline-opened", kind: "category" },
+      { type: "inline-fact", fact: { type: "closed" } },
+    );
+
+    expect(closed.taxonomyOpen).toBe(true);
+    expect(closed.inline.open).toBe(false);
   });
 
   test("a non-blank name is enough to create the design", () => {
@@ -59,7 +108,7 @@ describe("new design form reducer", () => {
     expect(cleared.collectionId).toBeNull();
   });
 
-  test("opening the other picker replaces the inline draft and remembers which one", () => {
+  test("opening the other new-entry sheet replaces its draft and remembers which list", () => {
     const opened = send(createInitialNewDesignFormState(), {
       type: "inline-opened",
       kind: "category",
@@ -109,7 +158,7 @@ describe("new design form reducer", () => {
     expect(yearTyping.inlineKind).toBe("collection");
   });
 
-  test("a category created inline is selected and closes the inline form", () => {
+  test("a category created from its sheet is selected and closes it", () => {
     const knitwear = "category-knitwear";
     const state = send(
       createInitialNewDesignFormState(),
@@ -123,7 +172,7 @@ describe("new design form reducer", () => {
     expect(state.inlineKind).toBeNull();
   });
 
-  test("a collection created inline is selected and keeps a chosen category", () => {
+  test("a collection created from its sheet is selected and keeps a chosen category", () => {
     const resort = "collection-resort";
     const state = send(
       createInitialNewDesignFormState(),
@@ -139,7 +188,7 @@ describe("new design form reducer", () => {
     expect(state.inlineYear).toBe("");
   });
 
-  test("closing inline creation drops its draft and keeps the chosen taxonomy", () => {
+  test("closing the new-entry sheet drops its draft and keeps the chosen taxonomy", () => {
     const state = send(
       createInitialNewDesignFormState(),
       { type: "category-chosen", categoryId: DRESS },
