@@ -74,7 +74,7 @@ export function HistoryScreen({ designId }: { designId: string }) {
           <View className="gap-6 px-6 pb-12 pt-2">
             <View className="gap-1">
               <Text variant="h3">History</Text>
-              <Text variant="muted">One entry per visit, newest first.</Text>
+              <Text variant="muted">Every recorded change, newest first.</Text>
             </View>
 
             {events.length === 0 ? (

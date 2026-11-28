@@ -27,7 +27,7 @@ Before adding or changing an Expo module, an EAS config, a config plugin, or a n
 
 ## Pointers
 
-- Commands: `docs/EXPO-COMMANDS.md`
+- Commands and device checks: `docs/EXPO-COMMANDS.md` (`pnpm device ui|tap|shot|state`).
 - Navigation and routing: `docs/EXPO-NAVIGATION-ROUTING.md`
 - EAS: `docs/EXPO-EAS.md`
 - Feature map: `src/features/README.md`

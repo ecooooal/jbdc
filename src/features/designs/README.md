@@ -12,8 +12,9 @@ uses recorded on it, and the screens that show and edit it. Public entries are
 | The two tab sections Edit and Detail show | `lib/sections.ts` |
 | The Specification and Creative direction field lists | `lib/specification-fields.ts`, `lib/creative-direction-fields.ts` |
 | Reading and writing a Design, and its Material uses | `lib/records.ts` |
+| A Status move, the one Event a rejection records, and a later decision | `lib/status-writes.ts` |
 | Whether a write changes anything, and whether a visit records an Event | `lib/records.ts` (`isUnchanged`), `history/lib/events.ts` (`recordEdit`) |
-| Role labels, name limits, whitespace-to-null, Status labels | `lib/material-use-role.ts`, `lib/limits.ts`, `lib/optional-text.ts`, `lib/status.ts` |
+| Role labels, name limits, whitespace-to-null, the one Status label rule | `lib/material-use-role.ts`, `lib/limits.ts`, `lib/optional-text.ts`, `lib/status.ts` |
 
 ## One reducer per surface
 
@@ -22,9 +23,10 @@ uses recorded on it, and the screens that show and edit it. Public entries are
 | Edit — the visit: drafts, open row, tabs, Material use panel, close | `lib/edit-design-reducer.ts` |
 | The add-Material-use editor | `lib/add-material-use-reducer.ts` |
 | New Design | `lib/new-design-form-reducer.ts` |
+| Detail — the status sheet: its open state, the checked row, the rejection draft | `lib/design-detail-reducer.ts` |
 
-`use-edit-visit.ts` runs the Edit reducer's effects; `use-design-detail.ts`
-is Detail's live read.
+`use-edit-visit.ts` runs the Edit reducer's effects; `use-design-detail-surface.ts`
+runs Detail's status sheet; `use-design-detail.ts` is Detail's live read.
 
 ## The Material use path
 
@@ -52,12 +54,14 @@ aligned with that diff, so it imports no part of History.
 
 - `components/edit-design-screen.tsx`, `components/design-detail-screen.tsx` — the two screens.
 - `components/section-tabs.tsx` — Detail's section index: two full-width label halves on the shared Tabs root, the open one inked over a wood rule on the shared hairline; Edit keeps its filled bar.
-- `components/new-design-form.tsx` — create: name, Category, Collection.
+- `components/new-design-form.tsx` — create: name, then the one Category and Collection sheet.
 - `components/field-rows.tsx` — one section's read-first rows; `form-field.tsx` is a single labelled input.
-- `components/taxonomy-select.tsx` — the create form's Category/Collection popover select with None; `choice-sheet.tsx` — Edit's trigger and its stacked choice sheet; `material-use-role-picker.tsx` — the Role choice.
-- `components/inline-creation-panel.tsx` — create a Category or Collection without leaving the form.
+- `components/taxonomy-field.tsx` — one Category or Collection list: its label, the picker's shell, and the surface's own action beneath it; `choice-sheet.tsx` — the picker trigger and its stacked choice sheet; `material-use-role-picker.tsx` — the Role choice.
+- `components/new-taxonomy-form.tsx` — the New category and New collection sheets, stacked above the create form's taxonomy sheet.
 - `components/material-uses-table.tsx` — the rows Detail and Edit share; Edit adds the pencil column and the last `Add material` row.
 - `components/material-uses-section.tsx` — Edit's Materials block: the uses table, whose last row opens the Add material sheet.
 - `components/material-use-sheets.tsx` — the Add material and Edit material sheets, with the New material sheet stacked above Add.
 - `components/add-material-use-form.tsx`, `edit-material-use-form.tsx`, `new-material-form.tsx` — the three Material sheets' bodies.
 - `components/design-status-badge.tsx` — a Status badge. The hero image and its journey belong to the `images` module's gallery; Detail composes `DesignGallery` above its text.
+- `components/status-sheet.tsx` — Detail's status sheet: the offered Statuses with the current one checked, and the rejection form Rejected expands. It only renders the surface's state and sends it what happened.
+- `components/decision-fields.tsx` — the optional Reason and Potential improvements fields the rejection form and the later decision sheet share.

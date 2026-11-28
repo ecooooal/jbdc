@@ -1,26 +1,35 @@
-import { act, fireEvent, render, screen, userEvent, within } from "@testing-library/react-native";
-import { router, useFocusEffect } from "expo-router";
-import { AppState, BackHandler } from "react-native";
-import { SafeAreaProvider } from "react-native-safe-area-context";
+import { act, fireEvent, screen, userEvent, within } from "@testing-library/react-native";
+import { router } from "expo-router";
+import type { ReactNode } from "react";
 import { Uniwind } from "uniwind";
-import { DatabaseProvider } from "@/features/database/react";
-import { createSyncSubscribe, createTempDatabase } from "@/features/database/testing";
-import { createDesign } from "@/features/designs";
+import { createTempDatabase } from "@/features/database/testing";
 import { listLibraryDesigns } from "@/features/library";
-import { LibraryScreen } from "@/features/library/react";
 import type { Grouping } from "@/features/settings";
-import { ThemeChoiceProvider } from "@/features/settings/react";
-import { createCollection } from "@/features/taxonomy";
 import { PRESS_HIGHLIGHT_HOLD_MS } from "../lib/library-screen-reducer";
+import {
+  rejectDesign,
+  renderLibraryScreen,
+  seedCollections,
+  seedStream,
+} from "./library-screen-fixtures";
 
-jest.mock("expo-router", () => ({ router: { push: jest.fn() }, useFocusEffect: jest.fn() }));
+jest.mock("expo-router", () => ({ router: { push: jest.fn() } }));
 
-const INITIAL_METRICS = {
-  frame: { x: 0, y: 0, width: 390, height: 844 },
-  insets: { top: 47, left: 0, right: 0, bottom: 34 },
-};
+// The native dropdown's portal waits for a trigger measurement Jest never
+// fires. Render its rows inline, inside the real root and items, so the tests
+// reach the grouping radio and the view checkbox the way the Detail menu's
+// rows are tested.
+jest.mock("@/shared/components/ui/dropdown-menu", () => {
+  const actual = jest.requireActual("@/shared/components/ui/dropdown-menu");
+  const React = jest.requireActual<typeof import("react")>("react");
+  const { View } = jest.requireActual<typeof import("react-native")>("react-native");
 
-const live = createSyncSubscribe();
+  return {
+    ...actual,
+    DropdownMenuContent: ({ children }: { children?: ReactNode }) =>
+      React.createElement(View, null, children),
+  };
+});
 
 let database: ReturnType<typeof createTempDatabase>["database"];
 let dispose: () => void;
@@ -28,7 +37,6 @@ let dispose: () => void;
 beforeEach(() => {
   ({ database, dispose } = createTempDatabase());
   jest.clearAllMocks();
-  jest.mocked(useFocusEffect).mockReset();
 });
 
 afterEach(() => {
@@ -38,15 +46,7 @@ afterEach(() => {
 });
 
 async function renderLibrary() {
-  return render(
-    <SafeAreaProvider initialMetrics={INITIAL_METRICS}>
-      <DatabaseProvider database={database} subscribe={live.subscribe}>
-        <ThemeChoiceProvider>
-          <LibraryScreen />
-        </ThemeChoiceProvider>
-      </DatabaseProvider>
-    </SafeAreaProvider>,
-  );
+  return renderLibraryScreen(database);
 }
 
 test("the empty view names the Library, not the Catalog", async () => {
@@ -56,16 +56,15 @@ test("the empty view names the Library, not the Catalog", async () => {
   expect(screen.queryByText(/catalog/i)).toBeNull();
 });
 
-test("the grouping dropdown remembers the choice", async () => {
-  seedCollections();
+test("the menu's Group by remembers the choice", async () => {
+  seedCollections(database);
   const first = await renderLibrary();
 
-  expect(screen.getByRole("combobox", { name: "Group by" })).toBeTruthy();
-  expect(screen.getByText("Design")).toBeTruthy();
+  expect(screen.getByRole("radio", { name: "Design" })).toBeChecked();
 
   await chooseGrouping("per-collection");
 
-  expect(screen.getByText("Collection")).toBeTruthy();
+  expect(screen.getByRole("radio", { name: "Collection" })).toBeChecked();
 
   const spring = within(screen.getByTestId("library-section-Spring"));
 
@@ -76,7 +75,35 @@ test("the grouping dropdown remembers the choice", async () => {
 
   await renderLibrary();
 
-  expect(screen.getByText("Collection")).toBeTruthy();
+  expect(screen.getByRole("radio", { name: "Collection" })).toBeChecked();
+});
+
+test("the view control shows the active Library and switches to the rejected cards", async () => {
+  seedStream(database);
+  rejectDesign(database, "Rejected coat", "The fabric cost too much", 4000);
+
+  await renderLibrary();
+
+  expect(screen.getByRole("button", { name: "View: Library" })).toBeTruthy();
+
+  await toggleRejectedDesigns();
+
+  expect(screen.getByRole("button", { name: "View: Rejected designs" })).toBeTruthy();
+  expect(screen.queryByText("Freshest dress")).toBeNull();
+  expect(screen.getByText("Rejected coat")).toBeTruthy();
+});
+
+test("unchecking Rejected designs returns the control and the screen to the Library", async () => {
+  seedStream(database);
+  rejectDesign(database, "Rejected coat", "The fabric cost too much", 4000);
+
+  await renderLibrary();
+  await toggleRejectedDesigns();
+  await toggleRejectedDesigns();
+
+  expect(screen.getByRole("button", { name: "View: Library" })).toBeTruthy();
+  expect(screen.getByText("Freshest dress")).toBeTruthy();
+  expect(screen.queryByText("Rejected coat")).toBeNull();
 });
 
 test("the search and filter placeholders render disabled and say they are coming", async () => {
@@ -91,170 +118,65 @@ test("the search and filter placeholders render disabled and say they are coming
 });
 
 test("the header carries no create button; the FAB owns add", async () => {
-  seedStream();
+  seedStream(database);
 
   await renderLibrary();
 
   expect(screen.queryByRole("button", { name: "Create design" })).toBeNull();
 });
 
-test("the FAB expands into add, theme, and settings actions", async () => {
-  seedStream();
+test("the FAB opens the create screen in one press", async () => {
   const user = userEvent.setup();
 
   await renderLibrary();
-
-  expect(screen.queryByRole("button", { name: "Add design" })).toBeNull();
-
-  await user.press(screen.getByRole("button", { name: "More actions" }));
-
-  expect(screen.getByRole("button", { name: "Add design" })).toBeTruthy();
-  expect(screen.getByRole("button", { name: "Switch to dark theme" })).toBeTruthy();
-  expect(screen.getByRole("button", { name: "Settings" })).toBeDisabled();
-
-  // Every action is named on paper, and the one that does not exist yet says
-  // so instead of fading into the work behind it.
-  expect(screen.getByText("Add design")).toBeTruthy();
-  expect(screen.getByText("Dark theme")).toBeTruthy();
-  expect(screen.getByText("Coming soon")).toBeTruthy();
-});
-
-test("the FAB's add action opens the create screen", async () => {
-  const user = userEvent.setup();
-
-  await renderLibrary();
-  await user.press(screen.getByRole("button", { name: "More actions" }));
   await user.press(screen.getByRole("button", { name: "Add design" }));
 
   expect(router.push).toHaveBeenLastCalledWith("/designs/new");
 });
 
-test("the FAB's theme action persists the chosen mode and applies it", async () => {
+test("the settings menu's density switch reflows the Library to the single view", async () => {
+  seedStream(database);
+  const user = userEvent.setup();
+
+  await renderLibrary();
+
+  expect(screen.getByRole("switch", { name: "Single view" })).not.toBeChecked();
+  expect(screen.getByRole("switch", { name: "Dark mode" })).toBeTruthy();
+  expect(screen.queryByRole("switch", { name: "Four designs per row" })).toBeNull();
+  expect(screen.queryByTestId("single-view")).toBeNull();
+
+  await user.press(screen.getByRole("switch", { name: "Single view" }));
+
+  expect(screen.getByRole("switch", { name: "Single view" })).toBeChecked();
+  expect(screen.getByTestId("single-view")).toBeTruthy();
+  expect(screen.getByText("1 / 3")).toBeTruthy();
+
+  await user.press(screen.getByRole("switch", { name: "Single view" }));
+
+  expect(screen.getByRole("switch", { name: "Single view" })).not.toBeChecked();
+  expect(screen.queryByTestId("single-view")).toBeNull();
+});
+
+test("the settings menu's dark mode switch applies the scheme and persists it", async () => {
   const user = userEvent.setup();
   const first = await renderLibrary();
 
-  await user.press(screen.getByRole("button", { name: "More actions" }));
-  await user.press(screen.getByRole("button", { name: "Switch to dark theme" }));
+  expect(screen.getByRole("switch", { name: "Dark mode" })).not.toBeChecked();
 
-  // Applied: the Library now offers the other mode.
-  await user.press(screen.getByRole("button", { name: "More actions" }));
+  await user.press(screen.getByRole("switch", { name: "Dark mode" }));
 
-  expect(screen.getByRole("button", { name: "Switch to light theme" })).toBeTruthy();
+  expect(screen.getByRole("switch", { name: "Dark mode" })).toBeChecked();
 
   // Persisted: a fresh app open reads the stored choice back.
   await first.unmount();
   await renderLibrary();
-  await user.press(screen.getByRole("button", { name: "More actions" }));
 
-  expect(screen.getByRole("button", { name: "Switch to light theme" })).toBeTruthy();
+  expect(screen.getByRole("switch", { name: "Dark mode" })).toBeChecked();
+
+  await user.press(screen.getByRole("switch", { name: "Dark mode" }));
+
+  expect(screen.getByRole("switch", { name: "Dark mode" })).not.toBeChecked();
 });
-
-test("an outside tap closes the FAB instead of reaching the card below", async () => {
-  const user = userEvent.setup();
-  seedStream();
-
-  await renderLibrary();
-  await user.press(screen.getByRole("button", { name: "More actions" }));
-  await fireEvent.press(screen.getByTestId("library-fab-dismiss"));
-
-  expect(screen.queryByRole("button", { name: "Add design" })).toBeNull();
-  expect(router.push).not.toHaveBeenCalled();
-});
-
-test("leaving the Library closes the FAB", async () => {
-  let closeOnLeave: (() => void) | undefined;
-
-  jest.mocked(useFocusEffect).mockImplementation((effect) => {
-    const cleanup = effect();
-
-    closeOnLeave = typeof cleanup === "function" ? cleanup : undefined;
-  });
-
-  const user = userEvent.setup();
-  seedStream();
-
-  await renderLibrary();
-  await user.press(screen.getByRole("button", { name: "More actions" }));
-
-  expect(screen.getByRole("button", { name: "Add design" })).toBeTruthy();
-
-  await act(async () => closeOnLeave?.());
-
-  expect(screen.queryByRole("button", { name: "Add design" })).toBeNull();
-});
-
-test("backgrounding the app closes the FAB", async () => {
-  // The RN Jest preset already mocks AppState with a subscription-returning
-  // listener, so the test reads the handler it recorded instead of replacing it.
-  const addEventListener = AppState.addEventListener as unknown as jest.Mock;
-  const user = userEvent.setup();
-  seedStream();
-
-  await renderLibrary();
-  await user.press(screen.getByRole("button", { name: "More actions" }));
-
-  expect(screen.getByRole("button", { name: "Add design" })).toBeTruthy();
-
-  const handler = addEventListener.mock.calls.at(-1)?.[1] as (status: string) => void;
-
-  if (!handler) throw new Error("The FAB did not subscribe to AppState");
-
-  await act(async () => handler("background"));
-
-  expect(screen.queryByRole("button", { name: "Add design" })).toBeNull();
-});
-
-test("the system Back closes the open FAB and stays on the Library", async () => {
-  const handlers: (() => boolean | null | undefined)[] = [];
-  const addEventListener = jest.spyOn(BackHandler, "addEventListener").mockImplementation(((
-    _event: string,
-    handler: () => boolean | null | undefined,
-  ) => {
-    handlers.push(handler);
-
-    return { remove: jest.fn() };
-  }) as never);
-
-  const user = userEvent.setup();
-  seedStream();
-
-  await renderLibrary();
-  await user.press(screen.getByRole("button", { name: "More actions" }));
-
-  let consumed = false;
-
-  await act(async () => {
-    consumed = handlers[0]() === true;
-  });
-
-  expect(consumed).toBe(true);
-  expect(screen.queryByRole("button", { name: "Add design" })).toBeNull();
-  addEventListener.mockRestore();
-});
-
-test("the content behind the open actions is hidden from assistive tech", async () => {
-  const user = userEvent.setup();
-  seedStream();
-
-  await renderLibrary();
-
-  const content = screen.getByTestId("library-content");
-
-  expect(content).toHaveProp("importantForAccessibility", "auto");
-  expect(content).toHaveProp("accessibilityElementsHidden", false);
-
-  await user.press(screen.getByRole("button", { name: "More actions" }));
-
-  expect(content).toHaveProp("importantForAccessibility", "no-hide-descendants");
-  expect(content).toHaveProp("accessibilityElementsHidden", true);
-});
-
-/** Three designs with no Collection, freshest first as the default read orders them. */
-function seedStream() {
-  createDesign(database, { name: "Freshest dress" }, 3000);
-  createDesign(database, { name: "Middle skirt" }, 2000);
-  createDesign(database, { name: "Oldest coat" }, 1000);
-}
 
 /** The width of one single-view page in the pager's settle events. */
 const PAGE_WIDTH = 390;
@@ -289,11 +211,11 @@ function expectPageNames(names: readonly string[]) {
 }
 
 test("density 1 pages the first Design full-screen instead of listing it", async () => {
-  seedStream();
+  seedStream(database);
   const user = userEvent.setup();
 
   await renderLibrary();
-  await user.press(screen.getByLabelText("Single view"));
+  await user.press(screen.getByRole("switch", { name: "Single view" }));
 
   const pager = screen.getByTestId("single-view");
 
@@ -304,11 +226,11 @@ test("density 1 pages the first Design full-screen instead of listing it", async
 });
 
 test("a swipe settles on its page and both edges stop the pager", async () => {
-  seedStream();
+  seedStream(database);
   const user = userEvent.setup();
 
   await renderLibrary();
-  await user.press(screen.getByLabelText("Single view"));
+  await user.press(screen.getByRole("switch", { name: "Single view" }));
 
   await settlePagerAt(PAGE_WIDTH);
 
@@ -328,11 +250,11 @@ test("a swipe settles on its page and both edges stop the pager", async () => {
 });
 
 test("the pager walks the grouping selector's order, not the read's", async () => {
-  seedCollections();
+  seedCollections(database);
   const user = userEvent.setup();
 
   await renderLibrary();
-  await user.press(screen.getByLabelText("Single view"));
+  await user.press(screen.getByRole("switch", { name: "Single view" }));
   await chooseGrouping("per-collection");
 
   expectPageNames([
@@ -345,19 +267,6 @@ test("the pager walks the grouping selector's order, not the read's", async () =
   ]);
 });
 
-/** Two Collections, four designs in Spring, one in none; Spring is freshest, then Autumn. */
-function seedCollections() {
-  const spring = createCollection(database, { name: "Spring" }, 1);
-  const autumn = createCollection(database, { name: "Autumn" }, 2);
-
-  createDesign(database, { name: "Autumn coat", collectionId: autumn.id }, 1000);
-  createDesign(database, { name: "Spring scarf", collectionId: spring.id }, 500);
-  createDesign(database, { name: "Spring skirt", collectionId: spring.id }, 2000);
-  createDesign(database, { name: "No season dress" }, 3000);
-  createDesign(database, { name: "Spring blouse", collectionId: spring.id }, 4000);
-  createDesign(database, { name: "Spring dress", collectionId: spring.id }, 1500);
-}
-
 /** The labels the picker shows, so the seam hands over what a pick would. */
 const GROUPING_LABELS: Record<Grouping, string> = {
   "per-design": "Design",
@@ -365,19 +274,21 @@ const GROUPING_LABELS: Record<Grouping, string> = {
 };
 
 /**
- * Opens the grouping choice through its primitive, which Jest cannot do: the
- * native Select positions its portal from the trigger's measure callback, and
- * the test renderer never fires it. Firing the handler is the documented seam.
+ * Picks a grouping through the menu's radio. The menu's content is rendered
+ * inline by this file's mock, so the row is reachable without opening the
+ * native portal, the same seam the Detail menu's rows use.
  */
 async function chooseGrouping(grouping: Grouping) {
-  await fireEvent(screen.getByRole("combobox", { name: "Group by" }), "valueChange", {
-    value: grouping,
-    label: GROUPING_LABELS[grouping],
-  });
+  await fireEvent.press(screen.getByRole("radio", { name: GROUPING_LABELS[grouping] }));
+}
+
+/** Checks, or unchecks, the header menu's Rejected designs view. */
+async function toggleRejectedDesigns() {
+  await fireEvent.press(screen.getByRole("checkbox", { name: "Rejected designs" }));
 }
 
 test("The Collection grouping regroups the density-2 grid under Collection headers", async () => {
-  seedCollections();
+  seedCollections(database);
 
   await renderLibrary();
 
@@ -405,7 +316,7 @@ test("The Collection grouping regroups the density-2 grid under Collection heade
 });
 
 test("The Collection grouping reads each Collection heading before its Designs", async () => {
-  seedCollections();
+  seedCollections(database);
 
   await renderLibrary();
   await chooseGrouping("per-collection");
@@ -428,37 +339,21 @@ test("The Collection grouping reads each Collection heading before its Designs",
   outline.forEach((name, index) => expect(headings[index]).toHaveTextContent(name));
 });
 
-test("the density control offers the single view and two designs per row", async () => {
-  seedStream();
-
-  await renderLibrary();
-
-  expect(screen.getByLabelText("Single view")).toBeTruthy();
-  expect(screen.getByLabelText("Two designs per row")).toBeTruthy();
-  expect(screen.queryByLabelText("Four designs per row")).toBeNull();
-  // The segments draw the layout; no numeral has to be memorised.
-  expect(screen.queryByText("1")).toBeNull();
-  expect(screen.queryByText("2")).toBeNull();
-});
-
 test("the FAB keeps one corner when the density changes", async () => {
-  seedStream();
+  seedStream(database);
   const user = userEvent.setup();
 
   await renderLibrary();
 
   const twoUpBottom = screen.getByTestId("library-fab-anchor").props.style.bottom;
 
-  await user.press(screen.getByLabelText("Single view"));
+  await user.press(screen.getByRole("switch", { name: "Single view" }));
 
   expect(screen.getByTestId("library-fab-anchor").props.style.bottom).toBe(twoUpBottom);
 });
 
-/** Every density, in the order the header's control names them. */
-const DENSITY_LABELS = ["Two designs per row", "Single view"] as const;
-
 test("a tap on a card at every density opens its Detail", async () => {
-  seedStream();
+  seedStream(database);
   const user = userEvent.setup();
   const freshest = listLibraryDesigns(database).find((design) => design.name === "Freshest dress");
 
@@ -467,8 +362,10 @@ test("a tap on a card at every density opens its Detail", async () => {
   jest.useFakeTimers();
   await renderLibrary();
 
-  for (const density of DENSITY_LABELS) {
-    await user.press(screen.getByLabelText(density));
+  for (const singleView of [false, true]) {
+    if (singleView) {
+      await user.press(screen.getByRole("switch", { name: "Single view" }));
+    }
 
     jest.mocked(router.push).mockClear();
     await fireEvent(screen.getByRole("button", { name: "Freshest dress" }), "press");

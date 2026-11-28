@@ -1,41 +1,40 @@
 import { router } from "expo-router";
 import { Plus } from "lucide-react-native";
 import { useReducer } from "react";
-import { View } from "react-native";
+import { Keyboard, Pressable, View } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useDatabase } from "@/features/database/react";
 import { createDesign } from "@/features/designs";
-import { DESIGN_NAME_MAX_LENGTH, InvalidDesignNameError } from "../lib/records";
-import {
-  createCategory,
-  createCollection,
-  InvalidCollectionYearError,
-  InvalidTaxonomyNameError,
-  TAXONOMY_NAME_MAX_LENGTH,
-  taxonomyLabel,
-} from "@/features/taxonomy";
+import { taxonomyLabel } from "@/features/taxonomy";
 import { useTaxonomy } from "@/features/taxonomy/react";
+import { Sheet, SheetBody } from "@/shared/components/sheet";
+import { SheetHeader } from "@/shared/components/sheet-header";
 import { Button } from "@/shared/components/ui/button";
 import { Icon } from "@/shared/components/ui/icon";
 import { Input } from "@/shared/components/ui/input";
 import { Text } from "@/shared/components/ui/text";
-import { inlineCreationResult } from "../lib/inline-creation-reducer";
 import {
   canCreateDesign,
-  collectionYearFromInput,
   createInitialNewDesignFormState,
+  type InlineCreationKind,
   newDesignFormReducer,
 } from "../lib/new-design-form-reducer";
+import { DESIGN_NAME_MAX_LENGTH, InvalidDesignNameError } from "../lib/records";
 import { FormField } from "./form-field";
-import { InlineCreationPanel } from "./inline-creation-panel";
+import { NewTaxonomyForm } from "./new-taxonomy-form";
 import { ReadError } from "./read-error";
-import { TaxonomySelect } from "./taxonomy-select";
+import { RowPencil } from "./row-pencil";
+import { TaxonomyField } from "./taxonomy-field";
 
 /**
- * The create-design form. A name is the only input; Category and Collection
- * are optional and can each be added inline. Submitting writes one Design and
- * returns to the Library, which shows it through its live query.
+ * The create-design form. A name is the only required input; Category and
+ * Collection are optional and are picked through the one taxonomy sheet Edit
+ * uses, so a list reads the same whether the owner is creating a Design or
+ * editing it. Either list can gain an entry without leaving the form: the
+ * new-entry sheet stacks above the taxonomy sheet, keeps a refusal with the
+ * name, and selects what it creates. Submitting writes one Design and returns
+ * to the Library, which shows it through its live query.
  */
 export function NewDesignForm() {
   const database = useDatabase();
@@ -48,30 +47,18 @@ export function NewDesignForm() {
   const selectedCategory = categories.find((category) => category.id === state.categoryId) ?? null;
   const selectedCollection =
     collections.find((collection) => collection.id === state.collectionId) ?? null;
+  const hasTaxonomy = selectedCategory !== null || selectedCollection !== null;
+  const taxonomySummary = hasTaxonomy
+    ? `${selectedCategory?.name ?? "No category"} · ${selectedCollection?.name ?? "No collection"}`
+    : "No category or collection";
 
-  function addCategory() {
-    dispatch({
-      type: "inline-fact",
-      fact: inlineCreationResult(
-        () => createCategory(database, { name: state.inline.name }),
-        InvalidTaxonomyNameError,
-      ),
-    });
+  function openTaxonomy(): void {
+    Keyboard.dismiss();
+    dispatch({ type: "taxonomy-opened" });
   }
 
-  function addCollection() {
-    dispatch({
-      type: "inline-fact",
-      fact: inlineCreationResult(
-        () =>
-          createCollection(database, {
-            name: state.inline.name,
-            year: collectionYearFromInput(state.inlineYear),
-          }),
-        InvalidTaxonomyNameError,
-        InvalidCollectionYearError,
-      ),
-    });
+  function openNewTaxonomy(kind: InlineCreationKind): void {
+    dispatch({ type: "inline-opened", kind });
   }
 
   function create() {
@@ -111,7 +98,7 @@ export function NewDesignForm() {
           <Text variant="muted">A name is all it needs. The rest can come later.</Text>
         </View>
 
-        <FormField label="Name">
+        <FormField label="Design name">
           <Input
             value={state.name}
             onChangeText={(name) => dispatch({ type: "name-changed", name })}
@@ -125,91 +112,31 @@ export function NewDesignForm() {
           {state.error ? <Text className="text-destructive text-sm">{state.error}</Text> : null}
         </FormField>
 
+        <FormField label="Category and collection">
+          <Pressable
+            onPress={openTaxonomy}
+            accessibilityRole="button"
+            accessibilityLabel="Category and collection"
+            accessibilityValue={{ text: taxonomySummary }}
+            className="border-border active:bg-accent flex-row items-center justify-between gap-3 rounded-md border p-4"
+          >
+            {hasTaxonomy ? (
+              <Text className="flex-1 leading-6">{taxonomySummary}</Text>
+            ) : (
+              <Text variant="muted" className="flex-1">
+                {taxonomySummary}
+              </Text>
+            )}
+            <RowPencil />
+          </Pressable>
+        </FormField>
+
         {taxonomyError ? (
           <ReadError
             message="The Category and Collection lists could not be loaded."
             error={taxonomyError}
           />
         ) : null}
-
-        <FormField label="Category">
-          <TaxonomySelect
-            label="Category"
-            placeholder="No category"
-            value={selectedCategory}
-            items={categories}
-            disabled={status !== "ready"}
-            onSelect={(category) =>
-              dispatch({ type: "category-chosen", categoryId: category?.id ?? null })
-            }
-          />
-          {state.inline.open && state.inlineKind === "category" ? (
-            <InlineCreationPanel
-              title="New category"
-              submitLabel="Add category"
-              name={state.inline.name}
-              error={state.inline.error}
-              maxLength={TAXONOMY_NAME_MAX_LENGTH}
-              onNameChange={(name) =>
-                dispatch({ type: "inline-fact", fact: { type: "name-changed", name } })
-              }
-              onSubmit={addCategory}
-              onCancel={() => dispatch({ type: "inline-fact", fact: { type: "closed" } })}
-            />
-          ) : (
-            <Button
-              size="sm"
-              variant="ghost"
-              className="self-start"
-              onPress={() => dispatch({ type: "inline-opened", kind: "category" })}
-            >
-              <Icon as={Plus} />
-              <Text>New category</Text>
-            </Button>
-          )}
-        </FormField>
-
-        <FormField label="Collection">
-          <TaxonomySelect
-            label="Collection"
-            placeholder="No collection"
-            value={selectedCollection}
-            items={collections}
-            disabled={status !== "ready"}
-            itemLabel={taxonomyLabel}
-            onSelect={(collection) =>
-              dispatch({ type: "collection-chosen", collectionId: collection?.id ?? null })
-            }
-          />
-          {state.inline.open && state.inlineKind === "collection" ? (
-            <InlineCreationPanel
-              title="New collection"
-              submitLabel="Add collection"
-              name={state.inline.name}
-              yearField={{
-                value: state.inlineYear,
-                onChange: (year) => dispatch({ type: "inline-year-changed", year }),
-              }}
-              error={state.inline.error}
-              maxLength={TAXONOMY_NAME_MAX_LENGTH}
-              onNameChange={(name) =>
-                dispatch({ type: "inline-fact", fact: { type: "name-changed", name } })
-              }
-              onSubmit={addCollection}
-              onCancel={() => dispatch({ type: "inline-fact", fact: { type: "closed" } })}
-            />
-          ) : (
-            <Button
-              size="sm"
-              variant="ghost"
-              className="self-start"
-              onPress={() => dispatch({ type: "inline-opened", kind: "collection" })}
-            >
-              <Icon as={Plus} />
-              <Text>New collection</Text>
-            </Button>
-          )}
-        </FormField>
 
         <View className="flex-row gap-3">
           <Button variant="ghost" className="flex-1" onPress={() => router.back()}>
@@ -220,6 +147,83 @@ export function NewDesignForm() {
           </Button>
         </View>
       </KeyboardAwareScrollView>
+
+      <Sheet open={state.taxonomyOpen} onClose={() => dispatch({ type: "taxonomy-closed" })}>
+        {state.taxonomyOpen ? (
+          <SheetBody testID="taxonomy-sheet" scroll>
+            <SheetHeader
+              title="Category and collection"
+              closeLabel="Close category and collection"
+              onClose={() => dispatch({ type: "taxonomy-closed" })}
+            />
+
+            {taxonomyError ? (
+              <ReadError
+                message="The Category and Collection lists could not be loaded."
+                error={taxonomyError}
+              />
+            ) : null}
+
+            <TaxonomyField
+              label="Category"
+              placeholder="No category"
+              value={selectedCategory}
+              items={categories}
+              disabled={status !== "ready"}
+              onSelect={(category) =>
+                dispatch({ type: "category-chosen", categoryId: category?.id ?? null })
+              }
+            >
+              <Button
+                size="sm"
+                variant="ghost"
+                className="self-start"
+                onPress={() => openNewTaxonomy("category")}
+              >
+                <Icon as={Plus} />
+                <Text>New category</Text>
+              </Button>
+            </TaxonomyField>
+
+            <TaxonomyField
+              label="Collection"
+              placeholder="No collection"
+              value={selectedCollection}
+              items={collections}
+              disabled={status !== "ready"}
+              itemLabel={taxonomyLabel}
+              onSelect={(collection) =>
+                dispatch({ type: "collection-chosen", collectionId: collection?.id ?? null })
+              }
+            >
+              <Button
+                size="sm"
+                variant="ghost"
+                className="self-start"
+                onPress={() => openNewTaxonomy("collection")}
+              >
+                <Icon as={Plus} />
+                <Text>New collection</Text>
+              </Button>
+            </TaxonomyField>
+          </SheetBody>
+        ) : null}
+      </Sheet>
+
+      <Sheet
+        open={state.inline.open}
+        onClose={() => dispatch({ type: "inline-fact", fact: { type: "closed" } })}
+      >
+        {state.inline.open && state.inlineKind ? (
+          <NewTaxonomyForm
+            kind={state.inlineKind}
+            inline={state.inline}
+            year={state.inlineYear}
+            onFact={(fact) => dispatch({ type: "inline-fact", fact })}
+            onYearChange={(year) => dispatch({ type: "inline-year-changed", year })}
+          />
+        ) : null}
+      </Sheet>
     </SafeAreaView>
   );
 }

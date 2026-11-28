@@ -1,15 +1,12 @@
-import { act, render, screen, userEvent, within } from "@testing-library/react-native";
+import { act, screen, userEvent, within } from "@testing-library/react-native";
 import { eq } from "drizzle-orm";
 import { router } from "expo-router";
 import type { ReactNode } from "react";
-import { SafeAreaProvider } from "react-native-safe-area-context";
-import { categories, materials } from "@/features/database";
-import { DatabaseProvider } from "@/features/database/react";
-import { createSyncSubscribe, createTempDatabase } from "@/features/database/testing";
+import { categories, materials, type Database } from "@/features/database";
 import { createDesign, writeDesign } from "@/features/designs";
-import { DesignDetailScreen } from "@/features/designs/react";
 import { createMaterial } from "@/features/materials";
 import { createCategory, createCollection } from "@/features/taxonomy";
+import { database, live, renderDetail, setupDesignDetailFixtures } from "./design-detail-fixtures";
 
 jest.mock("expo-router", () => ({
   router: { back: jest.fn(), push: jest.fn() },
@@ -30,43 +27,16 @@ jest.mock("@/shared/components/ui/dropdown-menu", () => {
   };
 });
 
+setupDesignDetailFixtures();
+
 /** Seeds a recorded use through the visit's one write path. */
 function addMaterialUse(
-  database: ReturnType<typeof createTempDatabase>["database"],
+  database: Database,
   designId: string,
   input: { materialId: string; colour: string; role: "main" | "secondary" | "other" },
   now?: number,
 ) {
   writeDesign(database, designId, { uses: [{ kind: "add", input }] }, now);
-}
-
-const INITIAL_METRICS = {
-  frame: { x: 0, y: 0, width: 390, height: 844 },
-  insets: { top: 47, left: 0, right: 0, bottom: 34 },
-};
-
-const live = createSyncSubscribe();
-
-let database: ReturnType<typeof createTempDatabase>["database"];
-let dispose: () => void;
-
-beforeEach(() => {
-  ({ database, dispose } = createTempDatabase());
-  jest.clearAllMocks();
-});
-
-afterEach(() => {
-  dispose();
-});
-
-async function renderDetail(designId: string) {
-  return render(
-    <SafeAreaProvider initialMetrics={INITIAL_METRICS}>
-      <DatabaseProvider database={database} subscribe={live.subscribe}>
-        <DesignDetailScreen designId={designId} />
-      </DatabaseProvider>
-    </SafeAreaProvider>,
-  );
 }
 
 /** The fixed header, outside the scrolling content. */
@@ -91,16 +61,17 @@ test("the header carries one kebab trigger and no text actions", async () => {
   expect(header.queryByRole("button", { name: "Edit design" })).toBeNull();
 });
 
-test("the kebab holds History and Edit as menu rows", async () => {
+test("the kebab holds History, Edit, and Change status as menu rows", async () => {
   const design = createDesign(database, { name: "Silk slip dress" });
 
   await renderDetail(design.id);
 
   const header = headerRegion();
 
-  expect(header.getAllByRole("menuitem")).toHaveLength(2);
+  expect(header.getAllByRole("menuitem")).toHaveLength(3);
   expect(header.getByRole("menuitem", { name: "History" })).toBeTruthy();
   expect(header.getByRole("menuitem", { name: "Edit" })).toBeTruthy();
+  expect(header.getByRole("menuitem", { name: "Change status" })).toBeTruthy();
 });
 
 test("choosing History in the header pushes the History route", async () => {

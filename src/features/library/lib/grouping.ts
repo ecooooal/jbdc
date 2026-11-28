@@ -2,11 +2,11 @@ import type { Grouping } from "@/features/settings";
 import type { LibraryDesign } from "./query";
 
 /** One section of a grouped Library: a Collection's designs, or the unfiled ones. */
-export type LibrarySection = {
+export type LibrarySection<T extends LibraryDesign = LibraryDesign> = {
   /** The Collection's label, or null for designs in no Collection. */
   collection: string | null;
   /** The section's designs, most recently updated first like the flat stream. */
-  designs: LibraryDesign[];
+  designs: T[];
 };
 
 /**
@@ -15,8 +15,8 @@ export type LibrarySection = {
  * no Collection label a section would claim; the Collection grouping gathers
  * them under their Collection instead.
  */
-export type LibraryArrangement =
-  { kind: "flat"; designs: LibraryDesign[] } | { kind: "grouped"; sections: LibrarySection[] };
+export type LibraryArrangement<T extends LibraryDesign = LibraryDesign> =
+  { kind: "flat"; designs: T[] } | { kind: "grouped"; sections: LibrarySection<T>[] };
 
 /** The most recent update among a Collection's designs, which orders the sections. */
 function newest(designs: readonly LibraryDesign[]): number {
@@ -31,14 +31,14 @@ function newest(designs: readonly LibraryDesign[]): number {
  * with "No collection" last; an empty Library has no sections at all. The rule
  * is pure, so the screen can render either grouping without the read changing.
  */
-export function groupLibraryDesigns(
-  designs: readonly LibraryDesign[],
+export function groupLibraryDesigns<T extends LibraryDesign>(
+  designs: readonly T[],
   grouping: Grouping,
-): LibraryArrangement {
+): LibraryArrangement<T> {
   if (grouping === "per-design") return { kind: "flat", designs: [...designs] };
 
-  const byCollection = new Map<string, LibraryDesign[]>();
-  const unfiled: LibraryDesign[] = [];
+  const byCollection = new Map<string, T[]>();
+  const unfiled: T[] = [];
 
   for (const design of designs) {
     if (design.collection === null) {
@@ -52,7 +52,7 @@ export function groupLibraryDesigns(
     else byCollection.set(design.collection, [design]);
   }
 
-  const sections: LibrarySection[] = [...byCollection.entries()]
+  const sections: LibrarySection<T>[] = [...byCollection.entries()]
     .sort(([, left], [, right]) => newest(right) - newest(left))
     .map(([collection, members]) => ({ collection, designs: members }));
 
@@ -66,7 +66,9 @@ export function groupLibraryDesigns(
  * stream, or each Collection section in turn. The single view pages this list,
  * so swiping between designs never disagrees with the grids.
  */
-export function orderedLibraryDesigns(arrangement: LibraryArrangement): LibraryDesign[] {
+export function orderedLibraryDesigns<T extends LibraryDesign>(
+  arrangement: LibraryArrangement<T>,
+): T[] {
   return arrangement.kind === "flat"
     ? arrangement.designs
     : arrangement.sections.flatMap((section) => section.designs);

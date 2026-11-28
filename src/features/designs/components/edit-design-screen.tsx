@@ -23,16 +23,15 @@ import type { EditDesignRow } from "../lib/edit-design-reducer";
 import { DESIGN_SECTIONS, isDesignSectionTab, type DesignSectionTab } from "../lib/sections";
 import { useDesignDetail } from "../lib/use-design-detail";
 import { useEditVisit } from "../lib/use-edit-visit";
-import { ChoiceSheet } from "./choice-sheet";
 import { DesignStatusBadge } from "./design-status-badge";
 import { FieldError } from "./field-error";
 import { FieldRows } from "./field-rows";
-import { FormField } from "./form-field";
 import { MaterialUseSheets } from "./material-use-sheets";
 import { MaterialUsesSection } from "./material-uses-section";
 import { ReadError } from "./read-error";
 import { RowPencil } from "./row-pencil";
 import { EditSectionTabs } from "./section-tabs";
+import { TaxonomyField } from "./taxonomy-field";
 
 /**
  * Edit for one Design. The hero holds the Design's identity, which the owner
@@ -374,29 +373,25 @@ export function EditDesignScreen({ designId }: { designId: string }) {
                   />
                 ) : null}
 
-                <FormField label="Category">
-                  <ChoiceSheet
-                    label="Category"
-                    placeholder="No category"
-                    value={selectedCategory}
-                    items={categories}
-                    disabled={taxonomyStatus !== "ready"}
-                    onSelect={(category) => chooseCategory(category?.id ?? null)}
-                  />
-                  {fieldError("categoryId")}
-                </FormField>
-                <FormField label="Collection">
-                  <ChoiceSheet
-                    label="Collection"
-                    placeholder="No collection"
-                    value={selectedCollection}
-                    items={collections}
-                    disabled={taxonomyStatus !== "ready"}
-                    itemLabel={taxonomyLabel}
-                    onSelect={(collection) => chooseCollection(collection?.id ?? null)}
-                  />
-                  {fieldError("collectionId")}
-                </FormField>
+                <TaxonomyField
+                  label="Category"
+                  placeholder="No category"
+                  value={selectedCategory}
+                  items={categories}
+                  disabled={taxonomyStatus !== "ready"}
+                  error={fieldError("categoryId")}
+                  onSelect={(category) => chooseCategory(category?.id ?? null)}
+                />
+                <TaxonomyField
+                  label="Collection"
+                  placeholder="No collection"
+                  value={selectedCollection}
+                  items={collections}
+                  disabled={taxonomyStatus !== "ready"}
+                  itemLabel={taxonomyLabel}
+                  error={fieldError("collectionId")}
+                  onSelect={(collection) => chooseCollection(collection?.id ?? null)}
+                />
               </SheetBody>
             ) : null}
           </Sheet>

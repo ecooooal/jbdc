@@ -1,11 +1,12 @@
 import type { DesignEventKind } from "@/features/database";
-import { designFieldLabel, type DesignEditableField } from "@/features/designs";
+import { designFieldLabel, designStatusLabel, type DesignEditableField } from "@/features/designs";
 import { taxonomyLabel, type TaxonomyNames } from "@/features/taxonomy";
 import {
   materialUseLines,
   type DesignEditDiff,
   type DesignEvent,
   type RecordedImage,
+  type StatusMove,
 } from "./events";
 import type { HistoryLine } from "./lines";
 import {
@@ -14,12 +15,12 @@ import {
   type DesignHistorySection,
 } from "./sections";
 
-/** The Event kinds whose cards are honest placeholders, keyed by the kind itself. */
-type PlaceholderKind = Extract<DesignEventKind, "status_change" | "decision" | "note">;
+/** The Event kinds whose card is one section of its own, keyed by the kind. */
+type EventCardKind = Extract<DesignEventKind, "status_change" | "decision" | "note">;
 
 /** One labelled group of lines on a card, in reading order. */
 export type DesignHistoryCardSection = {
-  section: DesignHistorySection | PlaceholderKind;
+  section: DesignHistorySection | EventCardKind;
   label: string;
   lines: HistoryLine[];
 };
@@ -143,28 +144,74 @@ const imageRule: Rule = (event) => {
 };
 
 /**
- * An honest rule for a kind with no writer yet: it renders the Event's own
- * reason under a section named for the kind. A blank reason invents no line.
+ * A Status move as the owner reads it: the two labels through the designs
+ * package's one label rule, old value first.
  */
-function reasonRule(kind: PlaceholderKind, label: string): Rule {
-  return (event) => [
+function statusMoveLine(move: StatusMove): HistoryLine {
+  return {
+    key: "status",
+    text: `${designStatusLabel(move.from)} → ${designStatusLabel(move.to)}`,
+  };
+}
+
+/**
+ * The status_change rule: the move is the whole card, one line under `Status
+ * change`. A move written without its diff has nothing honest to say.
+ */
+const statusChangeRule: Rule = (event) => {
+  const move = event.diff?.status;
+
+  return [
     {
-      section: kind,
-      label,
-      lines: event.reason ? [{ key: "reason", text: event.reason }] : [],
+      section: "status_change",
+      label: "Status change",
+      lines: move ? [statusMoveLine(move)] : [],
     },
   ];
-}
+};
+
+/**
+ * The decision rule: a rejection carries its move, reason, and potential
+ * improvements in one card; a later decision carries only its why. Every line
+ * is optional, so a blank decision is no card at all.
+ */
+const decisionRule: Rule = (event) => {
+  const lines: HistoryLine[] = [];
+  const move = event.diff?.status;
+
+  if (move) lines.push(statusMoveLine(move));
+  if (event.reason) lines.push({ key: "reason", text: `Reason: ${event.reason}` });
+  if (event.potentialImprovements) {
+    lines.push({
+      key: "potentialImprovements",
+      text: `Potential improvements: ${event.potentialImprovements}`,
+    });
+  }
+
+  return [{ section: "decision", label: "Decision", lines }];
+};
+
+/**
+ * The note card: its free text under `Note`. No note writer exists yet, so
+ * this is the one honest placeholder left.
+ */
+const noteRule: Rule = (event) => [
+  {
+    section: "note",
+    label: "Note",
+    lines: event.reason ? [{ key: "reason", text: event.reason }] : [],
+  },
+];
 
 /**
  * Every kind the schema names has a rule, keyed by kind: adding a sixth kind
  * fails the typecheck until its History wording is decided here.
  */
 const RULES: Record<DesignEventKind, Rule> = {
-  status_change: reasonRule("status_change", "Status change"),
-  decision: reasonRule("decision", "Decision"),
+  status_change: statusChangeRule,
+  decision: decisionRule,
   edit: editRule,
-  note: reasonRule("note", "Note"),
+  note: noteRule,
   image_change: imageRule,
 };
 

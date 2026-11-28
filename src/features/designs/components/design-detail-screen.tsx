@@ -1,6 +1,7 @@
 import { router } from "expo-router";
 import {
   ChevronLeft,
+  CircleDot,
   EllipsisVertical,
   History as HistoryIcon,
   Pencil,
@@ -31,26 +32,16 @@ import {
   type DesignSectionTab,
 } from "../lib/sections";
 import type { DesignDetail } from "../lib/records";
+import { formatShortDate, unbreakableDate } from "../lib/short-date";
 import { useDesignDetail } from "../lib/use-design-detail";
+import { useDesignDetailSurface } from "../lib/use-design-detail-surface";
+import { DecisionBlock } from "./decision-block";
+import { DecisionSheet } from "./decision-sheet";
 import { DesignStatusBadge } from "./design-status-badge";
 import { MaterialUsesTable } from "./material-uses-table";
 import { ReadError } from "./read-error";
 import { SectionTabs } from "./section-tabs";
-
-const SHORT_DATE_FORMAT = new Intl.DateTimeFormat(undefined, {
-  year: "numeric",
-  month: "short",
-  day: "numeric",
-});
-
-function formatShortDate(timestamp: number): string {
-  return SHORT_DATE_FORMAT.format(timestamp);
-}
-
-/** A date whose own spaces never break, so a wrapping line never splits one. */
-function unbreakableDate(timestamp: number): string {
-  return formatShortDate(timestamp).replaceAll(" ", "\u00A0");
-}
+import { StatusSheet } from "./status-sheet";
 
 /**
  * The record's dates as one quiet line: a plus marks its creation and a clock
@@ -120,11 +111,17 @@ function DetailRow({ label, value }: { label: string; value: string }) {
 
 /**
  * The header's one action area: a kebab that opens the shared menu with the
- * Design's History and Edit routes. Each row is an icon and its label. The
- * native menu renders in a portal, so Jest renders its rows through the
- * primitive's root instead of opening it.
+ * Design's History and Edit routes and the status sheet. Each row is an icon
+ * and its label. The native menu renders in a portal, so Jest renders its rows
+ * through the primitive's root instead of opening it.
  */
-function DetailActions({ designId }: { designId: string }) {
+function DetailActions({
+  designId,
+  onChangeStatus,
+}: {
+  designId: string;
+  onChangeStatus: () => void;
+}) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -149,6 +146,10 @@ function DetailActions({ designId }: { designId: string }) {
           <Icon as={Pencil} className="size-4" />
           <Text>Edit</Text>
         </DropdownMenuItem>
+        <DropdownMenuItem textValue="Change status" onPress={onChangeStatus}>
+          <Icon as={CircleDot} className="size-4" />
+          <Text>Change status</Text>
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );
@@ -162,7 +163,13 @@ function DetailActions({ designId }: { designId: string }) {
  * its lines instead of truncating. An absent Collection or Category is named
  * ("No collection", "No category") so the header never reads as a gap.
  */
-function DetailHeader({ design }: { design: DesignDetail | null }) {
+function DetailHeader({
+  design,
+  onChangeStatus,
+}: {
+  design: DesignDetail | null;
+  onChangeStatus: () => void;
+}) {
   return (
     <View testID="detail-header" className="flex-row items-start gap-2 px-4 pt-2">
       <Button
@@ -186,7 +193,7 @@ function DetailHeader({ design }: { design: DesignDetail | null }) {
         ) : null}
       </View>
 
-      {design ? <DetailActions designId={design.id} /> : null}
+      {design ? <DetailActions designId={design.id} onChangeStatus={onChangeStatus} /> : null}
     </View>
   );
 }
@@ -281,15 +288,26 @@ function DetailSections({ design }: { design: DesignDetail }) {
 }
 
 /**
- * What one Design is right now: its identity, then its images, then both
- * sections in full. Name and Status are always here; every field keeps its
- * row, so the sheet's shape is the same whether the design is finished or not.
+ * What one Design is right now: its identity, its latest Decision, then its
+ * images, then both sections in full. Name and Status are always here; every
+ * field keeps its row, so the sheet's shape is the same whether the design is
+ * finished or not. The decision block sits between identity and images because
+ * the why outranks the pictures: a rejected Design reads its reason before its
+ * gallery.
  */
-function DesignDetailContent({ design }: { design: DesignDetail }) {
+function DesignDetailContent({
+  design,
+  onAddDecision,
+}: {
+  design: DesignDetail;
+  onAddDecision: () => void;
+}) {
   return (
     <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
       <View className="gap-6 px-6 pb-12 pt-2">
         <DetailIdentity design={design} />
+
+        <DecisionBlock design={design} onAddDecision={onAddDecision} />
 
         <DesignGallery designId={design.id} />
 
@@ -312,15 +330,37 @@ const DETAIL_ZOOM = ZoomIn.duration(DETAIL_ARRIVAL.zoom.duration).withInitialVal
  * Detail for one Design, opened from its Library card. The header stays fixed
  * above the scrolling content; the body opens on the identity block and
  * subscribes to the record, so later edits show here without reopening the
- * screen. Back returns to the Library.
+ * screen. The kebab's Change status opens the status sheet and the block's Add
+ * a decision opens the decision sheet; both sheets' decisions live in the
+ * Detail surface reducer, and a write lands through the live read. Back
+ * returns to the Library.
  */
 export function DesignDetailScreen({ designId }: { designId: string }) {
   const { design, error, status } = useDesignDetail(designId);
+  const [surface, send] = useDesignDetailSurface(designId);
   // The provider measured these at launch, so the header sits below the status
   // bar on its first frame. The native SafeAreaView measures window insets
   // after its first layout, which lets the pushed screen paint at the top and
   // snap down once the insets arrive.
   const insets = useSafeAreaInsets();
+  // One panel holds whichever sheet is open, so each sheet receives only the
+  // panel of its own kind.
+  const statusPanel = surface.panel?.kind === "status" ? surface.panel : null;
+  const decisionDraft = surface.panel?.kind === "decision" ? surface.panel.draft : null;
+
+  /** The sheet opens on the Status the live read holds; the reducer keeps it. */
+  function openStatusSheet(): void {
+    if (!design) return;
+
+    send({ type: "status-sheet-opened", status: design.status });
+  }
+
+  /** The sheet opens on the latest decision the live read holds; the reducer keeps it. */
+  function openDecisionSheet(): void {
+    if (!design) return;
+
+    send({ type: "decision-sheet-opened", latest: design.latestDecision });
+  }
 
   return (
     <View
@@ -333,14 +373,14 @@ export function DesignDetailScreen({ designId }: { designId: string }) {
       className="bg-card"
     >
       <Animated.View entering={DETAIL_ZOOM} style={{ flex: 1 }}>
-        <DetailHeader design={design} />
+        <DetailHeader design={design} onChangeStatus={openStatusSheet} />
 
         {error ? (
           <View className="px-6 pt-4">
             <ReadError message="This design could not be loaded." error={error} />
           </View>
         ) : status === "loading" ? null : design ? (
-          <DesignDetailContent design={design} />
+          <DesignDetailContent design={design} onAddDecision={openDecisionSheet} />
         ) : (
           <View className="flex-1 items-center justify-center gap-2 px-6 pb-16">
             <Text variant="h4">Design not found</Text>
@@ -349,6 +389,9 @@ export function DesignDetailScreen({ designId }: { designId: string }) {
             </Text>
           </View>
         )}
+
+        <StatusSheet sheet={statusPanel} send={send} />
+        <DecisionSheet draft={decisionDraft} send={send} />
       </Animated.View>
     </View>
   );

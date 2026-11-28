@@ -1,4 +1,4 @@
-import { and, desc, eq, getTableColumns, isNull } from "drizzle-orm";
+import { and, desc, eq, getTableColumns, isNull, sql } from "drizzle-orm";
 import type {
   Database,
   DatabaseHandle,
@@ -9,6 +9,7 @@ import {
   categories,
   collections,
   declareLiveRead,
+  designEvents,
   designMaterials,
   designs,
   MATERIAL_USE_ROLES,
@@ -122,11 +123,23 @@ export type MaterialUsesPair = {
   after: readonly MaterialUse[];
 };
 
+/**
+ * The latest Decision recorded for a Design, as Detail projects it: the why
+ * and when of the newest `decision` Event. The Event's diff stays History's;
+ * a rejection's Status move is not copied here.
+ */
+export type LatestDecision = {
+  reason: string | null;
+  potentialImprovements: string | null;
+  createdAt: number;
+};
+
 /** A Design with the names Detail displays in place of its foreign keys. */
 export type DesignDetail = Design & {
   category: string | null;
   collection: string | null;
   materialUses: MaterialUse[];
+  latestDecision: LatestDecision | null;
 };
 
 /** The one sentence a refused name carries, shared by create and by the write. */
@@ -568,7 +581,7 @@ export function getDesign(database: Database, id: string): Design | null {
   return designFrom(database.db, id);
 }
 
-function designFrom(db: DatabaseHandle, id: string): Design | null {
+export function designFrom(db: DatabaseHandle, id: string): Design | null {
   return (
     db
       .select(designColumns)
@@ -591,9 +604,32 @@ function designDetailQuery(database: Database, id: string) {
 }
 
 /**
+ * A Design's newest Decision Event, reason and improvements included, or null
+ * when it has none. Equal timestamps fall back to insertion order, the same
+ * order History reads Events in, so a later Decision written in the same
+ * millisecond still wins.
+ */
+function latestDecisionFrom(db: DatabaseHandle, designId: string): LatestDecision | null {
+  return (
+    db
+      .select({
+        reason: designEvents.reason,
+        potentialImprovements: designEvents.potentialImprovements,
+        createdAt: designEvents.createdAt,
+      })
+      .from(designEvents)
+      .where(and(eq(designEvents.designId, designId), eq(designEvents.kind, "decision")))
+      .orderBy(desc(designEvents.createdAt), desc(sql`design_events.rowid`))
+      .limit(1)
+      .get() ?? null
+  );
+}
+
+/**
  * Reads one live Design for Detail, resolving its Category name and its
- * Collection label through the taxonomy name read, and its Material uses
- * through the Material name read; null when it is unknown or soft-deleted.
+ * Collection label through the taxonomy name read, its Material uses through
+ * the Material name read, and its latest Decision from the newest `decision`
+ * Event; null when it is unknown or soft-deleted.
  */
 export function getDesignDetail(database: Database, id: string): DesignDetail | null {
   const design = designDetailQuery(database, id).get();
@@ -608,6 +644,7 @@ export function getDesignDetail(database: Database, id: string): DesignDetail | 
     category: design.categoryId ? (names.categories.get(design.categoryId) ?? null) : null,
     collection: collection ? taxonomyLabel(collection) : null,
     materialUses: materialUsesFrom(database.db, id),
+    latestDecision: latestDecisionFrom(database.db, id),
   };
 }
 
@@ -617,13 +654,13 @@ export type DesignDetailRows = {
 };
 
 /**
- * The Detail read: the Design and every name and use it resolves, with all
- * five tables it watches declared beside the query (ADR-0005). Adding a
- * resolved name is one local edit here.
+ * The Detail read: the Design and every name, use, and Decision it resolves,
+ * with all six tables it watches declared beside the query (ADR-0005). Adding
+ * a resolved name or a projection is one local edit here.
  */
 export function designDetailRead(id: string): LiveReadDeclaration<DesignDetailRows> {
   return declareLiveRead<DesignDetailRows>({
-    tables: [designs, categories, collections, designMaterials, materials],
+    tables: [designs, categories, collections, designMaterials, materials, designEvents],
     read: (database) => ({ design: getDesignDetail(database, id) }),
     empty: { design: null },
   });

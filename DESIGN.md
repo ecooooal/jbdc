@@ -114,15 +114,15 @@ spacing:
   screen-margin: "24px"
 components:
   button-primary:
-    backgroundColor: "{colors.wood}"
-    textColor: "{colors.wood-foreground}"
+    backgroundColor: "{colors.selection}"
+    textColor: "{colors.selection-foreground}"
     typography: "{typography.label}"
     rounded: "{rounded.md}"
     height: "40px"
     padding: "0 16px"
   button-primary-sm:
-    backgroundColor: "{colors.wood}"
-    textColor: "{colors.wood-foreground}"
+    backgroundColor: "{colors.selection}"
+    textColor: "{colors.selection-foreground}"
     typography: "{typography.label}"
     rounded: "{rounded.md}"
     height: "36px"
@@ -166,8 +166,8 @@ components:
     rounded: "{rounded.xl}"
     padding: "0"
   badge-confirmed:
-    backgroundColor: "{colors.wood}"
-    textColor: "{colors.wood-foreground}"
+    backgroundColor: "{colors.selection}"
+    textColor: "{colors.selection-foreground}"
     typography: "{typography.label-sm}"
     rounded: "{rounded.full}"
     padding: "2px 8px"
@@ -199,8 +199,8 @@ components:
     rounded: "{rounded.xl}"
     padding: "4px"
   section-index-edit-active:
-    backgroundColor: "{colors.background}"
-    textColor: "{colors.foreground}"
+    backgroundColor: "{colors.selection}"
+    textColor: "{colors.selection-foreground}"
     typography: "{typography.label}"
     rounded: "{rounded.lg}"
   stage-tabs:
@@ -223,8 +223,8 @@ components:
     height: "36px"
     padding: "0 12px"
   fab:
-    backgroundColor: "{colors.wood}"
-    textColor: "{colors.wood-foreground}"
+    backgroundColor: "{colors.selection}"
+    textColor: "{colors.selection-foreground}"
     rounded: "{rounded.full}"
     height: "56px"
     width: "56px"
@@ -261,6 +261,7 @@ Rules:
 - The Flat-Archive Rule. A surface's importance is read from its tone, never from its shadow.
 - The Pill Rule. Pills are for state and selection — badges, counters, toggles.
 - The Quiet Turn Rule. Motion never announces — it only arrives and leaves, in 200ms or less.
+- The Separate Exit Rule. The one Status that ends a Design never shares a box with the Statuses that move it onward.
 Elevation:
 - Whisper: 0 1px 3px 0 rgba(0,0,0,0.05), 0 1px 2px -1px rgba(0,0,0,0.05)
 - Dialog: 0 10px 15px -3px rgba(0,0,0,0.05), 0 4px 6px -4px rgba(0,0,0,0.05)

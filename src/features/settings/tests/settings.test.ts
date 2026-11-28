@@ -1,7 +1,8 @@
 import { settings as settingsTable } from "@/features/database";
 import { createTempDatabase, openTestDatabase } from "@/features/database/testing";
-import { CARD_DENSITIES, cardDensityFrom } from "@/features/settings";
 import {
+  CARD_DENSITIES,
+  cardDensityFrom,
   createSettings,
   DEFAULT_CARD_DENSITY,
   DEFAULT_GROUPING,

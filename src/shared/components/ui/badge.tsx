@@ -15,8 +15,8 @@ const badgeVariants = cva(
     variants: {
       variant: {
         default: cn(
-          "bg-primary border-transparent",
-          Platform.select({ web: "[a&]:hover:bg-primary/90" }),
+          "bg-selection border-transparent",
+          Platform.select({ web: "[a&]:hover:bg-selection/90" }),
         ),
         secondary: cn(
           "bg-secondary border-transparent",
@@ -38,7 +38,7 @@ const badgeVariants = cva(
 const badgeTextVariants = cva("text-xs font-medium", {
   variants: {
     variant: {
-      default: "text-primary-foreground",
+      default: "text-selection-foreground",
       secondary: "text-secondary-foreground",
       destructive: "text-destructive-foreground",
       outline: "text-foreground",

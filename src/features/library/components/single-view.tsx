@@ -1,11 +1,9 @@
-import { useCallback, useState } from "react";
+import { useCallback, useState, type ReactNode } from "react";
 import { FlatList, View, type NativeScrollEvent, type NativeSyntheticEvent } from "react-native";
 import { useImageUri } from "@/features/images/react";
 import { Text } from "@/shared/components/ui/text";
 import { cn } from "@/shared/lib/utils";
 import type { LibraryDesign } from "../lib/query";
-import type { PressHighlightHandlers } from "./press-highlight";
-import { SingleViewPage } from "./single-view-page";
 
 /** The page a settled horizontal offset lands on, kept inside the designs it has. */
 function settledPage(offsetX: number, pageWidth: number, count: number): number {
@@ -18,18 +16,20 @@ function settledPage(offsetX: number, pageWidth: number, count: number): number 
  * The single view: a horizontal, bounded pager of full-screen Design pages,
  * opening on the first and stopping at both ends. A gesture decides nothing
  * until it ends; the position chip follows the page the scroll view settles on.
- * The pages are laid out in the order the grouping selector produced, so a
- * swipe walks exactly what the grids show.
+ * The pages are laid out in the chosen grouping's order, so a swipe walks
+ * exactly what the grids show. The screen supplies each page, so
+ * the Library and the rejected view share the pager and differ only in the
+ * panel beneath the Cover.
  */
-export function SingleView({
+export function SingleView<T extends LibraryDesign>({
   designs,
   width,
-  pressFor,
+  renderPage,
 }: {
-  designs: readonly LibraryDesign[];
+  designs: readonly T[];
   /** The exact width one page gets, so pages line up with the screen. */
   width: number;
-  pressFor: (designId: string) => PressHighlightHandlers;
+  renderPage: (design: T) => ReactNode;
 }) {
   const [page, setPage] = useState(0);
   const settled = Math.min(page, Math.max(designs.length - 1, 0));
@@ -56,9 +56,7 @@ export function SingleView({
         showsHorizontalScrollIndicator={false}
         data={designs}
         keyExtractor={(design) => design.id}
-        renderItem={({ item }) => (
-          <SingleViewPage design={item} width={width} press={pressFor(item.id)} />
-        )}
+        renderItem={({ item }) => renderPage(item)}
         onMomentumScrollEnd={settle}
         onScrollEndDrag={settle}
       />

@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import {
   categories,
   collections,
+  designEvents,
   designMaterials,
   designs,
   materials,
@@ -11,7 +12,7 @@ import {
 } from "@/features/database";
 import { createTempDatabase } from "@/features/database/testing";
 import { expectLiveReadReruns } from "@/features/database/testing-live";
-import { createDesign, writeDesign } from "@/features/designs";
+import { changeStatus, createDesign, recordDecision, writeDesign } from "@/features/designs";
 import { designDetailRead, getDesignDetail } from "../lib/records";
 import { createMaterial } from "@/features/materials";
 import { createCategory, createCollection } from "@/features/taxonomy";
@@ -57,6 +58,15 @@ describe("the Detail live read", () => {
           }),
       ],
       [materials, (db) => createMaterial(db, { name: "Silk crêpe" })],
+      [
+        designEvents,
+        (db) =>
+          changeStatus(db, design.id, {
+            status: "rejected",
+            reason: "The fabric cost too much",
+            potentialImprovements: null,
+          }),
+      ],
     ]);
 
     for (const [table, write] of writes) {
@@ -181,6 +191,7 @@ describe("design detail", () => {
       updatedAt: 20,
       deletedAt: null,
       materialUses: [],
+      latestDecision: null,
     });
   });
 
@@ -255,5 +266,100 @@ describe("design detail", () => {
 
     expect(getDesignDetail(database, removed)).toBeNull();
     expect(getDesignDetail(database, randomUUID())).toBeNull();
+  });
+});
+
+describe("the Detail read's latest decision", () => {
+  const DECIDED_AT = Date.UTC(2026, 10, 26, 12);
+
+  /** A rejected Design whose one Decision records a reason and improvements. */
+  function rejectedDesign() {
+    const design = createDesign(database, { name: "Silk slip dress" }, DECIDED_AT - 1000);
+
+    changeStatus(
+      database,
+      design.id,
+      {
+        status: "rejected",
+        reason: "The fabric cost too much",
+        potentialImprovements: "Try the wool blend",
+      },
+      DECIDED_AT,
+    );
+
+    return design;
+  }
+
+  test("is null when the Design has no Decision", () => {
+    const design = createDesign(database, { name: "Silk slip dress" });
+
+    expect(getDesignDetail(database, design.id)?.latestDecision).toBeNull();
+  });
+
+  test("projects the newest decision's reason, improvements, and time without its diff", () => {
+    const design = rejectedDesign();
+
+    expect(getDesignDetail(database, design.id)?.latestDecision).toEqual({
+      reason: "The fabric cost too much",
+      potentialImprovements: "Try the wool blend",
+      createdAt: DECIDED_AT,
+    });
+  });
+
+  test("a later decision wins over the rejection", () => {
+    const design = rejectedDesign();
+
+    recordDecision(
+      database,
+      design.id,
+      { reason: "The fringe shed", potentialImprovements: "Try a tighter weave" },
+      DECIDED_AT + 1000,
+    );
+
+    expect(getDesignDetail(database, design.id)?.latestDecision).toEqual({
+      reason: "The fringe shed",
+      potentialImprovements: "Try a tighter weave",
+      createdAt: DECIDED_AT + 1000,
+    });
+  });
+
+  test("a blank rejection reads nulls for its why", () => {
+    const design = createDesign(database, { name: "Silk slip dress" }, DECIDED_AT - 1000);
+
+    changeStatus(
+      database,
+      design.id,
+      { status: "rejected", reason: "   ", potentialImprovements: "  " },
+      DECIDED_AT,
+    );
+
+    expect(getDesignDetail(database, design.id)?.latestDecision).toEqual({
+      reason: null,
+      potentialImprovements: null,
+      createdAt: DECIDED_AT,
+    });
+  });
+
+  test("a Status move that is not a rejection is not a Decision", () => {
+    const design = createDesign(database, { name: "Silk slip dress" }, DECIDED_AT - 1000);
+
+    changeStatus(database, design.id, { status: "approved" }, DECIDED_AT);
+
+    expect(getDesignDetail(database, design.id)?.latestDecision).toBeNull();
+  });
+
+  test("a revival keeps the rejection readable", () => {
+    const design = rejectedDesign();
+
+    changeStatus(database, design.id, { status: "in_development" }, DECIDED_AT + 1000);
+
+    expect(getDesignDetail(database, design.id)).toMatchObject({
+      status: "in_development",
+      latestDecision: {
+        reason: "The fabric cost too much",
+        potentialImprovements: "Try the wool blend",
+        createdAt: DECIDED_AT,
+      },
+    });
   });
 });

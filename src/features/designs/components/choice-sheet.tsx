@@ -1,4 +1,4 @@
-import { Check, ChevronDown } from "lucide-react-native";
+import { ChevronDown } from "lucide-react-native";
 import { useState } from "react";
 import { Keyboard, Pressable, ScrollView, View } from "react-native";
 import { Sheet, SheetBody } from "@/shared/components/sheet";
@@ -7,31 +7,30 @@ import { Icon } from "@/shared/components/ui/icon";
 import { Text } from "@/shared/components/ui/text";
 import { cn } from "@/shared/lib/utils";
 
-/** One option row, the clear row included; only the chosen one carries the check. */
+/** One option row, the clear row included; only the chosen one takes the fill. */
 type Entry = {
   key: string;
   label: string;
   chosen: boolean;
-  /** The clear row reads in Faded Thread: it names an absence, not a record. */
+  /** The clear row reads in Faded Thread until it is chosen: it names an absence. */
   quiet: boolean;
   onPress: () => void;
 };
 
 /**
  * A picker drawn as its own sheet above the sheet it sits on: Edit's Category,
- * Collection, and Material choices. The trigger is the select's shell — Warm
- * Paper, Thread Line stroke, the field radius and height, a Faded Thread
- * chevron — and the options open on the shared wrapper, one tone deeper than the
- * sheet beneath, so the stack reads without a second popover.
+ * Collection, and Material choices, and the create form's taxonomy fields. The
+ * trigger is the select's shell — Warm Paper, Thread Line stroke, the field
+ * radius and height, a Faded Thread chevron — and the options open on the
+ * shared wrapper, one tone deeper than the sheet beneath, so the stack reads
+ * without a second popover.
  *
  * Opening dismisses the keyboard first. A Material picker sits beside a Colour
  * field that may already hold the keys, and a sheet that slides up under them
  * would push its own list off the card.
  *
  * It keeps only whether it is open: a choice is reported as the field's fact,
- * which the surface's reducer owns, and this control decides nothing. The create
- * form keeps the popover select because it is a modal route, and a sheet opened
- * from inside one cannot climb above it.
+ * which the surface's reducer owns, and this control decides nothing.
  */
 export function ChoiceSheet<T extends { id: string; name: string }>({
   label,
@@ -137,22 +136,22 @@ export function ChoiceSheet<T extends { id: string; name: string }>({
                     accessibilityState={{ selected: entry.chosen }}
                     onPress={entry.onPress}
                     className={cn(
-                      "active:bg-accent flex min-h-11 flex-row items-center justify-between gap-3 px-4 py-3",
+                      "flex min-h-11 flex-row items-center gap-3 px-4 py-3",
                       index > 0 && "border-border border-t",
+                      entry.chosen ? "bg-selection active:bg-selection/90" : "active:bg-accent",
                     )}
                   >
                     <Text
                       numberOfLines={2}
                       className={cn(
                         "flex-1",
-                        entry.quiet ? "text-muted-foreground" : entry.chosen && "font-medium",
+                        entry.chosen
+                          ? "text-selection-foreground font-medium"
+                          : entry.quiet && "text-muted-foreground",
                       )}
                     >
                       {entry.label}
                     </Text>
-                    <View className="w-4 items-center">
-                      {entry.chosen ? <Icon as={Check} className="text-foreground size-4" /> : null}
-                    </View>
                   </Pressable>
                 ))}
               </View>
